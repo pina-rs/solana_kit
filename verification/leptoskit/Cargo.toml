@@ -3,6 +3,7 @@ name = "solana_kit_leptoskit_verification"
 version = "0.1.0"
 edition = "2024"
 publish = false
+default-run = "solana_kit_leptoskit_verification"
 
 [workspace]
 
