@@ -59,7 +59,19 @@ dispatches a `Press` event and requires the corrupted report and second commit.
 The guest's small unsafe FFI wrappers implement that pinned synchronous copy ABI;
 core and the host harness forbid unsafe code.
 
-## Current v23 durable nonce integration
+## Current v24 message signer integration
+
+The 103-case suite preserves every previous 101 function, ordered case and result.
+Two isolated groups execute the accepted bare-message snapshots and the entire
+256-distinct-message bulk signing and comparison oracle. Native Rust, Chrome,
+both Wasmtime previews and the pinned LeptosKit host check 103 canonical passes
+and 102/103 under sole hash corruption. Import/dependency negatives, the one-fuel
+zero-commit control and five freshly packaged-core groups pass.
+The [message runtime receipt](message-runtime.md) records the signed executable,
+actual artifact hashes and finite source-owned crypto workload. This does not
+complete signer parity or establish device, wallet submission or validator proof.
+
+## Historical v23 durable nonce integration
 
 The 101-case suite retains all 97 wallet and signer groups unchanged and appends
 four accepted durable nonce groups. Native Rust, Chrome, both Wasmtime previews

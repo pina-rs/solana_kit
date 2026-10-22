@@ -6,8 +6,8 @@ On-chain programs should use Pina or official Solana program libraries.
 
 The [scoped receipt](signer-capabilities.tsv) retains all 85 exact declarations
 from `solana_kit_signers` at Dart commit
-`0138bb956d2d81ccc0c56edc602401c0df2f2b46`. There are 26 partial declarations,
-59 pending declarations, and zero complete declarations. The canonical inventory
+`0138bb956d2d81ccc0c56edc602401c0df2f2b46`. There are 39 partial declarations,
+46 pending declarations, and zero complete declarations. The canonical inventory
 is unchanged. Each row retains its exact ID, source hash, and provenance.
 
 `SignatureOutput` freezes the address, authorized bytes, and signature. Core owns
@@ -64,9 +64,9 @@ analyzer and Node preamble versions, so direct file execution supplies the
 original test evidence without modifying reference files.
 
 Automatic heterogeneous transaction roles and bounded ordered transaction batches
-are implemented through explicit `local` and `native` registrations. Message
-batches, message modification, instruction signer attachment, runtime type
-assertions, key grinding and generation, file persistence, and signer configuration
+are implemented through explicit `local` and `native` registrations. Instruction
+signer attachment, dynamic runtime type introspection, key grinding and generation,
+file persistence, and signer configuration
 remain uncovered. Those gaps explain the
 partial and pending statuses. They are not placeholder APIs.
 
@@ -105,5 +105,32 @@ Core validation deliberately exceeds Dart: conflicting logical handles reject
 before effects; changed bytes cannot reuse authorization; foreign signatures,
 missing non-sender slots, invalid crypto and zero submission identifiers reject.
 A composition validates at most 256 registrations. Its ordered `sign_batch`
-accepts at most 256 transactions and stops on the first failure. Message batches,
-backend-native bulk calls and the other pending declaration contracts remain open.
+accepts at most 256 transactions and stops on the first failure. Backend-native
+transaction bulk calls and the other pending declaration contracts remain open.
+
+Unit173 adds immutable bare `message::SignableMessage` snapshots and genuine
+whole-slice partial/modifying backend calls. Explicit local/native registrations
+retain logical handle identity. Modifiers run sequentially; partials share the
+final immutable slice and poll concurrently, merging successful results in input
+order. Both input counts are capped at256 before backend effects. Backend result
+cardinality, duplicate/missing/foreign signatures, changed bytes and stale
+authorization reject with a distinct `MessageError`. Existing signatures validate
+before effects. With crypto every signature verifies over the exact bare bytes;
+without crypto acceptance is structural only.
+
+Rust trait bounds and explicit registration constructors replace Dart's dynamic
+is/assert helpers for statically typed composition. There is no dynamic object
+inspection or Dart error-context equivalent. Constructors copy bytes and expose
+immutable dictionaries, strengthening Dart's shallow content immutability.
+Bare snapshots impose no transaction/envelope byte cap. Address dictionaries
+iterate in sorted order. The original singular `MessageSigner` remains usable
+through the explicit `SingularMessageSigner` adapter, whose documented per-item
+calls do not claim backend-native bulk behavior.
+
+The new tests execute actual256-message bulk success and257 rejection, both native
+heterogeneous generic Tokio orderings, local Rc Pending/wake/reverse completion,
+ordered validation and cancellation drops. Literal pinned Dart fixtures cover empty,
+UTF-8, arbitrary bytes, existing signatures and deterministic keypair signatures.
+Isolated portable message functions remain unregistered in the shared suite.
+These are local native behavioral proofs and Wasm compilation; no added browser,
+WASI host, interpreted host, validator or device execution is claimed.

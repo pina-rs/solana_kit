@@ -35,12 +35,36 @@ const COLUMN_COUNT: usize = 14;
 const HASH_COLUMN: usize = 12;
 const PROVENANCE_COLUMN: usize = 13;
 
-fn coverage(covered: bool) -> (&'static str, &'static str, &'static str) {
+const MESSAGES: &[&str] = &[
+    "SignableMessage",
+    "SignableMessage.content",
+    "SignableMessage.signatures",
+    "createSignableMessage",
+    "MessageModifyingSigner",
+    "MessageModifyingSigner.address",
+    "MessageModifyingSigner.modifyAndSignMessages",
+    "isMessagePartialSigner",
+    "assertIsMessagePartialSigner",
+    "isMessageModifyingSigner",
+    "assertIsMessageModifyingSigner",
+    "isMessageSigner",
+    "assertIsMessageSigner",
+];
+
+fn coverage(covered: bool, message: bool) -> (&'static str, &'static str, &'static str) {
+    if message {
+        return (
+            "partial",
+            "crates/solana_kit_signers/tests/messages.rs;crates/solana_kit_signers/tests/message_async.rs;verification/signer-capabilities/tests/messages.rs",
+            "immutable bare snapshots and bounded whole-slice message partial/modifying contracts; explicit local/native traits replace runtime assertions; configuration, dynamic introspection and remaining keypair contracts pending",
+        );
+    }
+
     if covered {
         return (
             "partial",
             "crates/solana_kit_signers/tests;verification/signer-capabilities/tests",
-            "automatic heterogeneous transaction roles and bounded ordered transaction batches; message batches, attachment and configuration remain pending",
+            "automatic heterogeneous transaction roles and bounded ordered transaction batches; attachment, configuration and remaining declaration contracts pending",
         );
     }
 
@@ -58,8 +82,11 @@ fn scoped_row(row: &str) -> Result<Option<(String, bool)>, &'static str> {
         return Err("unexpected canonical inventory schema");
     }
 
-    let covered = PARTIAL.contains(&columns[3]);
-    let (status, evidence, limit) = coverage(covered);
+    let message = MESSAGES.contains(&columns[3])
+        || columns[3].starts_with("MessagePartialSigner")
+        || columns[3] == "KeyPairSigner.signMessages";
+    let covered = PARTIAL.contains(&columns[3]) || message;
+    let (status, evidence, limit) = coverage(covered, message);
     let fields = [
         columns[0],
         columns[1],

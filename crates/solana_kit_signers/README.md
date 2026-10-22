@@ -67,5 +67,23 @@ GAT contracts remain unchanged.
 
 Composition accepts at most 256 registrations. `sign_batch` accepts at most 256
 transactions, signs in input order, and stops at the first failure. Earlier
-backend effects cannot be rolled back. Message batches and message modification,
-attachment/configuration, key generation, and persistence remain pending.
+backend effects cannot be rolled back. Attachment/configuration, key generation,
+and persistence remain pending.
+
+Use `message::SignableMessage` for exact bare bytes and an immutable signature
+dictionary. `from_text` copies UTF-8 without normalization or an automatic off-chain
+envelope. Snapshot construction imposes no content-length limit.
+
+`message::MessagePartialSigner` receives the whole bounded slice once and returns
+one exact-byte signature dictionary per input. `message::MessageModifyingSigner`
+returns one replacement per input. Choose `message::local` or `message::native`
+registrations explicitly. A composite backend is registered in one role.
+Modifiers run sequentially before partials share one immutable final slice.
+Results merge in registration order. At most 256 messages and registrations
+are accepted before effects. Changed bytes cannot retain stale signatures,
+partial outputs cannot claim foreign owners, and cardinality is checked.
+
+`message::SingularMessageSigner(backend)` explicitly adapts the original
+`MessageSigner` by invoking it once per input in order. Implement the bulk trait
+directly for a backend-native bulk operation. The adapter preserves the singular
+future's actual auto traits and stops at its first failure.

@@ -24,6 +24,7 @@ extern crate alloc;
 mod capability;
 mod composition;
 pub mod local;
+pub mod message;
 pub mod native;
 mod pipeline;
 mod snapshot;

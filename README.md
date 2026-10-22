@@ -24,7 +24,7 @@ account reads, all nineteen node metadata operations and all eight economics
 operations, nine account and token operations and richer accountInfo,
 and all fifteen history, submission, full-result and simulation operations,
 through one executor-neutral protocol owner. All 54 catalog methods have typed
-implementations. The shared 101-case wallet, signer and durable nonce suite has
+implementations. The shared 103-case wallet, transaction/message signer and durable nonce suite has
 [runtime execution evidence](docs/verification/runtimes.md).
 Nine typed RPC subscription families use a bounded caller-owned connection.
 Their [portable protocol receipt](docs/verification/subscription-runtime.md)
@@ -32,8 +32,8 @@ establishes memory-frame execution, without a WebSocket transport claim.
 The core component is unreleased; the published `solana_kit` 0.0.0 umbrella remains
 a dependency-free name reservation with no SDK APIs. This bounded codec slice
 leaves Phase 2 incomplete; see its [capability receipt](docs/verification/core-codecs.md).
-The [transaction ledger](docs/parity/message-transactions.md) records 33 partial
-and 713 pending capabilities; Phase 3 remains incomplete.
+The [transaction ledger](docs/parity/message-transactions.md) records 46 partial
+and 700 pending capabilities; Phase 3 remains incomplete.
 The [offchain message receipt](docs/parity/offchain-messages.md) records bounded
 V0/V1 application messages and signing envelopes. Its 83 IDs remain partial.
 The [account/sysvar receipt](docs/verification/accounts-sysvars.md) maps 151
