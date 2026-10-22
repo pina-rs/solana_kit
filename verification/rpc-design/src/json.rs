@@ -34,7 +34,7 @@ pub struct RemoteError {
 }
 
 /// Missing and explicit JSON null differ, including for a nullable success result.
-#[derive(Debug, Default)]
+#[derive(Debug, Default, PartialEq, Eq)]
 pub enum Presence<T> {
     #[default]
     Missing,

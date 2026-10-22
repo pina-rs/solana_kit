@@ -31,7 +31,8 @@ pub struct ReadConfig {
 #[serde(rename_all = "camelCase")]
 pub struct Context {
     pub slot: u64,
-    pub api_version: Option<String>,
+    #[serde(default)]
+    pub api_version: crate::json::Presence<String>,
 }
 
 #[derive(Debug, Deserialize, PartialEq, Eq)]

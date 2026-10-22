@@ -234,3 +234,17 @@ fn body_and_depth_limits_precede_json_and_http_status_precedes_success() {
     assert!(value.starts_with('['));
     let _: Request = json::request(REQUEST_ID, &LatestBlockhash(None), Limits::default()).unwrap();
 }
+
+#[test]
+fn optional_api_version_preserves_absence_and_rejects_explicit_null() {
+    use solana_kit_rpc_design::methods::Contextual;
+    let missing = envelope(r#"{"context":{"slot":1},"value":0}"#);
+    let value: Contextual<u64> =
+        json::response(REQUEST_ID, reply(missing), Limits::default()).unwrap();
+    assert_eq!(value.context.api_version, Presence::Missing);
+    let explicit_null = envelope(r#"{"context":{"slot":1,"apiVersion":null},"value":0}"#);
+    assert!(matches!(
+        json::response::<Contextual<u64>>(REQUEST_ID, reply(explicit_null), Limits::default()),
+        Err(Error::Schema(_))
+    ));
+}
