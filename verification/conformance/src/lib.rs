@@ -23,13 +23,14 @@ pub mod v1;
 
 /// Generated System instruction-data conformance fixtures.
 pub mod system;
+pub mod system_client;
 
 use alloc::vec::Vec;
 
 /// Immutable suite identity. Changes to fixtures or assertions require a new ID.
-pub const SUITE_ID: &str = "solana-kit-core-v8";
+pub const SUITE_ID: &str = "solana-kit-core-v9";
 /// Required number of cases; a truncated report cannot pass conformance.
-pub const EXPECTED_CASE_COUNT: usize = 51;
+pub const EXPECTED_CASE_COUNT: usize = 53;
 
 /// Selects authentic fixtures or the intentionally incorrect hash oracle.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -107,6 +108,14 @@ pub fn run(mode: FixtureMode) -> Report {
     cases.push(case("rpc-exact-balance-u64", rpc::balance()));
     cases.push(case("rpc-bounded-opaque-json", rpc::boundaries()));
     cases.push(case("rpc-local-pending-correlation", rpc::local_pending()));
+    cases.push(case(
+        "system-client-builder-parser",
+        system_client::builder_parser(),
+    ));
+    cases.push(case(
+        "system-client-nonce-snapshot",
+        system_client::nonce_snapshot(),
+    ));
 
     Report {
         suite_id: SUITE_ID,

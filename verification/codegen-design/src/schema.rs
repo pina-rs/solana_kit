@@ -17,7 +17,7 @@ fn keys(node: &Value, allowed: &[&str]) -> Result<(), Error> {
     Ok(())
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Eq, PartialEq)]
 pub(crate) enum Wire {
     U64,
     Address,

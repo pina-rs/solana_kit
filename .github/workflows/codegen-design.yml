@@ -46,6 +46,16 @@ jobs:
           git diff --exit-code -- docs/parity/system-data.tsv
           cargo +1.99.1 run --locked --manifest-path verification/codegen-design/Cargo.toml -- system
           git diff --exit-code -- crates/solana_kit_system/src/generated.rs
+      - name: Regenerate System client artifacts twice and reject drift
+        shell: bash
+        run: |
+          cargo +1.99.1 run --locked --manifest-path verification/codegen-design/Cargo.toml -- system-builders
+          cargo +1.99.1 run --locked --manifest-path verification/codegen-design/Cargo.toml -- system-errors
+          cargo +1.99.1 run --locked --manifest-path verification/codegen-design/Cargo.toml -- system-client-receipt
+          git diff --exit-code -- crates/solana_kit_system/src/builders.rs crates/solana_kit_system/src/errors.rs docs/parity/system-client.tsv
+          cargo +1.99.1 run --locked --manifest-path verification/codegen-design/Cargo.toml -- system-builders
+          cargo +1.99.1 run --locked --manifest-path verification/codegen-design/Cargo.toml -- system-errors
+          git diff --exit-code -- crates/solana_kit_system/src/builders.rs crates/solana_kit_system/src/errors.rs
       - name: Check program portability and documentation
         shell: bash
         run: |
