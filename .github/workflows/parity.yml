@@ -38,4 +38,4 @@ jobs:
       - name: Score authored and generated source without exclusions
         run: |
           cargo +1.99.1 install monostyle --version 0.3.26 --locked
-          monostyle check . --include-generated --fail-under 90 --no-color
+          cargo +1.99.1 xtask style
