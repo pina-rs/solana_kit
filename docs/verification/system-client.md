@@ -43,10 +43,13 @@ Fixed discriminators/default constructors, richer nonce state shapes and missing
 standalone enum codecs remain explicitly partial/pending. Source receipt33 stays
 historical. Full package parity and global completion are not claimed.
 
-Two new portable cases are isolated in system_client.rs and execute natively;
-the existing45-case registry is unchanged. The System crate compiles for browser
-Wasm, WASI Preview1 and Preview2. Combined browser/WASI/LeptosKit execution of these
-new cases and pinned validator execution remain separate integration work.
+The two portable cases in system_client.rs are registered after the preceding
+51 cases as suite v9. Clean signed source
+`ef8c553bcd1a349ee937a45644d1fa6e8fc31558` executes all 53 cases on native Rust,
+real Chrome, Wasmtime Preview 1 and Preview 2, and the pinned actual LeptosKit
+WasmHost. Each host also observes the sole corrupted hash failure, 52/53.
+The [runtime receipt](runtimes.md) records the exact tools, artifacts and graphs.
+Pinned validator execution and durable nonce transaction journeys remain pending.
 Public application normal/build dependencies remain System -> core -> bs58;
 all official Solana oracle dependencies are private native dev dependencies.
 Publishing remains disabled; unpatched source consumers are distinct from a

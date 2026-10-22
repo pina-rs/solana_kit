@@ -11,9 +11,10 @@ The first implemented slice is `solana_kit_core` 0.1.0: portable addresses,
 hashes, signatures, ordered instructions, account roles, bounded binary codecs,
 immutable legacy/v0/v1 transactions, account snapshots, sysvar layouts, program
 errors, optional exact fixed points, and deterministic cryptography. The generated
-`solana_kit_system` slice adds bounded data codecs for all fourteen pinned System
-instructions. `solana_kit_client` adds typed balance, latest-blockhash and full-base64
-account reads through one executor-neutral protocol owner. The shared 51-case suite has
+`solana_kit_system` slice adds bounded data codecs, typed account builders and strict
+parsers for all fourteen pinned System instructions, nonce account snapshots,
+and numeric custom errors. `solana_kit_client` adds typed balance, latest-blockhash and full-base64
+account reads through one executor-neutral protocol owner. The shared 53-case suite has
 [runtime execution evidence](docs/verification/runtimes.md).
 The core component is unreleased; the published `solana_kit` 0.0.0 umbrella remains
 a dependency-free name reservation with no SDK APIs. This bounded codec slice
@@ -24,13 +25,17 @@ The [account/sysvar receipt](docs/verification/accounts-sysvars.md) maps 151
 declarations and retains all 78 unresolved declarations explicitly.
 The [fixed-point receipt](docs/parity/fixed-points.md) maps 121 bounded equivalents
 and retains five remaining declarations out of 126 canonical IDs.
-The [System data receipt](docs/verification/system-data.md) records 83 data
-equivalents, 28 partial mappings and 130 pending declarations; account builders
-and validator execution remain unfinished.
+The [System client receipt](docs/verification/system-client.md) records 173
+implemented mappings and 68 partial or pending declarations. Validator execution
+and durable nonce transaction journeys remain unfinished.
 
 Three portable RPC protocol cases execute with memory transports on every core
-host. HTTP networking, remaining RPC operations, subscriptions and application
-journeys remain separate work; see the [RPC receipt](docs/parity/rpc-foundation.md).
+host. The native adapter provides bounded HTTP/1 and TLS with caller-owned
+Tokio execution, deadlines, cancellation and authentication. Its
+[native networking receipt](docs/verification/native-http.md) records actual local
+server journeys. Browser and guest networking, remaining RPC operations,
+subscriptions and application journeys remain separate work; see the
+[RPC receipt](docs/parity/rpc-foundation.md).
 
 - [Delivery plan](docs/planning/plan.md)
 - [Architecture and API proposal](docs/architecture/design.md)
