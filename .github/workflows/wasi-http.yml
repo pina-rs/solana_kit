@@ -42,8 +42,11 @@ jobs:
         shell: bash
         run: |
           cargo +1.99.1 clippy --manifest-path verification/wasi-http-prototype/Cargo.toml --bin embedded --locked -- -D warnings
+          cargo +1.99.1 test --manifest-path verification/wasi-http-prototype/Cargo.toml --bin embedded --locked
           cargo +1.99.1 clippy --manifest-path verification/wasi-http-prototype/Cargo.toml --bin embedded_guest --target wasm32-wasip2 --locked -- -D warnings
-          cargo +1.99.1 build --manifest-path verification/wasi-http-prototype/Cargo.toml --bin embedded_guest --target wasm32-wasip2 --locked
+          cargo +1.99.1 build --manifest-path verification/wasi-http-prototype/Cargo.toml --bin embedded_guest --bin cli_guest --target wasm32-wasip2 --locked
           cargo +1.99.1 run --manifest-path verification/wasi-http-prototype/Cargo.toml --bin embedded --locked
-          cargo +1.89.0 build --manifest-path verification/wasi-http-prototype/Cargo.toml --bin embedded_guest --target wasm32-wasip2 --locked
+          verification/wasi-http-prototype/target/debug/embedded --cli-only
+          cargo +1.89.0 build --manifest-path verification/wasi-http-prototype/Cargo.toml --bin embedded_guest --bin cli_guest --target wasm32-wasip2 --locked
           verification/wasi-http-prototype/target/debug/embedded
+          verification/wasi-http-prototype/target/debug/embedded --cli-only

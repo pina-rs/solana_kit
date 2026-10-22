@@ -28,6 +28,10 @@ path = "src/embedded.rs"
 name = "embedded_guest"
 path = "src/embedded_guest.rs"
 
+[[bin]]
+name = "cli_guest"
+path = "src/cli_guest.rs"
+
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 rustls = { version = "=0.23.46", default-features = false, features = ["std", "ring", "tls12"] }
 wasmparser = "=0.240.0"
