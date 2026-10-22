@@ -36,7 +36,52 @@ dispatches a `Press` event and requires the corrupted report and second commit.
 The guest's small unsafe FFI wrappers implement that pinned synchronous copy ABI;
 core and the host harness forbid unsafe code.
 
-## Current v4 executed receipt
+## Current v5 executed receipt
+
+The integrated `solana-kit-core-v5` suite preserves all preceding 39 cases and
+adds three exact fixed-point cases. Fresh local macOS ARM64 execution on
+2026-10-22 at signed checkpoint `84ca61b0eb5fec7c74ca4916740099d79b34f066`
+used Rust 1.99.1, Chrome 155.0.8059.85, ChromeDriver 155.0.8059.84,
+Wasmtime 50.0.0 and the pinned actual LeptosKit host. Source and native goldens
+were clean for this `cargo xtask all` run, which exited 0.
+
+| Execution                 | Canonical                      | Corruption control                                     |
+| ------------------------- | ------------------------------ | ------------------------------------------------------ |
+| Native command            | 42/42, exit 0                  | 41/42, exit 1                                          |
+| Real headless Chrome      | Full 42/42 report checked      | Full 41/42 report checked; both browser tests passed   |
+| Wasmtime Preview 1        | 42/42, exit 0                  | 41/42, exit 1                                          |
+| Wasmtime Preview 2        | 42/42, exit 0                  | 41/42, exit 1                                          |
+| Actual LeptosKit WasmHost | Full 42/42 JSON and one commit | Press event produced full 41/42 JSON and second commit |
+
+The sole corrupted case remains `sha256-fips-abc`, with `SHA-256 digest mismatch`.
+The three new cases cover exact parsing, negative floor arithmetic, scale larger
+than storage width, signed codec bytes and truncation rejection. Every host
+checks suite identity, case order/count, every outcome and failure state.
+
+All 16 normal/build selections pass: plain, crypto, fixed-points and combined,
+each on native, plain Wasm, Preview 1 and Preview 2. Eight additional normal-only
+numeric selections prove `autocfg` is build-only. The numeric default features
+remain disabled; plain core remains `bs58` only and crypto stays independent.
+The actual combined guest imports exactly the three pinned LeptosKit functions.
+The production import gate rejects `env::random`; the dependency gate rejects
+Tokio under each of the four feature policies. The clean packaged-core consumer
+passes all five tests, including actual fixed-point arithmetic and wire bytes.
+
+Executed v5 artifact SHA-256 values (local debug WASI artifacts, release guest):
+
+```text
+c4a8df243e588b2dccc8c07a90898bd4ae4d8cc7c3c54fc35a4153caef5bdf15  wasm32-wasip1
+6d70ece8425dbfd0f09ea2ff5350045df44e7c01731ad92c38369a4180f32dd4  wasm32-wasip2
+6cfd3128dada0eb65a3e2a28a5fac3f73d4c7466060a4fcee58e0e0c2c81b0e8  leptoskit-guest
+```
+
+The [fixed-point receipt](../parity/fixed-points.md) retains all 126 canonical IDs:
+121 implemented-bounded and five remaining. The production source and original
+fixed-point tests are unchanged from their independent review. This bounded
+off-chain client slice does not complete the package, Phase 2 or device journeys.
+Earlier receipts below retain their historical counts and artifacts.
+
+## Historical v4 executed receipt
 
 The integrated `solana-kit-core-v4` suite preserves all preceding 35 cases and
 adds four account/sysvar cases. Fresh local macOS ARM64 execution on 2026-10-22
@@ -185,8 +230,8 @@ cargo xtask dependency-fixture xtask/fixtures/forbidden-dependency.txt
 
 Both commands must exit nonzero. The combined gate instead asserts each expected
 rejection and fails if a negative fixture succeeds. Normal/build dependency trees
-are inspected for native, plain Wasm, Preview 1, and Preview 2, with and without
-crypto. A closed crate-name allowlist rejects Tokio and other new dependencies;
+are inspected for native, plain Wasm, Preview 1, and Preview 2, selecting plain,
+crypto, fixed-points and combined features. A closed crate-name allowlist rejects Tokio and other new dependencies;
 the lockfile pins versions. Address-only core selects only `bs58`. Native crypto
 also selects CPU-detection `libc`; the plain Wasm crypto tree selects neither.
 Host/UI/test-runner dependencies remain outside these selected core closures.

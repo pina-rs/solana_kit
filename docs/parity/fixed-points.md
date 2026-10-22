@@ -55,9 +55,16 @@ in the shared fixture provenance applies. No Dart execution is claimed.
 Eleven native tests cover those vectors, 32,340 independently bracketed rational
 rounding checks, malformed inputs, budget and signed overflow edges, byte
 vectors, and widths beyond 256. The separate shared module adds three cases
-under suite `solana-kit-core-v3-fixed-points` (34 cases). Wasm compilation is
-separate from actual host execution, which the coordinator performs during
-integration. Existing historical v2 execution receipts remain historical.
+under the original isolated suite `solana-kit-core-v3-fixed-points` (34 cases).
+The combined `solana-kit-core-v5` suite preserves the 39 preceding cases and adds
+these three cases. Its [executed runtime receipt](../verification/runtimes.md)
+records native, Chrome, Wasmtime Preview 1/2 and actual LeptosKit proof: canonical
+42/42 and corrupted 41/42, with only the SHA-256 negative control failing.
+All 16 plain/crypto/fixed-points/combined target closures and the packaged
+fixed-point consumer pass. The independent consumer also executes 1,650,000
+operation checks and 524,288 byte checks against the integrated core on Rust
+1.99.1 and MSRV 1.89.0. These finite checks do not establish complete package
+parity. Existing historical receipts remain historical.
 
 Reference test digests (SHA-256, paths below the pinned package's `test/`):
 
