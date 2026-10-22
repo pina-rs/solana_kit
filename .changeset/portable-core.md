@@ -2,7 +2,7 @@
 solana_kit_core: minor
 ---
 
-# Add portable Solana primitives and deterministic cryptography
+# Add portable primitives and deterministic cryptography
 
 Provide exact-length base58 addresses, hashes, signatures, account roles, and
 owned ordered instructions without host dependencies. The optional crypto

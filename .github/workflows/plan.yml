@@ -1,4 +1,4 @@
-name: Planning integrity
+name: SDK verification
 
 on:
   pull_request:
@@ -9,6 +9,59 @@ permissions:
   contents: read
 
 jobs:
+  native-core:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, macos-15, windows-2025]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install pinned Rust tools
+        shell: bash
+        run: rustup toolchain install 1.99.1 --profile minimal --component rustfmt --component clippy
+      - name: Test portable core and conformance
+        shell: bash
+        run: |
+          cargo +1.99.1 fmt --all --check
+          cargo +1.99.1 test --workspace --all-features --locked
+          cargo +1.99.1 clippy --workspace --all-targets --all-features --locked -- -D warnings
+          cargo +1.99.1 check -p solana_kit_core --no-default-features --locked
+          cargo +1.99.1 check -p solana_kit_core --no-default-features --features crypto --locked
+      - name: Execute canonical suite and corrupt-fixture exit control
+        shell: bash
+        run: |
+          cargo +1.99.1 run --quiet -p solana_kit_conformance --locked > "$RUNNER_TEMP/native-success.txt"
+          diff --strip-trailing-cr -u verification/conformance/evidence/native-success.txt "$RUNNER_TEMP/native-success.txt"
+          if cargo +1.99.1 run --quiet -p solana_kit_conformance --locked -- --corrupt-fixture > "$RUNNER_TEMP/native-corruption.txt"; then
+            echo "Corrupt fixture unexpectedly succeeded"
+            exit 1
+          else
+            corrupt_status=$?
+          fi
+          test "$corrupt_status" -eq 1
+          diff --strip-trailing-cr -u verification/conformance/evidence/native-corruption.txt "$RUNNER_TEMP/native-corruption.txt"
+      - name: Verify both public crate archives
+        shell: bash
+        run: |
+          cargo +1.99.1 package -p solana_kit_core --all-features --locked
+          cargo +1.99.1 package -p solana_kit --locked
+
+  core-msrv:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Check promised core MSRV
+        shell: bash
+        run: |
+          rustup toolchain install 1.89.0 --profile minimal
+          cargo +1.89.0 check -p solana_kit_core --no-default-features --locked
+          cargo +1.89.0 check -p solana_kit_core --no-default-features --features crypto --locked
+
   package-ledger:
     runs-on: ubuntu-24.04
     steps:
@@ -22,10 +75,20 @@ jobs:
           rustfmt +1.99.1 --edition 2024 --check tools/check_plan.rs
           rustc +1.99.1 --edition=2024 -D warnings tools/check_plan.rs -o "$RUNNER_TEMP/check-plan"
           "$RUNNER_TEMP/check-plan"
-          cargo +1.99.1 check --workspace --locked
-          cargo +1.99.1 package -p solana_kit --locked
+          curl --fail --location https://codeload.github.com/openbudgetfun/solana_kit/tar.gz/0138bb956d2d81ccc0c56edc602401c0df2f2b46 --output "$RUNNER_TEMP/dart-reference.tar.gz"
+          mkdir "$RUNNER_TEMP/dart-reference"
+          tar -xzf "$RUNNER_TEMP/dart-reference.tar.gz" --strip-components=1 -C "$RUNNER_TEMP/dart-reference"
+          "$RUNNER_TEMP/check-plan" "$RUNNER_TEMP/dart-reference"
       - name: Enforce monostyle 90 in both categories
         shell: bash
         run: |
           cargo +1.99.1 install monostyle --version 0.3.26 --locked
           monostyle check . --fail-under 90 --no-color
+      - name: Validate ownership and preview release files
+        shell: bash
+        run: |
+          cargo +1.99.1 install monochange --version 0.16.0 --locked
+          monochange check
+          monochange step validate
+          monochange discover --format json
+          monochange preview --format json
