@@ -1,0 +1,72 @@
+
+monostyle
+────────────────────────────────────────────────────────────────────────────────
+  36 files   3 packages   2,595 lines of code
+
+  readability   100.0  ████████████████████  excellent
+  complexity    100.0  ████████████████████  excellent
+
+  overall       100.0  ████████████████████  excellent
+
+readability: what is costing you points
+
+  ██████████ 100.0%  readability/overlong-line  (1 finding)
+             ./docs/verification/boundaries.md:107 [major]
+             in the shell example: this line is 183 columns wide, over the 100
+             limit
+             -> Break this line at a logical boundary, or extract part of the
+             expression into a named variable.
+
+
+packages
+
+     read    cplx  package
+    100.0   100.0  solana_kit cargo · ./crates/solana_kit · 10 LOC
+    100.0   100.0  solana_kit_core cargo · ./crates/solana_kit_core · 357 LOC
+    100.0   100.0  solana_kit_conformance cargo · ./verification/conformance · 608 LOC
+
+files
+
+    read penalty    code file
+    96.8    1.2     108 ./docs/verification/boundaries.md excellent
+   100.0   -0.0      12 ./.changeset/portable-core.md excellent
+   100.0   -0.0      26 ./README.md excellent
+   100.0   -0.0       8 ./crates/solana_kit/README.md excellent
+   100.0   -0.0       2 ./crates/solana_kit/src/lib.rs excellent
+   100.0   -0.0      28 ./crates/solana_kit_core/README.md excellent
+   100.0   -0.0     102 ./crates/solana_kit_core/src/crypto/pda.rs excellent
+   100.0   -0.0      51 ./crates/solana_kit_core/src/crypto.rs excellent
+   100.0   -0.0      47 ./crates/solana_kit_core/src/encoding.rs excellent
+   100.0   -0.0      46 ./crates/solana_kit_core/src/instruction.rs excellent
+   100.0   -0.0      13 ./crates/solana_kit_core/src/lib.rs excellent
+   100.0   -0.0      70 ./crates/solana_kit_core/src/values.rs excellent
+   100.0   -0.0     167 ./docs/architecture/design.md excellent
+   100.0   -0.0     169 ./docs/planning/plan.md excellent
+   100.0   -0.0     107 ./docs/planning/reference-findings.md excellent
+   100.0   -0.0      43 ./docs/planning/tasks.md excellent
+   100.0   -0.0      96 ./docs/planning/verification.md excellent
+   100.0   -0.0      89 ./docs/verification/core-native.md excellent
+   100.0   -0.0     143 ./tools/check_plan.rs excellent
+   100.0   -0.0      76 ./verification/boundaries/async/src/lib.rs excellent
+   100.0   -0.0     182 ./verification/boundaries/async/tests/capabilities.rs excellent
+   100.0   -0.0     123 ./verification/boundaries/async/tests/clients.rs excellent
+   100.0   -0.0      50 ./verification/boundaries/async/tests/lifecycle.rs excellent
+   100.0   -0.0      15 ./verification/boundaries/browser/src/lib.rs excellent
+   100.0   -0.0      65 ./verification/boundaries/contract/src/lib.rs excellent
+   100.0   -0.0      38 ./verification/boundaries/leptoskit/src/main.rs excellent
+   100.0   -0.0      20 ./verification/boundaries/system/PROVENANCE.md excellent
+   100.0   -0.0      48 ./verification/boundaries/system/src/lib.rs excellent
+   100.0   -0.0       8 ./verification/boundaries/system/src/main.rs excellent
+   100.0   -0.0      46 ./verification/conformance/fixtures/PROVENANCE.md excellent
+   100.0   -0.0     226 ./verification/conformance/src/addresses.rs excellent
+   100.0   -0.0      95 ./verification/conformance/src/cryptography.rs excellent
+   100.0   -0.0      83 ./verification/conformance/src/instructions.rs excellent
+   100.0   -0.0     118 ./verification/conformance/src/lib.rs excellent
+   100.0   -0.0      40 ./verification/conformance/src/main.rs excellent
+   100.0   -1.5      35 ./verification/boundaries/guest/src/lib.rs excellent
+
+Every path meets its floor.
+
+start here
+  Fixing readability/overlong-line at ./docs/verification/boundaries.md:107 would recover 100.0% of the available points.
+

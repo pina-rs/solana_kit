@@ -1,0 +1,49 @@
+solana_kit_system_leptoskit_boundary v0.1.0 (<workspace>/verification/boundaries/leptoskit)
+├── anyhow v1.0.104
+└── leptoskit_wasm v0.1.0 (https://github.com/ifiokjr/leptoskit?rev=fecf8628d326ff7b03f295523e6bb584c3fdf88d#fecf8628)
+    ├── leptoskit_bridge v0.1.0 (https://github.com/ifiokjr/leptoskit?rev=fecf8628d326ff7b03f295523e6bb584c3fdf88d#fecf8628)
+    │   ├── bytes v1.12.1
+    │   └── thiserror v2.0.21
+    │       └── thiserror-impl v2.0.21 (proc-macro)
+    │           ├── proc-macro2 v1.0.107
+    │           │   └── unicode-ident v1.0.27
+    │           ├── quote v1.0.47
+    │           │   └── proc-macro2 v1.0.107 (*)
+    │           └── syn v3.0.9
+    │               ├── proc-macro2 v1.0.107 (*)
+    │               ├── quote v1.0.47 (*)
+    │               └── unicode-ident v1.0.27
+    ├── leptoskit_native v0.1.0 (https://github.com/ifiokjr/leptoskit?rev=fecf8628d326ff7b03f295523e6bb584c3fdf88d#fecf8628)
+    │   ├── leptoskit_yoga v0.1.0 (https://github.com/ifiokjr/leptoskit?rev=fecf8628d326ff7b03f295523e6bb584c3fdf88d#fecf8628)
+    │   │   └── serde v1.0.229
+    │   │       ├── serde_core v1.0.229
+    │   │       └── serde_derive v1.0.229 (proc-macro)
+    │   │           ├── proc-macro2 v1.0.107 (*)
+    │   │           ├── quote v1.0.47 (*)
+    │   │           └── syn v3.0.9 (*)
+    │   └── serde v1.0.229 (*)
+    ├── leptoskit_yoga v0.1.0 (https://github.com/ifiokjr/leptoskit?rev=fecf8628d326ff7b03f295523e6bb584c3fdf88d#fecf8628) (*)
+    ├── serde v1.0.229 (*)
+    ├── serde_json v1.0.154
+    │   ├── itoa v1.0.18
+    │   ├── memchr v2.8.3
+    │   ├── serde_core v1.0.229
+    │   └── zmij v1.0.23
+    ├── thiserror v2.0.21 (*)
+    └── wasmi v2.0.0
+        ├── spin v0.9.9
+        ├── wasmi_collections v2.0.0
+        ├── wasmi_core v2.0.0
+        │   └── libm v0.2.16
+        ├── wasmi_ir v2.0.0
+        │   └── wasmi_core v2.0.0 (*)
+        ├── wasmparser v0.228.0
+        │   └── bitflags v2.13.2
+        └── wat v1.262.0
+            └── wast v262.0.0
+                ├── bumpalo v3.20.3
+                ├── leb128fmt v0.1.0
+                ├── memchr v2.8.3
+                ├── unicode-width v0.2.2
+                └── wasm-encoder v0.262.0
+                    └── leb128fmt v0.1.0

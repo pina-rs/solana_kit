@@ -1,0 +1,10 @@
+[workspace]
+members = ["contract", "async", "system", "browser", "guest"]
+exclude = ["leptoskit"]
+resolver = "3"
+
+[workspace.package]
+authors = ["Ifiok Jr. <ifiokotung@gmail.com>"]
+edition = "2024"
+license = "Unlicense"
+rust-version = "1.89"
