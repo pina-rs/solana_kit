@@ -1,6 +1,7 @@
 //! Reproducible runtime verification commands; unavailable tools are hard errors.
 #![forbid(unsafe_code)]
 
+mod arguments;
 mod client_gate;
 mod consumer;
 mod gates;
@@ -9,28 +10,28 @@ mod runtimes;
 mod style;
 mod system_gate;
 
-use anyhow::{Context, Result, bail};
+use anyhow::Result;
+use arguments::Command;
 
 /// Dispatches one explicit verification journey.
 fn main() -> Result<()> {
+    let arguments: Vec<_> = std::env::args_os().skip(1).collect();
+    let command = arguments::parse(&arguments)?;
     std::env::set_current_dir(concat!(env!("CARGO_MANIFEST_DIR"), "/.."))?;
-    let command = std::env::args()
-        .nth(1)
-        .context("usage: cargo xtask <command>")?;
 
-    match command.as_str() {
-        "style" => style::run(),
-        "style-report" => style::check_report(),
-        "native" => runtimes::native(),
-        "browser" => runtimes::browser(),
-        "wasi" => runtimes::wasi(),
-        "leptoskit" => runtimes::leptoskit(),
-        "gates" => gates::run(),
-        "dependency-graphs" => gates::graphs(),
-        "consumer" => consumer::run(),
-        "imports" => gates::check_import_file(),
-        "dependency-fixture" => gates::check_dependency_fixture(),
-        "all" => {
+    match command {
+        Command::Style(root) => style::run(root.as_deref()),
+        Command::StyleReport(path) => style::check_report(&path),
+        Command::Native => runtimes::native(),
+        Command::Browser => runtimes::browser(),
+        Command::Wasi => runtimes::wasi(),
+        Command::Leptoskit => runtimes::leptoskit(),
+        Command::Gates => gates::run(),
+        Command::DependencyGraphs => gates::graphs(),
+        Command::Consumer => consumer::run(),
+        Command::Imports(path) => gates::check_import_file(&path),
+        Command::DependencyFixture(path) => gates::check_dependency_fixture(&path),
+        Command::All => {
             runtimes::native()?;
             runtimes::browser()?;
             runtimes::wasi()?;
@@ -38,6 +39,5 @@ fn main() -> Result<()> {
             gates::run()?;
             consumer::run()
         }
-        _ => bail!("unknown verification command: {command}"),
     }
 }
