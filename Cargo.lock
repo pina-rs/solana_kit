@@ -766,6 +766,13 @@ name = "solana_kit"
 version = "0.0.0"
 
 [[package]]
+name = "solana_kit_associated_token_account"
+version = "0.1.0"
+dependencies = [
+ "solana_kit_core",
+]
+
+[[package]]
 name = "solana_kit_browser"
 version = "0.1.0"
 dependencies = [
@@ -825,9 +832,11 @@ name = "solana_kit_conformance"
 version = "0.1.0"
 dependencies = [
  "hex-literal",
+ "solana_kit_associated_token_account",
  "solana_kit_client",
  "solana_kit_compute_budget",
  "solana_kit_core",
+ "solana_kit_memo",
  "solana_kit_system",
 ]
 
@@ -863,6 +872,13 @@ dependencies = [
  "solana_kit_native",
  "tokio",
  "wat",
+]
+
+[[package]]
+name = "solana_kit_memo"
+version = "0.1.0"
+dependencies = [
+ "solana_kit_core",
 ]
 
 [[package]]

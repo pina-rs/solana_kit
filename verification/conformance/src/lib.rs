@@ -9,6 +9,7 @@
 extern crate alloc;
 
 pub mod compute_budget;
+pub mod memo_associated_token;
 
 mod accounts_sysvars;
 mod addresses;
@@ -42,9 +43,9 @@ pub mod system_client;
 use alloc::vec::Vec;
 
 /// Immutable suite identity. Changes to fixtures or assertions require a new ID.
-pub const SUITE_ID: &str = "solana-kit-core-v18";
+pub const SUITE_ID: &str = "solana-kit-core-v19";
 /// Required number of cases; a truncated report cannot pass conformance.
-pub const EXPECTED_CASE_COUNT: usize = 81;
+pub const EXPECTED_CASE_COUNT: usize = 83;
 
 /// Selects authentic fixtures or the intentionally incorrect hash oracle.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -147,6 +148,7 @@ pub fn run(mode: FixtureMode) -> Report {
     cases.extend(registry::offchain());
     cases.extend(compute_budget::cases());
     cases.extend(subscriptions::cases());
+    cases.extend(memo_associated_token::cases());
 
     Report {
         suite_id: SUITE_ID,
