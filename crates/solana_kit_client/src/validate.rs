@@ -1,4 +1,6 @@
 //! Reject duplicate keys even inside unknown extension fields or remote data.
+//! Arbitrary-precision numbers arrive as single-entry maps of numeric text.
+//! Treat those maps like every object: no reserved key bypasses validation.
 use serde::{
     Deserialize, Deserializer,
     de::{self, MapAccess, SeqAccess, Visitor},

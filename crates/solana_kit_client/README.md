@@ -42,7 +42,9 @@ impl Method for ProviderStatus {
 Errors distinguish transport capability/policy/deadline failures and original
 adapter causes from HTTP status, malformed JSON, schema/domain failures,
 correlation and remote JSON-RPC failures. Remote error data retains missing versus
-explicit null. Client IDs are monotonic, exactly browser-representable and fail
+explicit null and exact accepted JSON text, including numeric values beyond
+floating-point range. Decoded duplicate object keys remain invalid at every
+depth; typed integer and domain schemas remain strict. Client IDs are monotonic, exactly browser-representable and fail
 before wrapping; a fresh client needs its own adapter correlation namespace.
 
 The portable crate compiles for browser Wasm and WASI. These checks do not prove
