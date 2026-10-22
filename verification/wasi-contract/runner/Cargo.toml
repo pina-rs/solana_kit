@@ -1,0 +1,10 @@
+[package]
+name = "solana_kit_wasi_contract_runner"
+version = "0.0.0"
+edition = "2024"
+publish = false
+
+[dependencies]
+anyhow = "=1.0.104"
+httparse = "=1.10.1"
+wasmparser = "=0.240.0"
