@@ -36,8 +36,10 @@
 
 mod cursor;
 mod delimiters;
+mod framing;
 mod mapping;
 mod numbers;
+mod offsets;
 mod options;
 mod radix;
 mod sequences;
@@ -48,8 +50,10 @@ mod wide_text;
 
 pub use cursor::{Limits, Reader, Writer};
 pub use delimiters::{Padded, Sentinel};
+pub use framing::{ByteSizePrefix, FixedSize, FrameConsumption, Resized, Reverse};
 pub use mapping::{Checked, Mapped, Paired};
 pub use numbers::{Endian, Int256, Number, ShortU16, Uint256, ensure_number_range};
+pub use offsets::{Offset, OffsetScope};
 pub use options::OptionCodec;
 pub use radix::{BaseX, BaseXReslice};
 pub use sequences::{Bool, Bytes, Count, FixedBytes, Sequence, Tuple, Utf8};

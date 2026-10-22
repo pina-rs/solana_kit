@@ -22,7 +22,7 @@ impl Limits {
     }
 }
 
-/// A forward-only reader whose slices and allocation claims are checked.
+/// A reader whose slices, positions and allocation claims are checked.
 pub struct Reader<'a> {
     bytes: &'a [u8],
     position: usize,
@@ -47,6 +47,22 @@ impl<'a> Reader<'a> {
     #[must_use]
     pub const fn position(&self) -> usize {
         self.position
+    }
+
+    /// Borrows the entire enclosing input without advancing.
+    #[must_use]
+    pub const fn bytes(&self) -> &'a [u8] {
+        self.bytes
+    }
+
+    /// Moves to an absolute position, including backwards. Claims are retained.
+    pub fn seek(&mut self, position: usize) -> Result<(), Error> {
+        if position > self.bytes.len() {
+            return Err(Error::Truncated);
+        }
+
+        self.position = position;
+        Ok(())
     }
 
     /// Returns unread bytes without advancing.
@@ -92,6 +108,21 @@ impl<'a> Reader<'a> {
         Ok(value)
     }
 
+    pub(super) fn scoped<T>(
+        &mut self,
+        bytes: &[u8],
+        read: impl FnOnce(&mut Reader<'_>) -> Result<T, Error>,
+    ) -> Result<T, Error> {
+        let mut inner = Reader {
+            bytes,
+            position: 0,
+            items_left: self.items_left,
+        };
+        let result = read(&mut inner);
+        self.items_left = inner.items_left;
+        result
+    }
+
     /// Rejects any unread bytes.
     pub fn finish(&self) -> Result<(), Error> {
         if !self.remaining().is_empty() {
@@ -102,7 +133,7 @@ impl<'a> Reader<'a> {
     }
 }
 
-/// A forward-only writer into a fixed-size caller-owned slice.
+/// A checked writer into a fixed-size caller-owned slice.
 pub struct Writer<'a> {
     bytes: &'a mut [u8],
     position: usize,
@@ -119,6 +150,22 @@ impl<'a> Writer<'a> {
     #[must_use]
     pub const fn position(&self) -> usize {
         self.position
+    }
+
+    /// Borrows the entire enclosing output without advancing.
+    #[must_use]
+    pub fn bytes(&self) -> &[u8] {
+        self.bytes
+    }
+
+    /// Moves to an absolute position without modifying skipped storage.
+    pub fn seek(&mut self, position: usize) -> Result<(), Error> {
+        if position > self.bytes.len() {
+            return Err(Error::Truncated);
+        }
+
+        self.position = position;
+        Ok(())
     }
 
     /// Copies bytes after checking the entire destination range.

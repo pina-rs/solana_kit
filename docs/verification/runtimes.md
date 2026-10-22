@@ -59,7 +59,25 @@ dispatches a `Press` event and requires the corrupted report and second commit.
 The guest's small unsafe FFI wrappers implement that pinned synchronous copy ABI;
 core and the host harness forbid unsafe code.
 
-## Current v19 Memo and ATA receipt
+## Current v20 codec framing receipt
+
+Signed executable `b7a449cfa84ad9379c568f6613abc71c1e618153` integrates exact
+accepted final Memo/ATA parent `a976ca97eed9ff2b3a94d3d20313c8a50d0b05ef`
+and the independently accepted codec framing delta ending at
+`19e2c90b425707f560a9a54e0c147d56e5fc8c96`. The suite
+`solana-kit-core-v20` preserves all first 83 case IDs, order and outcomes, then
+appends the two unchanged accepted framing functions through their owning array.
+
+The full offline five-host run passes 85/85 canonical cases and observes 84/85
+under sole `sha256-fips-abc` corruption. Exact imports, graph negatives, all five
+packaged-core consumer groups and the one-fuel zero-commit trap pass. The checked
+pooled allowance remains 15,000,000 times the case count, now 1,275,000,000 per
+entry. No individual-case or transactional rollback guarantee is inferred. The
+[framing runtime receipt](codec-framing-runtime.md) records actual artifacts and
+the accepted padding, resize-prefix and reversed-context differences. All 113
+framing declaration IDs retain their partial or uncovered status and residuals.
+
+## Historical v19 Memo and ATA receipt
 
 Signed executable `2af1c02cc404e1d1ee6c3c5f298d3cfe898a9f5b` integrates exact
 accepted parent `92a20937d0b7c5866ec072e7dff7d9b273204263` and handwritten

@@ -1,6 +1,7 @@
 # Composite codec provenance
 
-The structured bit-array, value mapping, padding, sentinel, literal and dependent
+The framing, offset, fixed-size, reversal, structured bit-array, value mapping,
+padding, sentinel, literal and dependent
 record behavior was adapted from Solana Kit Dart at commit
 0138bb956d2d81ccc0c56edc602401c0df2f2b46. Original packages are
 solana_kit_codecs_core and solana_kit_codecs_data_structures. The Rust API uses

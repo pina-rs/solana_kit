@@ -9,6 +9,8 @@
 extern crate alloc;
 
 pub mod compute_budget;
+/// Accepted portable codec framing assertions shared by every host.
+pub mod framing;
 pub mod memo_associated_token;
 
 mod accounts_sysvars;
@@ -17,6 +19,7 @@ mod codecs;
 mod composites;
 mod cryptography;
 mod fixed_points;
+mod framing_cases;
 mod instructions;
 mod offchain;
 mod registry;
@@ -43,9 +46,9 @@ pub mod system_client;
 use alloc::vec::Vec;
 
 /// Immutable suite identity. Changes to fixtures or assertions require a new ID.
-pub const SUITE_ID: &str = "solana-kit-core-v19";
+pub const SUITE_ID: &str = "solana-kit-core-v20";
 /// Required number of cases; a truncated report cannot pass conformance.
-pub const EXPECTED_CASE_COUNT: usize = 83;
+pub const EXPECTED_CASE_COUNT: usize = 85;
 
 /// Selects authentic fixtures or the intentionally incorrect hash oracle.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -149,6 +152,7 @@ pub fn run(mode: FixtureMode) -> Report {
     cases.extend(compute_budget::cases());
     cases.extend(subscriptions::cases());
     cases.extend(memo_associated_token::cases());
+    cases.extend(framing_cases::cases());
 
     Report {
         suite_id: SUITE_ID,
