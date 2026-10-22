@@ -45,12 +45,48 @@ impl fmt::Display for PdaError {
 impl core::error::Error for PdaError {}
 
 /// A validated off-curve address and the bump used by canonical bump search.
+///
+/// Created only by [`find_program_address`]; read-only access preserves the pair.
+///
+/// # Examples
+/// ```
+/// use solana_kit_core::{Address, crypto::{find_program_address, ProgramDerivedAddress}};
+///
+/// let program: Address = "CZ3TbkgUYpDAJVEWpujQhDSgzNTeqbokrJmYa1j4HAZc".parse()?;
+/// let expected: Address = "9tVtkyCGAHSDDBPwz7895aC3p2gJRjpu2v26o35FTUco".parse()?;
+/// let derived: ProgramDerivedAddress = find_program_address(&[], &program)?;
+/// assert_eq!(derived.address(), expected);
+/// assert_eq!(derived.bump(), 255);
+/// # Ok::<(), Box<dyn std::error::Error>>(())
+/// ```
+///
+/// Callers cannot forge an unvalidated address and bump pair:
+/// ```compile_fail,E0451
+/// use solana_kit_core::{Address, crypto::ProgramDerivedAddress};
+///
+/// let forged = ProgramDerivedAddress {
+///     address: Address::from_bytes([0; 32]),
+///     bump: 255,
+/// };
+/// ```
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct ProgramDerivedAddress {
-    /// The derived address.
-    pub address: Address,
+    address: Address,
+    bump: u8,
+}
+
+impl ProgramDerivedAddress {
+    /// The validated off-curve address produced by canonical bump search.
+    #[must_use]
+    pub const fn address(&self) -> Address {
+        self.address
+    }
+
     /// The highest valid bump, searched from 255 through 0.
-    pub bump: u8,
+    #[must_use]
+    pub const fn bump(&self) -> u8 {
+        self.bump
+    }
 }
 
 /// Whether the address bytes decompress as an Ed25519 curve point.

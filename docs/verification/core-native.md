@@ -100,11 +100,13 @@ HTTP stack, OS RNG, or filesystem library. Native SHA-256 CPU detection selects
 `cpufeatures` and `libc`; the inspected `wasm32-unknown-unknown` closure excludes
 both. `Cargo.lock` pins the resolved graph, including build dependencies.
 
-The integration unit must register `solana_kit_core` and the private conformance
-package in monochange and add CI/release-preview handling. In this scoped unit,
-`monochange step validate` fails explicitly because the new changeset's
-`solana_kit_core` target has not yet been registered; this worker does not edit
-`monochange.toml`. The changeset records a minor release intent, not publication
-authorization. Transactions, codecs beyond fixed base58 values, RPC, transports,
-wallets, program clients, official System Program reuse, async host capabilities,
-and actual non-native runtime execution remain outside this unit.
+During the original implementation, `monochange step validate` failed because
+the new changeset's `solana_kit_core` target was not yet registered. Integration
+has since registered core in the `sdk` group and added CI/release-preview gates;
+see [current planning verification](../planning/verification.md). Private
+conformance deliberately remains `publish = false` and unregistered as a release
+or publication target. The changeset records a minor release intent, not
+publication authorization. Transactions, codecs beyond fixed base58 values,
+RPC, transports, wallets, program clients, official System Program reuse, async
+host capabilities, and actual non-native runtime execution remain outside this
+unit.

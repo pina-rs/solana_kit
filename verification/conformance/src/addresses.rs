@@ -124,8 +124,8 @@ fn pda(program: &str, seeds: &[&[u8]], expected: &str, bump: u8) -> Result<(), &
     let mut explicit_seeds = seeds.to_vec();
     explicit_seeds.push(&bump_seed);
 
-    require(actual.address == expected, "PDA address mismatch")?;
-    require(actual.bump == bump, "PDA bump mismatch")?;
+    require(actual.address() == expected, "PDA address mismatch")?;
+    require(actual.bump() == bump, "PDA bump mismatch")?;
     require(
         create_program_address(&explicit_seeds, &program) == Ok(expected),
         "explicit PDA recreation mismatch",
