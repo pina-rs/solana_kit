@@ -1,10 +1,13 @@
-//! Immutable legacy/v0 messages, strict wire decoding, and ordered signatures.
+//! Immutable legacy/v0/v1 messages, strict wire decoding, and ordered signatures.
 //!
 //! Compilation requires explicit blockhash expiry metadata. Decoding preserves
 //! received bytes and records unknown expiry; the block height is never on wire.
 //! A decoded transaction is structurally validated, not cryptographically trusted.
 
 mod compile;
+mod config;
+mod v1;
+pub use config::{HeapSize, V1Config};
 mod wire;
 
 use alloc::vec::Vec;
@@ -15,13 +18,18 @@ use crate::{Address, Hash, Instruction, Signature};
 /// Maximum legacy/v0 transaction packet size in bytes.
 pub const PACKET_SIZE: usize = 1232;
 
-/// Supported message envelopes. v1 requires its distinct future implementation.
+/// Maximum complete version-one transaction size, including signatures.
+pub const V1_PACKET_SIZE: usize = 4096;
+
+/// Supported message envelopes; version one has no address lookup tables.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum Version {
     /// Original unprefixed message.
     Legacy,
     /// Version zero with address table lookups.
     V0,
+    /// Version one with inline configuration and a message-first envelope.
+    V1,
 }
 
 /// Blockhash expiry information supplied by the builder or received on wire.
@@ -129,6 +137,7 @@ pub struct Message {
     instructions: Vec<CompiledInstruction>,
     lookups: Vec<Lookup>,
     lifetime: Lifetime,
+    config: Option<V1Config>,
     bytes: Vec<u8>,
 }
 
@@ -145,7 +154,38 @@ impl Message {
         instructions: &[Instruction],
         tables: &[LookupTable],
     ) -> Result<Self, Error> {
-        compile::compile(version, payer, lifetime, instructions, tables)
+        let config = (version == Version::V1).then(V1Config::default);
+        compile::compile(version, payer, lifetime, instructions, tables, config)
+    }
+
+    /// Compiles a version-one message with inline resource configuration.
+    ///
+    /// No lookup tables are accepted. This deterministic client operation does
+    /// not discover validator feature activation or establish durable nonce state.
+    ///
+    /// # Errors
+    /// Rejects unresolved expiry, invalid privileges, version-one limits, and a
+    /// complete envelope exceeding 4096 bytes including reserved signatures.
+    pub fn compile_v1(
+        payer: Address,
+        lifetime: Lifetime,
+        instructions: &[Instruction],
+        config: V1Config,
+    ) -> Result<Self, Error> {
+        compile::compile(
+            Version::V1,
+            payer,
+            lifetime,
+            instructions,
+            &[],
+            Some(config),
+        )
+    }
+
+    /// Inline configuration for version one; absent for legacy and version zero.
+    #[must_use]
+    pub const fn config(&self) -> Option<V1Config> {
+        self.config
     }
 
     /// Validates an entire external message without applying builder restrictions.
@@ -323,13 +363,13 @@ pub enum Error {
     TrailingBytes,
     /// A length uses an overlong or overflowing short-u16 representation.
     InvalidLength,
-    /// Version is not legacy or v0.
+    /// Version is not legacy, zero, or one.
     UnsupportedVersion,
     /// Header partitions are inconsistent or lack a writable payer.
     InvalidHeader,
     /// An index or account count exceeds protocol bounds.
     InvalidIndex,
-    /// The complete encoded transaction would exceed 1232 bytes.
+    /// The complete envelope exceeds its version-specific byte limit.
     PacketTooLarge,
     /// Local compilation requires explicit known blockhash expiry metadata.
     UnresolvedLifetime,
@@ -337,6 +377,10 @@ pub enum Error {
     WritableProgram,
     /// Lookup snapshots disagree, duplicate a table, or exceed 256 entries.
     InvalidLookup,
+    /// Version-one configuration has an unknown mask, half priority pair, or invalid heap.
+    InvalidConfig,
+    /// Version-one addresses repeat or its signature/instruction/account limits are exceeded.
+    InvalidV1Limits,
     /// Signer does not own a required slot.
     UnknownSigner,
     /// Signature was created for other message bytes.

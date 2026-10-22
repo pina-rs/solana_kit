@@ -2,7 +2,7 @@
 
 Portable off-chain client types for Solana addresses, hashes, signatures,
 ordered instructions, bounded binary codecs, account snapshots, sysvar layouts,
-program errors, and immutable legacy/v0 transactions.
+program errors, and immutable legacy/v0/v1 transactions.
 The default dependency graph contains only `bs58`. The optional `crypto` feature
 adds SHA-256, validated program-derived addresses, and deterministic Ed25519
 signing and strict verification through RustCrypto implementations.
@@ -16,13 +16,15 @@ network, or random-number source. Callers supply signing seeds and own the
 security and erasure of their seed storage. Signing keys erase their owned
 secret material on drop through `ed25519-dalek`'s `zeroize` feature.
 
-The `transaction` module compiles and strictly decodes immutable legacy/v0
-messages, retains ordered signature slots, and encodes packets within 1232 bytes.
+The `transaction` module compiles and strictly decodes immutable legacy/v0/v1
+messages and retains ordered signature slots. Complete legacy/v0 packets are
+bounded to 1232 bytes; complete V1 envelopes are bounded to 4096 bytes, inclusive.
 Local compilation requires explicit blockhash expiry metadata. Received wire
 preserves its exact signed bytes and records the lifetime token as unresolved,
 because expiry height is absent from the wire. Optional `crypto` signs and
 verifies those frozen bytes; structural decoding alone does not authenticate
-signatures. V1, durable nonces and general signer capabilities remain pending.
+signatures. Durable nonce lifecycle, full introspection, off-chain messages and
+general signer capabilities remain pending.
 
 `accounts` owns present and missing snapshots and decodes data while preserving
 metadata and enforcing the expected owner and reported size. `sysvars` provides
@@ -96,3 +98,11 @@ assert_eq!(price.checked_div_scalar(2, Rounding::Nearest)?.to_string(), "6.18");
 # Ok(())
 # }
 ```
+
+Version one uses typed inline `V1Config` and validated `HeapSize`, has no lookup
+tables, and signs the message prefix before appending fixed-width signatures.
+Its complete envelope is bounded to 4096 bytes; legacy/v0 retain 1232 bytes.
+Node version alone does not advertise feature activation. The local proof is
+documented in `docs/verification/v1-wire.md`. Three V1 assertion groups execute
+within the shared 48-case native/browser/WASI/LeptosKit suite; durable nonce
+lifecycle remains a separate follow-up.

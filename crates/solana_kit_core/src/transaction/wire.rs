@@ -7,7 +7,7 @@ use crate::{Address, Hash, Signature};
 
 use super::{
     CompiledInstruction, Error, Header, Lifetime, Lookup, Message, PACKET_SIZE, Transaction,
-    Version,
+    V1_PACKET_SIZE, Version, v1,
 };
 
 const VERSION_MASK: u8 = 128;
@@ -18,6 +18,16 @@ const SIGNATURE_SIZE: usize = 64;
 // Bound the entire input first, then parse only complete fields. Validation is
 // deliberately separate from the local compiler's privilege restrictions.
 pub(super) fn decode(bytes: &[u8]) -> Result<Message, Error> {
+    if bytes.first() == Some(&0x81) {
+        let (message, offset) = v1::decode_prefix(bytes)?;
+
+        if offset != bytes.len() {
+            return Err(Error::TrailingBytes);
+        }
+
+        return Ok(message);
+    }
+
     if bytes.len() > PACKET_SIZE {
         return Err(Error::PacketTooLarge);
     }
@@ -55,6 +65,7 @@ pub(super) fn decode(bytes: &[u8]) -> Result<Message, Error> {
         instructions,
         lookups,
         lifetime,
+        config: None,
         bytes: bytes.to_vec(),
     };
     validate(&message)?;
@@ -71,7 +82,15 @@ pub(super) fn validate(message: &Message) -> Result<(), Error> {
         validate_instruction(instruction, static_count, total)?;
     }
 
-    packet_size(message.bytes.len(), message.signers().len())?;
+    if message.version == Version::V1 {
+        v1::validate(message)?;
+    }
+
+    packet_size(
+        message.version,
+        message.bytes.len(),
+        message.signers().len(),
+    )?;
 
     Ok(())
 }
@@ -135,6 +154,10 @@ fn validate_instruction(
 // Legacy omits the version byte and lookup section; v0 includes both even when
 // there are no lookups. Every variable-length field uses canonical short-u16.
 pub(super) fn encode_message(message: &Message) -> Result<Vec<u8>, Error> {
+    if message.version == Version::V1 {
+        return v1::encode_message(message);
+    }
+
     // Version-dependent sections are necessary because legacy omits both the
     // version prefix and lookup count, while v0 always carries them.
     let mut bytes = Vec::new();
@@ -173,12 +196,16 @@ pub(super) fn encode_message(message: &Message) -> Result<Vec<u8>, Error> {
         }
     }
 
-    packet_size(bytes.len(), message.signers().len())?;
+    packet_size(message.version, bytes.len(), message.signers().len())?;
 
     Ok(bytes)
 }
 
 pub(super) fn decode_transaction(bytes: &[u8]) -> Result<Transaction, Error> {
+    if bytes.first() == Some(&0x81) {
+        return v1::decode_transaction(bytes);
+    }
+
     if bytes.len() > PACKET_SIZE {
         return Err(Error::PacketTooLarge);
     }
@@ -214,11 +241,16 @@ pub(super) fn encode_transaction(
     require_all: bool,
 ) -> Result<Vec<u8>, Error> {
     packet_size(
+        transaction.message.version,
         transaction.message.bytes.len(),
         transaction.signatures.len(),
     )?;
     let mut bytes = Vec::new();
-    length(&mut bytes, transaction.signatures.len())?;
+    if transaction.message.version == Version::V1 {
+        bytes.extend(&transaction.message.bytes);
+    } else {
+        length(&mut bytes, transaction.signatures.len())?;
+    }
 
     for signature in &transaction.signatures {
         if require_all && signature.is_none() {
@@ -228,16 +260,34 @@ pub(super) fn encode_transaction(
         bytes.extend(signature.map_or([0; 64], Signature::to_bytes));
     }
 
-    bytes.extend(&transaction.message.bytes);
+    if transaction.message.version != Version::V1 {
+        bytes.extend(&transaction.message.bytes);
+    }
 
     Ok(bytes)
 }
 
-fn packet_size(message: usize, signatures: usize) -> Result<(), Error> {
-    let count = u16::try_from(signatures).map_err(|_| Error::InvalidLength)?;
-    let prefix = ShortU16.encoded_len(&count).map_err(length_error)?;
+pub(super) fn packet_limit(version: Version) -> usize {
+    if version == Version::V1 {
+        V1_PACKET_SIZE
+    } else {
+        PACKET_SIZE
+    }
+}
 
-    if message + signatures * SIGNATURE_SIZE + prefix > PACKET_SIZE {
+pub(super) fn packet_size(
+    version: Version,
+    message: usize,
+    signatures: usize,
+) -> Result<(), Error> {
+    let count = u16::try_from(signatures).map_err(|_| Error::InvalidLength)?;
+    let prefix = if version == Version::V1 {
+        0
+    } else {
+        ShortU16.encoded_len(&count).map_err(length_error)?
+    };
+
+    if message + signatures * SIGNATURE_SIZE + prefix > packet_limit(version) {
         return Err(Error::PacketTooLarge);
     }
 
@@ -275,9 +325,9 @@ fn length_error(error: codecs::Error) -> Error {
     }
 }
 
-struct Reader<'a> {
-    bytes: &'a [u8],
-    offset: usize,
+pub(super) struct Reader<'a> {
+    pub(super) bytes: &'a [u8],
+    pub(super) offset: usize,
 }
 
 impl<'a> Reader<'a> {
@@ -306,7 +356,7 @@ impl<'a> Reader<'a> {
         ))
     }
 
-    fn take(&mut self, count: usize) -> Result<&'a [u8], Error> {
+    pub(super) fn take(&mut self, count: usize) -> Result<&'a [u8], Error> {
         let end = self.offset.checked_add(count).ok_or(Error::InvalidLength)?;
         let value = self.bytes.get(self.offset..end).ok_or(Error::Truncated)?;
         self.offset = end;
@@ -314,11 +364,11 @@ impl<'a> Reader<'a> {
         Ok(value)
     }
 
-    fn array<const N: usize>(&mut self) -> Result<[u8; N], Error> {
+    pub(super) fn array<const N: usize>(&mut self) -> Result<[u8; N], Error> {
         self.take(N)?.try_into().map_err(|_| Error::Truncated)
     }
 
-    fn byte(&mut self) -> Result<u8, Error> {
+    pub(super) fn byte(&mut self) -> Result<u8, Error> {
         Ok(self.array::<1>()?[0])
     }
 

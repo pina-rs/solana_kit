@@ -43,4 +43,7 @@ fixed-point-exact-codecs: Ok(())
 system-create-account-literal: Ok(())
 system-create-seeded-utf8: Ok(())
 system-strict-data-bounds: Ok(())
-solana-kit-core-v6: 44/45 cases passed
+transaction-v1-message-first: Ok(())
+transaction-v1-inline-config: Ok(())
+transaction-v1-signature-suffix: Ok(())
+solana-kit-core-v7: 47/48 cases passed
