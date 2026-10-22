@@ -1,0 +1,34 @@
+GRAPH native exact=16 Tokio negative rejected
+GRAPH wasm32-unknown-unknown exact=16 Tokio negative rejected
+GRAPH wasm32-wasip1 exact=16 Tokio negative rejected
+GRAPH wasm32-wasip2 exact=19 Tokio negative rejected
+IMPORTS
+wasi:cli/environment@0.2.12
+wasi:cli/exit@0.2.12
+wasi:cli/stderr@0.2.12
+wasi:cli/stdin@0.2.12
+wasi:cli/stdout@0.2.12
+wasi:cli/terminal-input@0.2.12
+wasi:cli/terminal-output@0.2.12
+wasi:cli/terminal-stderr@0.2.12
+wasi:cli/terminal-stdin@0.2.12
+wasi:cli/terminal-stdout@0.2.12
+wasi:clocks/monotonic-clock@0.2.12
+wasi:http/outgoing-handler@0.2.12
+wasi:http/types@0.2.12
+wasi:io/error@0.2.12
+wasi:io/poll@0.2.12
+wasi:io/streams@0.2.12
+PASS success; peer asserted request/auth/body/lifetime; PENDING success; PASS success real Pending+wake, Rc, cleanup
+PASS chunked; peer asserted request/auth/body/lifetime; PENDING chunked; PASS chunked real Pending+wake, Rc, cleanup
+PASS status; peer asserted request/auth/body/lifetime; PENDING status; PASS status real Pending+wake, Rc, cleanup
+PASS redirect; peer asserted request/auth/body/lifetime; PENDING redirect; PASS redirect real Pending+wake, Rc, cleanup
+PASS oversize; peer asserted request/auth/body/lifetime; PENDING oversize; PASS oversize real Pending+wake, Rc, cleanup
+PASS malformed; peer asserted request/auth/body/lifetime; PENDING malformed; PASS malformed real Pending+wake, Rc, cleanup
+PASS headers-deadline; peer asserted request/auth/body/lifetime; PENDING headers-deadline; PASS headers-deadline real Pending+wake, Rc, cleanup
+PASS body-deadline; peer asserted request/auth/body/lifetime; PENDING body-deadline; PASS body-deadline real Pending+wake, Rc, cleanup
+PASS cancel; peer asserted request/auth/body/lifetime; PENDING cancel; PASS cancel guest alive after observation window
+PASS retain; peer asserted request/auth/body/lifetime; PENDING retain; PASS retain guest alive after observation window
+PASS body-cancel; peer asserted request/auth/body/lifetime; PENDING body-cancel; PASS body-cancel guest alive after observation window
+PASS https-untrusted; peer asserted request/auth/body/lifetime; PENDING https-untrusted; PASS https-untrusted real Pending+wake, Rc, cleanup
+PASS wrong-body; peer asserted request/auth/body/lifetime; PENDING wrong-body

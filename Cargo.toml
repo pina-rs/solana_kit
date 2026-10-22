@@ -8,6 +8,7 @@ members = [
   "crates/solana_kit_leptoskit",
   "crates/solana_kit_native",
   "crates/solana_kit_system",
+  "crates/solana_kit_wasi",
   "verification/browser",
   "verification/browser-http",
   "verification/conformance",
