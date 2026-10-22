@@ -4,6 +4,18 @@ use core::marker::PhantomData;
 
 use super::{Decoder, Encoder, Error, Reader, Writer};
 
+/// Checks an inclusive caller-selected range without converting the number.
+/// Like the reference assertions, unordered values such as NaN are not outside
+/// either bound. Use integer types for integer codecs and explicit finite checks
+/// when a caller's floating-point contract requires them.
+pub fn ensure_number_range<T: PartialOrd>(value: &T, min: &T, max: &T) -> Result<(), Error> {
+    if value < min || value > max {
+        return Err(Error::InvalidValue);
+    }
+
+    Ok(())
+}
+
 /// Byte order, independent of the host architecture.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum Endian {
@@ -41,6 +53,21 @@ pub struct Number<T> {
 }
 
 impl<T> Number<T> {
+    /// Selects a wire byte order explicitly.
+    #[must_use]
+    pub const fn new(endian: Endian) -> Self {
+        Self {
+            endian,
+            marker: PhantomData,
+        }
+    }
+
+    /// Returns the selected wire byte order.
+    #[must_use]
+    pub const fn endian(&self) -> Endian {
+        self.endian
+    }
+
     /// Little-endian numeric codec.
     pub const LE: Self = Self {
         endian: Endian::Little,
@@ -51,6 +78,12 @@ impl<T> Number<T> {
         endian: Endian::Big,
         marker: PhantomData,
     };
+}
+
+impl<T> Default for Number<T> {
+    fn default() -> Self {
+        Self::LE
+    }
 }
 
 /// Implements native primitive byte contracts with no numeric casts.

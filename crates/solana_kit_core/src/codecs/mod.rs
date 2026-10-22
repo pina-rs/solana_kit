@@ -37,13 +37,20 @@
 mod cursor;
 mod numbers;
 mod options;
+mod radix;
 mod sequences;
+mod text;
 mod transforms;
+mod wide_text;
 
 pub use cursor::{Limits, Reader, Writer};
-pub use numbers::{Endian, Int256, Number, ShortU16, Uint256};
+pub use numbers::{Endian, Int256, Number, ShortU16, Uint256, ensure_number_range};
 pub use options::OptionCodec;
+pub use radix::{BaseX, BaseXReslice};
 pub use sequences::{Bool, Bytes, Count, FixedBytes, Sequence, Tuple, Utf8};
+#[cfg(feature = "text-codecs")]
+pub use text::Base64;
+pub use text::{Base16, Utf8Config, pad_null_characters, remove_null_characters};
 pub use transforms::{Affix, Constant, SizePrefix, SizePrefix64};
 
 use alloc::vec::Vec;

@@ -26,6 +26,7 @@ fn main() -> Result<()> {
         "wasi" => runtimes::wasi(),
         "leptoskit" => runtimes::leptoskit(),
         "gates" => gates::run(),
+        "dependency-graphs" => gates::graphs(),
         "consumer" => consumer::run(),
         "imports" => gates::check_import_file(),
         "dependency-fixture" => gates::check_dependency_fixture(),
