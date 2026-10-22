@@ -2,7 +2,10 @@
 extern crate std;
 
 use crate::{require, rpc_fixture::call};
-use solana_kit_client::{Presence, methods::history::*};
+use solana_kit_client::{
+    Presence,
+    methods::{LatestBlockhash, history::*},
+};
 use solana_kit_core::{Address, Signature};
 use std::{
     format,
@@ -36,6 +39,24 @@ pub(super) fn entry() -> String {
 
 pub(crate) fn queries() -> Result<(), &'static str> {
     require(signature().to_string() == SIG, "signature oracle changed")?;
+    let latest = call(
+        LatestBlockhash(None),
+        "getLatestBlockhash",
+        "[]",
+        &format!(
+            concat!(
+                r#"{{"context":{{"slot":{0}}},"value":{{"blockhash":"{1}","#,
+                r#""lastValidBlockHeight":{0}}}}}"#
+            ),
+            MAX, KEY
+        ),
+    )
+    .map_err(|_| "latest blockhash failed")?;
+    require(
+        latest.context.slot == u64::MAX && latest.value.last_valid_block_height == u64::MAX,
+        "latest block height narrowed",
+    )?;
+
     let time = call(
         BlockTime(u64::MAX),
         "getBlockTime",
