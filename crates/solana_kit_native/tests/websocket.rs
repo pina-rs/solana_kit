@@ -369,25 +369,34 @@ async fn tls_handshake_and_consuming_close_deadlines_close_their_sockets() {
     let listener = websocket_support::listener().await;
     let endpoint = websocket_support::endpoint(&listener, true, "localhost");
     let peer = tokio::spawn(async move {
-        let (mut stream, _) = listener.accept().await.unwrap();
+        let (mut stream, _) = fixture_phase("TLS peer accept", listener.accept())
+            .await
+            .expect("TLS peer accept failed");
         let mut header = [0; 5];
-        stream.read_exact(&mut header).await.unwrap();
+        fixture_phase("TLS record header", stream.read_exact(&mut header))
+            .await
+            .expect("TLS record header read failed");
         assert_eq!(header[0], 22);
         let length = usize::from(u16::from_be_bytes([header[3], header[4]]));
-        stream.read_exact(&mut vec![0; length]).await.unwrap();
-        assert_eq!(eof(&mut stream).await, 0);
+        fixture_phase("TLS record body", stream.read_exact(&mut vec![0; length]))
+            .await
+            .expect("TLS record body read failed");
+        assert_eq!(
+            fixture_phase("TLS peer EOF", stream.read(&mut [0]))
+                .await
+                .expect("TLS peer EOF read failed"),
+            0
+        );
     });
     let config = WsConfig {
         connect_timeout: Duration::from_millis(DEADLINE_MS),
         ..WsConfig::default()
     };
-    assert_eq!(
-        NativeWebSocket::connect(&endpoint, config)
-            .await
-            .unwrap_err(),
-        WsError::Deadline
-    );
-    peer.await.unwrap();
+    let result = NativeWebSocket::connect(&endpoint, config).await.map(drop);
+    let peer_result = peer.await;
+
+    assert_eq!(result, Err(WsError::Deadline));
+    peer_result.expect("TLS peer task failed");
     close_deadline().await;
 }
 
@@ -395,19 +404,49 @@ async fn close_deadline() {
     let listener = websocket_support::listener().await;
     let endpoint = websocket_support::endpoint(&listener, false, "127.0.0.1");
     let peer = tokio::spawn(async move {
-        let (stream, _) = listener.accept().await.unwrap();
-        let mut peer = tokio_tungstenite::accept_async(stream).await.unwrap();
+        let (stream, _) = fixture_phase("close peer accept", listener.accept())
+            .await
+            .expect("close peer accept failed");
+        let mut peer = fixture_phase(
+            "close peer upgrade",
+            tokio_tungstenite::accept_async(stream),
+        )
+        .await
+        .expect("close peer upgrade failed");
         assert!(matches!(
-            peer.next().await.unwrap().unwrap(),
+            fixture_phase("close frame", peer.next())
+                .await
+                .expect("close frame missing")
+                .expect("close frame read failed"),
             Message::Close(_)
         ));
-        assert_eq!(eof(peer.get_mut()).await, 0);
+        assert_eq!(
+            fixture_phase("close peer EOF", peer.get_mut().read(&mut [0]))
+                .await
+                .expect("close peer EOF read failed"),
+            0
+        );
     });
     let config = WsConfig {
         operation_timeout: Duration::from_millis(DEADLINE_MS),
         ..WsConfig::default()
     };
-    let socket = NativeWebSocket::connect(&endpoint, config).await.unwrap();
-    assert_eq!(socket.close().await.unwrap_err(), WsError::Deadline);
-    peer.await.unwrap();
+    let socket = NativeWebSocket::connect(&endpoint, config).await;
+
+    let result = match socket {
+        Ok(socket) => Ok(socket.close().await),
+        Err(error) => Err(error),
+    };
+
+    let peer_result = peer.await;
+
+    assert_eq!(result, Ok(Err(WsError::Deadline)));
+    peer_result.expect("close peer task failed");
+}
+
+/// Bounds fixture waits independently so failed client setup cannot strand its peer.
+async fn fixture_phase<T>(name: &str, future: impl std::future::Future<Output = T>) -> T {
+    timeout(Duration::from_secs(2), future)
+        .await
+        .unwrap_or_else(|_| panic!("fixture phase timed out: {name}"))
 }
