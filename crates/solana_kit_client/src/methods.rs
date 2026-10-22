@@ -166,3 +166,14 @@ impl Method for AccountInfo {
 
 /// Typed node, epoch, health and leader operations.
 pub mod node;
+
+/// Typed address-history pages and cursor filters.
+pub mod address_history;
+/// Historical block-range and signature queries.
+pub mod history;
+/// Typed simulation requests and execution results.
+pub mod simulation;
+/// Transaction submission, fee estimation and positional status queries.
+pub mod submission;
+/// Typed transaction/block views with explicit response encodings.
+pub mod transaction_results;

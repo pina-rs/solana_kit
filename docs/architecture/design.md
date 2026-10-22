@@ -1,10 +1,10 @@
 # Architecture and proposed contracts
 
 The portable core, [generated System client](../verification/system-client.md),
-and 39-operation typed RPC client are implemented. Accepted native, Window Fetch
+and 54-operation typed RPC client are implemented. Accepted native, Window Fetch
 and headless interpreted LeptosKit HTTP adapters have actual network evidence. The
 [Phase 1 evidence matrix](../verification/phase-one.md) records the executed
-portability and async experiments. Full catalog, remaining adapters, wallets,
+portability and async experiments. Remaining declaration contracts, adapters, wallets,
 and application support remain work in progress. The examples and signatures below are proposed
 contracts, not available SDK APIs. Source grounding is in
 [reference findings](../planning/reference-findings.md).
@@ -255,14 +255,14 @@ gates. Component publication remains disabled.
 ## Implemented RPC client
 
 The public `solana_kit_client` provides `Client<T>`, concrete-future `Transport`,
-and 39 of the 54 catalog operations. The
+and all 54 catalog operations. The
 [original foundation receipt](../parity/rpc-foundation.md) covers three operations;
 the [node receipt](../verification/rpc-node.md) adds 19, and the
 [economics receipt](../verification/rpc-economics.md) adds eight, and the
 [account/token receipt](../verification/rpc-account-token.md) adds nine and richer
-accountInfo. The 398 canonical
-declaration IDs remain a separate coverage measure, and 15 catalog operations
-remain pending. The client uses `std` without a runtime or network dependency.
+accountInfo. The [history runtime receipt](../verification/rpc-history.md) adds
+the final 15 operations. The 398 canonical declaration IDs remain a separate
+coverage measure. The client uses `std` without a runtime or network dependency.
 Account results reuse core-owned types. The open `Method` trait permits typed
 provider extensions while the client owns envelopes, correlation, bounds, and
 remote errors. The proposed API sketches above do not describe the implemented

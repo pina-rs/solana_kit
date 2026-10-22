@@ -36,13 +36,30 @@ dispatches a `Press` event and requires the corrupted report and second commit.
 The guest's small unsafe FFI wrappers implement that pinned synchronous copy ABI;
 core and the host harness forbid unsafe code.
 
-## Current v14 account and token RPC receipt
+## Current v15 complete RPC catalog receipt
+
+The `solana-kit-core-v15` suite preserves the first 68 case lines and appends
+four history/submission/full-result/address/simulation groups. Clean signed source
+`f4e0364bbd900912a677277e9ee5853d3994c6d9` executes all 54 catalog methods through
+the public Client. Native Rust, Chrome, both Wasmtime previews and the actual
+pinned LeptosKit host each check 72 canonical passes and the sole 71/72
+corrupt-hash result. `cargo +1.99.1 xtask all` also passes its existing import,
+dependency and five packaged-core consumer gates.
+
+The [complete catalog runtime receipt](rpc-history.md) records artifact hashes,
+literal requests, typed values, default caps and failure controls. The 146-ID
+history ledger remains 130 implemented and 16 pending, and the account/token
+100-ID ledger is unchanged. All 398 canonical RPC declaration IDs remain intact.
+Method coverage does not establish complete declaration, network, validator,
+device, registry or Phase 4 support.
+
+## Historical v14 account and token RPC receipt
 
 The `solana-kit-core-v14` suite preserves the first 65 case lines and appends
 three account/token groups. Clean signed source
 `f7f1107a8770bba12544aac10586ebefcdd33438` executes all nine new methods and richer
 accountInfo through the public Client and existing memory fixture. The public
-catalog now implements 39 of 54 methods, leaving 15 pending.
+catalog at that checkpoint implemented 39 of 54 methods, leaving 15 pending.
 
 The [account/token receipt](rpc-account-token.md) records actual host results,
 full-width values, literal requests, malformed controls and representation limits.

@@ -19,9 +19,13 @@ mod registry;
 /// Portable public RPC protocol fixtures without network I/O.
 pub mod rpc;
 mod rpc_accounts;
+mod rpc_address_simulation;
 mod rpc_economics;
 mod rpc_fixture;
+mod rpc_history;
 mod rpc_node;
+mod rpc_results;
+mod rpc_submission;
 mod text_numbers;
 mod transactions;
 /// Version-one client wire fixtures shared by every host.
@@ -34,9 +38,9 @@ pub mod system_client;
 use alloc::vec::Vec;
 
 /// Immutable suite identity. Changes to fixtures or assertions require a new ID.
-pub const SUITE_ID: &str = "solana-kit-core-v14";
+pub const SUITE_ID: &str = "solana-kit-core-v15";
 /// Required number of cases; a truncated report cannot pass conformance.
-pub const EXPECTED_CASE_COUNT: usize = 68;
+pub const EXPECTED_CASE_COUNT: usize = 72;
 
 /// Selects authentic fixtures or the intentionally incorrect hash oracle.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -123,6 +127,19 @@ pub fn run(mode: FixtureMode) -> Report {
     cases.push(case("composite-malformed-bounds", composites::malformed()));
     cases.extend(rpc_economics::cases());
     cases.extend(rpc_accounts::cases());
+    cases.push(case("rpc-history-exact-queries", rpc_history::queries()));
+    cases.push(case(
+        "rpc-submission-status-errors",
+        rpc_submission::operations(),
+    ));
+    cases.push(case(
+        "rpc-full-transaction-results",
+        rpc_results::full_results(),
+    ));
+    cases.push(case(
+        "rpc-address-simulation",
+        rpc_address_simulation::operations(),
+    ));
 
     Report {
         suite_id: SUITE_ID,
