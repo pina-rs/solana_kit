@@ -1,0 +1,13 @@
+[package]
+name = "wallet_consumer"
+version = "0.0.0"
+edition = "2024"
+publish = false
+rust-version = "1.89"
+
+[workspace]
+
+[dependencies]
+sha2 = "0.10.9"
+solana_kit_wallet = { path = "../../crates/solana_kit_wallet" }
+tokio = { version = "1.54.1", features = ["rt-multi-thread", "macros"] }

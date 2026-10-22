@@ -38,6 +38,7 @@ mod text_numbers;
 mod transactions;
 /// Version-one client wire fixtures shared by every host.
 pub mod v1;
+mod wallet_cases;
 
 /// Generated System instruction-data conformance fixtures.
 pub mod system;
@@ -46,9 +47,9 @@ pub mod system_client;
 use alloc::vec::Vec;
 
 /// Immutable suite identity. Changes to fixtures or assertions require a new ID.
-pub const SUITE_ID: &str = "solana-kit-core-v20";
+pub const SUITE_ID: &str = "solana-kit-core-v21";
 /// Required number of cases; a truncated report cannot pass conformance.
-pub const EXPECTED_CASE_COUNT: usize = 85;
+pub const EXPECTED_CASE_COUNT: usize = 90;
 
 /// Selects authentic fixtures or the intentionally incorrect hash oracle.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -153,6 +154,7 @@ pub fn run(mode: FixtureMode) -> Report {
     cases.extend(subscriptions::cases());
     cases.extend(memo_associated_token::cases());
     cases.extend(framing_cases::cases());
+    cases.extend(wallet_cases::cases());
 
     Report {
         suite_id: SUITE_ID,

@@ -1,0 +1,7 @@
+check	command	result
+shared-suite	CARGO_NET_OFFLINE=true cargo +1.99.1 xtask all	90/90 canonical and89/90 sole-corruption on allfivehosts
+isolated	cargo +1.99.1 test --manifest-path verification/wallet-runtime/Cargo.toml --locked --offline --target-dir target/wallet-portable	five public groups passed
+wallet-msrv	cargo +1.89.0 test -p solana_kit_wallet --locked --offline	37 tests passed
+source-audit	unchanged independent Unit138 source_audit OWNED REFERENCE	203 partial IDs;7sourcehashes;37assets
+positive-consumer	unchanged Unit148 ordinary consumer with owned dependency path	allpositive invariants passed
+historical-consumer	unchanged Unit138 --assert-contract with owned dependency path	intentional101 at historical-negative assertion

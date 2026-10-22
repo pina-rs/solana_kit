@@ -20,3 +20,4 @@ solana_kit_compute_budget = { path = "../../crates/solana_kit_compute_budget" }
 solana_kit_core = { path = "../../crates/solana_kit_core", features = ["crypto", "fixed-points", "text-codecs"] }
 solana_kit_memo = { path = "../../crates/solana_kit_memo" }
 solana_kit_system = { path = "../../crates/solana_kit_system" }
+solana_kit_wallet_verification = { path = "../wallet-runtime" }

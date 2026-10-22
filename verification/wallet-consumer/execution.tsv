@@ -1,0 +1,26 @@
+command	result	scope
+cargo test --workspace --locked --offline	passed	full workspace default checks; existing ignored doctest unchanged
+cargo test -p solana_kit_wallet --locked --offline	passed	corrected registry;original25plus12regressions;0failures
+cargo +1.89.0 test -p solana_kit_wallet --locked --offline	passed	corrected registry;original25plus12regressions;0failures
+cargo check -p solana_kit_wallet --locked --offline --target wasm32-unknown-unknown	passed	final source;compile only
+cargo check -p solana_kit_wallet --locked --offline --target wasm32-wasip1	passed	final source;compile only
+cargo check -p solana_kit_wallet --locked --offline --target wasm32-wasip2	passed	final source;compile only
+cargo +1.89.0 run --offline --manifest-path verification/wallet-consumer/Cargo.toml --bin wallet_consumer	passed	real native Tokio spawn including signing;local Rc across Pending/wake
+cargo run --offline --manifest-path verification/wallet-consumer/Cargo.toml --bin graphs	passed	actual default normal/build graph;five injected dependency negative controls rejected
+cargo run --offline --manifest-path verification/wallet-consumer/Cargo.toml --bin receipt -- . REFERENCE	passed	203canonical IDs;each source hash verified against immutable catalog
+cargo clippy -p solana_kit_wallet --all-targets --locked --offline -- -D warnings	passed	final source
+cargo clippy --manifest-path verification/wallet-consumer/Cargo.toml --all-targets --locked --offline -- -D warnings	passed	private ordinary consumer and tools
+RUSTDOCFLAGS=-Dwarnings cargo doc -p solana_kit_wallet --no-deps --locked --offline	passed	final source
+cargo fmt --all --check	passed	workspace
+cargo fmt --manifest-path verification/wallet-consumer/Cargo.toml --check	passed	private ordinary consumer
+owned dprint check	passed	Cargo manifests and authored Markdown
+actionlint	passed	existing repository workflows
+coverage-aware style gate	passed	every authored Rust file inventoried;every file/category>=90
+monochange check --format json	passed	zeroissues
+monochange step validate	passed	configuration and Cargo version groups
+monochange preview --format json	passed	wallet0.1.1planned;publication disabled;no writes
+Dart pinned original wallet_standard tests	passed	20/20;no pub resolution or reference edits
+Dart literal icon padding oracle	passed	canonical padding and trailing bits required
+registry getter reentry positive contract probes	passed	insertion;removal;changed;disposal;Rcidentity;nestedguardandcapturedrop;eventcardinality
+registry bounded observation controls	passed	32invalidationsreturnUnstableRegistration;31invalidationspermit32ndpasssuccess
+unchanged Unit138 historical-negative probe	intentional101	oldsourcecollisions2violatesuniqueness;correctedsourcecollisions1failsretainedbrokenoutcomeassertion
