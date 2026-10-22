@@ -6,9 +6,9 @@ publish = false
 
 [dependencies]
 anyhow = "=1.0.104"
-leptoskit_bridge = { git = "https://github.com/ifiokjr/leptoskit", rev = "fecf8628d326ff7b03f295523e6bb584c3fdf88d" }
-leptoskit_native = { git = "https://github.com/ifiokjr/leptoskit", rev = "fecf8628d326ff7b03f295523e6bb584c3fdf88d" }
-leptoskit_wasm = { git = "https://github.com/ifiokjr/leptoskit", rev = "fecf8628d326ff7b03f295523e6bb584c3fdf88d" }
+leptoskit_bridge = { git = "https://github.com/ifiokjr/leptoskit", rev = "706334eaa3e011d1ef986159911b0d80c80d3e9f" }
+leptoskit_native = { git = "https://github.com/ifiokjr/leptoskit", rev = "706334eaa3e011d1ef986159911b0d80c80d3e9f" }
+leptoskit_wasm = { git = "https://github.com/ifiokjr/leptoskit", rev = "706334eaa3e011d1ef986159911b0d80c80d3e9f" }
 serde_json = "=1.0.154"
 solana_kit_leptoskit = { path = "../../../crates/solana_kit_leptoskit", features = ["host"] }
 solana_kit_native = { path = "../../../crates/solana_kit_native" }

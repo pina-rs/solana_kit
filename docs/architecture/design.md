@@ -267,3 +267,25 @@ Account results reuse core-owned types. The open `Method` trait permits typed
 provider extensions while the client owns envelopes, correlation, bounds, and
 remote errors. The proposed API sketches above do not describe the implemented
 native, browser and LeptosKit constructors.
+
+## Application-owned LeptosKit HTTP
+
+`HttpDriver` owns the fixed HTTP services and native task accounting. It takes
+short `&mut WasmHost` borrows for construction, installation, draining and delivery.
+`next_completion().await` borrows only driver task state, so an application can
+use or destroy its actual `App` independently while native work waits. A synchronous
+`App::with_host` closure can return this owned work without returning a host borrow.
+
+An opaque `HttpCompletion` binds its driver, actual `HostIdentity` and current
+`BridgeIdentity`. Both upstream identities are required because callers can move
+an entire Bridge into another interpreter. Retained private allocation tokens
+prevent identity reuse without retaining either owner. Joining releases capacity
+before returning a completion; dropping it abandons delivery without retaining a
+native job. Shutdown closes admission and aborts and joins native tasks. Drop
+only aborts. `HttpHost` owns a host and this same driver, with no second registry.
+
+The rejected closure-owned candidate captures `App` for its entire lifetime and
+prevents independent application access while waiting. The caller-borrowed shape
+keeps interpreter ownership with the application. Native waiting uses no hidden
+runtime or platform pump. Swift and Kotlin scheduling and awaited close hooks,
+and generated desktop and mobile HTTP journeys, remain future work.

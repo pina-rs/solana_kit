@@ -11,6 +11,10 @@ mod guest;
 pub use guest::{GuestExchange, GuestHttp};
 
 #[cfg(feature = "host")]
+mod driver;
+#[cfg(feature = "host")]
 mod host;
 #[cfg(feature = "host")]
-pub use host::{HostError, HostLimits, HttpHost, Routed};
+pub use driver::{HostError, HostLimits, HttpCompletion, HttpDriver, Routed};
+#[cfg(feature = "host")]
+pub use host::HttpHost;

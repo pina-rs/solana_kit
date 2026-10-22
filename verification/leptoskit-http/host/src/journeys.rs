@@ -1,17 +1,17 @@
 //! Actual guest routing, quiet deadlines and observed native cancellation EOF.
+use crate::application::Application as HttpHost;
 use crate::fixture::{self, Fixture};
 use anyhow::{Context, Result, ensure};
 use leptoskit_bridge::{Bridge, Bytes, Event, Limits, PluginId};
-use leptoskit_native::HeadlessBackend;
 use leptoskit_wasm::WasmHost;
-use solana_kit_leptoskit::{HostLimits, HttpHost};
+use solana_kit_leptoskit::HostLimits;
 use std::time::Duration;
 
 const VIEWPORT_WIDTH: f32 = 320.0;
 const VIEWPORT_HEIGHT: f32 = 480.0;
 const RETAIN_WINDOW: Duration = Duration::from_millis(25);
 
-fn trace(app: &mut HttpHost<HeadlessBackend>) -> Result<Vec<String>> {
+fn trace(app: &mut HttpHost) -> Result<Vec<String>> {
     let host = app.host_mut()?;
     let root = host.surface().root().context("guest report root")?;
     let text = host
@@ -23,7 +23,7 @@ fn trace(app: &mut HttpHost<HeadlessBackend>) -> Result<Vec<String>> {
     Ok(serde_json::from_str(text)?)
 }
 
-fn require(app: &mut HttpHost<HeadlessBackend>, marker: &str) -> Result<()> {
+fn require(app: &mut HttpHost, marker: &str) -> Result<()> {
     let actual = trace(app)?;
     ensure!(
         actual.last().map(String::as_str) == Some(marker),
@@ -38,7 +38,7 @@ async fn message(receiver: &mut tokio::sync::mpsc::Receiver<()>) -> Result<()> {
         .context("fixture sender closed")
 }
 
-async fn progress(app: &mut HttpHost<HeadlessBackend>) -> Result<()> {
+async fn progress(app: &mut HttpHost) -> Result<()> {
     let routed = app.drain()?;
     ensure!(
         routed.requests.is_empty() && routed.cancelled.is_empty(),
@@ -51,7 +51,7 @@ async fn progress(app: &mut HttpHost<HeadlessBackend>) -> Result<()> {
     Ok(())
 }
 
-async fn setup(wasm: &[u8]) -> Result<(HttpHost<HeadlessBackend>, Vec<Fixture>)> {
+async fn setup(wasm: &[u8], borrowed: bool) -> Result<(HttpHost, Vec<Fixture>)> {
     let mut host = WasmHost::headless(wasm)?;
     host.set_fuel_budget(1_000_000_000);
     *host.plugins() = Bridge::new(Limits {
@@ -67,6 +67,7 @@ async fn setup(wasm: &[u8]) -> Result<(HttpHost<HeadlessBackend>, Vec<Fixture>)>
             request_bytes: 1024,
             reply_bytes: 1024,
         },
+        borrowed,
     )?;
     let mut fixtures = Vec::new();
 
@@ -87,8 +88,19 @@ async fn setup(wasm: &[u8]) -> Result<(HttpHost<HeadlessBackend>, Vec<Fixture>)>
 }
 
 pub(super) async fn run(wasm: &[u8]) -> Result<()> {
+    for borrowed in [true, false] {
+        instances(wasm, borrowed).await?;
+    }
+
+    println!(
+        "replacement uses a distinct owner; no callback or guest pointer escapes a task owner"
+    );
+    Ok(())
+}
+
+async fn instances(wasm: &[u8], borrowed: bool) -> Result<()> {
     for generation in 0..2 {
-        let (mut app, mut fixtures) = setup(wasm).await?;
+        let (mut app, mut fixtures) = setup(wasm, borrowed).await?;
         app.start(VIEWPORT_WIDTH, VIEWPORT_HEIGHT)?;
         require(&mut app, "pending")?;
         app.drain()?;
@@ -116,17 +128,13 @@ pub(super) async fn run(wasm: &[u8]) -> Result<()> {
         }
 
         println!(
-            "instance {generation}: actual HTTPS/u64MAX, status, body budget, quiet deadline, local Rc Pending/wake, retained/cancel EOF, unrelated event routing, abort+join unload PASS"
+            "borrowed {borrowed}, instance {generation}: actual HTTPS/u64MAX, status, body budget, quiet deadline, local Rc Pending/wake, retained/cancel EOF, unrelated event routing, abort+join unload PASS"
         );
     }
-
-    println!(
-        "replacement uses a distinct owner; no callback or guest pointer escapes a task owner"
-    );
     Ok(())
 }
 
-async fn cancel_and_unload(app: &mut HttpHost<HeadlessBackend>, quiet: &mut Fixture) -> Result<()> {
+async fn cancel_and_unload(app: &mut HttpHost, quiet: &mut Fixture) -> Result<()> {
     app.drain()?;
     message(&mut quiet.accepted).await?;
     ensure!(

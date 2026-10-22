@@ -16,13 +16,14 @@ guest = ["leptoskit_bridge/guest"]
 host = ["dep:leptoskit_native", "dep:leptoskit_wasm", "dep:solana_kit_native", "dep:tokio"]
 
 [dependencies]
-leptoskit_bridge = { version = "=0.1.0", git = "https://github.com/ifiokjr/leptoskit", rev = "fecf8628d326ff7b03f295523e6bb584c3fdf88d" }
-leptoskit_native = { version = "=0.1.0", git = "https://github.com/ifiokjr/leptoskit", rev = "fecf8628d326ff7b03f295523e6bb584c3fdf88d", optional = true }
-leptoskit_wasm = { version = "=0.1.0", git = "https://github.com/ifiokjr/leptoskit", rev = "fecf8628d326ff7b03f295523e6bb584c3fdf88d", optional = true }
+leptoskit_bridge = { version = "=0.1.0", git = "https://github.com/ifiokjr/leptoskit", rev = "706334eaa3e011d1ef986159911b0d80c80d3e9f" }
+leptoskit_native = { version = "=0.1.0", git = "https://github.com/ifiokjr/leptoskit", rev = "706334eaa3e011d1ef986159911b0d80c80d3e9f", optional = true }
+leptoskit_wasm = { version = "=0.1.0", git = "https://github.com/ifiokjr/leptoskit", rev = "706334eaa3e011d1ef986159911b0d80c80d3e9f", optional = true }
 solana_kit_client.workspace = true
 solana_kit_native = { workspace = true, optional = true }
 tokio = { version = "=1.54.1", features = ["rt"], optional = true }
 
 [dev-dependencies]
-tokio = { version = "=1.54.1", features = ["rt", "macros"] }
+leptoskit_bridge_ffi = { version = "=0.1.0", git = "https://github.com/ifiokjr/leptoskit", rev = "706334eaa3e011d1ef986159911b0d80c80d3e9f", features = ["app"] }
+tokio = { version = "=1.54.1", features = ["rt-multi-thread", "macros", "net", "time", "io-util"] }
 wat = "=1.262.0"
