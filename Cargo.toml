@@ -3,6 +3,7 @@ members = [
   "crates/solana_kit",
   "crates/solana_kit_client",
   "crates/solana_kit_core",
+  "crates/solana_kit_native",
   "crates/solana_kit_system",
   "verification/browser",
   "verification/conformance",
@@ -19,4 +20,5 @@ license = "Unlicense"
 rust-version = "1.89"
 
 [workspace.dependencies]
+solana_kit_client = { version = "0.1.0", path = "crates/solana_kit_client" }
 solana_kit_core = { version = "0.1.0", path = "crates/solana_kit_core", default-features = false }
