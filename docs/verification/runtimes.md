@@ -59,7 +59,19 @@ dispatches a `Press` event and requires the corrupted report and second commit.
 The guest's small unsafe FFI wrappers implement that pinned synchronous copy ABI;
 core and the host harness forbid unsafe code.
 
-## Current v22 wallet and signer integration
+## Current v23 durable nonce integration
+
+The 101-case suite retains all 97 wallet and signer groups unchanged and appends
+four accepted durable nonce groups. Native Rust, Chrome, both Wasmtime previews
+and the actual pinned LeptosKit host execute 101 canonical passes and 100/101
+under sole hash corruption. Exact imports, graph negatives, one-fuel zero-commit
+and all five fresh packaged-core consumer groups pass.
+The [nonce runtime receipt](nonce-runtime.md) records the signed executable,
+artifact hashes and the checked 2,785,000,000-fuel workload. These are off-chain
+construction and structural inspection fixtures; account authentication, nonce
+expiry, validator acceptance and installed device journeys remain unproved.
+
+## Historical v22 wallet and signer integration
 
 The 97-case suite preserves all 90 wallet-frontier cases and appends the seven
 accepted signer assertions unchanged. The checked private interpreter workload is

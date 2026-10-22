@@ -36,7 +36,7 @@ mod tests {
 
     #[test]
     fn accounts_for_all_256_successes_and_the_early_stop_success() {
-        assert_eq!(allowance().unwrap(), 2_725_000_000);
+        assert_eq!(allowance().unwrap(), 2_785_000_000);
     }
 
     #[test]

@@ -20,7 +20,9 @@ secret material on drop through `ed25519-dalek`'s `zeroize` feature.
 The `transaction` module compiles and strictly decodes immutable legacy/v0/v1
 messages and retains ordered signature slots. Complete legacy/v0 packets are
 bounded to 1232 bytes; complete V1 envelopes are bounded to 4096 bytes, inclusive.
-Local compilation requires explicit blockhash expiry metadata. Received wire
+Local compilation requires explicit blockhash expiry or durable nonce metadata.
+Durable nonce construction validates the first advance instruction's identities
+and roles. Structural inspection never authenticates nonce account state. Received wire
 preserves its exact signed bytes and records the lifetime token as unresolved,
 because expiry height is absent from the wire. Optional `crypto` signs and
 verifies those frozen bytes; structural decoding alone does not authenticate

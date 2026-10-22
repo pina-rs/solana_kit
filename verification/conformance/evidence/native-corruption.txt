@@ -95,4 +95,8 @@ signer-logical-identity: Ok(())
 signer-heterogeneous-roles: Ok(())
 signer-local-lifecycle: Ok(())
 signer-ordered-batches: Ok(())
-solana-kit-core-v22: 96/97 cases passed
+nonce-construction: Ok(())
+nonce-wire: Ok(())
+nonce-negatives: Ok(())
+nonce-signatures: Ok(())
+solana-kit-core-v23: 100/101 cases passed

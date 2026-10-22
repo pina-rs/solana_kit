@@ -6,11 +6,12 @@ complete the ecosystem, production adapters, or installed application journeys.
 All proofs concern off-chain application clients. On-chain programs use Pina or
 official Solana program libraries.
 
-The current shared v22 suite executes 97 canonical cases and 96/97 with sole
-hash corruption on all five named hosts. It preserves all 90 wallet-frontier
-cases and appends seven unchanged signer groups, including every 256-success
-batch assertion. The [signer receipt](signer-runtime.md) records the signed
-executable, checked private workload and historical 92-case measurement limits.
+The current shared v23 suite executes 101 canonical cases and 100/101 with sole
+hash corruption on all five named hosts. It preserves all 97 wallet and signer
+groups, including every 256-success batch assertion, and appends four accepted
+durable nonce groups. The [nonce receipt](nonce-runtime.md) records the signed
+executable and checked private workload. The [signer receipt](signer-runtime.md)
+retains the historical 92-case measurement limits.
 The 90-case matrix entry below is historical experiment evidence.
 
 ## Experiment matrix
@@ -56,9 +57,9 @@ async guest allows those three plus eight plugin-v1 imports with exact signature
 Neither guest assumes browser globals. Application code owns event routing,
 generation tokens, and fixture cleanup.
 
-The WASI network adapter remains outside the accepted snapshot documented here.
-WASI denial and early HTTP responses during upload need corrected error precedence
-and independent verification. Accepted headless LeptosKit HTTP does not establish
+The accepted [public WASI HTTP adapter](../../crates/solana_kit_wasi/README.md)
+includes independently verified denial and early-response error precedence.
+Accepted headless LeptosKit HTTP does not establish
 generated application loops or installed desktop, Android and iOS journeys.
 Neither result replaces the limits of the private experiments above.
 

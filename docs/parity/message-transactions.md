@@ -5,14 +5,17 @@ This SDK is exclusively for off-chain client application code. Its portable
 or official Solana program libraries for those.
 
 The legacy/v0 slice preserves immutable signed message bytes and ordered signer
-slots. Local construction requires explicit blockhash expiry metadata. External
-wire decoding cannot recover that metadata and must retain an unresolved token.
+slots. Local construction requires explicit blockhash expiry or durable nonce
+metadata. External wire decoding cannot recover that metadata and must retain an
+unresolved token.
 Incoming messages have a separate protocol validation path: local compiler
 restrictions must not reject otherwise valid received messages.
 
 The pinned Dart source is commit
 `0138bb956d2d81ccc0c56edc602401c0df2f2b46`. Its compiler sorts addresses by
-base58 text within privilege groups, places the payer first, retains duplicate
+base58 text within privilege groups using a per-character rank of digits, then
+`a, A, b, B` through `z, Z`, omitting characters outside the base58 alphabet.
+An equal prefix sorts by length. It places the payer first, retains duplicate
 instruction positions, and keeps invoked programs readonly and static.
 
 The adjacent TSV contains all phase 3 source symbols, copied from the canonical
@@ -34,6 +37,17 @@ Table snapshots are ordered by base58 table address; when an account appears in
 several snapshots the first table in that order wins, and the first matching index
 within that table wins. Signers and invoked programs stay static. Account role
 groups and loaded partitions use the pinned Dart compiler's base58 ordering.
+
+The compiler uses this explicit collation independently of `Address::Ord`, whose
+byte ordering is unchanged. Static privilege groups, competing table selection,
+loaded table/account groups and lookup descriptors share the same rule. No host
+locale or ICU dependency is required. The nine literal full compiler outputs in
+`crates/solana_kit_core/tests/fixtures/address_collation.tsv` were produced by the
+actual pinned Dart legacy/v0/v1 compiler. They cover mixed digits/case, multiple
+programs, repeated instruction positions, privilege upgrades, the payer reused
+as an authority, duplicate table entries and competing tables. Reversing snapshot
+input preserves the result. See the adjacent fixture provenance. This correction
+adds native evidence only; combined portable host execution remains separate.
 
 Fixtures follow the pinned Dart message codec field layout and protocol-valid
 constraints from cached official `solana-message` 4.4.1 (Apache-2.0). No official
@@ -85,3 +99,17 @@ signature tampering; see the [runtime receipt](../verification/runtimes.md).
 A 32-byte lifetime wire token does not prove
 durable nonce creation, advance, expiry or rollback. All 746 canonical source IDs
 remain present; bounded mappings stay partial and Phase 3 remains incomplete.
+
+## Durable nonce construction
+
+`Lifetime::DurableNonce` carries explicit token, nonce account and authority.
+`DurableNonce::prepare_instructions` deterministically retains, replaces or
+prepends the prerequisite advance. Compilation checks exact first-instruction
+identities and roles. Received lifetimes remain unresolved.
+`Message::nonce_advance` reports structural evidence without authenticating state.
+The [nonce receipt](../../verification/durable-nonce/README.md) records actual
+Dart literals, strict construction guarantees and remaining lookup, validator
+and host proof. All 30 instruction meta sequences and compiled message literals
+match after the shared pinned address comparator integration. Every literal
+comparison requires exact byte equality. The original three collation failures
+remain in local evidence.

@@ -1,11 +1,13 @@
 //! Immutable legacy/v0/v1 messages, strict wire decoding, and ordered signatures.
 //!
-//! Compilation requires explicit blockhash expiry metadata. Decoding preserves
+//! Compilation requires explicit blockhash expiry or durable nonce metadata. Decoding preserves
 //! received bytes and records unknown expiry; the block height is never on wire.
 //! A decoded transaction is structurally validated, not cryptographically trusted.
 
 mod compile;
 mod config;
+mod nonce;
+pub use nonce::{DurableNonce, NonceAdvance};
 mod v1;
 pub use config::{HeapSize, V1Config};
 mod wire;
@@ -32,7 +34,7 @@ pub enum Version {
     V1,
 }
 
-/// Blockhash expiry information supplied by the builder or received on wire.
+/// Explicit local lifetime metadata, or an uninterpreted received wire token.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum Lifetime {
     /// Caller-provided recent blockhash and last valid block height.
@@ -42,6 +44,8 @@ pub enum Lifetime {
         /// Expiry height; metadata only, absent from the signed wire.
         last_valid_block_height: u64,
     },
+    /// Caller-supplied nonce identities, checked against the first instruction.
+    DurableNonce(DurableNonce),
     /// Wire token whose expiry or nonce interpretation has not been established.
     Unresolved(Hash),
 }
@@ -52,6 +56,7 @@ impl Lifetime {
     pub const fn token(self) -> Hash {
         match self {
             Self::Blockhash { blockhash, .. } | Self::Unresolved(blockhash) => blockhash,
+            Self::DurableNonce(nonce) => nonce.token(),
         }
     }
 }
@@ -232,7 +237,7 @@ impl Message {
     pub fn lookups(&self) -> &[Lookup] {
         &self.lookups
     }
-    /// Explicit local expiry metadata, or an unresolved external token.
+    /// Explicit local lifetime metadata, or an unresolved external token.
     #[must_use]
     pub const fn lifetime(&self) -> Lifetime {
         self.lifetime
@@ -371,8 +376,10 @@ pub enum Error {
     InvalidIndex,
     /// The complete envelope exceeds its version-specific byte limit.
     PacketTooLarge,
-    /// Local compilation requires explicit known blockhash expiry metadata.
+    /// Local compilation requires explicit blockhash or nonce metadata.
     UnresolvedLifetime,
+    /// The first instruction does not advance the exact supplied nonce identities.
+    InvalidNonceAdvance,
     /// An invoked program is writable or is also the payer.
     WritableProgram,
     /// Lookup snapshots disagree, duplicate a table, or exceed 256 entries.

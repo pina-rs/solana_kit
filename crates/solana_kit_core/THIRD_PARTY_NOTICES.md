@@ -3,6 +3,9 @@
 The bounded radix/text codec behavior and retained test fixtures are derived
 from the Dart Solana Kit numeric/string packages at commit
 `0138bb956d2d81ccc0c56edc602401c0df2f2b46`. The original license follows.
+The durable nonce preparation and recognition contracts use the same pinned
+repository's transaction message sources. Their actual Dart oracle and synthetic
+literal fixtures retain this notice in `verification/durable-nonce/DART-LICENSE`.
 
 MIT License
 

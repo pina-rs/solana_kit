@@ -19,6 +19,7 @@ solana_kit_associated_token_account = { path = "../../crates/solana_kit_associat
 solana_kit_client = { path = "../../crates/solana_kit_client" }
 solana_kit_compute_budget = { path = "../../crates/solana_kit_compute_budget" }
 solana_kit_core = { path = "../../crates/solana_kit_core", features = ["crypto", "fixed-points", "text-codecs"] }
+solana_kit_durable_nonce_verification = { path = "../durable-nonce" }
 solana_kit_memo = { path = "../../crates/solana_kit_memo" }
 solana_kit_signers = { path = "../../crates/solana_kit_signers", features = ["crypto"] }
 solana_kit_system = { path = "../../crates/solana_kit_system" }

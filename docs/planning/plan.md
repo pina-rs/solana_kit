@@ -82,8 +82,8 @@ All five narrow experiments have executed evidence. The
 [Phase 1 evidence matrix](../verification/phase-one.md) links their source,
 commands, pins, negative controls, and limits. `cargo xtask all` reproduces the
 shared portable suite, import/dependency gates, and a clean packaged-core consumer.
-The current suite passes all 97 cases and rejects only the corrupt-hash
-case in the 96/97 negative run on native Rust, Chrome, both WASI previews, and the
+The current suite passes all 101 cases and rejects only the corrupt-hash
+case in the 100/101 negative run on native Rust, Chrome, both WASI previews, and the
 actual pinned LeptosKit `WasmHost`. The
 [portable runtime receipt](../verification/runtimes.md)
 records this expanded suite. The
@@ -152,11 +152,13 @@ construction requirements from validation of externally received transactions.
 The immutable legacy/v0/v1 slice compiles owned instructions and lookup snapshots,
 preserves exact signed bytes, validates received protocol wire independently of
 local compiler restrictions, and signs/verifies through optional deterministic
-crypto. Seven transaction cases execute in the shared suite, now 97 cases, including
+crypto. Transaction cases execute in the shared suite, now 101 cases, including
 version-one message-first envelopes, inline configuration, exact 4096/4097-byte
 boundaries and signature tampering. Legacy/v0 retain their 1232-byte packet cap. The
 [transaction ledger](../parity/message-transactions.md) retains all 746 source
-IDs: 33 partial and 713 pending, none complete. Durable nonces, full
+IDs: 46 partial and 700 pending, none complete. Bounded durable nonce construction
+and structural inspection have [portable runtime evidence](../verification/nonce-runtime.md).
+Authenticated nonce account state, expiry, full
 introspection, remaining signer capabilities, confirmation,
 and instruction plans remain outstanding; Phase 3 is incomplete.
 The bounded [offchain message receipt](../parity/offchain-messages.md) retains
