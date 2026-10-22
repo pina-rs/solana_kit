@@ -37,4 +37,7 @@ sysvar-clock-signed-fixture: Ok(())
 account-metadata-and-absence: Ok(())
 sysvar-history-u64-bounds: Ok(())
 program-error-source-facts: Ok(())
-solana-kit-core-v4: 38/39 cases passed
+fixed-point-exact-parsing: Ok(())
+fixed-point-exact-arithmetic: Ok(())
+fixed-point-exact-codecs: Ok(())
+solana-kit-core-v5: 41/42 cases passed

@@ -31,6 +31,8 @@ jobs:
           RUSTDOCFLAGS="-D warnings" cargo +1.99.1 doc --workspace --all-features --no-deps --locked
           cargo +1.99.1 check -p solana_kit_core --no-default-features --locked
           cargo +1.99.1 check -p solana_kit_core --no-default-features --features crypto --locked
+          cargo +1.99.1 check -p solana_kit_core --no-default-features --features fixed-points --locked
+          cargo +1.99.1 check -p solana_kit_core --no-default-features --features crypto,fixed-points --locked
       - name: Execute canonical suite and corrupt-fixture exit control
         shell: bash
         run: |
@@ -62,6 +64,8 @@ jobs:
           rustup toolchain install 1.89.0 --profile minimal
           cargo +1.89.0 check -p solana_kit_core --no-default-features --locked
           cargo +1.89.0 check -p solana_kit_core --no-default-features --features crypto --locked
+          cargo +1.89.0 check -p solana_kit_core --no-default-features --features fixed-points --locked
+          cargo +1.89.0 check -p solana_kit_core --no-default-features --features crypto,fixed-points --locked
 
   package-ledger:
     runs-on: ubuntu-24.04
