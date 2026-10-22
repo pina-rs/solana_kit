@@ -1,0 +1,18 @@
+[package]
+name = "solana_kit_rpc_design"
+version = "0.0.0"
+edition = "2024"
+license = "Unlicense"
+publish = false
+rust-version = "1.89"
+
+[workspace]
+
+[dependencies]
+serde = { version = "=1.0.229", features = ["derive"] }
+serde_json = { version = "=1.0.154", features = ["raw_value"] }
+solana_kit_core = { path = "../../crates/solana_kit_core" }
+
+[dev-dependencies]
+futures = "=0.3.31"
+tokio = { version = "=1.54.1", features = ["rt-multi-thread", "macros", "net", "io-util", "sync", "time"] }
