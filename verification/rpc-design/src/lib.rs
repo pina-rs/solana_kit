@@ -60,14 +60,29 @@ impl<T: Transport> Client<T> {
 
     /// Executes typed decoding after the actual associated exchange completes.
     pub async fn call<R: Method>(&self, method: R) -> Result<R::Response, Error> {
-        let id = self
-            .next_id
-            .fetch_update(Ordering::Relaxed, Ordering::Relaxed, |id| id.checked_add(1))
-            .map_err(|_| Error::IdExhausted)?;
-        let id = u64::from(id);
+        let id = self.reserve_id()?;
         let request = json::request(id, &method, self.limits)?;
         let reply = self.transport.exchange(request).await?;
         json::response(id, reply, self.limits)
+    }
+
+    /// Only uniqueness is shared; request bytes are not published through the counter.
+    fn reserve_id(&self) -> Result<u64, Error> {
+        let mut current = self.next_id.load(Ordering::Relaxed);
+
+        loop {
+            let next = current.checked_add(1).ok_or(Error::IdExhausted)?;
+
+            match self.next_id.compare_exchange_weak(
+                current,
+                next,
+                Ordering::Relaxed,
+                Ordering::Relaxed,
+            ) {
+                Ok(id) => return Ok(u64::from(id)),
+                Err(actual) => current = actual,
+            }
+        }
     }
 }
 

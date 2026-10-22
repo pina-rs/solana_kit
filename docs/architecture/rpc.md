@@ -18,13 +18,14 @@ A single client owns protocol framing, response correlation and typed decoding.
 Adapters own endpoints, authentication, streaming body bounds and cancellation.
 A request carries its response type; callers never choose an arbitrary return
 schema for a catalog method. Request IDs belong to one client owner, not adapters.
-The pilot accepts an explicit numeric ID to isolate protocol experiments; that
-is not the planned public request-ID ownership contract.
+The pilot allocates IDs from one per-client AtomicU32 counter. Concurrent calls
+reserve unique IDs with checked advancement; exhaustion is an explicit error,
+never a wrap or reuse. No global counter, OS entropy, timer or runtime is needed.
 
 ## Candidate contracts
 
 A: `Transport::Exchange<'a>: Future<Output = Result<HttpReply, TransportError>>`;
-`Client<T>::call<R: Method>(&self, id, request) -> R::Response` is an ordinary
+`Client<T>::call<R: Method>(&self, request) -> R::Response` is an ordinary
 async method. The native generic caller requires `T: Send + Sync`, each associated
 exchange future Send, and the method and response Send. Local adapters retain Rc
 through Pending without a universal Send bound or runtime dependency.
@@ -52,8 +53,12 @@ confirmation and account fetching. It owns request identity allocation, framing,
 JSON schemas, context and protocol errors. Use a sealed method/response mapping
 for standard operations; an arbitrary Deserialize type cannot stand in for a
 catalog response. Public client types are owned by Kit. Serde, RawValue and HTTP
-implementation types stay private. The pilot's exposed serde trait and explicit
-numeric ID are experimental seams to remove before public implementation.
+implementation types stay private. The pilot's exposed serde trait is an experimental seam to seal
+before public implementation. IDs reserve 1 through u32::MAX - 1, remain exactly representable
+in JavaScript, and fail with IdExhausted before transport access at the limit.
+The native concurrency test observes 32 distinct replies from one shared client;
+the exhaustion control never calls the transport. Cross-target compilation proves
+the selected atomic is available; runtime execution on Wasm remains pending.
 
 Adapters remain separate `solana_kit_native`, `solana_kit_browser`,
 `solana_kit_wasi` and `solana_kit_leptoskit` crates. Each adapter owns an explicitly
