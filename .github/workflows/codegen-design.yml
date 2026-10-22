@@ -66,3 +66,20 @@ jobs:
           RUSTDOCFLAGS='-D warnings' cargo +1.99.1 doc -p solana_kit_system --locked --no-deps
           rustup toolchain install 1.89.0 --profile minimal
           cargo +1.89.0 check -p solana_kit_system --locked
+      - name: Regenerate Compute Budget and reject drift
+        shell: bash
+        run: |
+          cargo +1.99.1 run --locked --manifest-path verification/codegen-design/Cargo.toml -- compute-budget
+          cargo +1.99.1 run --locked --manifest-path verification/codegen-design/Cargo.toml -- compute-budget-receipt
+          git diff --exit-code -- crates/solana_kit_compute_budget/src/generated.rs docs/parity/compute-budget.tsv
+          cargo +1.99.1 run --locked --manifest-path verification/codegen-design/Cargo.toml -- compute-budget
+          git diff --exit-code -- crates/solana_kit_compute_budget/src/generated.rs
+      - name: Verify portable Compute Budget client
+        shell: bash
+        run: |
+          cargo +1.99.1 test -p solana_kit_compute_budget --locked
+          cargo +1.99.1 check -p solana_kit_compute_budget --locked --target wasm32-unknown-unknown
+          cargo +1.99.1 check -p solana_kit_compute_budget --locked --target wasm32-wasip1
+          cargo +1.99.1 check -p solana_kit_compute_budget --locked --target wasm32-wasip2
+          cargo +1.89.0 test -p solana_kit_compute_budget --locked
+          RUSTDOCFLAGS='-D warnings' cargo +1.99.1 doc -p solana_kit_compute_budget --locked --no-deps

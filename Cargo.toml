@@ -3,6 +3,7 @@ members = [
   "crates/solana_kit",
   "crates/solana_kit_browser",
   "crates/solana_kit_client",
+  "crates/solana_kit_compute_budget",
   "crates/solana_kit_core",
   "crates/solana_kit_leptoskit",
   "crates/solana_kit_native",

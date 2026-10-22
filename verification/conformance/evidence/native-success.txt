@@ -73,4 +73,6 @@ rpc-address-simulation: Ok(())
 offchain-valid-wire: Ok(())
 offchain-malformed-bounds: Ok(())
 offchain-signature-tamper: Ok(())
-solana-kit-core-v16: 75/75 cases passed
+compute-budget-full-width-price: Ok(())
+compute-budget-ordering-historical: Ok(())
+solana-kit-core-v17: 77/77 cases passed

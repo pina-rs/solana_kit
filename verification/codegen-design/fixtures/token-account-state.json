@@ -1,0 +1,14 @@
+{
+  "kind": "definedTypeNode",
+  "name": "accountState",
+  "type": {
+    "kind": "enumTypeNode",
+    "variants": [
+      { "kind": "enumEmptyVariantTypeNode", "name": "uninitialized" },
+      { "kind": "enumEmptyVariantTypeNode", "name": "initialized" },
+      { "kind": "enumEmptyVariantTypeNode", "name": "frozen" }
+    ],
+    "size": { "kind": "numberTypeNode", "format": "u8", "endian": "le" }
+  },
+  "docs": []
+}

@@ -77,3 +77,8 @@ path = "crates/solana_kit_leptoskit"
 type = "cargo"
 changelog = false
 publish = { enabled = false }
+
+[package.solana_kit_compute_budget]
+path = "crates/solana_kit_compute_budget"
+type = "cargo"
+publish = { enabled = false }

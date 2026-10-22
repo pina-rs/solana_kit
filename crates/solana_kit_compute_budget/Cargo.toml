@@ -1,0 +1,14 @@
+[package]
+name = "solana_kit_compute_budget"
+version = "0.1.0"
+authors.workspace = true
+edition.workspace = true
+include = ["src/**", "README.md", "LICENSE", "COMPUTE-BUDGET-LICENSE"]
+license.workspace = true
+readme = "README.md"
+repository = "https://github.com/pina-rs/solana_kit/tree/main/crates/solana_kit_compute_budget"
+rust-version.workspace = true
+description = "Portable off-chain Compute Budget instruction client"
+
+[dependencies]
+solana_kit_core.workspace = true
