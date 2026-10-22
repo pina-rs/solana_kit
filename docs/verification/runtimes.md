@@ -36,7 +36,47 @@ dispatches a `Press` event and requires the corrupted report and second commit.
 The guest's small unsafe FFI wrappers implement that pinned synchronous copy ABI;
 core and the host harness forbid unsafe code.
 
-## Current v2 executed receipt
+## Current v3 executed receipt
+
+The integrated `solana-kit-core-v3` suite has 35 cases: the preceding 31
+primitive/codec cases and four immutable legacy/v0 transaction cases. Fresh
+local macOS ARM64 execution on 2026-10-22 at signed integration checkpoint
+`43f2e6334bf03f6b9654c8e5ddeef80765be9efc` used Rust 1.99.1, Chrome
+155.0.8059.85, ChromeDriver 155.0.8059.84, Wasmtime 50.0.0, and the pinned actual
+LeptosKit host. The committed source and native goldens were clean for this
+`cargo xtask all` run, which exited 0.
+
+| Execution                 | Canonical                      | Corruption control                                     |
+| ------------------------- | ------------------------------ | ------------------------------------------------------ |
+| Native command            | 35/35, exit 0                  | 34/35, exit 1                                          |
+| Real headless Chrome      | Full 35/35 report checked      | Full 34/35 report checked; both browser tests passed   |
+| Wasmtime Preview 1        | 35/35, exit 0                  | 34/35, exit 1                                          |
+| Wasmtime Preview 2        | 35/35, exit 0                  | 34/35, exit 1                                          |
+| Actual LeptosKit WasmHost | Full 35/35 JSON and one commit | Press event produced full 34/35 JSON and second commit |
+
+The sole corrupted case remains `sha256-fips-abc`, with `SHA-256 digest mismatch`.
+Every host checks suite identity, exact count, every outcome, and failure state.
+All eight selected default/crypto dependency closures passed. The default core
+graph remains `bs58` only; exact guest imports and both forbidden-import and
+forbidden-dependency negative controls passed. The extracted packaged-core
+consumer passed four public API tests, including exact legacy message bytes,
+signing, received unresolved lifetime metadata, and packet re-encoding.
+
+Executed v3 artifact SHA-256 values (local debug WASI artifacts, release guest):
+
+```text
+9b74163217de9f1b4b05743b1f48b643737ab19663e05649270f01d162e3801d  wasm32-wasip1
+dd8a8f1243003cbe12a3be789a4f8e1937eb76074e179c7797af148147de2710  wasm32-wasip2
+b4f477790d5ad1fc24d915cf95c6f2b8180ce4442fddcf4076537ca48023358f  leptoskit-guest
+```
+
+The [transaction ledger](../parity/message-transactions.md) retains all 746
+Phase 3 IDs: 22 partial and 724 pending, with none complete. This receipt proves
+the bounded synchronous legacy/v0 slice across these hosts; v1, durable nonces,
+introspection, off-chain messages, general signers, transport, and device work
+remain outstanding. Earlier receipts below describe historical artifacts.
+
+## Historical v2 executed receipt
 
 The expanded `solana-kit-core-v2` suite has 31 cases, including six bounded
 codec cases. Fresh local macOS ARM64 execution on 2026-10-22 at integration
