@@ -67,6 +67,17 @@ pub(crate) fn codecs() -> [CaseResult; 6] {
     ]
 }
 
+/// Accepted application-message cases follow the original 72 groups.
+pub(crate) fn offchain() -> [CaseResult; 3] {
+    use crate::offchain;
+
+    [
+        case("offchain-valid-wire", offchain::valid()),
+        case("offchain-malformed-bounds", offchain::malformed()),
+        case("offchain-signature-tamper", offchain::tamper()),
+    ]
+}
+
 /// Existing protocol and System client groups retain their stable report order.
 pub(crate) fn clients() -> [CaseResult; 8] {
     use crate::{rpc, rpc_node, system_client};

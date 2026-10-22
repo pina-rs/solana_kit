@@ -82,10 +82,10 @@ All five narrow experiments have executed evidence. The
 [Phase 1 evidence matrix](../verification/phase-one.md) links their source,
 commands, pins, negative controls, and limits. `cargo xtask all` reproduces the
 shared portable suite, import/dependency gates, and a clean packaged-core consumer.
-The current accepted suite passes all 72 cases and rejects only the corrupt-hash
-case in the 71/72 negative run on native Rust, Chrome, both WASI previews, and the
+The current accepted suite passes all 75 cases and rejects only the corrupt-hash
+case in the 74/75 negative run on native Rust, Chrome, both WASI previews, and the
 actual pinned LeptosKit `WasmHost`. The
-[complete catalog runtime receipt](../verification/rpc-history.md)
+[portable runtime receipt](../verification/runtimes.md)
 records this expanded suite. The
 [numeric receipt](../parity/numeric-string-codecs.md) retains its historical
 59-case proof.
@@ -150,13 +150,16 @@ construction requirements from validation of externally received transactions.
 The immutable legacy/v0/v1 slice compiles owned instructions and lookup snapshots,
 preserves exact signed bytes, validates received protocol wire independently of
 local compiler restrictions, and signs/verifies through optional deterministic
-crypto. Seven transaction cases execute in the shared suite, now 72 cases, including
+crypto. Seven transaction cases execute in the shared suite, now 75 cases, including
 version-one message-first envelopes, inline configuration, exact 4096/4097-byte
 boundaries and signature tampering. Legacy/v0 retain their 1232-byte packet cap. The
 [transaction ledger](../parity/message-transactions.md) retains all 746 source
 IDs: 33 partial and 713 pending, none complete. Durable nonces, full
-introspection, off-chain messages, general signer capabilities, confirmation,
+introspection, general signer capabilities, confirmation,
 and instruction plans remain outstanding; Phase 3 is incomplete.
+The bounded [offchain message receipt](../parity/offchain-messages.md) retains
+all 83 IDs as partial, with none complete. Its three groups now execute through
+the shared suite on every named portable host.
 
 ## Phase 4: RPC and host transports
 

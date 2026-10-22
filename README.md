@@ -18,13 +18,15 @@ account reads, all nineteen node metadata operations and all eight economics
 operations, nine account and token operations and richer accountInfo,
 and all fifteen history, submission, full-result and simulation operations,
 through one executor-neutral protocol owner. All 54 catalog methods have typed
-implementations. The shared 72-case suite has
+implementations. The shared 75-case suite has
 [runtime execution evidence](docs/verification/runtimes.md).
 The core component is unreleased; the published `solana_kit` 0.0.0 umbrella remains
 a dependency-free name reservation with no SDK APIs. This bounded codec slice
 leaves Phase 2 incomplete; see its [capability receipt](docs/verification/core-codecs.md).
 The [transaction ledger](docs/parity/message-transactions.md) records 33 partial
 and 713 pending capabilities; Phase 3 remains incomplete.
+The [offchain message receipt](docs/parity/offchain-messages.md) records bounded
+V0/V1 application messages and signing envelopes. Its 83 IDs remain partial.
 The [account/sysvar receipt](docs/verification/accounts-sysvars.md) maps 151
 declarations and retains all 78 unresolved declarations explicitly.
 The [fixed-point receipt](docs/parity/fixed-points.md) maps 121 bounded equivalents

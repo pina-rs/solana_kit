@@ -2,7 +2,8 @@
 
 Portable off-chain client types for Solana addresses, hashes, signatures,
 ordered instructions, bounded binary codecs, account snapshots, sysvar layouts,
-program errors, and immutable legacy/v0/v1 transactions.
+program errors, immutable legacy/v0/v1 transactions, and off-chain application
+messages.
 The default dependency graph contains only `bs58`. The optional `crypto` feature
 adds SHA-256, validated program-derived addresses, and deterministic Ed25519
 signing and strict verification through RustCrypto implementations.
@@ -23,14 +24,15 @@ Local compilation requires explicit blockhash expiry metadata. Received wire
 preserves its exact signed bytes and records the lifetime token as unresolved,
 because expiry height is absent from the wire. Optional `crypto` signs and
 verifies those frozen bytes; structural decoding alone does not authenticate
-signatures. Durable nonce lifecycle, full introspection, off-chain messages and
+signatures. Durable nonce lifecycle, full introspection, and
 general signer capabilities remain pending.
 
 `accounts` owns present and missing snapshots and decodes data while preserving
 metadata and enforcing the expected owner and reported size. `sysvars` provides
 nine bounded wire layouts and thirteen typed addresses. `program_error` retains
 custom, known and unknown failures without inferring instruction attribution.
-RPC account fetching remains pending; see the account/sysvar capability receipt.
+`solana_kit_client` provides typed RPC account fetching; see the account/sysvar
+capability receipt.
 
 ```rust
 use solana_kit_core::{AccountMeta, AccountRole, Address, Instruction};
@@ -104,7 +106,7 @@ tables, and signs the message prefix before appending fixed-width signatures.
 Its complete envelope is bounded to 4096 bytes; legacy/v0 retain 1232 bytes.
 Node version alone does not advertise feature activation. The local proof is
 documented in `docs/verification/v1-wire.md`. Three V1 assertion groups execute
-within the shared 59-case native/browser/WASI/LeptosKit suite; durable nonce
+within the shared 75-case native/browser/WASI/LeptosKit suite; durable nonce
 lifecycle remains a separate follow-up.
 
 Text codecs include exact Base10/Base58 integer radix conversion, configurable
@@ -115,3 +117,23 @@ numeric text without floating point. Optional `text-codecs` adds only audited
 Base64 conversion. Encoders take alphabet text and produce binary bytes;
 decoders render bytes as text. See the numeric/string parity receipt for explicit
 bounds, unsupported non-BMP custom alphabets and remaining generic BigInt helpers.
+
+`offchain` provides V0 and V1 application messages with caller-selected byte and
+allocation budgets. A validated `Message` retains its exact immutable signing
+bytes. `Envelope` stores ordered optional signatures and supports partial signing
+and strict verification with `crypto`. Signature presence alone does not prove
+authenticity. V0 content limits apply to content, independently of transaction
+packet limits. V1 content consumes the complete input frame and has no protocol
+size cap. See the [scoped receipt](../../docs/parity/offchain-messages.md).
+
+```rust
+use solana_kit_core::{Address, codecs::Limits, offchain::{Envelope, Message}};
+
+let signer = Address::from_bytes([1; 32]);
+let message = Message::v1("Authorize this application", &[signer], 1024)?;
+let envelope = Envelope::unsigned(message)?;
+let wire = envelope.encode(false, 2048)?;
+let received = Envelope::decode(&wire, Limits::new(2048, 4096))?;
+assert!(!received.is_complete());
+# Ok::<(), solana_kit_core::offchain::Error>(())
+```
