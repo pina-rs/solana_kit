@@ -1,4 +1,4 @@
-//! Isolated portable cases awaiting shared registry and runtime integration.
+//! Accepted portable Compute Budget cases reused by the shared suite.
 use solana_kit_compute_budget::*;
 use solana_kit_core::codecs::{Encoder, Error, Limits};
 
