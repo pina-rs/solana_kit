@@ -1,0 +1,10 @@
+check	invocation	observed	limit
+five-host-registry	CARGO_NET_OFFLINE=true WASM_BINDGEN_TEST_DRIVER_TIMEOUT=30 cargo +1.99.1 xtask all	all five actual hosts canonical81/81 and sole corruption80/81	memory-frame protocol; no WebSocket or device networking
+interpreter-fuel-negative	same full command; fresh actual pinned WasmHost with one fuel	OutOfFuel and zero commits	only this early negative guarantees no report commit
+interpreter-finite-allowance	same full command; checked15000000 times EXPECTED_CASE_COUNT	1215000000 per start or event entry	pooled whole-entry allowance including lazy translation; no per-case maximum
+import-and-dependency-policies	same full command	all selected closures and forbidden controls pass	compiled imports exactly leptoskit node_create/node_set_props/commit
+packaged-core-consumer	same full command	five ordinary extracted-package public groups pass	no registry release or publication claim
+unchanged-independent-consumer	env -u RUSTFLAGS -u RUSTDOCFLAGS -u CARGO_ENCODED_RUSTFLAGS CARGO_NET_OFFLINE=true cargo +1.89.0 test --offline -- --nocapture	14groups pass; source SHA256d6cc6ff2187038117b91bf80355540094a4e00fbe1563762d9412d38f4acebc9	ordinary external package; dependency paths only adapted
+accepted-author-tests	cargo test -p solana_kit_client --test signature_notifications --test subscriptions --test subscription_families --test subscription_designs --offline	23tests pass	original21 and accepted2 signature regressions unchanged
+original-dart-api-protocol	dart --packages=$PRESERVED_PACKAGE_CONFIG $CACHED_TEST_RUNNER --reporter expanded $PINNED_API_TESTS $PINNED_PROTOCOL_TEST	87tests pass	original immutable Dart0138bb956d2d81ccc0c56edc602401c0df2f2b46; no pub resolution
+exact-declaration-receipt	rustc --edition 2024 verification/subscriptions-design/receipt.rs -o target/subscription-receipt; target/subscription-receipt docs/parity/capabilities.tsv target/subscriptions.tsv; cmp docs/parity/subscriptions.tsv target/subscriptions.tsv	173IDs;68partial;105pending;0complete	canonical and scoped ID inventories unchanged

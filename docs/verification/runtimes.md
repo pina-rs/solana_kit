@@ -7,6 +7,28 @@ dependency closures, forbidden fixtures, and an external packaged-core consumer.
 Each journey is also available as `native`, `browser`, `wasi`, `leptoskit`,
 `gates`, or `consumer`. Run from this checkout; no secrets are needed.
 
+All arguments are validated before a journey starts or writes evidence. Commands
+accept only these positional arguments; no Cargo flags are forwarded:
+
+| Command                                                                                   | Arguments                                           |
+| ----------------------------------------------------------------------------------------- | --------------------------------------------------- |
+| `native`, `browser`, `wasi`, `leptoskit`, `gates`, `dependency-graphs`, `consumer`, `all` | None                                                |
+| `style`                                                                                   | Optional repository root; defaults to this checkout |
+| `style-report`                                                                            | Required report JSON path                           |
+| `imports`                                                                                 | Required Wasm artifact path                         |
+| `dependency-fixture`                                                                      | Required dependency tree text path                  |
+
+Paths resolve from this checkout. Prefix a path beginning with `-` with `./`.
+Unsupported options and trailing arguments fail with usage before child execution.
+To keep nested Cargo commands offline, set the inherited environment explicitly:
+
+```sh
+CARGO_NET_OFFLINE=true cargo xtask consumer
+```
+
+`cargo xtask consumer --offline` is rejected; xtask does not implement Cargo flag
+propagation. Offline execution requires the dependencies to be cached already.
+
 ## Reproduce
 
 The checked-in toolchain selects Rust 1.99.1, rustfmt, Clippy and all three Wasm
@@ -37,7 +59,58 @@ dispatches a `Press` event and requires the corrupted report and second commit.
 The guest's small unsafe FFI wrappers implement that pinned synchronous copy ABI;
 core and the host harness forbid unsafe code.
 
-## Current v17 Compute Budget receipt
+## Current v18 subscription receipt
+
+Signed executable source `eff549b358c2e0f1ae635884b9cb67dc94b6c4ba` integrates
+accepted final Compute Budget parent `87d04bc42af263d135ea078be30865511335f52e`,
+corrected subscription source `24f8b8a11b5f0b449c0b7695abf136fd71f20fe7`, and
+the independently accepted private fuel correction
+`6e2e59e1af03e3bea2c3d2351a2d20a240f190bb`. The suite is
+`solana-kit-core-v18`. Both reports preserve the first 77 case IDs, order and
+result lines from the final Compute Budget parent, then append four
+[subscription protocol groups](subscription-runtime.md).
+
+On 2026-10-22, the full command with `CARGO_NET_OFFLINE=true` and
+`WASM_BINDGEN_TEST_DRIVER_TIMEOUT=30` passed from that integrated source.
+Runtime tools were Rust 1.99.1, Chrome 155.0.8059.85, ChromeDriver 155.0.8059.84,
+Wasmtime 50.0.0, and the pinned actual LeptosKit host above.
+
+| Actual host               | Canonical                   | Corruption control             |
+| ------------------------- | --------------------------- | ------------------------------ |
+| Native command            | 81/81, exit 0               | 80/81, exit 1                  |
+| Real Chrome               | Full 81/81 report checked   | Full 80/81 report checked      |
+| Wasmtime Preview 1        | 81/81, exit 0               | 80/81, exit 1                  |
+| Wasmtime Preview 2        | 81/81, exit 0               | 80/81, exit 1                  |
+| Actual LeptosKit WasmHost | Full 81/81 JSON, one commit | Full 80/81 JSON, second commit |
+
+Only `sha256-fips-abc` fails under corruption. The actual interpreter also
+requires a fresh one-fuel host to trap before any report commit. Its normal
+finite allowance is checked `15,000,000 × EXPECTED_CASE_COUNT`, currently
+1,215,000,000 per entry. This pooled allowance includes lazy translation and
+the entire report. It is not an individual-case maximum. The measured final
+guest requires 1,019,911,869 fuel. One less traps after a report commit, so a
+near-completion trap does not establish rollback. See the
+[private host fuel evidence](../../verification/leptoskit/README.md).
+
+All assertions and the 32-cycle lifecycle fixture remain unchanged. The private
+host alone uses an optimized build. No SDK default or acknowledgement deadline
+changed. All nine subscription families execute complete in-memory text-frame
+I/O. These results establish no WebSocket, validator, installed-app or device
+networking support. The 173-ID subscription receipt remains 68 partial and
+105 pending, with transport, pooling, ping, reconnect and confirmation work open.
+
+The same command passes import/dependency policies, all forbidden controls and
+the extracted packaged-core consumer's five groups. Guest imports remain
+exactly `leptoskit::{node_create,node_set_props,commit}`. Executed artifact hashes
+are relative to the owned checkout.
+
+```text
+546750535be05157773eecb2984ac5e6120de238dd814c90ece524504cf52cf5  target/wasm32-wasip1/debug/solana_kit_conformance.wasm
+629a2a8207c452fb14fed23ff146ed9b82e2cdf2c49dc6bde62349f9a085a38d  target/wasm32-wasip2/debug/solana_kit_conformance.wasm
+2e35bfc7f379c33f76eadc8adf85fb669b14c13a75e7fe66afbcbfc08aec0a44  target/wasm32-unknown-unknown/release/solana_kit_conformance_guest.wasm
+```
+
+## Historical v17 Compute Budget receipt
 
 Signed executable source `cedc862fa559cb5430c10e8fbc9bb4c7a4d6aedf` merges the
 accepted offchain parent `87b1816163fa4c7b0e6fe82e1619a5d1d962c462` and executes
