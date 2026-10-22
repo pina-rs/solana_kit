@@ -3,8 +3,9 @@
 The reviewed Window Fetch adapter and its original six-group browser fixture are
 byte-identical to `7ec4668035eb0c9b6ee24fdb1752414767d7de43`. They now coexist
 with the reviewed native transport, System client, node operations, and numeric
-codecs. Executed integration source is `374d6ad`, whose numeric parent is
-`9a824a11ff68fda859dbeaf337fb3079257b5bf1`. This SDK is exclusively for off-chain
+codecs. Executed integration source is
+`2b7fc27fe5320cb17dfd7aa52a89864953ead04a`, whose numeric parent is
+`370c60218f924655b5b2da13d9d13b060bc31f46`. This SDK is exclusively for off-chain
 application code. Use Pina or official Solana program libraries on-chain.
 
 The original [browser receipt](browser-http.md) describes the supported API and
