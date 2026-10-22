@@ -83,3 +83,9 @@ impl Transport for NativeHttp {
         }
     }
 }
+
+mod websocket;
+mod websocket_config;
+mod websocket_connect;
+pub use websocket::{NativeWebSocket, WsError};
+pub use websocket_config::WsConfig;

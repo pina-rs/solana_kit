@@ -1,6 +1,6 @@
 # solana_kit_native
 
-Tokio HTTP/1 and verified TLS transport for off-chain Solana application code.
+Tokio HTTP/1 and text WebSocket transports with verified TLS for off-chain Solana application code.
 Use Pina or official Solana program libraries for on-chain programs.
 
 `NativeHttp::new(endpoint, HttpConfig::default())` implements the public
@@ -28,7 +28,7 @@ policy. Compressed bodies are not automatically decompressed.
 The named native future boxes one Send future because stable Rust cannot name
 an async-block associated GAT. Generic Tokio multiworker callers retain Send;
 portable/local client futures are unchanged. HTTP/2, connection pooling,
-WebSockets, browser/WASI/guest adapters and device journeys are separate work.
+browser/WASI/guest socket adapters and device journeys are separate work.
 
 ```rust
 use solana_kit_client::{Client, Limits};
@@ -42,3 +42,40 @@ let client = Client::new(transport, Limits::default());
 
 Construction performs no network request. See the repository's native HTTP
 verification receipt for executed local controls and remaining platform limits.
+
+`NativeWebSocket::connect(endpoint, WsConfig::default()).await` opens one
+caller-owned text socket. The endpoint explicitly selects `ws://` or `wss://`.
+Use WSS for untrusted networks. There is no private-destination filter. Accept
+endpoints only from trusted application configuration. Caller headers supply
+authentication. Userinfo, fragments, protocol overrides and cookie headers reject.
+Certificate chain and destination-name verification cannot be disabled.
+
+`send(&str)` checks its payload length before copying and flushes within a
+deadline. Incoming frame and reassembled-message limits apply during parsing.
+The write buffer has a hard encoded-byte limit. Ping and pong frames flush while
+receiving. Binary data, invalid frames, abrupt EOF and exceeded budgets return
+redacted typed errors. The fixed Tungstenite handshake guard permits at most
+65,536 input bytes plus one bounded read chunk and limits tiny packet attacks.
+An observed receive/send error or timeout drops the owned socket. Oversized local
+send input rejects before touching the socket. This is not a whole-process memory
+ceiling. Do not enable dependency wire-level trace logging for credentialed
+connections. Tungstenite trace logs can include complete requests and frames.
+
+Use a separate `solana_kit_client::subscriptions::Connection`. Send each outbound
+UTF-8 frame, ingest each complete received text with that socket's generation,
+and drive acknowledgement deadlines with caller-owned monotonic ticks. Drop the
+socket on a current-generation ingest failure. Dropping Connection releases its
+local state and does not drop this independent socket.
+
+Cancelling a borrowed `receive()` retains the persistent socket and its bounded
+parser. Cancelling a borrowed `send()` can leave a partial write. Drop the socket
+after a cancelled send and do not retry uncertain delivery automatically.
+Cancelling `connect()` drops in-progress I/O. OS DNS resolution may finish later,
+but it cannot send the handshake after cancellation. `close(self)` consumes the
+socket and waits for peer close within one operation deadline. Cancelling that
+consuming future drops its socket. Dropping the socket owner always releases its
+connection locally. No implicit unsubscribe, pool, owned task, reconnect, replay,
+automatic ping timer or retry exists.
+
+The native WebSocket verification receipt records actual loopback WS and fixture
+WSS tests. Browser, WASI, LeptosKit and installed device sockets remain pending.
