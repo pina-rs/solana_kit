@@ -27,6 +27,15 @@ including archive, IDL/source, and license checksums. Subsequent invocations reu
 those archives. No secret, validator, Node installation, or SDK runtime is needed.
 The private crate has its own workspace and lockfile and is never published.
 
+[Generator design CI](../../.github/workflows/codegen-design.yml) runs the six
+private regression tests, rustfmt, warning-denying Clippy, actual generation twice
+with a committed-output drift check after each run, and the independent literal
+52-byte and 94-byte proof. It uses committed fixtures and the private lockfile;
+it does not fetch reference archives. The 18-revision input audit and renderer
+constructor probe described here remain separately executed local evidence,
+not checks rerun by this workflow. Repository-wide style enforcement belongs to
+the SDK verification workflow.
+
 The ledger has 18 rows for 17 clients because Loader v3 and v4 have separate
 upstream revisions. Counts are raw declared schema nodes, not a parity metric.
 `unmodeled` means the source does not explicitly declare that category; it does

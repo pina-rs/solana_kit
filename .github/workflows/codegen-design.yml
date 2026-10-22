@@ -1,0 +1,39 @@
+name: Generator design verification
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  private-generator:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install pinned Rust tools
+        shell: bash
+        run: rustup toolchain install 1.99.1 --profile minimal --component rustfmt --component clippy
+      - name: Check private generator formatting and lints
+        shell: bash
+        run: |
+          cargo +1.99.1 fmt --manifest-path verification/codegen-design/Cargo.toml --check
+          cargo +1.99.1 clippy --locked --manifest-path verification/codegen-design/Cargo.toml --all-targets -- -D warnings
+      - name: Run private generator regression tests
+        shell: bash
+        run: cargo +1.99.1 test --locked --manifest-path verification/codegen-design/Cargo.toml
+      - name: Regenerate twice and reject committed output drift
+        shell: bash
+        run: |
+          cargo +1.99.1 run --locked --manifest-path verification/codegen-design/Cargo.toml -- generate
+          git diff --exit-code -- verification/codegen-design/src/generated.rs
+          cargo +1.99.1 run --locked --manifest-path verification/codegen-design/Cargo.toml -- generate
+          git diff --exit-code -- verification/codegen-design/src/generated.rs
+      - name: Execute independent literal byte proof
+        shell: bash
+        run: cargo +1.99.1 run --locked --manifest-path verification/codegen-design/Cargo.toml -- proof
