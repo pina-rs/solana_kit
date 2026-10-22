@@ -7,6 +7,7 @@ extern crate alloc;
 
 mod encoding;
 mod instruction;
+pub mod transaction;
 mod values;
 
 /// Bounded deterministic binary codecs.
