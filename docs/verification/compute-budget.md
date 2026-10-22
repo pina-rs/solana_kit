@@ -100,8 +100,9 @@ controls exercise every truncated prefix, tag mismatch, foreign program,
 nonempty metas, trailing input and byte budgets. Two portable functions follow
 the first75 cases in the shared `solana-kit-core-v17` suite. Canonical execution
 requires77 passing cases. The corrupt-hash control requires76 passing cases and
-exactly the original hash failure. Native Rust, Chrome and Wasmtime50.0.0
-Preview1 and Preview2 execute these outcomes. The client and conformance crate compile on
+exactly the original hash failure. Native Rust, Chrome, Wasmtime50.0.0
+Preview1 and Preview2, and the actual pinned LeptosKit WasmHost execute these
+outcomes. The client and conformance crate compile on
 wasm32-unknown-unknown, wasm32-wasip1 and wasm32-wasip2.
 
 Rust1.89 executes the public tests and a clean external no_std source consumer
