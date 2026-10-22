@@ -78,6 +78,9 @@ fn main() -> Result<()> {
         .as_deref()
         .context("missing corrupted report")?;
     validate(text, FixtureMode::CorruptHash)?;
-    println!("actual LeptosKit WasmHost: canonical 25/25; corruption 24/25 observed");
+    println!(
+        "actual LeptosKit WasmHost: canonical {EXPECTED_CASE_COUNT}/{EXPECTED_CASE_COUNT}; corruption {}/{EXPECTED_CASE_COUNT} observed",
+        EXPECTED_CASE_COUNT - 1
+    );
     Ok(())
 }
