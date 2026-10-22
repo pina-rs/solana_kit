@@ -82,7 +82,7 @@ confirmation, exact packet boundaries and its actual RPC-listener limitation.
 
 The integrated `solana-kit-core-v6` suite preserves all preceding 42 cases and
 appends three generated System data cases. Local macOS ARM64 execution on
-2026-10-22 at signed checkpoint `14700c4d3358a92d70199b6f22bf1f84dde46b54`
+2026-10-22 at signed checkpoint `4fa22d04fd0a00e115e4ea45ec1d09ca3cc1cb57`
 used Rust 1.99.1, Chrome 155.0.8059.85, ChromeDriver 155.0.8059.84,
 Wasmtime 50.0.0 and the pinned actual LeptosKit host. Clean source and native
 goldens were used for `cargo xtask all`, which exited 0.
@@ -111,14 +111,17 @@ core dependency controls pass. All five packaged-core consumer tests pass.
 Executed v6 artifact SHA-256 values (local debug WASI artifacts, release guest):
 
 ```text
-7b9d2c6e7cd0f3eff4c9749bfc10a7c530826f6c692e776c3c81fba132585155  wasm32-wasip1
-fb574c677217ea7d06273ce765674c9973707d5aa1f29d31c127ddce46c8b0e1  wasm32-wasip2
-9d24ab5620f010a2b7042be8318262d7c6dda21fe47c759346269a4fa4e8620e  leptoskit-guest
+93e9f7d7e0223ce02b59aac1be3527035876a37a358f47f6351b554e1fe59eab  wasm32-wasip1
+acfdb71cce02272d2bf018fd7434e4474a27a19814f3c3529654489ec9f0230f  wasm32-wasip2
+6c0e1542a29ff9a44ab99baa8d41052f759bc61f56fa5168a647df310e3601fb  leptoskit-guest
 ```
 
-Core production and the reviewed generated System source/schema/emitter are
-unchanged by integration. The [System receipt](system-data.md) retains all
-241 canonical IDs: 83 implemented data mappings, 28 partial and 130 pending.
+Core production matches the corrected fixed-point parent
+`ce571db4ae71ce22910d5cf3f4c822a215308431`. Its five finite-presentation
+regression tests also execute natively and on MSRV 1.89; they are separate from
+the 45 portable cases. The reviewed generated System source/schema/emitter and
+all portable case assertions are unchanged. The [System receipt](system-data.md)
+retains all 241 canonical IDs: 83 implemented data mappings, 28 partial and 130 pending.
 This proves bounded synchronous off-chain data behavior; it does not complete
 System builders, validator execution, the full program client or device journeys.
 System source-consumer checks use no patches; clean-registry packaging remains
@@ -318,8 +321,8 @@ cargo xtask dependency-fixture xtask/fixtures/forbidden-dependency.txt
 
 Both commands must exit nonzero. The combined gate instead asserts each expected
 rejection and fails if a negative fixture succeeds. Normal/build dependency trees
-are inspected for native, plain Wasm, Preview 1, and Preview 2, selecting plain,
-crypto, fixed-points and combined features. A closed crate-name allowlist rejects Tokio and other new dependencies;
+are inspected for native, plain Wasm, Preview 1, and Preview 2, with and without
+crypto. A closed crate-name allowlist rejects Tokio and other new dependencies;
 the lockfile pins versions. Address-only core selects only `bs58`. Native crypto
 also selects CPU-detection `libc`; the plain Wasm crypto tree selects neither.
 Host/UI/test-runner dependencies remain outside these selected core closures.
