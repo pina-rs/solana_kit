@@ -36,7 +36,49 @@ dispatches a `Press` event and requires the corrupted report and second commit.
 The guest's small unsafe FFI wrappers implement that pinned synchronous copy ABI;
 core and the host harness forbid unsafe code.
 
-## Current v10 node RPC receipt
+## Current v11 numeric and text codec receipt
+
+The `solana-kit-core-v11` suite preserves the first 56 case lines and appends
+three numeric and text groups. Clean signed source
+`370c60218f924655b5b2da13d9d13b060bc31f46` executed `cargo xtask all` on 2026-10-22.
+The groups check leading-zero radix conversion, odd hexadecimal tails, configured
+UTF-8, exact signed and unsigned 256-bit text, invalid radix and symbol rejection,
+allocation limits, tolerant Base64 padding, and invalid unused-bit rejection.
+The [numeric and string receipt](../parity/numeric-string-codecs.md) retains all
+88 canonical IDs, including seven partial capabilities.
+
+| Actual host               | Canonical                   | Corruption control             |
+| ------------------------- | --------------------------- | ------------------------------ |
+| Native command            | 59/59, exit 0               | 58/59, exit 1                  |
+| Real Chrome               | Full 59/59 report checked   | Full 58/59 report checked      |
+| Wasmtime Preview 1        | 59/59, exit 0               | 58/59, exit 1                  |
+| Wasmtime Preview 2        | 59/59, exit 0               | 58/59, exit 1                  |
+| Actual LeptosKit WasmHost | Full 59/59 JSON, one commit | Full 58/59 JSON, second commit |
+
+Rust 1.99.1, Chrome 155.0.8059.85, ChromeDriver 155.0.8059.84, Wasmtime 50.0.0,
+and the pinned actual LeptosKit host above performed these runs. Only
+`sha256-fips-abc` fails in corruption mode. All 32 core normal/build selections,
+16 numeric normal-only queries, four System queries, four client queries and
+their negative controls pass. The core controls reject Tokio under all eight
+feature policies and Base64 leakage under all four policies without text codecs.
+Default core still selects only `bs58`. Optional `text-codecs` adds `base64`.
+The separate System and client policies retain their reviewed closures. Compiled
+guest imports remain exactly `leptoskit::{node_create,node_set_props,commit}`.
+All five extracted packaged-core consumer tests pass.
+
+```text
+7e56e1a969a705c64b76af2d6238dd4cab3dba6ff8b4573e5c74e12cc9e4ce40  wasm32-wasip1
+6bd6ae7d162a4e1f78582b2d726a0e3ae022f84ccf997ef1083cc7227389ecbf  wasm32-wasip2
+218b6b0918a8355c8c7d8469a655d72e991224f6ce49d14a3ae6e008fa6a44a1  leptoskit-guest
+```
+
+An ordinary external Rust 1.89 consumer also executes the unchanged independent
+19,158-row Dart oracle with zero mismatches. The separately reviewed standalone
+NUL-removal correction preserves every other scalar, including repeated BOMs.
+This receipt establishes bounded off-chain client behavior. It does not establish
+installed-device journeys, complete numeric or string parity, or on-chain support.
+
+## Historical v10 node RPC receipt
 
 The `solana-kit-core-v10` suite preserves the first 53 case lines and appends
 three public-client node protocol groups. Clean signed source
