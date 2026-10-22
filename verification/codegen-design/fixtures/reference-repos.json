@@ -1,0 +1,280 @@
+{
+  "repos": [
+    {
+      "name": "kit",
+      "path": ".repos/kit",
+      "url": "https://github.com/anza-xyz/kit",
+      "ref": {
+        "type": "tag",
+        "value": "v8.5.0"
+      },
+      "notes": "upstream TypeScript source from anza-xyz/kit (v8.4.0)",
+      "package": "solana_kit",
+      "checkedCommit": "f35eab56d68a4d4421a5dbf018ad3cf6c3423d62"
+    },
+    {
+      "name": "espresso-cash-public",
+      "path": ".repos/espresso-cash-public",
+      "url": "https://github.com/brij-digital/espresso-cash-public",
+      "ref": {
+        "type": "branch",
+        "value": "master"
+      },
+      "notes": "Dart Solana reference from brij-digital/espresso-cash-public (default branch master)",
+      "checkedCommit": "77150680d6bfcd4029996b073594d73305189d91"
+    },
+    {
+      "name": "helius-sdk",
+      "path": ".repos/helius-labs/helius-sdk",
+      "url": "https://github.com/helius-labs/helius-sdk",
+      "ref": {
+        "type": "tag",
+        "value": "v3.3.0"
+      },
+      "package": "solana_kit_helius",
+      "notes": "Helius SDK reference; release tag has no GitHub Release object, so the tag itself is the pin",
+      "checkedCommit": "1a37d6f0d9ebd6220d7e9047af3e31d0b0bc105e"
+    },
+    {
+      "name": "mobile-wallet-adapter",
+      "path": ".repos/mobile-wallet-adapter",
+      "url": "https://github.com/solana-mobile/mobile-wallet-adapter",
+      "ref": {
+        "type": "tag",
+        "value": "@solana-mobile/mobile-wallet-adapter-protocol-kit@3.0.1"
+      },
+      "notes": "Solana Mobile Wallet Adapter reference. The same commit carries @solana-mobile/wallet-standard-mobile@0.6.0, so one tag pins both the protocol kit and the wallet standard",
+      "package": "solana_kit_mobile_wallet_adapter",
+      "packages": [
+        "solana_kit_mobile_wallet_adapter",
+        "solana_kit_mobile_wallet_adapter_protocol"
+      ],
+      "checkedCommit": "100e023048b7ffd3a67af2bf334f4bda3b9d8d7c"
+    },
+    {
+      "name": "system",
+      "path": ".repos/solana-program/system",
+      "url": "https://github.com/solana-program/system",
+      "ref": {
+        "type": "tag",
+        "value": "js@v0.16.0"
+      },
+      "package": "solana_kit_system",
+      "issue": 131,
+      "notes": "Solana system JS client. js@v0.15.0 only bumps the Codama JS renderer and regenerates the TypeScript client; idl.json is byte-identical, so the Dart output is unchanged",
+      "checkedCommit": "e9cb05138ea802b01f1ddf79ea140dcd765c9db6"
+    },
+    {
+      "name": "token",
+      "path": ".repos/solana-program/token",
+      "url": "https://github.com/solana-program/token",
+      "ref": {
+        "type": "tag",
+        "value": "js@v0.18.0"
+      },
+      "package": "solana_kit_token",
+      "notes": "SPL Token JS client. js@v0.17.0 only bumps the Codama JS renderer and regenerates the TypeScript client; idl.json is byte-identical, so the Dart output is unchanged",
+      "checkedCommit": "31646dce3df0a03d468a14913f01b9fd3c3adad0"
+    },
+    {
+      "name": "token-2022",
+      "path": ".repos/solana-program/token-2022",
+      "url": "https://github.com/solana-program/token-2022",
+      "ref": {
+        "type": "tag",
+        "value": "js@v0.20.0"
+      },
+      "package": "solana_kit_token_2022",
+      "notes": "SPL Token-2022 JS client. js@v0.17.0 renamed the program node to its canonical camelCase name and swapped the generated extension array for a hand-written TLV codec that stops at the first Uninitialized header, so accounts with unused extension space (including two-byte multisig padding) decode instead of throwing. js@v0.19.0 only bumps the Codama JS renderer and regenerates the TypeScript client; idl.json is byte-identical, so the Dart output is unchanged",
+      "checkedCommit": "e6b4af36a3dbdfe6f66aaf0c564427fa56671bb0"
+    },
+    {
+      "name": "subscriptions",
+      "path": ".repos/solana-foundation/subscriptions",
+      "url": "https://github.com/solana-foundation/subscriptions",
+      "ref": {
+        "type": "tag",
+        "value": "ts-client-v0.5.0"
+      },
+      "package": "solana_kit_subscriptions",
+      "notes": "Solana Foundation Subscriptions program IDL and TypeScript client for Codama Dart code generation",
+      "checkedCommit": "5a347ffaa969036061d274d3c91e0277962e2b51"
+    },
+    {
+      "name": "associated-token-account",
+      "path": ".repos/solana-program/associated-token-account",
+      "url": "https://github.com/solana-program/associated-token-account",
+      "ref": {
+        "type": "tag",
+        "value": "program@v8.0.0"
+      },
+      "package": "solana_kit_associated_token_account",
+      "issue": 132,
+      "checkedCommit": "0b867b5340cd001e5980d8ca7928effc4e10015c"
+    },
+    {
+      "name": "address-lookup-table",
+      "path": ".repos/solana-program/address-lookup-table",
+      "url": "https://github.com/solana-program/address-lookup-table",
+      "ref": {
+        "type": "tag",
+        "value": "js@v0.16.0"
+      },
+      "package": "solana_kit_address_lookup_table",
+      "issue": 134,
+      "notes": "Solana address-lookup-table JS client. js@v0.15.0 bumps the Codama JS renderer and regenerates the TypeScript client alongside Rust dependency bumps; idl.json is byte-identical, so the Dart output is unchanged",
+      "checkedCommit": "03b77b9e852c6f4c361f47f49823b61fc2088f49"
+    },
+    {
+      "name": "memo",
+      "path": ".repos/solana-program/memo",
+      "url": "https://github.com/solana-program/memo",
+      "ref": {
+        "type": "tag",
+        "value": "js@v0.16.0"
+      },
+      "package": "solana_kit_memo",
+      "issue": 135,
+      "notes": "SPL Memo program JS client. js@v0.14.0 points the generated client at the v4 memo program and adds the memo extraction helpers; the v1 and v3 addresses stay available as legacy constants. js@v0.15.0 only bumps the Codama JS renderer and regenerates the TypeScript client; idl.json is byte-identical, so the Dart output is unchanged",
+      "checkedCommit": "4a487432a7a57cc3739db43c6e7ac12fc96ff338"
+    },
+    {
+      "name": "compute-budget",
+      "path": ".repos/solana-program/compute-budget",
+      "url": "https://github.com/solana-program/compute-budget",
+      "ref": {
+        "type": "tag",
+        "value": "js@v0.20.0"
+      },
+      "package": "solana_kit_compute_budget",
+      "issue": 133,
+      "notes": "Solana compute-budget JS client for Codama Dart generation. js@v0.19.0 only bumps the Codama JS renderer and regenerates the TypeScript client; idl.json is byte-identical, so the Dart output is unchanged",
+      "checkedCommit": "e189b8ca25ecc283354b96f12cdcd6d7f4246921"
+    },
+    {
+      "name": "stake",
+      "path": ".repos/solana-program/stake",
+      "url": "https://github.com/solana-program/stake",
+      "ref": {
+        "type": "tag",
+        "value": "js@v0.11.0"
+      },
+      "package": "solana_kit_stake",
+      "issue": 136,
+      "notes": "Solana stake JS client. js@v0.10.0 moves the Codama IDL format to 1.9.2 and the program version to 5.0.0, but the IDL is byte-identical apart from those version fields and the renderer emits no program version, so the Dart output is unchanged",
+      "checkedCommit": "ba25b6c883e0144f0dded94ac8448acb65237e1d"
+    },
+    {
+      "name": "config",
+      "path": ".repos/solana-program/config",
+      "url": "https://github.com/solana-program/config",
+      "ref": {
+        "type": "tag",
+        "value": "solana-config-program-client@v1.1.0"
+      },
+      "package": "solana_kit_config",
+      "issue": 137,
+      "checkedCommit": "b60f4f22ea5ace8ae15336f3dd4cbad9ee50dcce"
+    },
+    {
+      "name": "loader-v3",
+      "path": ".repos/solana-program/loader-v3",
+      "url": "https://github.com/solana-program/loader-v3",
+      "ref": {
+        "type": "tag",
+        "value": "js@v0.8.0"
+      },
+      "package": "solana_kit_loader",
+      "issue": 138,
+      "notes": "Solana loader-v3 JS client. js@v0.7.0 only bumps the Codama JS renderer and regenerates the TypeScript client; idl.json is byte-identical, so the Dart output is unchanged",
+      "checkedCommit": "b9c8ab343229851ebaa1607ec64b1d9a9a3ffc41"
+    },
+    {
+      "name": "loader-v4",
+      "path": ".repos/solana-program/loader-v4",
+      "url": "https://github.com/solana-program/loader-v4",
+      "ref": {
+        "type": "commit",
+        "value": "76f8ce27d3bcb7492e5adb83c6eae8b5a6d2ee39"
+      },
+      "package": "solana_kit_loader",
+      "issue": 138,
+      "notes": "Pinned to a commit because upstream still publishes no versioned release for this program. The move to 76f8ce27 only bumps the Codama JS renderer and regenerates the TypeScript client; idl.json is byte-identical, so the Dart output is unchanged",
+      "checkedCommit": "76f8ce27d3bcb7492e5adb83c6eae8b5a6d2ee39"
+    },
+    {
+      "name": "account-compression",
+      "path": ".repos/solana-program/account-compression",
+      "url": "https://github.com/solana-program/account-compression",
+      "ref": {
+        "type": "branch",
+        "value": "ac-mainnet-tag"
+      },
+      "package": "solana_kit_spl_account_compression",
+      "issue": 131,
+      "notes": "SPL Account Compression IDL for Codama Dart code generation (default branch ac-mainnet-tag)",
+      "checkedCommit": "b229799e395cb78867e3753cf27534ecac375843"
+    },
+    {
+      "name": "mpl-bubblegum",
+      "path": ".repos/metaplex-foundation/mpl-bubblegum",
+      "url": "https://github.com/metaplex-foundation/mpl-bubblegum",
+      "ref": {
+        "type": "tag",
+        "value": "release/bubblegum@2.0.0"
+      },
+      "package": "solana_kit_mpl_bubblegum",
+      "issue": 131,
+      "notes": "Metaplex Bubblegum Anchor IDL at idls/bubblegum.json; convert with @codama/nodes-from-anchor before rendering. Pinned to the Core/Rust client release tag release/bubblegum@2.0.0 rather than a default-branch commit: the tag is the newest immutable ref that carries the DAS inherited-SFBP work (JS client v6.0.0 leaf metadata, commit 79e1a195), and the four commits between it and main only touch CI release workflows and crate manifests. The JS client's own v6.0.0 release is untagged, so this tag is the closest versioned pin upstream publishes.",
+      "checkedCommit": "79e1a1954bddb7fe5dcd52a5570a66a9f7d465e4"
+    },
+    {
+      "name": "mpl-token-metadata",
+      "path": ".repos/metaplex-foundation/mpl-token-metadata",
+      "url": "https://github.com/metaplex-foundation/mpl-token-metadata",
+      "ref": {
+        "type": "commit",
+        "value": "353d01be4af3018e1daf49d0cd35ba9f731d9c9c"
+      },
+      "package": "solana_kit_mpl_token_metadata",
+      "notes": "Metaplex Token Metadata Shank IDL at idls/token_metadata.json for Codama Dart generation. The move from 349e0610 only fixes the JS client repository URL; the IDL is byte-identical",
+      "checkedCommit": "353d01be4af3018e1daf49d0cd35ba9f731d9c9c"
+    },
+    {
+      "name": "mpl-core",
+      "path": ".repos/metaplex-foundation/mpl-core",
+      "url": "https://github.com/metaplex-foundation/mpl-core",
+      "ref": {
+        "type": "tag",
+        "value": "release/core@0.15.3"
+      },
+      "package": "solana_kit_mpl_core",
+      "notes": "Metaplex Core Shank IDL at idls/mpl_core.json for Codama Dart generation",
+      "checkedCommit": "8c5cee35199a7d103e181de7b13f2e20b1e20103"
+    },
+    {
+      "name": "squads-v4",
+      "path": ".repos/Squads-Protocol/v4",
+      "url": "https://github.com/Squads-Protocol/v4",
+      "ref": {
+        "type": "commit",
+        "value": "af94153ff77a28b6effe46b9c94baaa93742b48c"
+      },
+      "package": "solana_kit_squads",
+      "notes": "Squads V4 multisig Shank IDL at sdk/multisig/idl/squads_multisig_program.json for Codama Dart generation",
+      "checkedCommit": "af94153ff77a28b6effe46b9c94baaa93742b48c"
+    },
+    {
+      "name": "solana-attestation-service",
+      "path": ".repos/solana-foundation/solana-attestation-service",
+      "url": "https://github.com/solana-foundation/solana-attestation-service",
+      "ref": {
+        "type": "commit",
+        "value": "5b64cf09843d62ca800f7d73f8438ad3505de70e"
+      },
+      "package": "solana_kit_attestation_service",
+      "notes": "Solana Attestation Service Shank IDL at idl/solana_attestation_service.json for Codama Dart generation",
+      "checkedCommit": "5b64cf09843d62ca800f7d73f8438ad3505de70e"
+    }
+  ]
+}
