@@ -35,3 +35,11 @@ The accepted author suite has 23 tests. The pinned Dart API/protocol suite has
 87 tests. The [scoped receipt](../parity/subscriptions.md) retains all 173 IDs as
 68 partial and 105 pending. Transport adapters, pooling, coalescing, ping,
 reconnect, historical reconciliation and confirmation remain open.
+
+The final integrated executable is
+`eff549b358c2e0f1ae635884b9cb67dc94b6c4ba`. Full `cargo xtask all` with inherited
+offline mode passes every named host at 81/81 and observes only the original
+hash failure at 80/81. The [runtime receipt](runtimes.md) records tool versions,
+artifact hashes, finite interpreter fuel limits and the actual one-fuel negative.
+The [normalized command receipt](../../verification/subscriptions-design/runtime.tsv)
+retains the checks without personal filesystem prefixes.
