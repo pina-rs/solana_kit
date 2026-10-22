@@ -49,6 +49,18 @@ fn pinned_dart_vectors_match_official_rust_and_exact_envelope() {
         );
         official(&wire);
 
+        let (message, signatures) = decode(&wire).unwrap();
+        let message_end = wire.len() - signatures.len() * 64;
+
+        for (address, signature) in message.addresses.iter().zip(&signatures) {
+            solana_kit_core::crypto::verify(
+                &solana_kit_core::Address::from_bytes(*address),
+                &wire[..message_end],
+                &solana_kit_core::Signature::from_bytes(*signature),
+            )
+            .unwrap();
+        }
+
         for length in 0..wire.len() {
             assert!(decode(&wire[..length]).is_err(), "{name} prefix {length}");
         }
