@@ -149,3 +149,38 @@ pub(super) fn bounded_operand(value: &BigInt) -> Result<(), Error> {
 
     Ok(())
 }
+
+impl<const RADIX: u8> FixedPoint<RADIX> {
+    /// Reference-compatible kind tag for validated decimal or binary values.
+    pub const fn kind(&self) -> &'static str {
+        if RADIX == 10 {
+            "decimalFixedPoint"
+        } else {
+            "binaryFixedPoint"
+        }
+    }
+
+    /// Tests optional shape constraints; the Rust type already proves kind and validity.
+    pub fn has_shape(
+        &self,
+        signedness: Option<Signedness>,
+        total_bits: Option<u32>,
+        scale: Option<u32>,
+    ) -> bool {
+        signedness.is_none_or(|value| value == self.shape.signedness())
+            && total_bits.is_none_or(|value| value == self.shape.total_bits())
+            && scale.is_none_or(|value| value == self.shape.scale())
+    }
+
+    /// Enforces optional shape constraints without unchecked dynamic downcasts.
+    pub fn assert_shape(
+        &self,
+        signedness: Option<Signedness>,
+        total_bits: Option<u32>,
+        scale: Option<u32>,
+    ) -> Result<(), Error> {
+        self.has_shape(signedness, total_bits, scale)
+            .then_some(())
+            .ok_or(Error::ShapeMismatch)
+    }
+}

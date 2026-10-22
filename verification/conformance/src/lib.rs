@@ -12,15 +12,16 @@ mod accounts_sysvars;
 mod addresses;
 mod codecs;
 mod cryptography;
+mod fixed_points;
 mod instructions;
 mod transactions;
 
 use alloc::{vec, vec::Vec};
 
 /// Immutable suite identity. Changes to fixtures or assertions require a new ID.
-pub const SUITE_ID: &str = "solana-kit-core-v4";
+pub const SUITE_ID: &str = "solana-kit-core-v5";
 /// Required number of cases; a truncated report cannot pass conformance.
-pub const EXPECTED_CASE_COUNT: usize = 39;
+pub const EXPECTED_CASE_COUNT: usize = 42;
 
 /// Selects authentic fixtures or the intentionally incorrect hash oracle.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -125,6 +126,8 @@ pub fn run(mode: FixtureMode) -> Report {
     ];
     cases.extend(transactions::cases());
     cases.extend(accounts_sysvars::cases());
+
+    cases.extend(fixed_points::cases());
 
     Report {
         suite_id: SUITE_ID,

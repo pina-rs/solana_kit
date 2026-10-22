@@ -74,3 +74,25 @@ assert_eq!(bytes, [3, 0, 0, 0, b'h', 0xc3, 0xa9]);
 assert_eq!(codec.decode(&bytes, Limits::new(7, 3))?, "hé");
 # Ok::<(), solana_kit_core::codecs::Error>(())
 ```
+
+The optional `fixed-points` feature adds exact decimal and binary fixed points
+through `num-bigint`, using validated immutable shapes and checked arithmetic.
+It accepts widths through 4096 bits, scales through 4096, decimal input through
+8192 bytes, and ratio/scalar operands through 32768 magnitude bits. These bounds
+keep caller-controlled allocations finite. Binary fractional bits may exceed
+storage width. No exact operation converts through floating point; `to_number`
+is an explicitly lossy presentation helper. Codec decoding shares the core byte
+and allocation budgets and rejects trailing bytes; use `decode_prefix` for
+framed or offset reads. Shapes must be byte aligned for codecs.
+
+```rust
+# fn main() -> Result<(), Box<dyn std::error::Error>> {
+# #[cfg(feature = "fixed-points")] {
+use solana_kit_core::fixed_points::{DecimalShape, Rounding, Signedness};
+let cents = DecimalShape::new(Signedness::Signed, 64, 2)?;
+let price = cents.parse("12.35", Rounding::Strict)?;
+assert_eq!(price.checked_div_scalar(2, Rounding::Nearest)?.to_string(), "6.18");
+# }
+# Ok(())
+# }
+```

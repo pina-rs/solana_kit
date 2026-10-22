@@ -124,6 +124,7 @@ impl<const RADIX: u8> Shape<RADIX> {
     }
 }
 
+/// Truncating division needs sign-aware adjustments; nearest ties move away from zero.
 pub(super) fn divide(
     numerator: BigInt,
     denominator: &BigInt,
@@ -142,6 +143,7 @@ pub(super) fn divide(
 
     let positive = numerator.sign() == denominator.sign();
     let direction = if positive { 1 } else { -1 };
+
     let increment = match rounding {
         Rounding::Strict => return Err(Error::PrecisionLoss),
         Rounding::Trunc => false,

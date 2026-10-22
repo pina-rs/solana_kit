@@ -4,7 +4,12 @@
 //! 0..=4096; decimal input is at most 8192 bytes. These explicit resource bounds
 //! replace the reference's unbounded allocations. All constructors validate.
 
+mod codec;
 mod shape;
+mod text;
+pub use codec::FixedPointCodec;
+pub use text::{Base10, FormatOptions};
+
 mod value;
 pub use value::FixedPoint;
 
