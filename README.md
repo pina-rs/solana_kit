@@ -1,7 +1,11 @@
 # solana_kit
 
-A Rust Solana toolkit for native applications, browser WebAssembly, WASI, and
-embedded WebAssembly applications such as LeptosKit.
+An off-chain Rust Solana client SDK for native applications, browser WebAssembly,
+WASI, and embedded WebAssembly applications such as LeptosKit.
+
+Solana Kit is only for off-chain application code. Do not use it in Solana
+on-chain programs; use Pina or official Solana program libraries instead.
+`no_std + alloc` enables portable clients and does not imply on-chain support.
 
 The first implemented slice is `solana_kit_core` 0.1.0: portable addresses,
 hashes, signatures, ordered instructions, account roles, and optional deterministic

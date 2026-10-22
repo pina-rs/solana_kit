@@ -5,6 +5,11 @@ contracts, not available SDK APIs. The first portability experiments may refine
 them before they become public. Source grounding is in
 [reference findings](../planning/reference-findings.md).
 
+Solana Kit is exclusively an off-chain client SDK for application code. None of
+its crates target Solana on-chain programs; use Pina or official Solana program
+libraries for those programs. `no_std + alloc` enables portable clients and is
+not an on-chain support promise. All environments below run off-chain clients.
+
 ## Caller experience
 
 A native application chooses a Tokio adapter. A browser chooses a browser
@@ -69,9 +74,10 @@ dependency. Internal compiler/wire modules remain private. JSON representation
 belongs to the client; serde does not define transaction wire format.
 
 The initial client may use `std` collections while remaining executor independent;
-do not promise no_std RPC until proved. Programs need core, not the client or
-umbrella. Expensive algorithms remain optional. Measure actual address-only,
-transaction-only, and full-client consumers before splitting the core further.
+do not promise no_std RPC until proved. Program client codecs and builders depend
+on core; the on-chain programs themselves are outside this SDK. Expensive
+algorithms remain optional. Measure actual address-only, transaction-only, and
+full-client consumers before splitting the core further.
 
 Explicit adapter dependencies select environments. Cargo features add capabilities;
 they must not globally select one environment. Browser and interpreted guests
@@ -189,7 +195,8 @@ Adopt the domain-crate candidate's independent program versioning, explicit driv
 ownership, and singleton guest-event routing constraint. Correct its synchronous
 entropy sketch, its pubsub/program crate-name collision, and its assumption that
 dropping an executor task handle cancels work. Keep `solana_kit_subscriptions`
-for the reference on-chain program; RPC pubsub lives in client modules.
+for the off-chain client of the reference Subscriptions program; RPC pubsub lives
+in client modules.
 
 The rejected many-domain-crate design offers finer compilation cuts, but creates
 more version edges before measurements show a benefit. A 71-crate literal port

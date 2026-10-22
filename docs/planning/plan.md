@@ -2,10 +2,16 @@
 
 ## Outcome
 
-Provide the capabilities of the pinned Dart Solana Kit ecosystem through
-idiomatic Rust APIs usable in native applications, browsers, WASI hosts, and
-LeptosKit's interpreted Wasm guests on desktop, Android, and iOS. Use small
+Provide an exclusively off-chain client SDK for application code, covering the
+capabilities of the pinned Dart Solana Kit ecosystem through idiomatic Rust APIs
+usable in native applications, browsers, WASI hosts, and LeptosKit's interpreted
+Wasm guests on desktop, Android, and iOS. Use small
 dependency graphs, audited cryptography, and monochange for releases.
+
+Do not use Solana Kit in Solana on-chain programs; use Pina or official Solana
+program libraries instead. `no_std + alloc` supports portable clients, not
+on-chain deployment. Every implementation phase and runtime target below stays
+within this off-chain client scope.
 
 The reference audit covers 70 Dart packages and one Codama renderer. It includes
 17 program clients, six external integrations, two wallet protocol packages,
@@ -178,8 +184,8 @@ Attestation Service, and the recurring-payments Subscriptions program. The last
 is distinct from RPC subscriptions.
 
 Acceptance: generator golden output and drift check, negative IDLs/security cases,
-byte oracles, and pinned validator integration. No program pulls an Agave client
-or validator into application normal/build dependencies.
+byte oracles, and pinned validator integration. No program client pulls an Agave
+client or validator into application normal/build dependencies.
 
 ## Phase 7: wallets and application integration
 
@@ -211,6 +217,9 @@ dependency allowlists pass, clean-consumer packaging succeeds, API/docs agree,
 and release readiness succeeds. Publish only implemented crates.
 
 ## Runtime evidence policy
+
+These environments host off-chain application code. Solana on-chain program
+execution is outside the SDK's supported targets.
 
 | Environment              | Required evidence                                                                                |
 | ------------------------ | ------------------------------------------------------------------------------------------------ |

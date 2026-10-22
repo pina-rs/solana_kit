@@ -1,9 +1,14 @@
 # solana_kit_core
 
-Host-independent Solana addresses, hashes, signatures, and ordered instructions.
+Portable off-chain client types for Solana addresses, hashes, signatures, and
+ordered instructions.
 The default dependency graph contains only `bs58`. The optional `crypto` feature
 adds SHA-256, validated program-derived addresses, and deterministic Ed25519
 signing and strict verification through RustCrypto implementations.
+
+This crate is only for off-chain application code. Do not use it in Solana
+on-chain programs; use Pina or official Solana program libraries instead.
+`no_std + alloc` enables portable clients and does not imply on-chain support.
 
 The crate uses `no_std` plus `alloc`, with no executor, JavaScript, filesystem,
 network, or random-number source. Callers supply signing seeds and own the
