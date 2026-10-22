@@ -1,0 +1,32 @@
+Browser waker lifecycle execution receipt.
+
+The public API reproduction uses safe Arc<Wake> and Drop. A JavaScript helper
+captures the real socket separately from the Rust owner. The context waker drops
+after its Pending poll, leaving the registered clone as the final owner.
+Its destructor dispatches a real DOM error event.
+
+Before, separate cancellation and replacement Chrome runs each report:
+panicked at crates/solana_kit_browser/src/websocket/state.rs:29:40:
+RefCell already borrowed
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 13 filtered out
+
+After, both current Rust and actual Rust 1.89.0 browser artifacts report:
+test result: ok. 18 passed; 0 failed; 0 ignored; 0 filtered out
+Chrome passed. 36 fixture connections completed and all tasks joined.
+
+The original 12 WebSocket groups remain. Six added groups assert receive
+cancellation/replacement, Ready delivery, terminal wake and first-cause
+preservation, connect cancellation and close replacement through public methods.
+Both toolchains also execute the unchanged six HTTP groups in actual Chrome.
+Normal certificate validation rejects untrusted WSS. Trusted-positive WSS
+remains unverified. This is Window execution, not Worker or device evidence.
+
+SHA256 of preserved actual artifacts:
+426dec959c63538b4e8fe9a7adfadd06d1a67e41579000aed669d0776b308230  before.wasm
+2147ae8f8b76c01d27262d286e12cc24ee8b330ef913521fb5d838a6f0f62c7a  after-current.wasm
+798c42f6ab0901b18e34386d2e82fde683f1ff13b94e6bf772313be581ba9d3b  after-msrv.wasm
+
+Raw artifacts and logs remain in the local ignored Unit169 evidence store.
+The test runner accepts one optional wasm-bindgen-test filter so original-source
+panic cases can execute separately. The full command remains:
+cargo run -p solana_kit_browser_websocket_verification --locked --offline

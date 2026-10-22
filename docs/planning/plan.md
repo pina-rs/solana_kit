@@ -96,6 +96,10 @@ mobile application support. Separate accepted
 [native HTTP](../verification/native-http.md) and
 [Window Fetch HTTP](../verification/browser-http-integration.md) adapters have
 actual network evidence. The accepted
+[Window WebSocket](../verification/browser-websocket.md) adds actual Chrome
+subscription frames, bounded queue behavior, cancellation and waker lifecycle
+controls on current Rust and MSRV. Trusted-positive WSS remains unverified.
+The accepted
 [headless LeptosKit HTTP adapter](../verification/leptoskit-http.md) adds actual
 interpreted guest HTTP/TLS, Pending/wake, cancellation and awaited native teardown.
 The accepted [public WASI HTTP adapter](../../crates/solana_kit_wasi/README.md)

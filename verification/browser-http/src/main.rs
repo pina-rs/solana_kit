@@ -61,7 +61,6 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
 fn chrome(endpoint: &str) -> std::io::Result<std::process::ExitStatus> {
     Command::new("cargo")
         .args([
-            "+1.99.1",
             "test",
             "-p",
             "solana_kit_browser_http_verification",

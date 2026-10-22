@@ -895,6 +895,24 @@ dependencies = [
 ]
 
 [[package]]
+name = "solana_kit_browser_websocket_verification"
+version = "0.1.0"
+dependencies = [
+ "futures",
+ "js-sys",
+ "rustls",
+ "serde_json",
+ "solana_kit_browser",
+ "solana_kit_client",
+ "solana_kit_core",
+ "tungstenite",
+ "wasm-bindgen",
+ "wasm-bindgen-futures",
+ "wasm-bindgen-test",
+ "web-sys",
+]
+
+[[package]]
 name = "solana_kit_client"
 version = "0.1.0"
 dependencies = [
