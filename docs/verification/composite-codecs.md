@@ -46,7 +46,7 @@ claims, callback failures, zero-progress remainder reads and count overflow.
 Another 434 small binary payload/delimiter pairs compare accepted encoding against
 the first delimiter position and verify roundtrips. Three isolated portable
 functions originally executed natively without changing the shared registry.
-The [v12 runtime integration](runtimes.md#current-v12-composite-codec-receipt)
+The [v12 runtime integration](runtimes.md#historical-v12-composite-codec-receipt)
 now appends those exact functions and executes them in native Rust, Chrome,
 Wasmtime Preview 1 and Preview 2, and the pinned actual LeptosKit host.
 

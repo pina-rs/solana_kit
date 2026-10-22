@@ -18,6 +18,7 @@ mod instructions;
 mod registry;
 /// Portable public RPC protocol fixtures without network I/O.
 pub mod rpc;
+mod rpc_economics;
 mod rpc_fixture;
 mod rpc_node;
 mod text_numbers;
@@ -32,9 +33,9 @@ pub mod system_client;
 use alloc::vec::Vec;
 
 /// Immutable suite identity. Changes to fixtures or assertions require a new ID.
-pub const SUITE_ID: &str = "solana-kit-core-v12";
+pub const SUITE_ID: &str = "solana-kit-core-v13";
 /// Required number of cases; a truncated report cannot pass conformance.
-pub const EXPECTED_CASE_COUNT: usize = 62;
+pub const EXPECTED_CASE_COUNT: usize = 65;
 
 /// Selects authentic fixtures or the intentionally incorrect hash oracle.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -109,29 +110,7 @@ pub fn run(mode: FixtureMode) -> Report {
     cases.extend(fixed_points::cases());
     cases.extend(system::cases());
     cases.extend(v1::cases());
-    cases.push(case("rpc-exact-balance-u64", rpc::balance()));
-    cases.push(case("rpc-bounded-opaque-json", rpc::boundaries()));
-    cases.push(case("rpc-local-pending-correlation", rpc::local_pending()));
-    cases.push(case(
-        "system-client-builder-parser",
-        system_client::builder_parser(),
-    ));
-    cases.push(case(
-        "system-client-nonce-snapshot",
-        system_client::nonce_snapshot(),
-    ));
-    cases.push(case(
-        "rpc-node-scalar-metadata",
-        rpc_node::scalar_metadata(),
-    ));
-    cases.push(case(
-        "rpc-node-structured-metadata",
-        rpc_node::structured_metadata(),
-    ));
-    cases.push(case(
-        "rpc-node-certificate-failures",
-        rpc_node::certificate_and_failures(),
-    ));
+    cases.extend(registry::clients());
     cases.push(case("numeric-text-codecs", text_numbers::text()));
     cases.push(case("numeric-wide-text", text_numbers::wide()));
     cases.push(case("numeric-text-malformed", text_numbers::malformed()));
@@ -141,6 +120,7 @@ pub fn run(mode: FixtureMode) -> Report {
     ));
     cases.push(case("composite-backward-bits", composites::bits()));
     cases.push(case("composite-malformed-bounds", composites::malformed()));
+    cases.extend(rpc_economics::cases());
 
     Report {
         suite_id: SUITE_ID,

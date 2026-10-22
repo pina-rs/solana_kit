@@ -82,10 +82,10 @@ All five narrow experiments have executed evidence. The
 [Phase 1 evidence matrix](../verification/phase-one.md) links their source,
 commands, pins, negative controls, and limits. `cargo xtask all` reproduces the
 shared portable suite, import/dependency gates, and a clean packaged-core consumer.
-The current accepted suite passes all 62 cases and rejects only the corrupt-hash
-case in the 61/62 negative run on native Rust, Chrome, both WASI previews, and the
+The current accepted suite passes all 65 cases and rejects only the corrupt-hash
+case in the 64/65 negative run on native Rust, Chrome, both WASI previews, and the
 actual pinned LeptosKit `WasmHost`. The
-[composite runtime receipt](../verification/runtimes.md#current-v12-composite-codec-receipt)
+[economics runtime receipt](../verification/rpc-economics.md)
 records this expanded suite. The
 [numeric receipt](../parity/numeric-string-codecs.md) retains its historical
 59-case proof.
@@ -148,7 +148,7 @@ construction requirements from validation of externally received transactions.
 The immutable legacy/v0/v1 slice compiles owned instructions and lookup snapshots,
 preserves exact signed bytes, validates received protocol wire independently of
 local compiler restrictions, and signs/verifies through optional deterministic
-crypto. Seven transaction cases execute in the shared suite, now 62 cases, including
+crypto. Seven transaction cases execute in the shared suite, now 65 cases, including
 version-one message-first envelopes, inline configuration, exact 4096/4097-byte
 boundaries and signature tampering. Legacy/v0 retain their 1232-byte packet cap. The
 [transaction ledger](../parity/message-transactions.md) retains all 746 source
@@ -264,11 +264,12 @@ Keep unsupported, compiled, executed, and device-verified states distinct. Do no
 infer a runtime from `target_arch = "wasm32"`; browser and LeptosKit guests share
 the same Rust target. See [the architecture](../architecture/design.md).
 
-The public client implements 22 of the 54 source-audited catalog operations.
+The public client implements 30 of the 54 source-audited catalog operations.
 The original [RPC foundation](../parity/rpc-foundation.md) supplies three operations;
-the [node catalog receipt](../verification/rpc-node.md) adds 19. The catalog retains
+the [node catalog receipt](../verification/rpc-node.md) adds 19, and the
+[economics receipt](../verification/rpc-economics.md) adds eight. The catalog retains
 398 canonical declaration IDs. Operation coverage does not complete those IDs or
-the remaining 32 operations. Foundation and node protocol groups execute with
+the remaining 24 operations. Foundation, node and economics protocol groups execute with
 memory transports across native Rust, Chrome, both WASI previews, and the actual
 pinned LeptosKit host. Accepted native and Window Fetch HTTP adapters add separate
 network evidence. Neither result establishes installed device support or full

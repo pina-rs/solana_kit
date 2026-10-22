@@ -66,3 +66,31 @@ pub(crate) fn codecs() -> [CaseResult; 6] {
         case("codec-exact-framing", codecs::framing()),
     ]
 }
+
+/// Existing protocol and System client groups retain their stable report order.
+pub(crate) fn clients() -> [CaseResult; 8] {
+    use crate::{rpc, rpc_node, system_client};
+
+    [
+        case("rpc-exact-balance-u64", rpc::balance()),
+        case("rpc-bounded-opaque-json", rpc::boundaries()),
+        case("rpc-local-pending-correlation", rpc::local_pending()),
+        case(
+            "system-client-builder-parser",
+            system_client::builder_parser(),
+        ),
+        case(
+            "system-client-nonce-snapshot",
+            system_client::nonce_snapshot(),
+        ),
+        case("rpc-node-scalar-metadata", rpc_node::scalar_metadata()),
+        case(
+            "rpc-node-structured-metadata",
+            rpc_node::structured_metadata(),
+        ),
+        case(
+            "rpc-node-certificate-failures",
+            rpc_node::certificate_and_failures(),
+        ),
+    ]
+}
