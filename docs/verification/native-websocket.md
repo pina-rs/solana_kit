@@ -68,6 +68,41 @@ report. The original native HTTP implementation and tests remain unchanged.
 No shared subscription algorithm, core source, central inventory or existing
 receipt is changed by the socket implementation.
 
+## Current runtime integration
+
+Unit151 imports the exact accepted adapter from
+`cf98b8622108372da2c04c98d4b06387d98a94b2` onto the accepted 85-case runtime
+parent `6bd0b0df9cc848c106d680f1980fc7b7f7494a0b`. Public adapter source,
+configuration, tests and the declaration receipt remain byte-identical. The
+current lockfile gains only the adapter's required dependencies.
+
+The original 17 native network groups and the unchanged independent Unit143
+consumer's 12 groups pass on ordinary Rust 1.89 outside repository Cargo
+configuration. They execute actual loopback WS and WSS, partial-send
+backpressure cancellation, retained partial-receive state and actual I/O wake,
+peer EOF after ownership cancellation, wrong CA and name rejection, no retry,
+and notification-before-ack routing for all nine typed subscription families.
+Both isolated Boolean-only trace diagnostics reproduce the upstream limitation
+above. The original pinned Dart WebSocket package again passes all 98 tests.
+The strict independent receipt auditor verifies all 173 IDs and 23 source
+hashes and rejects missing, duplicate and corrupted-hash controls.
+
+The complete portable executable source remains identical to Unit149's actual
+85/85 canonical and 84/85 corruption execution on native Rust, Chrome, both
+Wasmtime previews and the pinned LeptosKit host. That prior runtime proof
+carries by source identity. Unit151 does not claim another five-host execution.
+All three portable target checks and normal/build dependency graphs remain
+separate compile and dependency evidence. Native dependencies stay outside
+core and client closures. WASI, strict CLI, fuel, program and generator source
+remain unchanged.
+
+The focused `native-websocket.yml` workflow runs actual native socket tests and
+an ordinary external public consumer on Linux, macOS and Windows with Rust
+1.99.1 and the minimum supported Rust 1.89. Local macOS evidence cannot replace
+the actual Windows job, which remains a merge gate. Unit151's primary ignored
+report retains exact commands, results, source comparisons and carried artifact
+hashes. No browser, WASI, LeptosKit, pooling or ecosystem completion is claimed.
+
 ## Exact declaration scope
 
 Regenerate the scoped receipt without changing canonical inventory.

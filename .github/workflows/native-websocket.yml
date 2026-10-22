@@ -29,10 +29,16 @@ jobs:
         shell: bash
         run: |
           checkout="$PWD"
+
+          if [[ "$RUNNER_OS" == Windows ]]; then
+            checkout="$(cygpath -m "$PWD")"
+          fi
+
           consumer="$(mktemp -d)"
           mkdir -p "$consumer/tests"
           cp crates/solana_kit_native/tests/websocket*.rs "$consumer/tests/"
           cp -R crates/solana_kit_native/tests/websocket_support crates/solana_kit_native/tests/fixtures "$consumer/tests/"
+          cp Cargo.lock "$consumer/Cargo.lock"
           cat > "$consumer/Cargo.toml" <<TOML
           [package]
           name = "native_websocket_consumer"
