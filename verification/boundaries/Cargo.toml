@@ -1,5 +1,5 @@
 [workspace]
-members = ["contract", "async", "system", "browser", "guest"]
+members = ["async", "browser", "contract", "guest", "system"]
 exclude = ["leptoskit"]
 resolver = "3"
 

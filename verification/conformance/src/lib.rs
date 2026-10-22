@@ -17,12 +17,15 @@ mod instructions;
 mod registry;
 mod transactions;
 
+/// Generated System instruction-data conformance fixtures.
+pub mod system;
+
 use alloc::vec::Vec;
 
 /// Immutable suite identity. Changes to fixtures or assertions require a new ID.
-pub const SUITE_ID: &str = "solana-kit-core-v5";
+pub const SUITE_ID: &str = "solana-kit-core-v6";
 /// Required number of cases; a truncated report cannot pass conformance.
-pub const EXPECTED_CASE_COUNT: usize = 42;
+pub const EXPECTED_CASE_COUNT: usize = 45;
 
 /// Selects authentic fixtures or the intentionally incorrect hash oracle.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -95,6 +98,7 @@ pub fn run(mode: FixtureMode) -> Report {
     cases.extend(accounts_sysvars::cases());
 
     cases.extend(fixed_points::cases());
+    cases.extend(system::cases());
 
     Report {
         suite_id: SUITE_ID,

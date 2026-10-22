@@ -199,5 +199,6 @@ fn negative_controls() -> Result<()> {
 pub(crate) fn run() -> Result<()> {
     guest()?;
     dependency_graphs()?;
+    crate::system_gate::run()?;
     negative_controls()
 }

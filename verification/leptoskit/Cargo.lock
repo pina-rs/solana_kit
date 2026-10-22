@@ -390,6 +390,7 @@ version = "0.1.0"
 dependencies = [
  "hex-literal",
  "solana_kit_core",
+ "solana_kit_system",
 ]
 
 [[package]]
@@ -412,6 +413,13 @@ dependencies = [
  "leptoskit_wasm",
  "serde_json",
  "solana_kit_conformance",
+]
+
+[[package]]
+name = "solana_kit_system"
+version = "0.1.0"
+dependencies = [
+ "solana_kit_core",
 ]
 
 [[package]]
