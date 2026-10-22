@@ -52,7 +52,9 @@ support or parity claim is inferred from reference documentation.
 ## Phase 1: workspace, fixtures, and portability experiments
 
 Create the Cargo workspace, stable-toolchain policy, formatting/lint gates,
-reference-fixture extraction, and a Rust `xtask` verification tool. Establish
+reference-fixture extraction, and a Rust `xtask` verification tool. Enforce
+monostyle readability and complexity scores of at least 90 without disabling
+scoring rules. Establish
 monochange package ownership, release groups, changesets, and dry-run release
 checks before adding multiple published crates.
 

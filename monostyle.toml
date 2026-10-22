@@ -1,0 +1,7 @@
+fail-under = { readability = 90.0, complexity = 90.0 }
+
+[rules]
+max-line-width = 100
+
+[rules.ignore]
+generated = false

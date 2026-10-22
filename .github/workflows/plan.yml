@@ -22,3 +22,10 @@ jobs:
           rustfmt +1.99.1 --edition 2024 --check tools/check_plan.rs
           rustc +1.99.1 --edition=2024 -D warnings tools/check_plan.rs -o "$RUNNER_TEMP/check-plan"
           "$RUNNER_TEMP/check-plan"
+          cargo +1.99.1 check --workspace --locked
+          cargo +1.99.1 package -p solana_kit --locked
+      - name: Enforce monostyle 90 in both categories
+        shell: bash
+        run: |
+          cargo +1.99.1 install monostyle --version 0.3.26 --locked
+          monostyle check . --fail-under 90 --no-color
