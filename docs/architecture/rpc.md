@@ -1,7 +1,8 @@
-# Typed RPC design experiment
+# Typed RPC foundation and design evidence
 
-This is a private, executable off-chain client experiment. No public client API
-is available from this work. Solana Kit must not be used for on-chain programs;
+The public solana_kit_client implements three typed off-chain RPC operations;
+verification/rpc-design retains private executable design controls over that same
+implementation. Solana Kit must not be used for on-chain programs;
 use Pina or the official Solana program libraries there.
 
 ## Grounding and worklist
@@ -13,12 +14,12 @@ use Pina or the official Solana program libraries there.
 - Implement: typed balance, blockhash and base64 account paths only.
 - Scrap: discard the erased boundary if it prevents native Send propagation.
 
-The future public caller shape is `client.call(Balance::new(address, config))`.
+The public caller shape is `client.call(Balance(address, config))`.
 A single client owns protocol framing, response correlation and typed decoding.
 Adapters own endpoints, authentication, streaming body bounds and cancellation.
 A request carries its response type; callers never choose an arbitrary return
 schema for a catalog method. Request IDs belong to one client owner, not adapters.
-The pilot allocates IDs from one per-client AtomicU32 counter. Concurrent calls
+The client allocates IDs from one per-client AtomicU32 counter. Concurrent calls
 reserve unique IDs with checked advancement; exhaustion is an explicit error,
 never a wrap or reuse. No global counter, OS entropy, timer or runtime is needed.
 
@@ -50,11 +51,12 @@ when real public adapters exist.
 
 Keep one `solana_kit_client` crate for typed RPC, HTTP contracts, pubsub,
 confirmation and account fetching. It owns request identity allocation, framing,
-JSON schemas, context and protocol errors. Use a sealed method/response mapping
-for standard operations; an arbitrary Deserialize type cannot stand in for a
-catalog response. Public client types are owned by Kit. Serde, RawValue and HTTP
-implementation types stay private. The pilot's exposed serde trait is an experimental seam to seal
-before public implementation. IDs reserve 1 through u32::MAX - 1, remain exactly representable
+JSON schemas, context and protocol errors. Built-in operations fix their response
+types; callers cannot substitute a schema. The open typed Method trait also lets
+provider integrations supply their own params and result decoder while reusing
+the central envelope. Serde is part of this explicit client extension contract;
+core domain types remain Kit-owned. Opaque remote data retains exact RawValue
+text, including whitespace, after duplicate-key and budget validation. IDs reserve 1 through u32::MAX - 1, remain exactly representable
 in JavaScript, and fail with IdExhausted before transport access at the limit.
 The native concurrency test observes 32 distinct replies from one shared client;
 the exhaustion control never calls the transport. Cross-target compilation proves
@@ -74,8 +76,8 @@ status, deadline, body/depth limit, malformed JSON, correlation, protocol envelo
 remote JSON-RPC and typed domain/schema variants. Preserve remote code/message
 and bounded unknown data, including missing versus explicit null. Do not treat
 simulation `value.err` as a JSON-RPC framing error, or infer success from HTTP 200.
-The prototype's three-case TransportError is deliberately incomplete and must
-not be copied as the finished adapter taxonomy.
+The public TransportError categorizes unavailable, denied, deadline, cancellation,
+I/O, body/header limit and invalid HTTP failures while retaining adapter causes.
 
 ## JSON boundaries and scope
 
@@ -88,8 +90,9 @@ A lexical container guard runs before serde allocations; serde then validates
 syntax. No recursion-limit disabling, JavaScript JSON.parse, silent zero slot,
 empty account or fallback balance is used.
 
-The base64 account pilot retains the encoded string and typed label; it does not
-decode or validate base64 contents, support slices, zstd or jsonParsed. Those are
+The public base64 account path validates canonical base64 bytes and the reported
+full allocation size, returning core present/missing account types with the
+requested address. Slices, zstd and jsonParsed remain unsupported. Those are
 explicit remaining operations, not a claim that arbitrary serde_json establishes
 a complete schema. In the public API, encoding and transaction-details choices
 must select explicit result variants; parsed account fallback and absent versus
@@ -115,7 +118,8 @@ canonical declaration IDs. The list constants themselves remain at the IDs in
 capabilities.tsv. This derived worklist never edits that canonical inventory.
 Only 14 methods have convenience wrappers; 40 require new typed caller paths.
 All response type names in this worklist are proposals. The three marked pilots
-are subsets and none of the 54 is marked fully implemented or verified.
+have public typed implementations, with getAccountInfo limited to full base64.
+Runtime adapter verification and the remaining 51 methods are still pending.
 
 | Unit                             | Catalog methods | Verification obligation                                                                                            |
 | -------------------------------- | --------------: | ------------------------------------------------------------------------------------------------------------------ |

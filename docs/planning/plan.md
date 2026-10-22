@@ -248,3 +248,10 @@ execution is outside the SDK's supported targets.
 Keep unsupported, compiled, executed, and device-verified states distinct. Do not
 infer a runtime from `target_arch = "wasm32"`; browser and LeptosKit guests share
 the same Rust target. See [the architecture](../architecture/design.md).
+
+The public RPC foundation implements typed balance, latest-blockhash and
+full-base64 account reads through one executor-neutral protocol owner. It retains
+all 54 source-audited catalog entries and 398 canonical declaration IDs; 51 typed
+operations and alternate account encodings remain pending. Three Wasm target
+compilation checks do not establish network runtime support. See the
+[RPC foundation receipt](../parity/rpc-foundation.md). Phase 4 remains incomplete.

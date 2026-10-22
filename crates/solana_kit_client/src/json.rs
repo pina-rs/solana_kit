@@ -44,19 +44,25 @@ impl<'de, T: Deserialize<'de>> Deserialize<'de> for Presence<T> {
 }
 
 #[derive(Serialize)]
-struct Frame<'a, P> {
+struct Frame<'a> {
     jsonrpc: &'static str,
     id: u64,
     method: &'static str,
-    params: &'a P,
+    params: &'a RawValue,
 }
 
 pub fn request<R: Method>(id: u64, method: &R, limits: Limits) -> Result<Request, Error> {
+    let params = serde_json::value::to_raw_value(method)?;
+
+    if !matches!(params.get().as_bytes().first(), Some(b'[' | b'{')) {
+        return Err(Error::Envelope);
+    }
+
     let body = serde_json::to_vec(&Frame {
         jsonrpc: "2.0",
         id,
         method: R::NAME,
-        params: method,
+        params: &params,
     })?;
     check_limits(&body, limits)?;
 

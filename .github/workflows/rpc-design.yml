@@ -25,6 +25,8 @@ jobs:
           cargo +1.99.1 fmt --manifest-path verification/rpc-design/Cargo.toml --check
           cargo +1.99.1 clippy --manifest-path verification/rpc-design/Cargo.toml --all-targets --locked -- -D warnings
           cargo +1.99.1 test --manifest-path verification/rpc-design/Cargo.toml --locked
+          cargo +1.99.1 test -p solana_kit_client --all-features --locked
+          RUSTDOCFLAGS="-D warnings" cargo +1.99.1 doc -p solana_kit_client --no-deps --locked
   catalog:
     runs-on: ubuntu-24.04
     steps:
@@ -50,3 +52,18 @@ jobs:
             echo 'missing row control unexpectedly passed' >&2
             exit 1
           fi
+  client-portability:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Check public client MSRV and all three Wasm targets
+        run: |
+          rustup toolchain install 1.89.0 --profile minimal
+          cargo +1.89.0 check -p solana_kit_client --locked
+          rustup toolchain install 1.99.1 --profile minimal
+          rustup target add --toolchain 1.99.1 wasm32-unknown-unknown wasm32-wasip1 wasm32-wasip2
+          cargo +1.99.1 check -p solana_kit_client --target wasm32-unknown-unknown --locked
+          cargo +1.99.1 check -p solana_kit_client --target wasm32-wasip1 --locked
+          cargo +1.99.1 check -p solana_kit_client --target wasm32-wasip2 --locked

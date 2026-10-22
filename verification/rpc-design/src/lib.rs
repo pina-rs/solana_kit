@@ -2,6 +2,7 @@
 #![forbid(unsafe_code)]
 
 pub mod alternatives;
+pub mod conformance;
 pub use solana_kit_client::{
     Client, Error, Limits, Presence, Reply, Request, Transport, TransportError,
     TransportFailureKind, methods,

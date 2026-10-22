@@ -1,7 +1,7 @@
-# Private typed RPC experiment
+# Private typed RPC verification
 
-This workspace compares two async boundaries and proves a small typed JSON-RPC
-pilot for off-chain application clients. It is not a public SDK crate and must
+This workspace compares two async boundaries and exercises the public JSON-RPC
+client for off-chain application clients. It is not a public SDK crate and must
 not be used in on-chain programs; use Pina or official Solana program libraries.
 
 Run from the repository root with cached dependencies:
@@ -24,10 +24,11 @@ the existing tree-sitter capability inventory.
 Tests execute the same generic client through a native Send exchange and an Rc
 exchange that actually suspends. They also execute the erased-future alternative
 locally and reject its native spawn at compile time. Typed JSON cases cover
-balance, latest blockhash, and nullable base64-account wire shapes, with malformed
+balance, latest blockhash, and core present/missing full-base64 account shapes, with malformed
 and precision controls. Real loopback HTTP observes a typed response and pending
 call abort followed by socket EOF; retaining the call first produces no EOF.
 
 See [the design](../../docs/architecture/rpc.md) for the selected boundary,
-proposed public crate ownership, all 54 implementation scopes and precise limits.
-No browser, WASI, interpreted guest or mobile RPC runtime is claimed here.
+public crate ownership, all 54 implementation scopes and precise limits.
+Portable cases in src/conformance.rs are isolated from the core suite and await
+actual host integration. No browser, WASI, interpreted guest or mobile RPC runtime is claimed here.

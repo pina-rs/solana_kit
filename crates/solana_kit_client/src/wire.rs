@@ -53,6 +53,7 @@ pub(crate) fn account(
     result: &str,
 ) -> Result<Contextual<MaybeAccount<Vec<u8>>>, Error> {
     let wire: NullableContext<Account> = serde_json::from_str(result).map_err(Error::Schema)?;
+
     let value = match wire.value {
         None => MaybeAccount::Missing(address),
         Some(wire) => {
@@ -75,6 +76,7 @@ pub(crate) fn account(
             })
         }
     };
+
     Ok(Contextual {
         context: wire.context,
         value,

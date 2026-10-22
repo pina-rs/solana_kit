@@ -20,28 +20,37 @@ impl<'de> Visitor<'de> for UniqueVisitor {
     fn expecting(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.write_str("JSON without duplicate object keys")
     }
+
     fn visit_bool<E: de::Error>(self, _: bool) -> Result<Unique, E> {
         Ok(Unique)
     }
+
     fn visit_i64<E: de::Error>(self, _: i64) -> Result<Unique, E> {
         Ok(Unique)
     }
+
     fn visit_u64<E: de::Error>(self, _: u64) -> Result<Unique, E> {
         Ok(Unique)
     }
+
     fn visit_f64<E: de::Error>(self, _: f64) -> Result<Unique, E> {
         Ok(Unique)
     }
+
     fn visit_str<E: de::Error>(self, _: &str) -> Result<Unique, E> {
         Ok(Unique)
     }
+
     fn visit_unit<E: de::Error>(self) -> Result<Unique, E> {
         Ok(Unique)
     }
+
     fn visit_seq<A: SeqAccess<'de>>(self, mut seq: A) -> Result<Unique, A::Error> {
         while seq.next_element::<Unique>()?.is_some() {}
+
         Ok(Unique)
     }
+
     fn visit_map<A: MapAccess<'de>>(self, mut map: A) -> Result<Unique, A::Error> {
         let mut keys = BTreeSet::new();
 
@@ -49,6 +58,7 @@ impl<'de> Visitor<'de> for UniqueVisitor {
             if !keys.insert(key) {
                 return Err(de::Error::custom("duplicate JSON object key"));
             }
+
             map.next_value::<Unique>()?;
         }
 

@@ -150,10 +150,10 @@ fn render_row(
     } else {
         "missing"
     };
-    let status = if ["getBalance", "getLatestBlockhash", "getAccountInfo"].contains(&method) {
-        "private-pilot-subset"
-    } else {
-        "planned-schema-unverified"
+    let status = match method {
+        "getAccountInfo" => "public-full-base64-subset",
+        "getBalance" | "getLatestBlockhash" => "public-typed-read",
+        _ => "planned-schema-unverified",
     };
 
     let provenance = format!("{PIN}:{path}");

@@ -139,3 +139,22 @@ fn adapter_error_keeps_original_source_and_missing_error_data_stays_missing() {
     };
     assert!(matches!(remote.data, Presence::Missing));
 }
+
+#[test]
+fn accepted_remote_data_retains_exact_opaque_json_text() {
+    let client = Client::new(
+        Script(
+            r#"{"jsonrpc":"2.0","id":1,"error":{"code":-1,"message":"bad","data":{ "future": [ 1, null ] }}}"#,
+        ),
+        Limits::default(),
+    );
+    let Err(Error::Remote(remote)) =
+        futures::executor::block_on(client.call(Balance(address(), None)))
+    else {
+        panic!("remote error expected")
+    };
+    let Presence::Present(data) = remote.data else {
+        panic!("present data expected")
+    };
+    assert_eq!(data.get(), r#"{ "future": [ 1, null ] }"#);
+}
