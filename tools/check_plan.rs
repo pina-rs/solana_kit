@@ -5,6 +5,7 @@ use std::env;
 use std::error::Error;
 use std::fs;
 use std::path::Path;
+use std::path::PathBuf;
 
 type CheckResult<T> = Result<T, Box<dyn Error>>;
 
@@ -112,8 +113,8 @@ fn validate_state(phase: &str, status: &str, evidence: &str) -> CheckResult<()> 
         return Err(format!("invalid implementation phase {phase}").into());
     }
 
-    match (status, evidence) {
-        ("implemented" | "verified", "-") => Err("implementation claim needs evidence".into()),
+    match (status, evidence.trim()) {
+        ("implemented" | "verified", "" | "-") => Err("implementation claim needs evidence".into()),
         ("inventoried" | "implemented" | "verified" | "blocked", _) => Ok(()),
         _ => Err(format!("unknown implementation status {status}").into()),
     }
@@ -130,7 +131,7 @@ fn check_reference(root: &Path, packages: &[Package<'_>]) -> CheckResult<()> {
             return Err(format!("package name differs from {}", path.display()).into());
         }
 
-        recorded.insert(package.manifest.to_owned());
+        recorded.insert(PathBuf::from(package.manifest));
     }
 
     if recorded != reference_manifests(root)? {
@@ -150,7 +151,7 @@ fn manifest_name(manifest: &str) -> Option<&str> {
     })
 }
 
-fn reference_manifests(root: &Path) -> CheckResult<BTreeSet<String>> {
+fn reference_manifests(root: &Path) -> CheckResult<BTreeSet<PathBuf>> {
     let mut manifests = BTreeSet::new();
 
     for entry in fs::read_dir(root.join("packages"))? {
@@ -160,7 +161,7 @@ fn reference_manifests(root: &Path) -> CheckResult<BTreeSet<String>> {
             let manifest = path.join(filename);
 
             if manifest.is_file() {
-                manifests.insert(manifest.strip_prefix(root)?.to_string_lossy().into_owned());
+                manifests.insert(manifest.strip_prefix(root)?.to_path_buf());
             }
         }
     }
