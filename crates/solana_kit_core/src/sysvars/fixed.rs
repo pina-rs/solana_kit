@@ -31,7 +31,15 @@ pub struct Clock {
     /// Current Unix timestamp.
     pub unix_timestamp: i64,
 }
-layout!(Clock, CLOCK_SIZE, slot: Number::<u64>::LE, epoch_start_timestamp: Number::<i64>::LE, epoch: Number::<u64>::LE, leader_schedule_epoch: Number::<u64>::LE, unix_timestamp: Number::<i64>::LE);
+layout!(
+    Clock,
+    CLOCK_SIZE,
+    slot: Number::<u64>::LE,
+    epoch_start_timestamp: Number::<i64>::LE,
+    epoch: Number::<u64>::LE,
+    leader_schedule_epoch: Number::<u64>::LE,
+    unix_timestamp: Number::<i64>::LE,
+);
 
 /// Rent configuration. Float bits and the full reference u8 burn range are preserved.
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -43,7 +51,13 @@ pub struct Rent {
     /// Percentage burned; the reference codec accepts all u8 values.
     pub burn_percent: u8,
 }
-layout!(Rent, RENT_SIZE, lamports_per_byte_year: Number::<u64>::LE, exemption_threshold: Number::<f64>::LE, burn_percent: Number::<u8>::LE);
+layout!(
+    Rent,
+    RENT_SIZE,
+    lamports_per_byte_year: Number::<u64>::LE,
+    exemption_threshold: Number::<f64>::LE,
+    burn_percent: Number::<u8>::LE,
+);
 
 /// Epoch timing and warmup configuration.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -59,7 +73,15 @@ pub struct EpochSchedule {
     /// First normal-length slot.
     pub first_normal_slot: u64,
 }
-layout!(EpochSchedule, EPOCH_SCHEDULE_SIZE, slots_per_epoch: Number::<u64>::LE, leader_schedule_slot_offset: Number::<u64>::LE, warmup: Bool, first_normal_epoch: Number::<u64>::LE, first_normal_slot: Number::<u64>::LE);
+layout!(
+    EpochSchedule,
+    EPOCH_SCHEDULE_SIZE,
+    slots_per_epoch: Number::<u64>::LE,
+    leader_schedule_slot_offset: Number::<u64>::LE,
+    warmup: Bool,
+    first_normal_epoch: Number::<u64>::LE,
+    first_normal_slot: Number::<u64>::LE,
+);
 
 /// Epoch reward distribution snapshot.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -79,7 +101,17 @@ pub struct EpochRewards {
     /// Whether distribution is active.
     pub active: bool,
 }
-layout!(EpochRewards, EPOCH_REWARDS_SIZE, distribution_starting_block_height: Number::<u64>::LE, num_partitions: Number::<u64>::LE, parent_blockhash: HashCodec, total_points: Number::<u128>::LE, total_rewards: Number::<u64>::LE, distributed_rewards: Number::<u64>::LE, active: Bool);
+layout!(
+    EpochRewards,
+    EPOCH_REWARDS_SIZE,
+    distribution_starting_block_height: Number::<u64>::LE,
+    num_partitions: Number::<u64>::LE,
+    parent_blockhash: HashCodec,
+    total_points: Number::<u128>::LE,
+    total_rewards: Number::<u64>::LE,
+    distributed_rewards: Number::<u64>::LE,
+    active: Bool,
+);
 
 /// Last restart slot, zero when no hard fork was recorded.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -87,4 +119,8 @@ pub struct LastRestartSlot {
     /// Recorded restart slot.
     pub last_restart_slot: u64,
 }
-layout!(LastRestartSlot, LAST_RESTART_SLOT_SIZE, last_restart_slot: Number::<u64>::LE);
+layout!(
+    LastRestartSlot,
+    LAST_RESTART_SLOT_SIZE,
+    last_restart_slot: Number::<u64>::LE,
+);

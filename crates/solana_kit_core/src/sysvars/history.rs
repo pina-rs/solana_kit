@@ -1,6 +1,10 @@
 //! Counted historical layouts with shared allocation limits.
 
 use super::{HashCodec, SysvarCodec, layout};
+
+const LENGTH_PREFIX_SIZE: usize = 8;
+const HASH_ENTRY_SIZE: usize = 40;
+const STAKE_ENTRY_SIZE: usize = 32;
 use crate::{
     Hash,
     codecs::{Decoder, Encoder, Error, Number, Reader, Writer},
@@ -24,7 +28,12 @@ pub struct SlotHashEntry {
     /// Parent bank hash.
     pub hash: Hash,
 }
-layout!(SlotHashEntry, 40, slot: Number::<u64>::LE, hash: HashCodec);
+layout!(
+    SlotHashEntry,
+    40,
+    slot: Number::<u64>::LE,
+    hash: HashCodec,
+);
 
 /// Historical signature fee calculation.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -32,7 +41,11 @@ pub struct FeeCalculator {
     /// Lamports charged per signature.
     pub lamports_per_signature: u64,
 }
-layout!(FeeCalculator, 8, lamports_per_signature: Number::<u64>::LE);
+layout!(
+    FeeCalculator,
+    8,
+    lamports_per_signature: Number::<u64>::LE,
+);
 
 /// Historical blockhash and signature fee, retained for old snapshots.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -42,7 +55,12 @@ pub struct RecentBlockhashEntry {
     /// Historical signature fee.
     pub fee_calculator: FeeCalculator,
 }
-layout!(RecentBlockhashEntry, 40, blockhash: HashCodec, fee_calculator: SysvarCodec::<FeeCalculator>::NEW);
+layout!(
+    RecentBlockhashEntry,
+    40,
+    blockhash: HashCodec,
+    fee_calculator: SysvarCodec::<FeeCalculator>::NEW,
+);
 
 /// Stake activation amounts for an epoch.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -54,7 +72,13 @@ pub struct StakeHistoryData {
     /// Stake cooling down in lamports.
     pub deactivating: u64,
 }
-layout!(StakeHistoryData, 24, effective: Number::<u64>::LE, activating: Number::<u64>::LE, deactivating: Number::<u64>::LE);
+layout!(
+    StakeHistoryData,
+    24,
+    effective: Number::<u64>::LE,
+    activating: Number::<u64>::LE,
+    deactivating: Number::<u64>::LE,
+);
 
 /// One epoch's stake activation history.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -64,7 +88,12 @@ pub struct StakeHistoryEntry {
     /// Stake activation values.
     pub stake_history: StakeHistoryData,
 }
-layout!(StakeHistoryEntry, 32, epoch: Number::<u64>::LE, stake_history: SysvarCodec::<StakeHistoryData>::NEW);
+layout!(
+    StakeHistoryEntry,
+    32,
+    epoch: Number::<u64>::LE,
+    stake_history: SysvarCodec::<StakeHistoryData>::NEW,
+);
 
 /// A u64-prefixed vector of parent bank hashes.
 pub type SlotHashes = Vec<SlotHashEntry>;
@@ -99,13 +128,13 @@ where
 
 /// Generates concrete vector implementations without exposing an unbounded parser.
 macro_rules! vector_layout {
-    ($ty:ty, $size:literal) => {
+    ($ty:ty, $size:expr) => {
         impl Encoder<Vec<$ty>> for SysvarCodec<Vec<$ty>> {
             fn encoded_len(&self, value: &Vec<$ty>) -> Result<usize, Error> {
                 value
                     .len()
                     .checked_mul($size)
-                    .and_then(|size| size.checked_add(8))
+                    .and_then(|size| size.checked_add(LENGTH_PREFIX_SIZE))
                     .ok_or(Error::Overflow)
             }
             fn write(&self, value: &Vec<$ty>, writer: &mut Writer<'_>) -> Result<(), Error> {
@@ -114,9 +143,7 @@ macro_rules! vector_layout {
                     writer,
                 )?;
 
-                for entry in value {
-                    SysvarCodec::<$ty>::NEW.write(entry, writer)?;
-                }
+                write_entries(value, writer)?;
 
                 Ok(())
             }
@@ -130,9 +157,21 @@ macro_rules! vector_layout {
         }
     };
 }
-vector_layout!(SlotHashEntry, 40);
-vector_layout!(RecentBlockhashEntry, 40);
-vector_layout!(StakeHistoryEntry, 32);
+vector_layout!(SlotHashEntry, HASH_ENTRY_SIZE);
+vector_layout!(RecentBlockhashEntry, HASH_ENTRY_SIZE);
+vector_layout!(StakeHistoryEntry, STAKE_ENTRY_SIZE);
+
+/// Writes typed entries through their composed layouts.
+fn write_entries<T>(entries: &[T], writer: &mut Writer<'_>) -> Result<(), Error>
+where
+    SysvarCodec<T>: Encoder<T>,
+{
+    for entry in entries {
+        SysvarCodec::<T>::NEW.write(entry, writer)?;
+    }
+
+    Ok(())
+}
 
 /// A fixed million-bit history and the next newer slot.
 #[derive(Clone, Debug, Eq, PartialEq)]

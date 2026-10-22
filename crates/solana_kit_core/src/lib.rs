@@ -7,6 +7,9 @@ extern crate alloc;
 
 /// Owned account snapshots and decoding.
 pub mod accounts;
+/// Typed program-error matching and log extraction.
+pub mod program_error;
+
 /// Portable sysvar data layouts.
 pub mod sysvars;
 

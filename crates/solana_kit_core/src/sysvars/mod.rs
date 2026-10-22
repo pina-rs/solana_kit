@@ -4,8 +4,12 @@
 //! decoding uses the common cursor contract. Historical RecentBlockhashes is
 //! retained for reading snapshots; use RPC fee estimation for new transactions.
 
+mod addresses;
+
 mod fixed;
 mod history;
+
+pub use addresses::*;
 
 pub use fixed::*;
 pub use history::*;

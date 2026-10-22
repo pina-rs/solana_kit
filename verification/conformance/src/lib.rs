@@ -8,6 +8,7 @@
 //! [`FixtureMode::CorruptHash`] as a negative control for the host's failure path.
 extern crate alloc;
 
+mod accounts_sysvars;
 mod addresses;
 mod codecs;
 mod cryptography;
@@ -17,9 +18,9 @@ mod transactions;
 use alloc::{vec, vec::Vec};
 
 /// Immutable suite identity. Changes to fixtures or assertions require a new ID.
-pub const SUITE_ID: &str = "solana-kit-core-v3";
+pub const SUITE_ID: &str = "solana-kit-core-v4";
 /// Required number of cases; a truncated report cannot pass conformance.
-pub const EXPECTED_CASE_COUNT: usize = 35;
+pub const EXPECTED_CASE_COUNT: usize = 39;
 
 /// Selects authentic fixtures or the intentionally incorrect hash oracle.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -121,6 +122,16 @@ pub fn run(mode: FixtureMode) -> Report {
         case("codec-bounded-sequences", codecs::bounded_sequences()),
         case("codec-distinct-options", codecs::options()),
         case("codec-exact-framing", codecs::framing()),
+        case("sysvar-clock-signed-fixture", accounts_sysvars::clock()),
+        case("account-metadata-and-absence", accounts_sysvars::accounts()),
+        case(
+            "sysvar-history-u64-bounds",
+            accounts_sysvars::history_bounds(),
+        ),
+        case(
+            "program-error-source-facts",
+            accounts_sysvars::program_errors(),
+        ),
     ];
     cases.extend(transactions::cases());
 
