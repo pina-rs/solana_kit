@@ -1,5 +1,13 @@
 [workspace]
-members = ["crates/solana_kit", "crates/solana_kit_core", "verification/conformance"]
+members = [
+  "crates/solana_kit",
+  "crates/solana_kit_core",
+  "verification/conformance",
+  "verification/browser",
+  "verification/guest",
+  "xtask",
+]
+exclude = ["verification/leptoskit"]
 resolver = "3"
 
 [workspace.package]

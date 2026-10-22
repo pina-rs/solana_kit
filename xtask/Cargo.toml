@@ -1,0 +1,11 @@
+[package]
+name = "solana_kit_xtask"
+version = "0.1.0"
+edition.workspace = true
+publish = false
+
+[dependencies]
+anyhow = "1.0"
+solana_kit_conformance = { path = "../verification/conformance" }
+wasmparser = "0.240"
+wat = "1.240"

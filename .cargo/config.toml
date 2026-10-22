@@ -1,0 +1,5 @@
+[alias]
+xtask = "run --locked --package solana_kit_xtask --"
+
+[target.wasm32-unknown-unknown]
+runner = "wasm-bindgen-test-runner"
