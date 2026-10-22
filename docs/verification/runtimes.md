@@ -38,9 +38,10 @@ core and the host harness forbid unsafe code.
 
 ## Current v7 executed receipt
 
-After the fixed-point presentation correction, the unchanged 48-case
+After the fixed-point presentation correction and signed integration of merged
+main `b74b8f893ba38c10cb208dfeadebb49ed7473d5e`, the unchanged 48-case
 `solana-kit-core-v7` suite was freshly executed on 2026-10-22 at signed source
-checkpoint `5d9bf3e4c1bc5fa06e051745737ec1e65d0c30ad`. Rust 1.99.1,
+checkpoint `d3a3f5373dfce86d05f0431abddd25431af7fdff`. Rust 1.99.1,
 Chrome 155.0.8059.85, ChromeDriver 155.0.8059.84, Wasmtime 50.0.0 and the
 actual pinned LeptosKit host all executed through `cargo xtask all`, which exited 0.
 
@@ -76,6 +77,13 @@ This remains bounded synchronous off-chain client evidence. On-chain programs
 must use Pina or official Solana program libraries. The initial v7 limits and
 separate local-validator evidence below remain applicable; no validator was
 restarted merely to repeat unchanged V1 source.
+
+The preceding corrected-math run at signed checkpoint
+`5d9bf3e4c1bc5fa06e051745737ec1e65d0c30ad` also executed all 48/47 outcomes
+and gates successfully, producing the same three artifact hashes. The fresh
+run above incorporates the merged complete-coverage style tooling and TLS/WS
+fixture without changing the V1 or portable conformance source. Its earlier
+receipt remains in the signed history.
 
 ## Historical initial v7 executed receipt
 
