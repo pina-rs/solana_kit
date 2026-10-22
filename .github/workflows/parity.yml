@@ -1,0 +1,41 @@
+name: Capability inventory
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  pinned-source-ledger:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Check out immutable reference
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: openbudgetfun/solana_kit
+          ref: 0138bb956d2d81ccc0c56edc602401c0df2f2b46
+          path: .monochange/local/parity-reference
+          persist-credentials: false
+      - name: Install pinned Rust
+        run: rustup toolchain install 1.99.1 --profile minimal --component rustfmt --component clippy
+      - name: Run syntax fixtures and missing/duplicate/fake-evidence controls
+        run: |
+          cargo +1.99.1 fmt --manifest-path tools/capability_inventory/Cargo.toml --check
+          cargo +1.99.1 test --manifest-path tools/capability_inventory/Cargo.toml --locked
+          cargo +1.99.1 clippy --manifest-path tools/capability_inventory/Cargo.toml --all-targets --locked -- -D warnings
+      - name: Reconcile every source and capability against the immutable snapshot
+        run: |
+          cargo +1.99.1 run --quiet --manifest-path tools/capability_inventory/Cargo.toml --locked -- check .monochange/local/parity-reference > "$RUNNER_TEMP/parity-first.txt"
+          cargo +1.99.1 run --quiet --manifest-path tools/capability_inventory/Cargo.toml --locked -- check .monochange/local/parity-reference > "$RUNNER_TEMP/parity-second.txt"
+          diff -u "$RUNNER_TEMP/parity-first.txt" "$RUNNER_TEMP/parity-second.txt"
+          cargo +1.99.1 run --quiet --manifest-path tools/capability_inventory/Cargo.toml --locked -- controls .monochange/local/parity-reference
+      - name: Score authored and generated source without exclusions
+        run: |
+          cargo +1.99.1 install monostyle --version 0.3.26 --locked
+          monostyle check . --include-generated --fail-under 90 --no-color
