@@ -49,4 +49,6 @@ transaction-v1-signature-suffix: Ok(())
 rpc-exact-balance-u64: Ok(())
 rpc-bounded-opaque-json: Ok(())
 rpc-local-pending-correlation: Ok(())
-solana-kit-core-v8: 51/51 cases passed
+system-client-builder-parser: Ok(())
+system-client-nonce-snapshot: Ok(())
+solana-kit-core-v9: 53/53 cases passed

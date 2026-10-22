@@ -36,7 +36,52 @@ dispatches a `Press` event and requires the corrupted report and second commit.
 The guest's small unsafe FFI wrappers implement that pinned synchronous copy ABI;
 core and the host harness forbid unsafe code.
 
-## Current v8 public RPC protocol receipt
+## Current v9 System client receipt
+
+The `solana-kit-core-v9` suite preserves the first 51 case lines and appends the
+existing System builder/parser and nonce snapshot groups. Clean signed source
+`ef8c553bcd1a349ee937a45644d1fa6e8fc31558` executed `cargo xtask all` on 2026-10-22
+with Rust 1.99.1, Chrome 155.0.8059.85, ChromeDriver 155.0.8059.84, Wasmtime 50.0.0,
+and the same pinned actual LeptosKit host. System production and private generator
+source equal reviewed `034ec2bcf2e4724982157b7b2ef09da5e80ab8be`.
+The native adapter from signed parent `92ab00b9f2fb3cabba75dd573338012a05faff43`
+is present without changing the portable client or guest graphs.
+
+| Actual host               | Canonical                   | Corruption control             |
+| ------------------------- | --------------------------- | ------------------------------ |
+| Native command            | 53/53, exit 0               | 52/53, exit 1                  |
+| Real Chrome               | Full 53/53 report checked   | Full 52/53 report checked      |
+| Wasmtime Preview 1        | 53/53, exit 0               | 52/53, exit 1                  |
+| Wasmtime Preview 2        | 53/53, exit 0               | 52/53, exit 1                  |
+| Actual LeptosKit WasmHost | Full 53/53 JSON, one commit | Full 52/53 JSON, second commit |
+
+Only `sha256-fips-abc` fails in the control. The two appended groups execute
+duplicate positional accounts, the strict signer-role parser, exact initialized
+nonce fields and full-width fees, and rejection of an invalid nonce state.
+All preceding core and RPC assertions still execute. The native adapter's real
+HTTP and TLS proof remains in its [separate receipt](native-http.md).
+This portable suite uses memory RPC transports and performs no network calls.
+
+All 16 core graph queries, eight numeric normal-only queries, four System queries,
+four client queries, and their dependency and import negative controls pass.
+The System graph remains System, core, and bs58. Compiled guest imports remain
+exactly `leptoskit::node_create`, `leptoskit::node_set_props`, and
+`leptoskit::commit`. All five extracted packaged-core consumer tests pass.
+
+Executed artifact SHA-256 values:
+
+```text
+b9807e35a80afb495ee04cfedddae13febfa0ec659a2cec955539f2eed733019  wasm32-wasip1
+d5c5ac663f5e4b100621d1e0feb625d566c536f8ed5141197eda8db5bafbd21d  wasm32-wasip2
+7a27798cb44a6a66e2f72e612dbbddd75ae5dc369813133038e6e4af82147d74  leptoskit-guest
+```
+
+The [System client receipt](system-client.md) retains all 68 partial or pending
+System declarations. Validator, durable nonce transaction, wallet, generated app,
+Android, iOS, and registry-release verification remain separate work.
+All crates are exclusively for off-chain application clients.
+
+## Historical v8 public RPC protocol receipt
 
 The `solana-kit-core-v8` suite preserves the first48 case lines and appends three
 public-client protocol groups. Signed clean source
