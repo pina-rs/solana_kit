@@ -6,10 +6,11 @@ complete the ecosystem, production adapters, or installed application journeys.
 All proofs concern off-chain application clients. On-chain programs use Pina or
 official Solana program libraries.
 
-The current shared v23 suite executes 101 canonical cases and 100/101 with sole
-hash corruption on all five named hosts. It preserves all 97 wallet and signer
-groups, including every 256-success batch assertion, and appends four accepted
-durable nonce groups. The [nonce receipt](nonce-runtime.md) records the signed
+The current shared v24 suite executes 103 canonical cases and 102/103 with sole
+hash corruption on all five named hosts. It preserves all 101 prior groups,
+including every transaction batch assertion and four accepted nonce groups,
+and appends two [message groups](message-runtime.md) with 256 distinct messages.
+The [nonce receipt](nonce-runtime.md) records its historical signed
 executable and checked private workload. The [signer receipt](signer-runtime.md)
 retains the historical 92-case measurement limits.
 The 90-case matrix entry below is historical experiment evidence.
