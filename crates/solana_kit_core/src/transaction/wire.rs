@@ -325,9 +325,9 @@ fn length_error(error: codecs::Error) -> Error {
     }
 }
 
-struct Reader<'a> {
-    bytes: &'a [u8],
-    offset: usize,
+pub(super) struct Reader<'a> {
+    pub(super) bytes: &'a [u8],
+    pub(super) offset: usize,
 }
 
 impl<'a> Reader<'a> {
@@ -356,7 +356,7 @@ impl<'a> Reader<'a> {
         ))
     }
 
-    fn take(&mut self, count: usize) -> Result<&'a [u8], Error> {
+    pub(super) fn take(&mut self, count: usize) -> Result<&'a [u8], Error> {
         let end = self.offset.checked_add(count).ok_or(Error::InvalidLength)?;
         let value = self.bytes.get(self.offset..end).ok_or(Error::Truncated)?;
         self.offset = end;
@@ -364,11 +364,11 @@ impl<'a> Reader<'a> {
         Ok(value)
     }
 
-    fn array<const N: usize>(&mut self) -> Result<[u8; N], Error> {
+    pub(super) fn array<const N: usize>(&mut self) -> Result<[u8; N], Error> {
         self.take(N)?.try_into().map_err(|_| Error::Truncated)
     }
 
-    fn byte(&mut self) -> Result<u8, Error> {
+    pub(super) fn byte(&mut self) -> Result<u8, Error> {
         Ok(self.array::<1>()?[0])
     }
 

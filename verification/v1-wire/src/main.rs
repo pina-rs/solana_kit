@@ -271,9 +271,7 @@ fn is_size_error(response: &Value) -> bool {
     let error = &response["error"];
     let message = error["message"].as_str().unwrap_or("");
     error["code"].as_i64() == Some(SIZE_ERROR)
-        && message.contains("VersionedTransaction too large")
-        && message.contains("4097")
-        && message.contains("4096")
+        && message.ends_with("VersionedTransaction too large: 4097 bytes (max: 4096 bytes)")
 }
 
 #[cfg(test)]
@@ -290,6 +288,7 @@ mod tests {
             json!({"error":{"code":SIZE_ERROR,"message":"invalid base64"}}),
             json!({"result":null}),
             json!({"error":{"code":SIZE_ERROR,"message":"VersionedTransaction too large: 5000 (max: 1232)"}}),
+            json!({"error":{"code":SIZE_ERROR,"message":"VersionedTransaction too large: 40970 bytes (max: 40960 bytes)"}}),
         ] {
             assert!(!is_size_error(&response));
         }

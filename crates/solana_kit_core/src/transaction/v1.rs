@@ -10,6 +10,7 @@ use super::{
 };
 
 use super::config::{COMPUTE_BIT, HEAP_BIT, LOADED_BIT, PRIORITY_MASK};
+use super::wire::Reader;
 
 pub(super) const MAX_SIGNERS: u8 = 12;
 pub(super) const MAX_ADDRESSES: usize = 64;
@@ -113,7 +114,7 @@ pub(super) fn decode_prefix(bytes: &[u8]) -> Result<(Message, usize), Error> {
     }
 
     let config = reader.config(mask)?;
-    let instructions = reader.instructions(instruction_count)?;
+    let instructions = reader.v1_instructions(instruction_count)?;
     let message = Message {
         version: Version::V1,
         header,
@@ -149,27 +150,7 @@ pub(super) fn decode_transaction(bytes: &[u8]) -> Result<Transaction, Error> {
     })
 }
 
-struct Reader<'a> {
-    bytes: &'a [u8],
-    offset: usize,
-}
-
-impl<'a> Reader<'a> {
-    fn take(&mut self, count: usize) -> Result<&'a [u8], Error> {
-        let end = self.offset.checked_add(count).ok_or(Error::InvalidLength)?;
-        let value = self.bytes.get(self.offset..end).ok_or(Error::Truncated)?;
-        self.offset = end;
-        Ok(value)
-    }
-
-    fn array<const N: usize>(&mut self) -> Result<[u8; N], Error> {
-        self.take(N)?.try_into().map_err(|_| Error::Truncated)
-    }
-
-    fn byte(&mut self) -> Result<u8, Error> {
-        Ok(self.array::<1>()?[0])
-    }
-
+impl Reader<'_> {
     fn config(&mut self, mask: u32) -> Result<V1Config, Error> {
         let mut config = V1Config::default();
 
@@ -192,7 +173,7 @@ impl<'a> Reader<'a> {
         Ok(config)
     }
 
-    fn instructions(&mut self, count: usize) -> Result<Vec<CompiledInstruction>, Error> {
+    fn v1_instructions(&mut self, count: usize) -> Result<Vec<CompiledInstruction>, Error> {
         let mut headers = Vec::new();
 
         for _ in 0..count {
