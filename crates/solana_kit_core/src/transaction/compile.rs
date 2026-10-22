@@ -35,7 +35,7 @@ pub(super) fn compile(
         return Err(Error::PacketTooLarge);
     }
 
-    if version == Version::V1 && instructions.len() > 64 {
+    if version == Version::V1 && instructions.len() > super::v1::MAX_INSTRUCTIONS {
         return Err(Error::InvalidV1Limits);
     }
 
@@ -96,6 +96,8 @@ fn partition(
     }
 }
 
+// Privileges merge before partitioning so a later signer/writable use cannot
+// accidentally remain a readonly lookup entry. Bound input before cloning data.
 fn collect_accounts(
     payer: Address,
     instructions: &[Instruction],

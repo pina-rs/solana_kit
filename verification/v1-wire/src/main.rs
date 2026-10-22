@@ -5,10 +5,19 @@ use std::process::Command;
 
 use base64::{Engine, engine::general_purpose::STANDARD};
 use serde_json::{Value, json};
-use solana_kit_core::{Address, crypto::Keypair};
-use solana_kit_v1_wire_proof::{Instruction, MAX_PACKET, Message, encode};
+use solana_kit_core::{
+    AccountMeta, AccountRole, Address, Hash, Instruction,
+    crypto::Keypair,
+    transaction::{Lifetime, Message, Transaction, V1_PACKET_SIZE as MAX_PACKET, V1Config},
+};
 
 const STATUS_POLL_MS: u64 = 200;
+const COMPUTE_LIMIT: u32 = 200_000;
+const LOADED_LIMIT: u32 = 1_048_576;
+const LARGE_PADDING: usize = 1600;
+const SIZE_ERROR: i64 = -32602;
+#[cfg(test)]
+const INTERNAL_ERROR: i64 = -32603;
 
 fn rpc(method: &str, params: Value) -> Result<Value, Box<dyn Error>> {
     let body = json!({"jsonrpc":"2.0", "id":1, "method":method, "params":params});
@@ -23,7 +32,7 @@ fn rpc(method: &str, params: Value) -> Result<Value, Box<dyn Error>> {
             "--data",
         ])
         .arg(body.to_string())
-        .arg("http://127.0.0.1:18899")
+        .arg("http://127.0.0.1:19899")
         .output()?;
 
     if !output.status.success() {
@@ -34,9 +43,7 @@ fn rpc(method: &str, params: Value) -> Result<Value, Box<dyn Error>> {
 }
 
 fn signature_wire(message: &Message, key: &Keypair) -> Result<Vec<u8>, Box<dyn Error>> {
-    let empty = encode(message, &[[0; 64]])?;
-    let signature = key.sign(&empty[..empty.len() - 64]);
-    Ok(encode(message, &[*signature.as_bytes()])?)
+    Ok(Transaction::new(message.clone()).sign(key)?.encode(true)?)
 }
 
 fn simulate(name: &str, wire: &[u8]) -> Result<Value, Box<dyn Error>> {
@@ -66,23 +73,47 @@ fn control_wire(payer: &[u8; 32], hash: &[u8; 32], key: &Keypair) -> Vec<u8> {
     wire
 }
 
-fn base_message(payer: [u8; 32], hash: [u8; 32]) -> Message {
+fn base_message(
+    payer: Address,
+    hash: Hash,
+    padding: Option<usize>,
+) -> Result<Message, Box<dyn Error>> {
     let mut data = 2u32.to_le_bytes().to_vec();
     data.extend(10_000_000u64.to_le_bytes());
-    let mut config = 200_000u32.to_le_bytes().to_vec();
-    config.extend(1_048_576u32.to_le_bytes());
-    Message {
-        header: [1, 0, 1],
-        mask: 12,
-        lifetime: hash,
-        addresses: vec![payer, [8; 32], [0; 32]],
-        config,
-        instructions: vec![Instruction {
-            program: 2,
-            accounts: vec![0, 1],
-            data,
-        }],
+    let mut instructions = vec![Instruction {
+        program_address: Address::from_bytes([0; 32]),
+        accounts: vec![
+            AccountMeta {
+                address: payer,
+                role: AccountRole::WritableSigner,
+            },
+            AccountMeta {
+                address: Address::from_bytes([8; 32]),
+                role: AccountRole::Writable,
+            },
+        ],
+        data,
+    }];
+
+    if let Some(count) = padding {
+        instructions.push(Instruction {
+            program_address: "ComputeBudget111111111111111111111111111111".parse()?,
+            accounts: vec![],
+            data: vec![7; count],
+        });
     }
+
+    Ok(Message::compile_v1(
+        payer,
+        Lifetime::Blockhash {
+            blockhash: hash,
+            last_valid_block_height: u64::MAX,
+        },
+        &instructions,
+        V1Config::default()
+            .with_compute_unit_limit(COMPUTE_LIMIT)
+            .with_loaded_accounts_data_limit(LOADED_LIMIT),
+    )?)
 }
 
 /// Polls local fixture submissions with matching commitment to avoid hash ambiguity.
@@ -153,8 +184,9 @@ fn main() -> Result<(), Box<dyn Error>> {
         .ok_or("missing blockhash")?
         .parse()?;
     legacy_control(&key, &hash)?;
-    let message = base_message(*key.address().as_bytes(), *hash.as_bytes());
+    let message = base_message(key.address(), Hash::from_bytes(*hash.as_bytes()), None)?;
     let small = signature_wire(&message, &key)?;
+
     let small_result = simulate("v1-small", &small)?;
 
     if std::env::args().nth(1).as_deref() == Some("--expect-disabled") {
@@ -173,7 +205,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     send_and_confirm("v1-small", &small)?;
     signature_negative(&small)?;
-    large_probe(message, &key)?;
+    large_probe(Hash::from_bytes(*hash.as_bytes()), &key)?;
     Ok(())
 }
 
@@ -189,15 +221,8 @@ fn legacy_control(key: &Keypair, hash: &Address) -> Result<(), Box<dyn Error>> {
     send_and_confirm("legacy-control", &control)
 }
 
-fn large_probe(mut message: Message, key: &Keypair) -> Result<(), Box<dyn Error>> {
-    let budget: Address = "ComputeBudget111111111111111111111111111111".parse()?;
-    message.addresses.push(*budget.as_bytes());
-    message.header[2] += 1;
-    message.instructions.push(Instruction {
-        program: 3,
-        accounts: vec![],
-        data: vec![7; 1600],
-    });
+fn large_probe(hash: Hash, key: &Keypair) -> Result<(), Box<dyn Error>> {
+    let message = base_message(key.address(), hash, Some(LARGE_PADDING))?;
     let wire = signature_wire(&message, key)?;
     let result = simulate("v1-large-noop", &wire)?;
 
@@ -206,8 +231,8 @@ fn large_probe(mut message: Message, key: &Keypair) -> Result<(), Box<dyn Error>
     }
 
     send_and_confirm("v1-large-noop", &wire)?;
-    let increase = MAX_PACKET - wire.len();
-    message.instructions[1].data.extend(vec![7; increase]);
+    let padding = LARGE_PADDING + MAX_PACKET - wire.len();
+    let message = base_message(key.address(), hash, Some(padding))?;
     let exact = signature_wire(&message, key)?;
     assert_eq!(exact.len(), MAX_PACKET);
     let exact_result = simulate("v1-exact-cap", &exact)?;
@@ -217,11 +242,12 @@ fn large_probe(mut message: Message, key: &Keypair) -> Result<(), Box<dyn Error>
     }
 
     send_and_confirm("v1-exact-cap", &exact)?;
+    assert!(base_message(key.address(), hash, Some(padding + 1)).is_err());
     let mut over = exact;
     over.push(0);
     let rejected = simulate("v1-over-cap", &over)?;
 
-    if rejected.get("error").is_none() {
+    if !is_size_error(&rejected) {
         return Err("4097 bytes unexpectedly accepted at RPC boundary".into());
     }
 
@@ -239,4 +265,33 @@ fn signature_negative(wire: &[u8]) -> Result<(), Box<dyn Error>> {
     }
 
     Ok(())
+}
+
+fn is_size_error(response: &Value) -> bool {
+    let error = &response["error"];
+    let message = error["message"].as_str().unwrap_or("");
+    error["code"].as_i64() == Some(SIZE_ERROR)
+        && message.contains("VersionedTransaction too large")
+        && message.contains("4097")
+        && message.contains("4096")
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn packet_cap_requires_the_specific_node_size_error() {
+        let exact = json!({"error":{"code":SIZE_ERROR,"message":"decoded VersionedTransaction too large: 4097 bytes (max: 4096 bytes)"}});
+        assert!(is_size_error(&exact));
+
+        for response in [
+            json!({"error":{"code":INTERNAL_ERROR,"message":"internal error"}}),
+            json!({"error":{"code":SIZE_ERROR,"message":"invalid base64"}}),
+            json!({"result":null}),
+            json!({"error":{"code":SIZE_ERROR,"message":"VersionedTransaction too large: 5000 (max: 1232)"}}),
+        ] {
+            assert!(!is_size_error(&response));
+        }
+    }
 }

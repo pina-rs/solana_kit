@@ -9,12 +9,20 @@ use super::{
     V1Config, Version, wire,
 };
 
+use super::config::{COMPUTE_BIT, HEAP_BIT, LOADED_BIT, PRIORITY_MASK};
+
+pub(super) const MAX_SIGNERS: u8 = 12;
+pub(super) const MAX_ADDRESSES: usize = 64;
+pub(super) const MAX_INSTRUCTIONS: usize = 64;
+
+// Version-one's additional bounds and uniqueness are wire constraints, unlike
+// local construction's readonly-program restriction.
 pub(super) fn validate(message: &Message) -> Result<(), Error> {
     let unique: BTreeSet<_> = message.static_accounts.iter().collect();
 
-    if message.header.required_signatures > 12
-        || message.static_accounts.len() > 64
-        || message.instructions.len() > 64
+    if message.header.required_signatures > MAX_SIGNERS
+        || message.static_accounts.len() > MAX_ADDRESSES
+        || message.instructions.len() > MAX_INSTRUCTIONS
         || unique.len() != message.static_accounts.len()
         || !message.lookups.is_empty()
     {
@@ -22,7 +30,8 @@ pub(super) fn validate(message: &Message) -> Result<(), Error> {
     }
 
     if message.instructions.iter().any(|instruction| {
-        instruction.accounts.len() > 255 || instruction.data.len() > usize::from(u16::MAX)
+        instruction.accounts.len() > usize::from(u8::MAX)
+            || instruction.data.len() > usize::from(u16::MAX)
     }) {
         return Err(Error::InvalidLength);
     }
@@ -94,7 +103,10 @@ pub(super) fn decode_prefix(bytes: &[u8]) -> Result<(Message, usize), Error> {
     let instruction_count = usize::from(reader.byte()?);
     let address_count = usize::from(reader.byte()?);
 
-    if header.required_signatures > 12 || instruction_count > 64 || address_count > 64 {
+    if header.required_signatures > 12
+        || instruction_count > MAX_INSTRUCTIONS
+        || address_count > MAX_ADDRESSES
+    {
         return Err(Error::InvalidV1Limits);
     }
 
@@ -165,19 +177,19 @@ impl<'a> Reader<'a> {
     fn config(&mut self, mask: u32) -> Result<V1Config, Error> {
         let mut config = V1Config::default();
 
-        if mask & 3 != 0 {
+        if mask & PRIORITY_MASK != 0 {
             config = config.with_priority_fee(u64::from_le_bytes(self.array()?));
         }
 
-        if mask & 4 != 0 {
+        if mask & COMPUTE_BIT != 0 {
             config = config.with_compute_unit_limit(u32::from_le_bytes(self.array()?));
         }
 
-        if mask & 8 != 0 {
+        if mask & LOADED_BIT != 0 {
             config = config.with_loaded_accounts_data_limit(u32::from_le_bytes(self.array()?));
         }
 
-        if mask & 16 != 0 {
+        if mask & HEAP_BIT != 0 {
             config = config.with_heap_size(HeapSize::new(u32::from_le_bytes(self.array()?))?);
         }
 

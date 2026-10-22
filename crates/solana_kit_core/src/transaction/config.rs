@@ -4,6 +4,15 @@ use alloc::vec::Vec;
 
 use super::Error;
 
+const MIN_HEAP: u32 = 32768;
+const MAX_HEAP: u32 = 262144;
+const HEAP_ALIGNMENT: u32 = 1024;
+pub(super) const PRIORITY_MASK: u32 = 3;
+pub(super) const COMPUTE_BIT: u32 = 4;
+pub(super) const LOADED_BIT: u32 = 8;
+pub(super) const HEAP_BIT: u32 = 16;
+const KNOWN_MASK: u32 = 31;
+
 /// An explicitly requested heap frame, in bytes.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct HeapSize(u32);
@@ -14,7 +23,7 @@ impl HeapSize {
     /// # Errors
     /// Returns [`Error::InvalidConfig`] for an out-of-range or unaligned value.
     pub fn new(bytes: u32) -> Result<Self, Error> {
-        if !(32768..=262144).contains(&bytes) || bytes % 1024 != 0 {
+        if !(MIN_HEAP..=MAX_HEAP).contains(&bytes) || bytes % HEAP_ALIGNMENT != 0 {
             return Err(Error::InvalidConfig);
         }
 
@@ -96,10 +105,10 @@ impl V1Config {
     /// Canonical supported mask; the two priority bits are always atomic.
     #[must_use]
     pub fn mask(self) -> u32 {
-        u32::from(self.priority_fee.is_some()) * 3
-            | u32::from(self.compute_unit_limit.is_some()) * 4
-            | u32::from(self.loaded_accounts_data_limit.is_some()) * 8
-            | u32::from(self.heap_size.is_some()) * 16
+        u32::from(self.priority_fee.is_some()) * PRIORITY_MASK
+            | u32::from(self.compute_unit_limit.is_some()) * COMPUTE_BIT
+            | u32::from(self.loaded_accounts_data_limit.is_some()) * LOADED_BIT
+            | u32::from(self.heap_size.is_some()) * HEAP_BIT
     }
 
     pub(super) fn encode(self, bytes: &mut Vec<u8>) {
@@ -120,7 +129,7 @@ impl V1Config {
     }
 
     pub(super) fn validate_mask(mask: u32) -> Result<(), Error> {
-        if mask & !31 != 0 || matches!(mask & 3, 1 | 2) {
+        if mask & !KNOWN_MASK != 0 || matches!(mask & PRIORITY_MASK, 1 | 2) {
             return Err(Error::InvalidConfig);
         }
 

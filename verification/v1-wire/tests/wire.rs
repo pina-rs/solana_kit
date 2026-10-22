@@ -1,6 +1,9 @@
 use base64::{Engine, engine::general_purpose::STANDARD};
 use solana_kit_v1_wire_proof::{Message, decode, encode};
 
+const SIGNATURE_SIZE: usize = 64;
+const HEAP_BIT: u32 = 16;
+
 fn minimal() -> Message {
     Message {
         header: [1, 0, 0],
@@ -27,10 +30,17 @@ fn literal_message_first_layout_and_official_oracle() {
 }
 
 fn official(wire: &[u8]) {
+    let public = solana_kit_core::transaction::Transaction::decode(wire).unwrap();
+    assert_eq!(public.encode(false).unwrap(), wire);
+    assert_eq!(
+        public.message().version(),
+        solana_kit_core::transaction::Version::V1
+    );
     let (message, signatures) = decode(wire).unwrap();
-    let message_end = wire.len() - signatures.len() * 64;
+    let message_end = wire.len() - signatures.len() * SIGNATURE_SIZE;
     let official = solana_message::v1::deserialize(&wire[1..message_end]).unwrap();
     official.validate().unwrap();
+
     assert_eq!(official.serialize(), wire[..message_end]);
     assert_eq!(encode(&message, &signatures).unwrap(), wire);
 }
@@ -47,10 +57,13 @@ fn pinned_dart_vectors_match_official_rust_and_exact_envelope() {
             fixture["wireBytes"].as_u64().unwrap() as usize,
             "{name}"
         );
+
         official(&wire);
 
+        let public = solana_kit_core::transaction::Transaction::decode(&wire).unwrap();
+        public.verify().unwrap();
         let (message, signatures) = decode(&wire).unwrap();
-        let message_end = wire.len() - signatures.len() * 64;
+        let message_end = wire.len() - signatures.len() * SIGNATURE_SIZE;
 
         for (address, signature) in message.addresses.iter().zip(&signatures) {
             solana_kit_core::crypto::verify(
@@ -63,6 +76,7 @@ fn pinned_dart_vectors_match_official_rust_and_exact_envelope() {
 
         for length in 0..wire.len() {
             assert!(decode(&wire[..length]).is_err(), "{name} prefix {length}");
+            assert!(solana_kit_core::transaction::Transaction::decode(&wire[..length]).is_err());
         }
 
         let mut trailing = wire.clone();
@@ -155,7 +169,7 @@ fn structural_maxima_and_config_order_match_official() {
 
         message.config = vec![0; mask.count_ones() as usize * 4];
 
-        if mask & 16 != 0 {
+        if mask & HEAP_BIT != 0 {
             let length = message.config.len();
             message.config[length - 4..].copy_from_slice(&32768u32.to_le_bytes());
         }
