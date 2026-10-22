@@ -15,7 +15,10 @@ pub mod sysvars;
 
 mod encoding;
 mod instruction;
+/// Immutable off-chain application messages and signing envelopes.
+pub mod offchain;
 pub mod transaction;
+
 mod values;
 
 /// Bounded deterministic binary codecs.

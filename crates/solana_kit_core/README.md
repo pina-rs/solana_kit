@@ -2,7 +2,8 @@
 
 Portable off-chain client types for Solana addresses, hashes, signatures,
 ordered instructions, bounded binary codecs, account snapshots, sysvar layouts,
-program errors, and immutable legacy/v0/v1 transactions.
+program errors, immutable legacy/v0/v1 transactions, and off-chain application
+messages.
 The default dependency graph contains only `bs58`. The optional `crypto` feature
 adds SHA-256, validated program-derived addresses, and deterministic Ed25519
 signing and strict verification through RustCrypto implementations.
@@ -23,7 +24,7 @@ Local compilation requires explicit blockhash expiry metadata. Received wire
 preserves its exact signed bytes and records the lifetime token as unresolved,
 because expiry height is absent from the wire. Optional `crypto` signs and
 verifies those frozen bytes; structural decoding alone does not authenticate
-signatures. Durable nonce lifecycle, full introspection, off-chain messages and
+signatures. Durable nonce lifecycle, full introspection, and
 general signer capabilities remain pending.
 
 `accounts` owns present and missing snapshots and decodes data while preserving
@@ -115,3 +116,23 @@ numeric text without floating point. Optional `text-codecs` adds only audited
 Base64 conversion. Encoders take alphabet text and produce binary bytes;
 decoders render bytes as text. See the numeric/string parity receipt for explicit
 bounds, unsupported non-BMP custom alphabets and remaining generic BigInt helpers.
+
+`offchain` provides V0 and V1 application messages with caller-selected byte and
+allocation budgets. A validated `Message` retains its exact immutable signing
+bytes. `Envelope` stores ordered optional signatures and supports partial signing
+and strict verification with `crypto`. Signature presence alone does not prove
+authenticity. V0 content limits apply to content, independently of transaction
+packet limits. V1 content consumes the complete input frame and has no protocol
+size cap. See the [scoped receipt](../../docs/parity/offchain-messages.md).
+
+```rust
+use solana_kit_core::{Address, codecs::Limits, offchain::{Envelope, Message}};
+
+let signer = Address::from_bytes([1; 32]);
+let message = Message::v1("Authorize this application", &[signer], 1024)?;
+let envelope = Envelope::unsigned(message)?;
+let wire = envelope.encode(false, 2048)?;
+let received = Envelope::decode(&wire, Limits::new(2048, 4096))?;
+assert!(!received.is_complete());
+# Ok::<(), solana_kit_core::offchain::Error>(())
+```
