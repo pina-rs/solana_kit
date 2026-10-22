@@ -3,7 +3,7 @@ name = "solana_kit_core"
 version = "0.1.0"
 authors.workspace = true
 edition.workspace = true
-include = ["src/**", "README.md", "LICENSE"]
+include = ["src/**", "README.md", "LICENSE", "THIRD_PARTY_NOTICES.md"]
 license.workspace = true
 readme = "README.md"
 repository = "https://github.com/pina-rs/solana_kit/tree/main/crates/solana_kit_core"
@@ -14,8 +14,10 @@ description = "Portable Solana values, instructions, and deterministic cryptogra
 default = []
 crypto = ["dep:sha2", "dep:curve25519-dalek", "dep:ed25519-dalek"]
 fixed-points = ["dep:num-bigint", "dep:num-traits"]
+text-codecs = ["dep:base64"]
 
 [dependencies]
+base64 = { version = "0.22.1", default-features = false, features = ["alloc"], optional = true }
 bs58 = { version = "0.5.1", default-features = false, features = ["alloc"] }
 curve25519-dalek = { version = "4.1.3", default-features = false, optional = true }
 ed25519-dalek = { version = "2.2.0", default-features = false, features = ["zeroize"], optional = true }

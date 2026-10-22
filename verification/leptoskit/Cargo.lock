@@ -414,6 +414,7 @@ dependencies = [
 name = "solana_kit_core"
 version = "0.1.0"
 dependencies = [
+ "base64",
  "bs58",
  "curve25519-dalek",
  "ed25519-dalek",

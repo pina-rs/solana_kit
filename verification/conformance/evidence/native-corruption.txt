@@ -54,4 +54,7 @@ system-client-nonce-snapshot: Ok(())
 rpc-node-scalar-metadata: Ok(())
 rpc-node-structured-metadata: Ok(())
 rpc-node-certificate-failures: Ok(())
-solana-kit-core-v10: 55/56 cases passed
+numeric-text-codecs: Ok(())
+numeric-wide-text: Ok(())
+numeric-text-malformed: Ok(())
+solana-kit-core-v11: 58/59 cases passed

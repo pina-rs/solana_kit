@@ -104,5 +104,14 @@ tables, and signs the message prefix before appending fixed-width signatures.
 Its complete envelope is bounded to 4096 bytes; legacy/v0 retain 1232 bytes.
 Node version alone does not advertise feature activation. The local proof is
 documented in `docs/verification/v1-wire.md`. Three V1 assertion groups execute
-within the shared 48-case native/browser/WASI/LeptosKit suite; durable nonce
+within the shared 59-case native/browser/WASI/LeptosKit suite; durable nonce
 lifecycle remains a separate follow-up.
+
+Text codecs include exact Base10/Base58 integer radix conversion, configurable
+bit reslicing, mixed-case hexadecimal with odd low-nibble tails, and explicit
+`Utf8Config` strict/lossy, BOM and null policies. Existing `Utf8` preserves its
+strict BOM-preserving contract. `Uint256` and `Int256` parse and format exact
+numeric text without floating point. Optional `text-codecs` adds only audited
+Base64 conversion. Encoders take alphabet text and produce binary bytes;
+decoders render bytes as text. See the numeric/string parity receipt for explicit
+bounds, unsupported non-BMP custom alphabets and remaining generic BigInt helpers.
