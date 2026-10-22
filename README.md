@@ -15,15 +15,18 @@ errors, optional exact fixed points, and deterministic cryptography. The generat
 parsers for all fourteen pinned System instructions, nonce account snapshots,
 and numeric custom errors. `solana_kit_client` adds typed balance, latest-blockhash and full-base64
 account reads, all nineteen node metadata operations and all eight economics
-operations, plus nine account and token operations and richer accountInfo,
-through one executor-neutral protocol owner. These implement 39 of
-the 54 catalog methods. The shared 68-case suite has
+operations, nine account and token operations and richer accountInfo,
+and all fifteen history, submission, full-result and simulation operations,
+through one executor-neutral protocol owner. All 54 catalog methods have typed
+implementations. The shared 75-case suite has
 [runtime execution evidence](docs/verification/runtimes.md).
 The core component is unreleased; the published `solana_kit` 0.0.0 umbrella remains
 a dependency-free name reservation with no SDK APIs. This bounded codec slice
 leaves Phase 2 incomplete; see its [capability receipt](docs/verification/core-codecs.md).
 The [transaction ledger](docs/parity/message-transactions.md) records 33 partial
 and 713 pending capabilities; Phase 3 remains incomplete.
+The [offchain message receipt](docs/parity/offchain-messages.md) records bounded
+V0/V1 application messages and signing envelopes. Its 83 IDs remain partial.
 The [account/sysvar receipt](docs/verification/accounts-sysvars.md) maps 151
 declarations and retains all 78 unresolved declarations explicitly.
 The [fixed-point receipt](docs/parity/fixed-points.md) maps 121 bounded equivalents
@@ -32,7 +35,7 @@ The [System client receipt](docs/verification/system-client.md) records 173
 implemented mappings and 68 partial or pending declarations. Validator execution
 and durable nonce transaction journeys remain unfinished.
 
-Nine portable RPC protocol groups execute with memory transports on every core
+Sixteen portable RPC protocol groups execute with memory transports on every core
 host. The native adapter provides bounded HTTP/1 and TLS with caller-owned
 Tokio execution, deadlines, cancellation and authentication. Its
 [native networking receipt](docs/verification/native-http.md) records actual local
@@ -43,11 +46,12 @@ actual Chrome journeys. The optional `solana_kit_leptoskit` adapter provides
 headless interpreted HTTP through fixed host-owned services, real guest wake and
 cancellation, and awaited native teardown. Its
 [actual-host receipt](docs/verification/leptoskit-http.md) records both stable and
-MSRV guest execution. WASI networking, browser workers, remaining RPC operations,
-subscriptions and installed application journeys remain separate work; see the
+MSRV guest execution. WASI networking, browser workers, subscriptions,
+and installed application journeys remain separate work; see the
 [RPC receipt](docs/parity/rpc-foundation.md) and
 [node operation receipt](docs/verification/rpc-node.md) and
-[economics runtime receipt](docs/verification/rpc-economics.md).
+[economics runtime receipt](docs/verification/rpc-economics.md) and
+[complete catalog runtime receipt](docs/verification/rpc-history.md).
 
 - [Delivery plan](docs/planning/plan.md)
 - [Architecture and API proposal](docs/architecture/design.md)

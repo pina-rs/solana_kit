@@ -1,6 +1,30 @@
 //! Actual upstream memory guards and host admission never turn errors into data.
 use super::*;
 use leptoskit_native::HeadlessBackend;
+use tokio::{
+    io::{AsyncReadExt, AsyncWriteExt},
+    net::TcpListener,
+};
+
+async fn invalid_http_peer(listener: TcpListener) {
+    let (mut socket, _) = listener.accept().await.unwrap();
+    let mut headers = Vec::new();
+
+    while !headers.ends_with(b"\r\n\r\n") {
+        headers.push(socket.read_u8().await.unwrap());
+        assert!(headers.len() < 1024);
+    }
+
+    assert!(headers.starts_with(b"POST / HTTP/1.1\r\n"));
+    let mut body = [0; 2];
+    socket.read_exact(&mut body).await.unwrap();
+    assert_eq!(&body, b"{}");
+    socket
+        .write_all(b"not an HTTP response\r\n\r\n")
+        .await
+        .unwrap();
+    socket.shutdown().await.unwrap();
+}
 
 fn host() -> HttpHost<HeadlessBackend> {
     let wasm = wat::parse_str(
@@ -140,9 +164,9 @@ async fn stale_generation_never_wakes_a_replacement() {
 #[tokio::test]
 async fn completed_native_failure_after_cancellation_is_joined_without_guest_entry() {
     let mut app = host();
-    let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
     let address = listener.local_addr().unwrap();
-    drop(listener);
+    let peer = tokio::spawn(invalid_http_peer(listener));
     let native = NativeHttp::new(&format!("http://{address}/"), Default::default()).unwrap();
     let plugin = app.install("fixed", native, true).unwrap();
     let call = app
@@ -154,6 +178,8 @@ async fn completed_native_failure_after_cancellation_is_joined_without_guest_ent
     app.drain().unwrap();
 
     tokio::time::timeout(std::time::Duration::from_secs(2), async {
+        peer.await.unwrap();
+
         while !app.jobs.values().next().unwrap().abort.is_finished() {
             tokio::task::yield_now().await;
         }
@@ -163,6 +189,10 @@ async fn completed_native_failure_after_cancellation_is_joined_without_guest_ent
     assert_eq!(app.retained_jobs(), 1);
     app.host_mut().unwrap().plugins().cancel(call).unwrap();
     app.drain().unwrap();
+    assert!(matches!(
+        app.host_mut().unwrap().plugins().result(call),
+        Err(leptoskit_bridge::Error::InvalidCall)
+    ));
     assert_eq!(app.retained_jobs(), 1);
     assert!(app.next_completion().await.unwrap());
     assert_eq!(app.retained_jobs(), 0);
@@ -170,6 +200,26 @@ async fn completed_native_failure_after_cancellation_is_joined_without_guest_ent
 
     assert_eq!(app.host_mut().unwrap().plugins().buffered_bytes(), 0);
     app.shutdown().await.unwrap();
+}
+
+#[tokio::test]
+async fn invalid_http_peer_produces_real_native_transport_failure() {
+    let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let address = listener.local_addr().unwrap();
+    let peer = tokio::spawn(invalid_http_peer(listener));
+    let native = NativeHttp::new(&format!("http://{address}/"), Default::default()).unwrap();
+    let request = solana_kit_client::Request {
+        body: b"{}".to_vec(),
+        max_reply_bytes: 16,
+    };
+
+    tokio::time::timeout(std::time::Duration::from_secs(2), async {
+        let error = native.exchange(request).await.unwrap_err();
+        assert_eq!(error.kind, TransportFailureKind::InvalidResponse);
+        peer.await.unwrap();
+    })
+    .await
+    .unwrap();
 }
 
 #[test]

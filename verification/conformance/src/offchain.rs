@@ -1,4 +1,4 @@
-//! Isolated portable off-chain message cases, outside the shared suite registry.
+//! Accepted portable off-chain message cases reused by the shared suite.
 extern crate alloc;
 
 const VERSION_OFFSET: usize = 16;

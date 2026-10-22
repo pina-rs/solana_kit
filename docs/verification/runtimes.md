@@ -17,6 +17,7 @@ wasm-bindgen-cli --version 0.2.128 --locked`. Set these executable paths:
 export CHROME=/path/to/chrome
 export CHROMEDRIVER=/path/to/matching/chromedriver
 export WASMTIME=/path/to/wasmtime
+export WASM_BINDGEN_TEST_DRIVER_TIMEOUT=30
 cargo xtask all
 ```
 
@@ -36,13 +37,79 @@ dispatches a `Press` event and requires the corrupted report and second commit.
 The guest's small unsafe FFI wrappers implement that pinned synchronous copy ABI;
 core and the host harness forbid unsafe code.
 
-## Current v14 account and token RPC receipt
+## Current v16 offchain message receipt
+
+Signed executable source `1fd7a56f94b0589517c7586c012b23fedff0756b` executes
+`solana-kit-core-v16`. It preserves the corrected history parent's first 72 case
+IDs, order and report bytes and appends `offchain-valid-wire`,
+`offchain-malformed-bounds`, and `offchain-signature-tamper`. The accepted final
+history parent `a0c2520b27db369f9c5f2e65afbbf15de755d6bd` adds documentation and
+ancestry only over its executed source. No executable source or manifest changes
+were needed for that final additive merge.
+
+On 2026-10-22, `cargo +1.99.1 xtask all` passed with fresh owned targets using
+Rust 1.99.1, Chrome 155.0.8059.85, ChromeDriver 155.0.8059.84, Wasmtime 50.0.0,
+and the pinned actual LeptosKit host above. Only the driver startup timeout was
+set to 30 seconds.
+
+| Actual host               | Canonical                   | Corruption control             |
+| ------------------------- | --------------------------- | ------------------------------ |
+| Native command            | 75/75, exit 0               | 74/75, exit 1                  |
+| Real Chrome               | Full 75/75 report checked   | Full 74/75 report checked      |
+| Wasmtime Preview 1        | 75/75, exit 0               | 74/75, exit 1                  |
+| Wasmtime Preview 2        | 75/75, exit 0               | 74/75, exit 1                  |
+| Actual LeptosKit WasmHost | Full 75/75 JSON, one commit | Full 74/75 JSON, second commit |
+
+Only `sha256-fips-abc` fails in corruption mode. The three appended functions
+retain their accepted isolated bodies without algorithm changes. The
+[offchain receipt](../parity/offchain-messages.md) records immutable V0/V1
+messages, envelopes, exact signing bytes and both documented V0 differences.
+All 83 declaration IDs remain partial, with none complete.
+
+The unchanged independent Rust 1.89 consumer passes with default features and
+crypto after a dependency manifest path adaptation only. Every source, lock and
+original Dart oracle byte remains exact. All four message, unsigned-envelope,
+signed-envelope and deterministic signature fixtures match. The default core
+normal/build closure remains core plus bs58. The full host command also passes
+selected dependency/import policies, negative controls and all five packaged-core
+consumer groups. Guest imports remain exactly `leptoskit::{node_create,node_set_props,commit}`.
+
+Executed artifact SHA-256 values follow. Paths are relative to the owned checkout.
+
+```text
+2ada3e01d30b284d70865eb41db88079a8818d711383cb9bd62d8e7edc5f8dfa  target/wasm32-wasip1/debug/solana_kit_conformance.wasm
+a4daefce416082e4a646aa18daf707d1608b87ae9b037033c2b6283d234bb217  target/wasm32-wasip2/debug/solana_kit_conformance.wasm
+9f8946aa4b2c7353107568de367c535931b6aafacfc0ff67fcd744b6b3ef9ae9  target/wasm32-unknown-unknown/release/solana_kit_conformance_guest.wasm
+```
+
+This proves synchronous offchain-client execution. It establishes no complete
+phase, validator, installed app, mobile device or registry release readiness.
+The following receipts retain their historical counts and artifacts.
+
+## Historical v15 complete RPC catalog receipt
+
+The `solana-kit-core-v15` suite preserves the first 68 case lines and appends
+four history/submission/full-result/address/simulation groups. Clean signed source
+`f4e0364bbd900912a677277e9ee5853d3994c6d9` executes all 54 catalog methods through
+the public Client. Native Rust, Chrome, both Wasmtime previews and the actual
+pinned LeptosKit host each check 72 canonical passes and the sole 71/72
+corrupt-hash result. `cargo +1.99.1 xtask all` also passes its existing import,
+dependency and five packaged-core consumer gates.
+
+The [complete catalog runtime receipt](rpc-history.md) records artifact hashes,
+literal requests, typed values, default caps and failure controls. The 146-ID
+history ledger remains 130 implemented and 16 pending, and the account/token
+100-ID ledger is unchanged. All 398 canonical RPC declaration IDs remain intact.
+Method coverage does not establish complete declaration, network, validator,
+device, registry or Phase 4 support.
+
+## Historical v14 account and token RPC receipt
 
 The `solana-kit-core-v14` suite preserves the first 65 case lines and appends
 three account/token groups. Clean signed source
 `f7f1107a8770bba12544aac10586ebefcdd33438` executes all nine new methods and richer
 accountInfo through the public Client and existing memory fixture. The public
-catalog now implements 39 of 54 methods, leaving 15 pending.
+catalog at that checkpoint implemented 39 of 54 methods, leaving 15 pending.
 
 The [account/token receipt](rpc-account-token.md) records actual host results,
 full-width values, literal requests, malformed controls and representation limits.
