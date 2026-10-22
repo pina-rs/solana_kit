@@ -88,4 +88,11 @@ wallet-capability-contracts: Ok(())
 wallet-registry-revision: Ok(())
 wallet-registry-lifecycle: Ok(())
 wallet-registry-exhaustion: Ok(())
-solana-kit-core-v21: 90/90 cases passed
+signer-valid-snapshot: Ok(())
+signer-malformed-signature: Ok(())
+signer-tamper-snapshot: Ok(())
+signer-logical-identity: Ok(())
+signer-heterogeneous-roles: Ok(())
+signer-local-lifecycle: Ok(())
+signer-ordered-batches: Ok(())
+solana-kit-core-v22: 97/97 cases passed

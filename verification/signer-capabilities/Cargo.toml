@@ -1,0 +1,19 @@
+[workspace]
+
+[package]
+name = "signer_capability_consumer"
+version = "0.0.0"
+edition = "2024"
+publish = false
+rust-version = "1.89"
+
+[dependencies]
+solana_kit_core = { path = "../../crates/solana_kit_core", features = ["crypto"] }
+solana_kit_signers = { path = "../../crates/solana_kit_signers", features = ["crypto"] }
+
+[dev-dependencies]
+tokio = { version = "=1.54.1", features = ["rt-multi-thread", "macros"] }
+
+[features]
+default = ["crypto"]
+crypto = []

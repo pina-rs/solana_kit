@@ -19,6 +19,7 @@ mod codecs;
 mod composites;
 mod cryptography;
 mod fixed_points;
+
 mod framing_cases;
 mod instructions;
 mod offchain;
@@ -33,6 +34,8 @@ mod rpc_history;
 mod rpc_node;
 mod rpc_results;
 mod rpc_submission;
+/// Public signer fixtures for portable orchestration diagnostics.
+pub mod signers;
 mod subscriptions;
 mod text_numbers;
 mod transactions;
@@ -47,9 +50,9 @@ pub mod system_client;
 use alloc::vec::Vec;
 
 /// Immutable suite identity. Changes to fixtures or assertions require a new ID.
-pub const SUITE_ID: &str = "solana-kit-core-v21";
+pub const SUITE_ID: &str = "solana-kit-core-v22";
 /// Required number of cases; a truncated report cannot pass conformance.
-pub const EXPECTED_CASE_COUNT: usize = 90;
+pub const EXPECTED_CASE_COUNT: usize = 97;
 
 /// Selects authentic fixtures or the intentionally incorrect hash oracle.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -113,27 +116,8 @@ fn require(condition: bool, explanation: &'static str) -> Result<(), &'static st
 /// the expected hash fixture; the implementation and comparison remain intact.
 #[must_use]
 pub fn run(mode: FixtureMode) -> Report {
-    let mut cases = Vec::with_capacity(EXPECTED_CASE_COUNT);
-    cases.extend(registry::values_and_crypto(mode));
-    cases.extend(registry::derivation());
-    cases.extend(registry::instructions());
-    cases.extend(registry::codecs());
-    cases.extend(transactions::cases());
-    cases.extend(accounts_sysvars::cases());
+    let mut cases = foundational_cases(mode);
 
-    cases.extend(fixed_points::cases());
-    cases.extend(system::cases());
-    cases.extend(v1::cases());
-    cases.extend(registry::clients());
-    cases.push(case("numeric-text-codecs", text_numbers::text()));
-    cases.push(case("numeric-wide-text", text_numbers::wide()));
-    cases.push(case("numeric-text-malformed", text_numbers::malformed()));
-    cases.push(case(
-        "composite-typed-composition",
-        composites::composition(),
-    ));
-    cases.push(case("composite-backward-bits", composites::bits()));
-    cases.push(case("composite-malformed-bounds", composites::malformed()));
     cases.extend(rpc_economics::cases());
     cases.extend(rpc_accounts::cases());
     cases.push(case("rpc-history-exact-queries", rpc_history::queries()));
@@ -155,11 +139,37 @@ pub fn run(mode: FixtureMode) -> Report {
     cases.extend(memo_associated_token::cases());
     cases.extend(framing_cases::cases());
     cases.extend(wallet_cases::cases());
+    cases.extend(signers::cases());
 
     Report {
         suite_id: SUITE_ID,
         cases,
     }
+}
+
+fn foundational_cases(mode: FixtureMode) -> Vec<CaseResult> {
+    let mut cases = Vec::with_capacity(EXPECTED_CASE_COUNT);
+    cases.extend(registry::values_and_crypto(mode));
+    cases.extend(registry::derivation());
+    cases.extend(registry::instructions());
+    cases.extend(registry::codecs());
+    cases.extend(transactions::cases());
+    cases.extend(accounts_sysvars::cases());
+
+    cases.extend(fixed_points::cases());
+    cases.extend(system::cases());
+    cases.extend(v1::cases());
+    cases.extend(registry::clients());
+    cases.push(case("numeric-text-codecs", text_numbers::text()));
+    cases.push(case("numeric-wide-text", text_numbers::wide()));
+    cases.push(case("numeric-text-malformed", text_numbers::malformed()));
+    cases.push(case(
+        "composite-typed-composition",
+        composites::composition(),
+    ));
+    cases.push(case("composite-backward-bits", composites::bits()));
+    cases.push(case("composite-malformed-bounds", composites::malformed()));
+    cases
 }
 
 #[cfg(test)]

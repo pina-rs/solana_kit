@@ -9,6 +9,7 @@ members = [
   "crates/solana_kit_leptoskit",
   "crates/solana_kit_memo",
   "crates/solana_kit_native",
+  "crates/solana_kit_signers",
   "crates/solana_kit_system",
   "crates/solana_kit_wallet",
   "crates/solana_kit_wasi",
@@ -18,7 +19,12 @@ members = [
   "verification/guest",
   "xtask",
 ]
-exclude = ["verification/leptoskit", "verification/wallet-consumer", "verification/wallet-runtime"]
+exclude = [
+  "verification/leptoskit",
+  "verification/wallet-consumer",
+  "verification/wallet-runtime",
+  "verification/signer-capabilities",
+]
 resolver = "3"
 
 [workspace.package]
