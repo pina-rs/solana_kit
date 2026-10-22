@@ -108,6 +108,7 @@ hashes. No browser, WASI, LeptosKit, pooling or ecosystem completion is claimed.
 Regenerate the scoped receipt without changing canonical inventory.
 
 ```sh
+mkdir -p target
 rustc --edition 2024 verification/native-websocket/receipt.rs -o target/native-websocket-receipt
 target/native-websocket-receipt docs/parity/capabilities.tsv target/native-websocket-declarations.tsv
 cmp verification/native-websocket/declarations.tsv target/native-websocket-declarations.tsv
