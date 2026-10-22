@@ -103,5 +103,6 @@ Version one uses typed inline `V1Config` and validated `HeapSize`, has no lookup
 tables, and signs the message prefix before appending fixed-width signatures.
 Its complete envelope is bounded to 4096 bytes; legacy/v0 retain 1232 bytes.
 Node version alone does not advertise feature activation. The local proof is
-documented in `docs/verification/v1-wire.md`; durable nonce lifecycle and new
-version-one host conformance remain separate follow-ups.
+documented in `docs/verification/v1-wire.md`. Three V1 assertion groups execute
+within the shared 48-case native/browser/WASI/LeptosKit suite; durable nonce
+lifecycle remains a separate follow-up.

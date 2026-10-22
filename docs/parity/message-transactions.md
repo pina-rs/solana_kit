@@ -78,8 +78,10 @@ and the specific -32602/4097/max4096 error. A disabled-feature genesis accepts t
 legacy control and explicitly rejects v1 as UnsupportedVersion. `getVersion`
 alone does not advertise feature support. These are local fixture-node results.
 
-The three candidate portable cases are isolated from the established host suite
-until integration executes them on each host. No browser/WASI/LeptosKit execution
-for these new cases is claimed here. A 32-byte lifetime wire token does not prove
+The three version-one groups execute in the shared 48-case suite on native Rust,
+real Chrome, Wasmtime Preview 1/2 and the pinned actual LeptosKit WasmHost. They
+check the literal envelope, inline configuration, exact 4096/4097-byte bounds and
+signature tampering; see the [runtime receipt](../verification/runtimes.md).
+A 32-byte lifetime wire token does not prove
 durable nonce creation, advance, expiry or rollback. All 746 canonical source IDs
 remain present; bounded mappings stay partial and Phase 3 remains incomplete.

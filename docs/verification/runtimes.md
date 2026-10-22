@@ -36,7 +36,49 @@ dispatches a `Press` event and requires the corrupted report and second commit.
 The guest's small unsafe FFI wrappers implement that pinned synchronous copy ABI;
 core and the host harness forbid unsafe code.
 
-## Current v6 executed receipt
+## Current v7 executed receipt
+
+The integrated `solana-kit-core-v7` suite preserves all preceding 45 cases and
+appends three V1 groups. Execution on 2026-10-22 at signed source checkpoint
+`3d04ed4daa814b9907dbcaccbd4eb0393229a3bb` used Rust 1.99.1,
+Chrome 155.0.8059.85, ChromeDriver 155.0.8059.84, Wasmtime 50.0.0 and the actual
+pinned LeptosKit host. `cargo xtask all` exited 0.
+
+| Execution                 | Canonical                      | Corruption control                                     |
+| ------------------------- | ------------------------------ | ------------------------------------------------------ |
+| Native command            | 48/48, exit 0                  | 47/48, exit 1                                          |
+| Real headless Chrome      | Full 48/48 report checked      | Full 47/48 report checked; both browser tests passed   |
+| Wasmtime Preview 1        | 48/48, exit 0                  | 47/48, exit 1                                          |
+| Wasmtime Preview 2        | 48/48, exit 0                  | 47/48, exit 1                                          |
+| Actual LeptosKit WasmHost | Full 48/48 JSON and one commit | Press event produced full 47/48 JSON and second commit |
+
+Only `sha256-fips-abc` fails in corruption mode. V1 fixtures execute literal
+message-first encoding, full-width inline priority fees, half-mask rejection,
+inclusive 4096-byte envelope success, 4097-byte rejection and actual signature
+tampering inside every host, including the 32-bit guests. Legacy/v0 retain their
+1232-byte cap. Production V1 source is unchanged from the separately reviewed
+official-oracle and local-validator proof; integration only extends fixture bounds.
+
+All 16 core normal/build feature-target queries, eight numeric normal-only
+queries, four separate System graph queries and their concrete negative controls
+pass unchanged. The guest imports exactly `node_create`, `node_set_props` and
+`commit` from LeptosKit. All five extracted packaged-core consumer tests pass.
+
+Executed v7 artifact SHA-256 values:
+
+```text
+c43c52d33533eece95b27215010cb18b1a8cc60fc682e8cb90c7a28d7f399eb0  wasm32-wasip1
+19158ac6f403ec4f351e2c82ab8625261d13fad7c408996bf46a0f781706da49  wasm32-wasip2
+ec95a1904fd66a87760b26a2fd3f450cafc510f42a5029d875555930cb17dcc7  leptoskit-guest
+```
+
+This is bounded synchronous off-chain client behavior. It does not prove
+durable-nonce lifecycle, public networking adapters, wallets, generated mobile
+applications, remote node feature activation or complete Phase 3 parity. The
+[local validator receipt](v1-wire.md) separately records simulation, submission,
+confirmation, exact packet boundaries and its actual RPC-listener limitation.
+
+## Historical v6 executed receipt
 
 The integrated `solana-kit-core-v6` suite preserves all preceding 42 cases and
 appends three generated System data cases. Local macOS ARM64 execution on

@@ -78,7 +78,7 @@ not broad capability completion:
    assuming browser globals or OS APIs.
 5. Compile a downstream crate without repository-specific rustflags or patches.
 
-The expanded 45-case portable-core/program suite now executes natively, in real Chrome,
+The expanded 48-case portable-core/program suite now executes natively, in real Chrome,
 in Wasmtime 50.0.0 Preview 1/2 commands, and in the pinned actual LeptosKit
 headless WasmHost. Each host observes the corrupt-hash negative control.
 `cargo xtask all` reproduces those runs, binary import/dependency gates, and a
@@ -132,10 +132,12 @@ privilege merging/account ordering, fee-payer/signature ordering, exact packet
 limits per version, malformed inputs, and sign/decode/re-encode behavior. Separate
 construction requirements from validation of externally received transactions.
 
-The immutable legacy/v0 slice compiles owned instructions and lookup snapshots,
+The immutable legacy/v0/v1 slice compiles owned instructions and lookup snapshots,
 preserves exact signed bytes, validates received protocol wire independently of
 local compiler restrictions, and signs/verifies through optional deterministic
-crypto. Its four transaction cases remain in the shared 45-case suite. The
+crypto. Seven transaction cases execute in the shared 48-case suite, including
+version-one message-first envelopes, inline configuration, exact 4096/4097-byte
+boundaries and signature tampering. Legacy/v0 retain their 1232-byte packet cap. The
 [transaction ledger](../parity/message-transactions.md) retains all 746 source
 IDs: 33 partial and 713 pending, none complete. Durable nonces, full
 introspection, off-chain messages, general signer capabilities, confirmation,
