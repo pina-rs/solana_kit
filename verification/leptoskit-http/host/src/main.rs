@@ -1,5 +1,6 @@
 //! Executes actual interpreted HTTP/TLS rather than a substitute interpreter.
 #![forbid(unsafe_code)]
+mod application;
 mod fixture;
 mod imports;
 mod journeys;

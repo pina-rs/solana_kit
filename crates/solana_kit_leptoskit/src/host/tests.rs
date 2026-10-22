@@ -1,6 +1,9 @@
 //! Actual upstream memory guards and host admission never turn errors into data.
 use super::*;
+use crate::wire;
+use leptoskit_bridge::Bytes;
 use leptoskit_native::HeadlessBackend;
+use solana_kit_client::{Transport, TransportFailureKind};
 use tokio::{
     io::{AsyncReadExt, AsyncWriteExt},
     net::TcpListener,
@@ -141,18 +144,12 @@ async fn unrelated_requests_and_cancellations_remain_application_owned() {
 async fn stale_generation_never_wakes_a_replacement() {
     let mut old = host();
     let mut replacement = host();
-    assert_ne!(old.instance, replacement.instance);
-    let token = Token {
-        instance: old.instance,
-        call: CallId(1),
-    };
-    let abort = replacement
-        .tasks
-        .spawn(async move { (token, vec![0, 200, 0]) });
-    replacement.jobs.insert(abort.id(), Job { token, abort });
+    let original = old.host_mut().unwrap().identity();
+    let successor = replacement.host_mut().unwrap().identity();
+    assert_ne!(original, successor);
     assert!(matches!(
-        replacement.next_completion().await,
-        Err(HostError::Task)
+        old.driver.drain(replacement.host_mut().unwrap()),
+        Err(HostError::Owner)
     ));
     assert_eq!(replacement.retained_jobs(), 0);
 
@@ -180,7 +177,7 @@ async fn completed_native_failure_after_cancellation_is_joined_without_guest_ent
     tokio::time::timeout(std::time::Duration::from_secs(2), async {
         peer.await.unwrap();
 
-        while !app.jobs.values().next().unwrap().abort.is_finished() {
+        while !app.driver.has_finished_job() {
             tokio::task::yield_now().await;
         }
     })

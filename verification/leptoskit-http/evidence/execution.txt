@@ -1,4 +1,6 @@
 compiled guest exact v1 ABI imports: {("leptoskit", "commit"), ("leptoskit", "node_create"), ("leptoskit", "node_set_props"), ("leptoskit_plugins_v1", "cancel"), ("leptoskit_plugins_v1", "event_info"), ("leptoskit_plugins_v1", "resolve"), ("leptoskit_plugins_v1", "result_len"), ("leptoskit_plugins_v1", "submit"), ("leptoskit_plugins_v1", "take_event"), ("leptoskit_plugins_v1", "take_result"), ("leptoskit_plugins_v1", "version")}
-instance 0: actual HTTPS/u64MAX, status, body budget, quiet deadline, local Rc Pending/wake, retained/cancel EOF, unrelated event routing, abort+join unload PASS
-instance 1: actual HTTPS/u64MAX, status, body budget, quiet deadline, local Rc Pending/wake, retained/cancel EOF, unrelated event routing, abort+join unload PASS
+borrowed true, instance 0: actual HTTPS/u64MAX, status, body budget, quiet deadline, local Rc Pending/wake, retained/cancel EOF, unrelated event routing, abort+join unload PASS
+borrowed true, instance 1: actual HTTPS/u64MAX, status, body budget, quiet deadline, local Rc Pending/wake, retained/cancel EOF, unrelated event routing, abort+join unload PASS
+borrowed false, instance 0: actual HTTPS/u64MAX, status, body budget, quiet deadline, local Rc Pending/wake, retained/cancel EOF, unrelated event routing, abort+join unload PASS
+borrowed false, instance 1: actual HTTPS/u64MAX, status, body budget, quiet deadline, local Rc Pending/wake, retained/cancel EOF, unrelated event routing, abort+join unload PASS
 replacement uses a distinct owner; no callback or guest pointer escapes a task owner

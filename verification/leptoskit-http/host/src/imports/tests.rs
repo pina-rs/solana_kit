@@ -1,13 +1,15 @@
 //! Exercises the compiled artifact and novel missing/forbidden/ABI controls.
 
 use super::verify;
-use std::path::Path;
+use std::path::PathBuf;
 
 /// Missing the actual build artifact fails this test rather than skipping it.
 #[test]
 fn actual_rust_guest_has_exact_import_contract() {
-    let artifact = Path::new(env!("CARGO_MANIFEST_DIR"))
-        .join("../target/wasm32-unknown-unknown/debug/solana_kit_leptoskit_http_guest.wasm");
+    let target = std::env::var_os("CARGO_TARGET_DIR")
+        .map(PathBuf::from)
+        .unwrap_or_else(|| PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../target"));
+    let artifact = target.join("wasm32-unknown-unknown/debug/solana_kit_leptoskit_http_guest.wasm");
     let wasm = std::fs::read(artifact).expect("build the required actual guest first");
     verify(&wasm).expect("actual compiled guest import contract");
 }

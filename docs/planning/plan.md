@@ -316,3 +316,10 @@ memory transports across native Rust, Chrome, both WASI previews, and the actual
 pinned LeptosKit host. Accepted native, Window Fetch and headless LeptosKit HTTP
 adapters add separate network evidence. These results do not establish installed device support or full
 Phase 4 completion.
+
+The production LeptosKit HTTP driver now supports a caller-owned interpreter via
+short borrows and owned completions, with `HttpHost` delegating to the same owner
+of services and jobs. Its upstream identity and scoped-access prerequisite is
+pinned to public commit `706334eaa3e011d1ef986159911b0d80c80d3e9f`.
+Platform scheduling and awaited-close hooks and generated desktop, Android and
+iOS HTTP journeys remain unimplemented and unaccepted.
