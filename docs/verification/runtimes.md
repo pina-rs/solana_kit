@@ -36,7 +36,42 @@ dispatches a `Press` event and requires the corrupted report and second commit.
 The guest's small unsafe FFI wrappers implement that pinned synchronous copy ABI;
 core and the host harness forbid unsafe code.
 
-## Current v9 System client receipt
+## Current v10 node RPC receipt
+
+The `solana-kit-core-v10` suite preserves the first 53 case lines and appends
+three public-client node protocol groups. Clean signed source
+`96494782927020a2708732abd31c56570139663e` executed `cargo xtask all` on 2026-10-22.
+Every one of the nineteen node methods executes with a literal expected request
+and an asserted typed response. The [node receipt](rpc-node.md) records scope,
+source identity and the twelve remaining Dart display/hash declarations.
+
+| Actual host               | Canonical                   | Corruption control             |
+| ------------------------- | --------------------------- | ------------------------------ |
+| Native command            | 56/56, exit 0               | 55/56, exit 1                  |
+| Real Chrome               | Full 56/56 report checked   | Full 55/56 report checked      |
+| Wasmtime Preview 1        | 56/56, exit 0               | 55/56, exit 1                  |
+| Wasmtime Preview 2        | 56/56, exit 0               | 55/56, exit 1                  |
+| Actual LeptosKit WasmHost | Full 56/56 JSON, one commit | Full 55/56 JSON, second commit |
+
+Rust 1.99.1, Chrome 155.0.8059.85, ChromeDriver 155.0.8059.84, Wasmtime 50.0.0,
+and the pinned actual LeptosKit host above performed these runs. Only
+`sha256-fips-abc` fails in corruption mode. All 16 core, eight numeric normal-only,
+four System and four client graph queries and their negative controls pass.
+Client retains exactly thirteen reviewed external package/version pairs. Compiled
+guest imports remain exactly `leptoskit::{node_create,node_set_props,commit}`.
+All five extracted packaged-core consumer tests pass.
+
+```text
+da12d010d4abf9fe538cddb334dc05b0cfdc3ed880da4e576148a44eb8b0b419  wasm32-wasip1
+9b20a390f9acc7e8b7fec4705af963db295a98380a3948846d85ff8f8505e29c  wasm32-wasip2
+1a2fed08f01535285acf851725e71fe0c447d319b4f99e1bc4af89bb1a9a8524  leptoskit-guest
+```
+
+These are memory-transport protocol fixtures. Network adapters, installed-device
+journeys, BLS certificate verification and complete catalog parity are separate.
+All code remains exclusively for off-chain application clients.
+
+## Historical v9 System client receipt
 
 The `solana-kit-core-v9` suite preserves the first 51 case lines and appends the
 existing System builder/parser and nonce snapshot groups. Clean signed source
