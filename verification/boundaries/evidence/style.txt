@@ -69,4 +69,3 @@ Every path meets its floor.
 
 start here
   Fixing readability/overlong-line at ./docs/verification/boundaries.md:107 would recover 100.0% of the available points.
-
