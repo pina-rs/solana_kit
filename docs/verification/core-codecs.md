@@ -45,18 +45,18 @@ implementation was checkpointed as signed, locally verified commit
 `18cdffea5131f97ead31e6e3cad65d3e6dba929f`; subsequent changes complete these
 receipts and add cursor-contract tests.
 
-| Check | Result |
-| --- | --- |
-| `cargo fmt --all --check` | Passed |
-| `cargo test -p solana_kit_core` | Passed default codecs and doctests |
-| `cargo test -p solana_kit_core --features crypto` | Passed codecs and crypto doctests |
-| `cargo test -p solana_kit_core --all-features --tests` | Passed 18 tests |
-| `cargo +1.89.0 test -p solana_kit_core --all-features --tests` | Passed 18 tests |
-| `cargo test -p solana_kit_conformance` | Passed canonical, corruption, missing-case/wrong-suite checks |
-| `cargo clippy --workspace --all-targets --all-features -- -D warnings` | Passed |
-| Core all-feature checks for `wasm32-unknown-unknown`, `wasm32-wasip1`, `wasm32-wasip2` | Passed compilation only |
-| Default normal/build dependency closure | Only `bs58 0.5.1`; codecs add no dependency |
-| Monostyle 0.3.26 with generated files scored | Every file and repository category at least 90 |
+| Check                                                                                  | Result                                                        |
+| -------------------------------------------------------------------------------------- | ------------------------------------------------------------- |
+| `cargo fmt --all --check`                                                              | Passed                                                        |
+| `cargo test -p solana_kit_core`                                                        | Passed default codecs and doctests                            |
+| `cargo test -p solana_kit_core --features crypto`                                      | Passed codecs and crypto doctests                             |
+| `cargo test -p solana_kit_core --all-features --tests`                                 | Passed 18 tests                                               |
+| `cargo +1.89.0 test -p solana_kit_core --all-features --tests`                         | Passed 18 tests                                               |
+| `cargo test -p solana_kit_conformance`                                                 | Passed canonical, corruption, missing-case/wrong-suite checks |
+| `cargo clippy --workspace --all-targets --all-features -- -D warnings`                 | Passed                                                        |
+| Core all-feature checks for `wasm32-unknown-unknown`, `wasm32-wasip1`, `wasm32-wasip2` | Passed compilation only                                       |
+| Default normal/build dependency closure                                                | Only `bs58 0.5.1`; codecs add no dependency                   |
+| Monostyle 0.3.26 with generated files scored                                           | Every file and repository category at least 90                |
 
 The 18 codec tests include exhaustive short-u16 round trips for all 65,536
 values, independently fixed byte vectors, signed boundaries, 256-bit extremes,
@@ -71,9 +71,12 @@ The shared host-neutral suite is `solana-kit-core-v2`, 31 cases. Native
 31/31; native [corruption](../../verification/conformance/evidence/native-corruption.txt)
 reports 30/31 and exits 1 after failing the real SHA-256 comparison. The new six
 cases exercise numeric bytes, compact integers, string prefix widths, bounded
-sequences, option layouts, and exact framing. Browser, WASI and wasmi execution
-of v2 remains an integration task for the runtime harness. Target compilation
-does not establish those runtime results. Serde is not an existing feature;
+sequences, option layouts, and exact framing. Integration subsequently executed
+all 31 cases and the 30/31 corruption control in real Chrome, both Wasmtime
+Preview 1/2 commands and the pinned actual LeptosKit WasmHost; see the
+[current runtime receipt](runtimes.md#current-v2-executed-receipt) for artifact
+hashes and host versions. The earlier target checks in the table remain
+compile-only evidence. Serde is not an existing feature;
 this unit neither implements nor claims a serde matrix.
 
 The component remains unpublished. The minor changeset records additive API

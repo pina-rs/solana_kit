@@ -81,10 +81,10 @@ changed code, and every individual file, with the unchanged scoring rules.
 | `monostyle check . --fail-under 90`                                                   | Passed; every file meets both floors                                      |
 | `monostyle check crates/solana_kit_core verification/conformance --fail-under 90`     | Passed; every changed code file meets both floors                         |
 
-The [canonical output](../../verification/conformance/evidence/native-success.txt)
+The current [canonical output](../../verification/conformance/evidence/native-success.txt)
 and [corruption output](../../verification/conformance/evidence/native-corruption.txt)
-preserve every case result. Corruption changes the expected hash's first bit and
-produces the actual comparison failure:
+contain v2 results. In the historical v1 run, changing the expected hash's first
+bit produced the actual comparison failure:
 
 ```text
 sha256-fips-abc: Err("SHA-256 digest mismatch")

@@ -62,12 +62,12 @@ The six codec cases use fixed expected bytes, never expectations produced by the
 Rust encoder. At the same pinned Dart commit, these complete test files have
 the following SHA-256 digests:
 
-| Path below `packages/` | SHA-256 | Extracted oracle |
-| --- | --- | --- |
-| `solana_kit_codecs_numbers/test/u32_test.dart` | `bbc80cab3f570b1a516004448281bc40166fa97e20db5b1268ef073ac395daee` | 42 is `2a000000` in little endian |
-| `solana_kit_codecs_numbers/test/u64_test.dart` | `91affd7f2262bf88a0d9dd3f6f32a0b21990a65b5308945bb55b1df0bb3ede44` | `0xffffffff` is `00000000ffffffff` in big endian |
-| `solana_kit_codecs_numbers/test/short_u16_test.dart` | `143b2c4e972c2a5786e429fe7b04110fbcd8fd5cf2457d62e542aec4d2314d0a` | Compact integer boundaries |
-| `solana_kit_codecs_data_structures/test/constant_test.dart` | `0f59ccae8b5f8113262b0bc3a6f30a680800597218414880e8584bb237fc0a86` | Exact constant byte comparison |
+| Path below `packages/`                                      | SHA-256                                                            | Extracted oracle                                 |
+| ----------------------------------------------------------- | ------------------------------------------------------------------ | ------------------------------------------------ |
+| `solana_kit_codecs_numbers/test/u32_test.dart`              | `bbc80cab3f570b1a516004448281bc40166fa97e20db5b1268ef073ac395daee` | 42 is `2a000000` in little endian                |
+| `solana_kit_codecs_numbers/test/u64_test.dart`              | `91affd7f2262bf88a0d9dd3f6f32a0b21990a65b5308945bb55b1df0bb3ede44` | `0xffffffff` is `00000000ffffffff` in big endian |
+| `solana_kit_codecs_numbers/test/short_u16_test.dart`        | `143b2c4e972c2a5786e429fe7b04110fbcd8fd5cf2457d62e542aec4d2314d0a` | Compact integer boundaries                       |
+| `solana_kit_codecs_data_structures/test/constant_test.dart` | `0f59ccae8b5f8113262b0bc3a6f30a680800597218414880e8584bb237fc0a86` | Exact constant byte comparison                   |
 
 Other expected arrays are explicit wire-contract fixtures: UTF-8 `hé` is
 `68c3a9`; a little-endian u32 byte count prefixes it with `03000000`, while a

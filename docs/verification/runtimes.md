@@ -36,7 +36,43 @@ dispatches a `Press` event and requires the corrupted report and second commit.
 The guest's small unsafe FFI wrappers implement that pinned synchronous copy ABI;
 core and the host harness forbid unsafe code.
 
-## Executed receipt
+## Current v2 executed receipt
+
+The expanded `solana-kit-core-v2` suite has 31 cases, including six bounded
+codec cases. Fresh local macOS ARM64 execution on 2026-10-22 at integration
+checkpoint `bde7552e2079` used the same Rust 1.99.1, Chrome 155.0.8059.85,
+ChromeDriver 155.0.8059.84, Wasmtime 50.0.0, and pinned actual LeptosKit host
+described below. `cargo xtask all` exited 0.
+
+| Execution                 | Canonical                      | Corruption control                                     |
+| ------------------------- | ------------------------------ | ------------------------------------------------------ |
+| Native command            | 31/31, exit 0                  | 30/31, exit 1                                          |
+| Real headless Chrome      | Full 31/31 report checked      | Full 30/31 report checked; both browser tests passed   |
+| Wasmtime Preview 1        | 31/31, exit 0                  | 30/31, exit 1                                          |
+| Wasmtime Preview 2        | 31/31, exit 0                  | 30/31, exit 1                                          |
+| Actual LeptosKit WasmHost | Full 31/31 JSON and one commit | Press event produced full 30/31 JSON and second commit |
+
+The sole corrupted case is `sha256-fips-abc`, with `SHA-256 digest mismatch`.
+Each host validates the suite identity, exact case count, outcomes and failure
+state. The actual-host display derives its counts from the suite constant.
+All eight selected default/crypto dependency closures passed, both import and
+dependency negative controls rejected their forbidden fixtures, and the clean
+packaged-core consumer passed all three public API tests.
+
+Executed v2 artifact SHA-256 values (local debug WASI artifacts, release guest):
+
+```text
+983f30eaa10b04dc39068702b031d1d0fa48b9ce4ce6cb663157d810b442e815  wasm32-wasip1
+cd4e1b9d62332e28999a8b2a05cbf5b011caa84dd360f34235b6c4281648084f  wasm32-wasip2
+2ecef09163ac6df0a91ec33bcaa79dade89ec26d4ca71127a745d5d4fd9e785b  leptoskit-guest
+```
+
+The [codec receipt](core-codecs.md) records the bounded capability scope and
+remaining work. This execution does not complete Phase 2 or the transport and
+device plans. The following v1 receipt is retained as historical evidence;
+its counts and hashes describe those earlier artifacts, not the current suite.
+
+## Historical v1 executed receipt
 
 Local macOS ARM64 execution on 2026-10-22 used Rust 1.99.1, Chrome
 155.0.8059.85, ChromeDriver 155.0.8059.84, and Wasmtime 50.0.0
