@@ -1,0 +1,18 @@
+[package]
+name = "solana_kit_associated_token_account"
+version = "0.1.0"
+authors.workspace = true
+edition.workspace = true
+include = ["src/**", "README.md", "LICENSE", "DART-LICENSE", "PROGRAM-LICENSE"]
+license.workspace = true
+readme = "README.md"
+repository = "https://github.com/pina-rs/solana_kit/tree/main/crates/solana_kit_associated_token_account"
+rust-version.workspace = true
+description = "Portable off-chain associated_token_account instruction client"
+
+[dependencies]
+solana_kit_core.workspace = true
+
+[features]
+default = []
+crypto = ["solana_kit_core/crypto"]

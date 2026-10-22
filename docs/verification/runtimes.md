@@ -59,7 +59,23 @@ dispatches a `Press` event and requires the corrupted report and second commit.
 The guest's small unsafe FFI wrappers implement that pinned synchronous copy ABI;
 core and the host harness forbid unsafe code.
 
-## Current v18 subscription receipt
+## Current v19 Memo and ATA receipt
+
+Signed executable `2af1c02cc404e1d1ee6c3c5f298d3cfe898a9f5b` integrates exact
+accepted parent `92a20937d0b7c5866ec072e7dff7d9b273204263` and handwritten
+Memo/ATA clients from `5616186f62a795cf5b756fb9b677705f35dae3c9`. The suite
+`solana-kit-core-v19` preserves all first 81 case IDs, order and outcomes, then
+appends the two unchanged accepted portable functions in an owning array.
+
+The full offline five-host run passes 83/83 canonical cases and observes 82/83
+under sole `sha256-fips-abc` corruption. Exact imports, graph negatives, all five
+packaged-core consumer groups and the independent one-fuel trap also pass. The
+checked pooled allowance remains 15,000,000 times the case count, now
+1,245,000,000 per entry. No individual-case or transactional rollback guarantee
+is inferred. See the [Memo/ATA runtime receipt](memo-ata-runtime.md) for tools,
+hashes, ordinary consumers, provenance and bounded handwritten-client limits.
+
+## Historical v18 subscription receipt
 
 Signed executable source `eff549b358c2e0f1ae635884b9cb67dc94b6c4ba` integrates
 accepted final Compute Budget parent `87d04bc42af263d135ea078be30865511335f52e`,

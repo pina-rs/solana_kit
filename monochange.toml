@@ -95,3 +95,13 @@ path = "crates/solana_kit_wasi"
 type = "cargo"
 changelog = false
 publish = { enabled = false }
+
+[package.solana_kit_memo]
+path = "crates/solana_kit_memo"
+type = "cargo"
+publish = { enabled = false }
+
+[package.solana_kit_associated_token_account]
+path = "crates/solana_kit_associated_token_account"
+type = "cargo"
+publish = { enabled = false }
