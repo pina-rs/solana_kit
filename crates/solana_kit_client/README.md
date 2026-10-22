@@ -57,6 +57,7 @@ Those fixtures include every node and economics method with typed results and li
 The [economics runtime receipt](../../docs/verification/rpc-economics.md) retains
 the exact 42-ID accounting and the three partial or pending declarations.
 They do not prove production network adapters or installed browser/mobile journeys.
+
 RPC subscriptions use `subscriptions::Connection`. The caller owns the socket,
 clock, and connection lifecycle. Drain `outbound()` frames, pass complete text
 frames to `ingest(generation, bytes)`, and drain typed notifications with `next()`.
