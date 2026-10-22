@@ -4,6 +4,9 @@
 use anyhow::{Context, Result, bail};
 use leptoskit_wasm::{EventKind, WasmHost};
 
+const VIEWPORT_WIDTH: f32 = 320.0;
+const VIEWPORT_HEIGHT: f32 = 480.0;
+
 /// Executes one fresh host so a trapped or translated instance cannot bias a trial.
 fn main() -> Result<()> {
     let arguments: Vec<_> = std::env::args().collect();
@@ -16,7 +19,7 @@ fn main() -> Result<()> {
     let mut host = WasmHost::headless(&bytes)?;
     host.set_fuel_budget(budget);
 
-    let result = host.start(320.0, 480.0).and_then(|()| {
+    let result = host.start(VIEWPORT_WIDTH, VIEWPORT_HEIGHT).and_then(|()| {
         if let Some(selector) = selector {
             host.dispatch_wire(selector, EventKind::Press, None)?;
         }
