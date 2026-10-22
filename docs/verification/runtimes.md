@@ -230,8 +230,8 @@ cargo xtask dependency-fixture xtask/fixtures/forbidden-dependency.txt
 
 Both commands must exit nonzero. The combined gate instead asserts each expected
 rejection and fails if a negative fixture succeeds. Normal/build dependency trees
-are inspected for native, plain Wasm, Preview 1, and Preview 2, selecting plain,
-crypto, fixed-points and combined features. A closed crate-name allowlist rejects Tokio and other new dependencies;
+are inspected for native, plain Wasm, Preview 1, and Preview 2, with and without
+crypto. A closed crate-name allowlist rejects Tokio and other new dependencies;
 the lockfile pins versions. Address-only core selects only `bs58`. Native crypto
 also selects CPU-detection `libc`; the plain Wasm crypto tree selects neither.
 Host/UI/test-runner dependencies remain outside these selected core closures.

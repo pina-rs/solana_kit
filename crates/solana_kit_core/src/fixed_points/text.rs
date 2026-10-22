@@ -3,7 +3,6 @@ const DECIMAL_BINARY_FACTOR: u8 = 5;
 use alloc::{format, string::String};
 use core::fmt;
 use num_bigint::BigInt;
-use num_traits::ToPrimitive;
 
 use super::{
     Error, FixedPoint, MAX_INPUT_BYTES, MAX_SCALE, Rounding, Shape, Signedness, shape::divide,
@@ -139,18 +138,23 @@ impl<const RADIX: u8> FixedPoint<RADIX> {
     }
     /// Explicitly lossy floating-point conversion for presentation only.
     /// Exact arithmetic, parsing, formatting and codecs never call this method.
+    /// Finite underflow succeeds, preserving the sign of a nonzero input.
+    ///
+    /// # Errors
+    /// Returns [`Error::Overflow`] if the result is not finite.
     pub fn to_number(&self) -> Result<f64, Error> {
-        let scale = BigInt::from(RADIX).pow(self.shape().scale());
-        let denominator = scale.to_f64().ok_or(Error::Overflow)?;
+        // Exact decimal scaling avoids overflowing numerator/denominator floats.
+        let number = self
+            .to_base10()
+            .scientific_notation()
+            .parse::<f64>()
+            .map_err(|_| Error::Overflow)?;
 
-        if RADIX == 2 {
-            let integer = (self.raw() / &scale).to_f64().ok_or(Error::Overflow)?;
-            let fraction = (self.raw() % scale).to_f64().ok_or(Error::Overflow)?;
-
-            return Ok(integer + fraction / denominator);
+        if !number.is_finite() {
+            return Err(Error::Overflow);
         }
 
-        Ok(self.raw().to_f64().ok_or(Error::Overflow)? / denominator)
+        Ok(number)
     }
 }
 

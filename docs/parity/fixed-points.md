@@ -34,8 +34,13 @@ Whitespace, exponents, plus signs and digit-free input are rejected.
 Formatting options rescale exactly before padding or trimming fractional zeros.
 `to_base10` preserves all binary precision by multiplying raw by `5^scale`.
 `format_with` passes exact scientific notation to caller formatting logic.
-`to_number` is intentionally lossy and never participates in exact operations;
-extreme IEEE754 conversion parity remains open.
+`to_number` is intentionally lossy and never participates in exact operations.
+It converts the exact base-10 scientific representation through Rust's `f64`
+parser, avoiding separate overflowing numerator/denominator conversions. A finite
+result succeeds, including subnormal values and signed underflow to zero;
+nonfinite results return `Error::Overflow`. Work stays bounded by the validated
+width and scale. This presentation contract is not an exact floating arithmetic
+API; complete extreme IEEE754 parity with Dart remains open.
 
 Codecs require byte alignment, use core `Encoder`/`Decoder`/`Endian`/cursors,
 charge raw output bytes against the shared decoder allocation budget, preserve
@@ -52,7 +57,7 @@ Reference vectors are from its decimal/binary, arithmetic, formatting,
 conversion, comparison, range, codec and security tests. The retained MIT notice
 in the shared fixture provenance applies. No Dart execution is claimed.
 
-Eleven native tests cover those vectors, 32,340 independently bracketed rational
+Eleven original native tests cover those vectors, 32,340 independently bracketed rational
 rounding checks, malformed inputs, budget and signed overflow edges, byte
 vectors, and widths beyond 256. The separate shared module adds three cases
 under the original isolated suite `solana-kit-core-v3-fixed-points` (34 cases).
@@ -64,7 +69,9 @@ All 16 plain/crypto/fixed-points/combined target closures and the packaged
 fixed-point consumer pass. The independent consumer also executes 1,650,000
 operation checks and 524,288 byte checks against the integrated core on Rust
 1.99.1 and MSRV 1.89.0. These finite checks do not establish complete package
-parity. Existing historical receipts remain historical.
+parity. Five additional public conversion regressions cover both radices and
+signs, finite wide ratios, nonfinite overflow, subnormals and signed underflow.
+Existing historical receipts remain historical.
 
 Reference test digests (SHA-256, paths below the pinned package's `test/`):
 
