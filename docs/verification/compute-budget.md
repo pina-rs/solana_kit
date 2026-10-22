@@ -95,12 +95,13 @@ comparisons, checking bytes, program identity and empty metas. Official interfac
 8292c436b269ad23cecc8b24f7da3ab07ca111661e25e00ce0e1d22771951ab9.
 Official dependencies exist only in the private native dev graph.
 
-All25 private generator tests and6 public client tests pass. Public malformed
+All26 private generator tests and6 public client tests pass. Public malformed
 controls exercise every truncated prefix, tag mismatch, foreign program,
-nonempty metas, trailing input and byte budgets. Two new isolated portable
-conformance functions execute natively. They are not registered in the shared
-runtime suite. No browser, WASI or LeptosKit runtime execution is claimed for
-these new functions. The client and conformance crate compile on
+nonempty metas, trailing input and byte budgets. Two portable functions follow
+the first75 cases in the shared `solana-kit-core-v17` suite. Canonical execution
+requires77 passing cases. The corrupt-hash control requires76 passing cases and
+exactly the original hash failure. Native Rust, Chrome and Wasmtime50.0.0
+Preview1 and Preview2 execute these outcomes. The client and conformance crate compile on
 wasm32-unknown-unknown, wasm32-wasip1 and wasm32-wasip2.
 
 Rust1.89 executes the public tests and a clean external no_std source consumer
@@ -125,9 +126,12 @@ matrix over all u8 tags, lengths0 through12, both program identities and both
 positions relative to a valid match. Actual Dart accepts trailing price bytes.
 The earlier receipt's price-rejection claim was incorrect. Canonical instruction
 parsers and codecs still reject whole-input trailing bytes. Accepted finite
-generator boundaries now execute all256 unit enum variants and a zero-field
-instruction under warning-denied compilation. Exhaustive u8 enums omit an
-unreachable wildcard, and generated imports follow the emitted field codecs.
+generator boundaries now execute all256 unit enum variants, all256 instruction
+tags, sparse tags0/93/255 and a zero-field instruction under warning-denied
+Rust1.89 compilation. Complete u8 domains omit unreachable wildcards. Sparse
+domains retain invalid-tag errors, and generated imports follow the emitted
+field codecs. The private generated consumers use ordinary Cargo with isolated
+targets, so Cargo selects compiler-compatible dependencies.
 
 Regenerate and verify from the repository root:
 
@@ -140,8 +144,8 @@ cargo test --locked -p solana_kit_conformance --test compute_budget
 ```
 
 No validator, RPC, wallet, real generated app, mobile device or registry release
-journey is established by this slice. Coordinator-owned independent review,
-combined runtime integration and remote CI remain separate gates.
+journey is established by this slice. Coordinator-owned independent review
+and remote CI remain separate gates.
 
 The linked enum fixture is the exact selected accountState defined-type JSON node
 from the pinned Token IDL at31646dce3df0a03d468a14913f01b9fd3c3adad0.

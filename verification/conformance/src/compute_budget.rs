@@ -1,8 +1,19 @@
-//! Isolated portable cases awaiting shared registry and runtime integration.
+//! Accepted portable Compute Budget cases reused by the shared suite.
 use solana_kit_compute_budget::*;
 use solana_kit_core::codecs::{Encoder, Error, Limits};
 
 const LIMITS: Limits = Limits::new(16, 0);
+
+/// Compute Budget cases follow the preserved first 75 case groups.
+pub(crate) fn cases() -> [crate::CaseResult; 2] {
+    [
+        crate::case("compute-budget-full-width-price", full_width_price()),
+        crate::case(
+            "compute-budget-ordering-historical",
+            ordering_and_historical_layout(),
+        ),
+    ]
+}
 
 /// Exercises full unsigned prices, fixed program identity and strict trailing rejection.
 pub fn full_width_price() -> Result<(), &'static str> {
