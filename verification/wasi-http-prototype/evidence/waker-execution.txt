@@ -1,0 +1,39 @@
+Production reactor callback correction, base cb1d236297a0c9547734c5dda9cd22a47fc9da72.
+Named local host Wasmtime 50.0.0. Rust 1.99.1, wasm32-wasip2.
+
+Unchanged independent public consumer, safe Wake and Drop.
+Original component SHA256 172b00a53f3652481d96e0e974b41cf61de8fdcdf6521059d2c6d19a3eee3f8b.
+Only Cargo path dependencies changed for corrected source consumption.
+Same direct command arguments before and after:
+wasmtime run -S http=y <component> waker-drop http://127.0.0.1:1/rpc?probe=exact
+BEFORE exit134, RefCell already mutably borrowed.
+AFTER exit0:
+PASS explicit endpoint/header/timeout boundaries
+WAKER_DROP registrations=0
+PASS reentrant waker Drop
+
+The original boundary-peer wrapper also reproduced the original abort before
+editing. Its corrected cancellation replay failed an incidental expectation
+that a socket must connect before cancellation. Direct execution above observes
+the unchanged consumer result. No lifecycle assertion or original peer changed.
+All nine unchanged independent HTTP boundary cases passed through that peer.
+
+cargo +1.99.1 test -p solana_kit_wasi --test reactor --target wasm32-wasip2 --no-run --locked --offline
+wasmtime target/wasm32-wasip2/debug/deps/reactor-252b090ef1ae142a.wasm --test-threads=1
+BEFORE clone callback test aborts at Registry borrow from RawWaker clone.
+AFTER:
+running 6 tests
+test capacity_error_preserves_existing_registrations_and_cleanup ... ok
+test clone_and_cancellation_callbacks_can_inspect_registry ... ok
+test expired_timer_removal_allows_reentrancy ... ok
+test ready_removal_and_unused_waker_drop_allow_reentrancy ... ok
+test replacement_drops_previous_waker_outside_registry_borrow ... ok
+test wake_delivery_and_driver_errors_allow_reentrancy ... ok
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out
+
+All 20 embedded reference-host cases and all 13 original CLI cases passed after
+fresh guest builds. Exact 16-interface and four normal/build dependency closures,
+their injected negative controls and the portable three-import policy passed.
+This proves the named local host and executed callback paths. Local Rust 1.89
+Preview2 std is absent. CI must build and execute that MSRV guest. No target was
+downloaded. No device or universal-host behavior is claimed.
