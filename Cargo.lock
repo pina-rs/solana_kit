@@ -946,6 +946,7 @@ dependencies = [
  "solana_kit_memo",
  "solana_kit_signers",
  "solana_kit_system",
+ "solana_kit_token",
  "solana_kit_wallet_verification",
 ]
 

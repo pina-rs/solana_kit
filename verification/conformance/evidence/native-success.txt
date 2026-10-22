@@ -101,4 +101,6 @@ nonce-negatives: Ok(())
 nonce-signatures: Ok(())
 message-snapshots: Ok(())
 message-batches: Ok(())
-solana-kit-core-v24: 103/103 cases passed
+token-literal-oracles: Ok(())
+token-strict-errors: Ok(())
+solana-kit-core-v25: 105/105 cases passed
