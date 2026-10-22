@@ -15,12 +15,16 @@ errors, optional exact fixed points, and deterministic cryptography. The generat
 parsers for all fourteen pinned System instructions, nonce account snapshots,
 and numeric custom errors. `solana_kit_compute_budget` adds all five concrete
 instruction codecs, builders, parsers and instruction-list helpers.
+The handwritten `solana_kit_memo` and `solana_kit_associated_token_account`
+clients add bounded Memo text/signers and canonical ATA instructions with optional
+PDA derivation. Their [runtime receipt](docs/verification/memo-ata-runtime.md)
+retains the explicit package-parity limits.
 `solana_kit_client` adds typed balance, latest-blockhash and full-base64
 account reads, all nineteen node metadata operations and all eight economics
 operations, nine account and token operations and richer accountInfo,
 and all fifteen history, submission, full-result and simulation operations,
 through one executor-neutral protocol owner. All 54 catalog methods have typed
-implementations. The shared 81-case suite has
+implementations. The shared 83-case suite has
 [runtime execution evidence](docs/verification/runtimes.md).
 Nine typed RPC subscription families use a bounded caller-owned connection.
 Their [portable protocol receipt](docs/verification/subscription-runtime.md)
