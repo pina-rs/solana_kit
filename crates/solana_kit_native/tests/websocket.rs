@@ -367,7 +367,7 @@ async fn pending_receive_is_woken_by_actual_peer_data() {
 #[tokio::test]
 async fn tls_handshake_and_consuming_close_deadlines_close_their_sockets() {
     let listener = websocket_support::listener().await;
-    let endpoint = websocket_support::endpoint(&listener, true, "localhost");
+    let endpoint = websocket_support::endpoint(&listener, true, "127.0.0.1");
     let peer = tokio::spawn(async move {
         let (mut stream, _) = fixture_phase("TLS peer accept", listener.accept())
             .await

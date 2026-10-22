@@ -1,6 +1,6 @@
 //! Deterministic local construction; protocol decoding has a separate path.
 
-use alloc::{collections::BTreeMap, string::ToString, vec::Vec};
+use alloc::{collections::BTreeMap, vec::Vec};
 
 use crate::{AccountRole, Address, Instruction};
 
@@ -8,6 +8,9 @@ use super::{
     CompiledInstruction, Error, Header, Lifetime, Lookup, LookupTable, Message, PACKET_SIZE,
     V1Config, Version, wire,
 };
+
+mod collation;
+use collation::address_key;
 
 const MAX_ACCOUNTS: usize = 256;
 
@@ -27,8 +30,10 @@ pub(super) fn compile(
     tables: &[LookupTable],
     config: Option<V1Config>,
 ) -> Result<Message, Error> {
-    if !matches!(lifetime, Lifetime::Blockhash { .. }) {
-        return Err(Error::UnresolvedLifetime);
+    match lifetime {
+        Lifetime::Unresolved(_) => return Err(Error::UnresolvedLifetime),
+        Lifetime::DurableNonce(nonce) => nonce.validate_instructions(instructions)?,
+        Lifetime::Blockhash { .. } => {}
     }
 
     if instructions.len() > PACKET_SIZE || tables.len() > MAX_ACCOUNTS {
@@ -41,7 +46,7 @@ pub(super) fn compile(
 
     let accounts = collect_accounts(payer, instructions, version)?;
     let mut tables: Vec<_> = tables.iter().collect();
-    tables.sort_by_key(|table| table.address.to_string());
+    tables.sort_by_key(|table| address_key(table.address));
     validate_tables(version, &tables)?;
     let mut static_entries = Vec::new();
     let mut loaded = Vec::new();
@@ -53,11 +58,15 @@ pub(super) fn compile(
             *address != payer,
             !role.is_signer(),
             !role.is_writable(),
-            address.to_string(),
+            address_key(*address),
         )
     });
     loaded.sort_by_key(|(address, role, table, _)| {
-        (!role.is_writable(), table.to_string(), address.to_string())
+        (
+            !role.is_writable(),
+            address_key(*table),
+            address_key(*address),
+        )
     });
     let header = header(&static_entries)?;
     let static_accounts: Vec<_> = static_entries.iter().map(|(address, _)| *address).collect();

@@ -22,6 +22,7 @@ mod fixed_points;
 
 mod framing_cases;
 mod instructions;
+mod nonce_cases;
 mod offchain;
 mod registry;
 /// Portable public RPC protocol fixtures without network I/O.
@@ -50,9 +51,9 @@ pub mod system_client;
 use alloc::vec::Vec;
 
 /// Immutable suite identity. Changes to fixtures or assertions require a new ID.
-pub const SUITE_ID: &str = "solana-kit-core-v22";
+pub const SUITE_ID: &str = "solana-kit-core-v23";
 /// Required number of cases; a truncated report cannot pass conformance.
-pub const EXPECTED_CASE_COUNT: usize = 97;
+pub const EXPECTED_CASE_COUNT: usize = 101;
 
 /// Selects authentic fixtures or the intentionally incorrect hash oracle.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -140,6 +141,7 @@ pub fn run(mode: FixtureMode) -> Report {
     cases.extend(framing_cases::cases());
     cases.extend(wallet_cases::cases());
     cases.extend(signers::cases());
+    cases.extend(nonce_cases::cases());
 
     Report {
         suite_id: SUITE_ID,
