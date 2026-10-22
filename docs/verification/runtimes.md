@@ -59,7 +59,27 @@ dispatches a `Press` event and requires the corrupted report and second commit.
 The guest's small unsafe FFI wrappers implement that pinned synchronous copy ABI;
 core and the host harness forbid unsafe code.
 
-## Current v25 Token integration
+## Current v26 confirmation integration
+
+The 108-case suite preserves every previous 105 assertion body and ordered row.
+Three groups exercise public confirmation policy and event ordering, local Rc
+across an observed Pending receive with finite awaited cleanup, and exact
+submission bytes and effect exclusion. Actual native Rust 1.99.1, Chrome 155,
+Wasmtime 50 Preview1 and Preview2, and pinned LeptosKit WasmHost execute 108/108
+canonical and 107/108 under sole hash corruption. The one-fuel zero-commit
+control, exact imports, closed dependency graphs and all five fresh packaged-core
+groups pass at signed executable `6baff658d68997638c383b84ce85d0057c9a2778`.
+
+The checked private allowance is 105 ordinary groups times 15,000,000 plus 257
+authenticated transactions and 772 message crypto calls times 5,000,000, totalling
+6,720,000,000 per entry. The three new groups add no crypto loop. Existing 256
+distinct message and 256 cached transaction assertions remain unchanged. This
+is finite source-owned accounting, not a measured minimum or speed claim.
+The [confirmation receipt](transaction-confirmation.md) records the caller-owned
+observation and bounded-cleanup contract. No actual timer backend, authenticated
+nonce RPC adapter, subscription factory, validator or device journey is proved.
+
+## Historical v25 Token integration
 
 The 105-case suite preserves all 103 previous assertion groups and appends the
 93-row Token literal matrix and six strict Token groups. Actual native Rust,
@@ -548,7 +568,7 @@ All crates are exclusively for off-chain application clients.
 The `solana-kit-core-v8` suite preserves the first48 case lines and appends three
 public-client protocol groups. Signed clean source
 `709ec9588865df8dd55362412891c234295a72a7` executed `cargo xtask all` on2026-10-22
-using Rust1.99.1, Chrome155.0.8059.85/driver155.0.8059.84, Wasmtime50.0.0 and the
+using Rust 1.99.1, Chrome 155.0.8059.85/driver155.0.8059.84, Wasmtime 50.0.0 and the
 same pinned actual LeptosKit WasmHost. Public client source/tests equal accepted
 `6dc82ec165293b8a61007357d16d24f2e06ed510`; core production equals the V1 parent.
 

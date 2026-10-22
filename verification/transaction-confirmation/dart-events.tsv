@@ -1,0 +1,14 @@
+commitment	finalized	finalized	0
+commitment	finalized	confirmed	1
+commitment	finalized	processed	1
+commitment	confirmed	finalized	-1
+commitment	confirmed	confirmed	0
+commitment	confirmed	processed	1
+commitment	processed	finalized	-1
+commitment	processed	confirmed	-1
+commitment	processed	processed	0
+receipt	pending>confirmed
+expiry	41:pending>42:expired
+timeout	finalized	pending>timeout	60000
+timeout	confirmed	pending>timeout	60000
+timeout	processed	pending>timeout	30000
