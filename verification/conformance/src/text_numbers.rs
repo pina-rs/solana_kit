@@ -50,6 +50,7 @@ pub fn malformed() -> Result<(), &'static str> {
         Uint256::from_str_radix("1", 1) == Err(Error::InvalidValue),
         "invalid radix accepted",
     )?;
+    #[cfg(feature = "text-codecs")]
     {
         use solana_kit_core::codecs::Base64;
         require(
