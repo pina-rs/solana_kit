@@ -1,0 +1,8 @@
+compiled guest exact v1 ABI imports: {("leptoskit", "commit"), ("leptoskit", "node_create"), ("leptoskit", "node_set_props"), ("leptoskit_plugins_v1", "cancel"), ("leptoskit_plugins_v1", "event_info"), ("leptoskit_plugins_v1", "resolve"), ("leptoskit_plugins_v1", "result_len"), ("leptoskit_plugins_v1", "submit"), ("leptoskit_plugins_v1", "take_event"), ("leptoskit_plugins_v1", "take_result"), ("leptoskit_plugins_v1", "version")}
+canonical: ["unavailable", "denied", "singleton-owned", "entropy-pending", "entropy-complete", "short-pending", "short-rejected", "unavailable-pending", "unavailable-reply", "timer-pending", "timer-complete", "quiet-pending", "unrelated-routed", "cancel-routed", "quiet-cancelled", "unload-pending"]; cancelled/late/unload cleanup observed
+replacement: reused ID rejected by generation; numeric-only stale reply traps guest
+negative OmitBridge: required failure: start actual guest: host call failed: wasm `unreachable` instruction executed
+negative OmitWake: required failure: expected entropy-complete; actual guest trace: ["unavailable", "denied", "singleton-owned", "entropy-pending"]
+negative OmitCancel: required failure: expected unload-pending; actual guest trace: ["unavailable", "denied", "singleton-owned", "entropy-pending", "entropy-complete", "short-pending", "short-rejected", "unavailable-pending", "unavailable-reply", "timer-pending", "timer-complete", "quiet-pending", "unrelated-routed"]
+negative CorruptEntropy: required failure: wake actual guest: host call failed: wasm `unreachable` instruction executed
+actual LeptosKit async guest: all canonical and negative journeys passed
