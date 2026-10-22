@@ -6,6 +6,7 @@ This is a delivery checklist. Release notes describe completed behavior only.
 
 - [x] Read the figure-it-out principles and establish an auditable workflow.
 - [x] Confirm whole-ecosystem scope, underscore crate names, public repository, and WASI from the beginning.
+- [x] Confirm Unlicense for new project code and retain required third-party notices.
 - [x] Inspect pinned current-main snapshots of Dart Solana Kit, Wasm Solana, and LeptosKit without changing their working files.
 - [x] Inventory all 71 top-level reference packages and distinguish source inventory from verified behavior.
 - [x] Identify browser, native, WASI, and interpreted guest capability boundaries.

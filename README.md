@@ -19,4 +19,7 @@ Crates will use underscore names, including `solana_kit` for the umbrella crate
 and `solana_kit_*` for its components. The target is the entire Dart Solana Kit
 ecosystem, delivered in independently verified phases. Package boundaries and
 APIs will follow Rust's ownership model and dependency needs.
+
+Released under [Unlicense](LICENSE). Reused third-party material retains its
+required license and notices.
 A lightweight Rust Solana Kit ecosystem for native, browser WebAssembly, and embedded Wasm runtimes.
