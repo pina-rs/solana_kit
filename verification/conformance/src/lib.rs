@@ -122,17 +122,8 @@ pub fn run(mode: FixtureMode) -> Report {
         case("codec-bounded-sequences", codecs::bounded_sequences()),
         case("codec-distinct-options", codecs::options()),
         case("codec-exact-framing", codecs::framing()),
-        case("sysvar-clock-signed-fixture", accounts_sysvars::clock()),
-        case("account-metadata-and-absence", accounts_sysvars::accounts()),
-        case(
-            "sysvar-history-u64-bounds",
-            accounts_sysvars::history_bounds(),
-        ),
-        case(
-            "program-error-source-facts",
-            accounts_sysvars::program_errors(),
-        ),
     ];
+    cases.extend(accounts_sysvars::cases());
     cases.extend(transactions::cases());
 
     Report {

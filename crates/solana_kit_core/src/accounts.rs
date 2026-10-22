@@ -33,6 +33,9 @@ pub struct Account<T> {
 /// An account with owned encoded bytes.
 pub type EncodedAccount = Account<Vec<u8>>;
 
+/// An encoded snapshot or an explicitly missing requested address.
+pub type MaybeEncodedAccount = MaybeAccount<Vec<u8>>;
+
 /// Missing accounts retain only their address and cannot contain account data.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum MaybeAccount<T> {

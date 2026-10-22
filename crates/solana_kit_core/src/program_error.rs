@@ -2,6 +2,7 @@
 
 use crate::Address;
 use alloc::string::{String, ToString};
+use core::fmt;
 
 /// Known failure facts retained independently of an RPC error representation.
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -82,6 +83,14 @@ pub enum LogParseError {
     /// Invalid, empty, or overflowing hexadecimal custom error code.
     InvalidCustomCode,
 }
+
+impl fmt::Display for LogParseError {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(formatter, "program failure log error: {self:?}")
+    }
+}
+
+impl core::error::Error for LogParseError {}
 
 /// Parses exactly `Program <address> failed: <description>`.
 ///

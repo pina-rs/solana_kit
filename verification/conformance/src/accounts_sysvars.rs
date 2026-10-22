@@ -10,6 +10,23 @@ use solana_kit_core::{
     sysvars::{Clock, OWNER_ADDRESS, SlotHashes, SysvarCodec},
 };
 
+const CLOCK_SLOT: u64 = 284617079;
+const CLOCK_TIMESTAMP: i64 = -20000;
+const WORD_SIZE: usize = 8;
+const ACCOUNT_BALANCE: u64 = 99;
+const RENT_EPOCH: u64 = 7;
+const CUSTOM_CODE: u32 = 42;
+
+/// Keeps the additional assertion groups separate from the preexisting suite.
+pub(crate) fn cases() -> [crate::CaseResult; 4] {
+    [
+        crate::case("sysvar-clock-signed-fixture", clock()),
+        crate::case("account-metadata-and-absence", accounts()),
+        crate::case("sysvar-history-u64-bounds", history_bounds()),
+        crate::case("program-error-source-facts", program_errors()),
+    ]
+}
+
 /// Signed timestamp fixture is independent of the encoder under test.
 pub(crate) fn clock() -> Result<(), &'static str> {
     let bytes = [
@@ -18,16 +35,16 @@ pub(crate) fn clock() -> Result<(), &'static str> {
     ];
     let codec = SysvarCodec::<Clock>::NEW;
     let value = codec
-        .decode(&bytes, Limits::new(40, 0))
+        .decode(&bytes, Limits::new(bytes.len(), 0))
         .map_err(|_| "clock fixture rejected")?;
     require(
-        value.slot == 284617079
+        value.slot == CLOCK_SLOT
             && value.epoch_start_timestamp == -10
-            && value.unix_timestamp == -20000,
+            && value.unix_timestamp == CLOCK_TIMESTAMP,
         "clock signed fields differ",
     )?;
     let encoded = codec
-        .encode(&value, 40)
+        .encode(&value, bytes.len())
         .map_err(|_| "clock encoding failed")?;
     require(encoded == bytes, "clock independent bytes differ")
 }
@@ -35,14 +52,14 @@ pub(crate) fn clock() -> Result<(), &'static str> {
 /// Missing accounts preserve absence; present snapshots retain metadata.
 pub(crate) fn accounts() -> Result<(), &'static str> {
     let address = Address::from_bytes([5; 32]);
-    let limits = Limits::new(8, 0);
+    let limits = Limits::new(WORD_SIZE, 0);
     let account = Account {
         address,
         owner: OWNER_ADDRESS,
-        lamports: 99,
+        lamports: ACCOUNT_BALANCE,
         executable: false,
         space: 8,
-        rent_epoch: Some(7),
+        rent_epoch: Some(RENT_EPOCH),
         data: vec![255; 8],
     };
     let decoded = account
@@ -51,8 +68,8 @@ pub(crate) fn accounts() -> Result<(), &'static str> {
     require(
         decoded.address == address
             && decoded.data == u64::MAX
-            && decoded.lamports == 99
-            && decoded.rent_epoch == Some(7),
+            && decoded.lamports == ACCOUNT_BALANCE
+            && decoded.rent_epoch == Some(RENT_EPOCH),
         "account metadata differs",
     )?;
     let missing = MaybeAccount::<alloc::vec::Vec<u8>>::Missing(address)
@@ -91,7 +108,7 @@ pub(crate) fn program_errors() -> Result<(), &'static str> {
     require(
         failure.log == line
             && failure.program == program
-            && failure.error == ProgramError::Custom(42),
+            && failure.error == ProgramError::Custom(CUSTOM_CODE),
         "failure facts lost",
     )?;
     let error = InstructionFailure {
@@ -99,7 +116,7 @@ pub(crate) fn program_errors() -> Result<(), &'static str> {
         error: failure.error,
     };
     require(
-        error.is_program_error(&[program], program, Some(42))
+        error.is_program_error(&[program], program, Some(CUSTOM_CODE))
             && !error.is_program_error(&[], program, None),
         "program error attribution differs",
     )
