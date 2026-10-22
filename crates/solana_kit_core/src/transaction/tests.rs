@@ -207,7 +207,7 @@ fn strict_lengths_headers_indices_and_truncation() {
     }
 
     let mut bytes = fixture.clone();
-    bytes[0] = 129;
+    bytes[0] = 130;
     assert_eq!(Message::decode(&bytes), Err(Error::UnsupportedVersion));
     bytes = fixture.clone();
     bytes[1] = 1;

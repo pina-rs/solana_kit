@@ -6,7 +6,7 @@ use crate::{AccountRole, Address, Instruction};
 
 use super::{
     CompiledInstruction, Error, Header, Lifetime, Lookup, LookupTable, Message, PACKET_SIZE,
-    Version, wire,
+    V1Config, Version, wire,
 };
 
 const MAX_ACCOUNTS: usize = 256;
@@ -25,6 +25,7 @@ pub(super) fn compile(
     lifetime: Lifetime,
     instructions: &[Instruction],
     tables: &[LookupTable],
+    config: Option<V1Config>,
 ) -> Result<Message, Error> {
     if !matches!(lifetime, Lifetime::Blockhash { .. }) {
         return Err(Error::UnresolvedLifetime);
@@ -34,7 +35,11 @@ pub(super) fn compile(
         return Err(Error::PacketTooLarge);
     }
 
-    let accounts = collect_accounts(payer, instructions)?;
+    if version == Version::V1 && instructions.len() > 64 {
+        return Err(Error::InvalidV1Limits);
+    }
+
+    let accounts = collect_accounts(payer, instructions, version)?;
     let mut tables: Vec<_> = tables.iter().collect();
     tables.sort_by_key(|table| table.address.to_string());
     validate_tables(version, &tables)?;
@@ -67,6 +72,7 @@ pub(super) fn compile(
         instructions,
         lookups,
         lifetime,
+        config,
         bytes: Vec::new(),
     };
     message.bytes = wire::encode_message(&message)?;
@@ -93,12 +99,15 @@ fn partition(
 fn collect_accounts(
     payer: Address,
     instructions: &[Instruction],
+    version: Version,
 ) -> Result<BTreeMap<Address, Entry>, Error> {
     let mut accounts = BTreeMap::new();
     insert(&mut accounts, payer, AccountRole::WritableSigner, false)?;
 
     for instruction in instructions {
-        if instruction.data.len() > PACKET_SIZE || instruction.accounts.len() > PACKET_SIZE {
+        if instruction.data.len() > wire::packet_limit(version)
+            || instruction.accounts.len() > PACKET_SIZE
+        {
             return Err(Error::PacketTooLarge);
         }
 
@@ -139,7 +148,7 @@ fn insert(
 }
 
 fn validate_tables(version: Version, tables: &[&LookupTable]) -> Result<(), Error> {
-    if version == Version::Legacy && !tables.is_empty() {
+    if version != Version::V0 && !tables.is_empty() {
         return Err(Error::InvalidLookup);
     }
 
