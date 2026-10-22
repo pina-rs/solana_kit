@@ -85,8 +85,8 @@ crypto after only a dependency manifest path adaptation. It retains every source
 lock and original Dart oracle byte, and matches all four message, unsigned
 envelope, signed envelope and deterministic signature fixtures. All 83 IDs remain
 partial and none complete. Both documented V0 differences above remain explicit.
-No offchain production algorithm, golden fixture byte, dependency or source pin changed during
-integration. The default core normal/build closure remains core plus bs58.
+Offchain production algorithms, golden fixtures, dependencies and source pins
+remain unchanged. The default core normal/build closure remains core plus bs58.
 
 The full host command also passes graph/import controls and all five packaged-core
 consumer groups. This proves synchronous offchain-client behavior. It establishes
