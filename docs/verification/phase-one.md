@@ -25,6 +25,11 @@ independent peer observations. Their receipts define the accepted scope.
 Browser workers, WebSockets, installed applications, and complete host support
 remain separate gates.
 
+The accepted [headless LeptosKit HTTP adapter](leptoskit-http.md) separately
+executes public client requests through the actual pinned WasmHost and NativeHttp.
+It proves fixed host services, real Pending/wake, cancellation with peer EOF,
+capacity through abort and join, and awaited unload before replacement.
+
 The [WASI HTTP experiment](wasi-contract.md) executes outbound HTTP, bounded bodies,
 status errors, deadlines, pending-response Drop with peer EOF, retained-response
 control, entropy, and monotonic timer wake. It pins Wasmtime 50.0.0 and WASI
@@ -44,11 +49,11 @@ async guest allows those three plus eight plugin-v1 imports with exact signature
 Neither guest assumes browser globals. Application code owns event routing,
 generation tokens, and fixture cleanup.
 
-WASI and LeptosKit network adapters are outside the accepted snapshot documented
-here. WASI denial and early HTTP responses during upload need corrected error
-precedence and independent verification. Actual headless LeptosKit HTTP work is
-under separate review and integration. Neither candidate replaces the limits of
-the private experiments above.
+The WASI network adapter remains outside the accepted snapshot documented here.
+WASI denial and early HTTP responses during upload need corrected error precedence
+and independent verification. Accepted headless LeptosKit HTTP does not establish
+generated application loops or installed desktop, Android and iOS journeys.
+Neither result replaces the limits of the private experiments above.
 
 ## Workspace and release gates
 
@@ -59,7 +64,7 @@ in the scored report, even under a cache-like directory. Unsupported languages
 remain reported as skipped, with no invented score.
 
 [Monochange configuration](../../monochange.toml) assigns core, client, native,
-and browser to the `sdk` group and System to an independent package. The
+browser and LeptosKit to the `sdk` group and System to an independent package. The
 [verification workflow](../../.github/workflows/plan.yml) runs `monochange check`,
 `monochange step validate`, discovery, and release preview. The initial real core
 package preview and later core/client/System dry runs establish version ownership.
@@ -74,8 +79,8 @@ and expected failures. Missing tools or guest artifacts fail explicitly.
 Historical receipt hashes identify their actual local builds. Rebuilding in a
 different directory can change a debug artifact hash without changing its source.
 
-Accepted native and Window Fetch HTTP evidence does not complete WASI or
-LeptosKit networking, destination policy, or installed-host resource accounting.
+Accepted native, Window Fetch and headless LeptosKit HTTP evidence does not
+complete WASI networking or installed desktop and mobile application journeys.
 Full RPC,
 subscriptions, wallets, other program clients, and generated desktop/Android/iOS
 journeys remain required by the later phases. These experiment results cannot

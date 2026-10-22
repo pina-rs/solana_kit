@@ -38,7 +38,11 @@ Tokio execution, deadlines, cancellation and authentication. Its
 server journeys. The explicit `solana_kit_browser` adapter provides bounded Window
 Fetch HTTP with local futures, deadlines, cancellation, and caller authentication.
 Its [integration receipt](docs/verification/browser-http-integration.md) records
-actual Chrome journeys. Guest networking, browser workers, remaining RPC operations,
+actual Chrome journeys. The optional `solana_kit_leptoskit` adapter provides
+headless interpreted HTTP through fixed host-owned services, real guest wake and
+cancellation, and awaited native teardown. Its
+[actual-host receipt](docs/verification/leptoskit-http.md) records both stable and
+MSRV guest execution. WASI networking, browser workers, remaining RPC operations,
 subscriptions and installed application journeys remain separate work; see the
 [RPC receipt](docs/parity/rpc-foundation.md) and
 [node operation receipt](docs/verification/rpc-node.md) and

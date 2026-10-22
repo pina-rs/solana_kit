@@ -30,3 +30,9 @@ available compatible upstream release. Component publishing remains disabled.
 Headless interpreted execution does not establish generated desktop, Android or
 iOS application integration. Those installed application loops must wire this
 owner and guest executor explicitly.
+
+The [actual-host receipt](../../docs/verification/leptoskit-http.md) records the
+accepted headless replay with rebuilt Rust 1.99.1 and 1.89.0 guests, six source
+controls, four compiled ABI controls, and an unchanged independent public consumer.
+The HTTP application guest requires exactly three renderer and eight plugin-v1
+imports. The separate portable-core guest keeps its exact three-import policy.

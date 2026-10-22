@@ -95,8 +95,10 @@ WASI host capabilities. These experiments do not establish installed desktop or
 mobile application support. Separate accepted
 [native HTTP](../verification/native-http.md) and
 [Window Fetch HTTP](../verification/browser-http-integration.md) adapters have
-actual network evidence. WASI and LeptosKit network adapters remain outside this
-accepted snapshot while correction, independent review, and integration continue.
+actual network evidence. The accepted
+[headless LeptosKit HTTP adapter](../verification/leptoskit-http.md) adds actual
+interpreted guest HTTP/TLS, Pending/wake, cancellation and awaited native teardown.
+WASI adapter correction and independent verification remain outside this snapshot.
 
 WASI core fixtures execute in Preview 1 and Preview 2. The separate Preview 2
 HTTP experiment executes clock, entropy, cancellation, and outbound HTTP through
@@ -178,6 +180,13 @@ Acceptance: typed catalog coverage, loopback success/error/timeout/cancellation
 tests, browser execution, WASI execution, and interpreted guest-to-host execution.
 Capture permission and capability failures as errors. No fallback returns an
 empty account, zero balance, or successful-looking result.
+
+The optional LeptosKit HTTP adapter now has accepted actual-host execution through
+public `Client<GuestHttp>` and host-owned `NativeHttp`. Its application owns the
+local executor, singleton Events routing and completion loop. Guest networking
+uses fixed named host services; cancellation retains capacity until real native
+termination is joined. This headless result leaves generated desktop, Android
+and iOS application wiring, other capabilities and full Phase 4 coverage open.
 
 ## Phase 5: subscriptions and orchestration
 
@@ -271,6 +280,6 @@ the [node catalog receipt](../verification/rpc-node.md) adds 19, and the
 398 canonical declaration IDs. Operation coverage does not complete those IDs or
 the remaining 24 operations. Foundation, node and economics protocol groups execute with
 memory transports across native Rust, Chrome, both WASI previews, and the actual
-pinned LeptosKit host. Accepted native and Window Fetch HTTP adapters add separate
-network evidence. Neither result establishes installed device support or full
+pinned LeptosKit host. Accepted native, Window Fetch and headless LeptosKit HTTP
+adapters add separate network evidence. These results do not establish installed device support or full
 Phase 4 completion.

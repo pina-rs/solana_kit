@@ -1,8 +1,8 @@
 # Architecture and proposed contracts
 
 The portable core, [generated System client](../verification/system-client.md),
-and 22-operation typed RPC client are implemented. Accepted native and Window Fetch HTTP adapters have actual network
-evidence. The
+and 30-operation typed RPC client are implemented. Accepted native, Window Fetch
+and headless interpreted LeptosKit HTTP adapters have actual network evidence. The
 [Phase 1 evidence matrix](../verification/phase-one.md) records the executed
 portability and async experiments. Full catalog, remaining adapters, wallets,
 and application support remain work in progress. The examples and signatures below are proposed
@@ -129,8 +129,19 @@ domain values, not JSON, reqwest, web-sys, WIT, or official Solana types. Reques
 budgets, bounded response bodies, cancellation-on-drop, status handling, and
 capability failure are explicit in the accepted
 [native HTTP](../verification/native-http.md) and
-[Window Fetch HTTP](../verification/browser-http-integration.md) contracts.
+[Window Fetch HTTP](../verification/browser-http-integration.md) contracts,
+and the [headless LeptosKit HTTP](../verification/leptoskit-http.md) contract.
 Private experiments prove only the behavior described in their receipts.
+
+The implemented LeptosKit `GuestHttp` transport uses the pinned upstream Call
+registry and its registered wakers. The explicit `host` feature provides
+`HttpHost`, which owns the actual `WasmHost`, fixed named `NativeHttp` services,
+and native task accounting. Guest bytes cannot select endpoints, credentials,
+TLS roots or retries. The application owns its local executor, poll export and
+singleton Events receiver. It drains routed work and awaits completions in its
+own event loop. Cancellation retains capacity until abort completion is joined;
+awaited shutdown joins native work before unloading. The separate guest feature
+has no Tokio, interpreter, JavaScript or OS entropy dependency.
 
 Use ordinary inherent async methods over concrete associated futures where that
 is sufficient. If a named state-machine future becomes necessary, it borrows
@@ -227,10 +238,10 @@ but this is not cross-family consensus or runtime verification.
 ## Remaining host and application work
 
 Private experiments establish a named WASI HTTP/socket/TLS path and async fixture
-capabilities through the actual pinned LeptosKit bridge. Accepted native and
-Window Fetch HTTP adapters have separate network and cancellation evidence.
-WASI adapter correction and LeptosKit HTTP review/integration remain outside
-this accepted snapshot. In particular, WASI denial and early-response handling
+capabilities through the actual pinned LeptosKit bridge. Accepted native,
+Window Fetch and headless LeptosKit HTTP adapters have separate network and
+cancellation evidence. WASI adapter correction remains outside this accepted
+snapshot. In particular, WASI denial and early-response handling
 during an upload need corrected error precedence and independent verification.
 LeptosKit fixture entropy and injected time do not prove platform entropy or
 timers. Installed desktop, Android, and iOS journeys remain required.
@@ -253,4 +264,4 @@ remain pending. The client uses `std` without a runtime or network dependency.
 Account results reuse core-owned types. The open `Method` trait permits typed
 provider extensions while the client owns envelopes, correlation, bounds, and
 remote errors. The proposed API sketches above do not describe the implemented
-native and browser constructors.
+native, browser and LeptosKit constructors.
