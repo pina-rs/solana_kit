@@ -1,0 +1,40 @@
+wasmtime 50.0.0 (ebe5e8df1 2026-10-20)
+IMPORTS
+wasi:cli/environment@0.2.12
+wasi:cli/exit@0.2.12
+wasi:cli/stderr@0.2.12
+wasi:cli/stdin@0.2.12
+wasi:cli/stdout@0.2.12
+wasi:cli/terminal-input@0.2.12
+wasi:cli/terminal-output@0.2.12
+wasi:cli/terminal-stderr@0.2.12
+wasi:cli/terminal-stdin@0.2.12
+wasi:cli/terminal-stdout@0.2.12
+wasi:clocks/monotonic-clock@0.2.12
+wasi:clocks/wall-clock@0.2.12
+wasi:filesystem/preopens@0.2.12
+wasi:filesystem/types@0.2.12
+wasi:io/error@0.2.12
+wasi:io/poll@0.2.12
+wasi:io/streams@0.2.12
+wasi:random/insecure-seed@0.2.12
+wasi:random/random@0.2.12
+wasi:sockets/instance-network@0.2.12
+wasi:sockets/network@0.2.12
+wasi:sockets/tcp-create-socket@0.2.12
+wasi:sockets/tcp@0.2.12
+wasi:sockets/udp-create-socket@0.2.12
+wasi:sockets/udp@0.2.12
+
+PASS exchange: exit=exit status: 0; validated TLS plus real WebSocket protocol; guest=PASS exchange
+PASS corrupt: exit=exit status: 1; validated TLS plus real WebSocket protocol; guest=
+PASS wrong-ca: exit=exit status: 0; peer observed TLS validation alert; guest=PASS wrong-ca
+PASS wrong-name: exit=exit status: 0; peer observed TLS validation alert; guest=PASS wrong-name
+PASS plaintext: exit=exit status: 0; real TLS ClientHello rejected plaintext; guest=PASS plaintext
+PASS bad-upgrade: exit=exit status: 0; valid TLS; explicit upgrade rejection; guest=PASS bad-upgrade
+PASS oversized: exit=exit status: 0; validated TLS plus real WebSocket protocol; guest=PASS oversized
+PASS cancel: exit=exit status: 0; quiet EOF before 240ms; post-close send=Ok(()); receive=Err(Io(Custom { kind: UnexpectedEof, error: "peer closed connection without sending TLS close_notify: https://docs.rs/rustls/latest/rustls/manual/_03_howto/index.html#unexpected-eof" })); guest=PENDING cancel; PASS cancel
+PASS retain: exit=exit status: 0; quiet connection retained past 240ms; guest=PENDING retain; PASS retain
+PASS unload: exit=signal: 9 (SIGKILL); quiet EOF before 240ms; post-close send=Ok(()); receive=Err(Io(Custom { kind: UnexpectedEof, error: "peer closed connection without sending TLS close_notify: https://docs.rs/rustls/latest/rustls/manual/_03_howto/index.html#unexpected-eof" })); guest=PENDING unload
+PASS denied: exit=exit status: 0; no peer connection; guest=PASS denied Os { code: 2, kind: PermissionDenied, message: "Permission denied" }
+PASS unavailable: exit=exit status: 0; no peer connection; guest=PASS unavailable Os { code: 2, kind: PermissionDenied, message: "Permission denied" }
