@@ -2,8 +2,8 @@
 members = [
   "crates/solana_kit",
   "crates/solana_kit_core",
-  "verification/conformance",
   "verification/browser",
+  "verification/conformance",
   "verification/guest",
   "xtask",
 ]

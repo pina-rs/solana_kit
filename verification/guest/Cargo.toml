@@ -8,5 +8,5 @@ publish = false
 crate-type = ["cdylib"]
 
 [dependencies]
-solana_kit_conformance = { path = "../conformance" }
 serde_json = "1.0"
+solana_kit_conformance = { path = "../conformance" }

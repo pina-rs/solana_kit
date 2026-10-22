@@ -11,7 +11,10 @@ mod tests {
         let bytes = core::array::from_fn(|index| u8::try_from(index + 1).expect("32 bytes"));
         let address = Address::from(bytes);
 
-        assert_eq!(address.to_string(), "4wBqpZM9xaSheZzJSMawUKKwhdpChKbZ5eu5ky4Vigw");
+        assert_eq!(
+            address.to_string(),
+            "4wBqpZM9xaSheZzJSMawUKKwhdpChKbZ5eu5ky4Vigw"
+        );
         assert_eq!(address.to_string().parse::<Address>(), Ok(address));
         assert!("0".parse::<Address>().is_err());
         assert!("1".repeat(45).parse::<Address>().is_err());
@@ -24,5 +27,20 @@ mod tests {
 
         assert_eq!(hash.to_string().parse::<Hash>(), Ok(hash));
         assert!(Hash::try_from(&[7; 31][..]).is_err());
+    }
+
+    /// Checks deterministic signing and rejection through only the public package.
+    #[test]
+    fn crypto_signing_rejects_changed_message() {
+        use solana_kit_core::crypto::{Keypair, verify};
+
+        let key = Keypair::from_seed(&[7; 32]);
+        let signature = key.sign(b"downstream package");
+
+        assert_eq!(
+            verify(&key.address(), b"downstream package", &signature),
+            Ok(())
+        );
+        assert!(verify(&key.address(), b"changed message", &signature).is_err());
     }
 }

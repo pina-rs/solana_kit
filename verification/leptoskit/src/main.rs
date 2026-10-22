@@ -6,8 +6,8 @@ use leptoskit_wasm::{EventKind, WasmHost};
 use serde_json::Value;
 use solana_kit_conformance::{EXPECTED_CASE_COUNT, FixtureMode, SUITE_ID, run};
 
-const VIEWPORT_WIDTH: f64 = 320.0;
-const VIEWPORT_HEIGHT: f64 = 480.0;
+const VIEWPORT_WIDTH: f32 = 320.0;
+const VIEWPORT_HEIGHT: f32 = 480.0;
 const FUEL_BUDGET: u64 = 1_000_000_000;
 
 /// Checks the full guest report against the same suite's native report.
