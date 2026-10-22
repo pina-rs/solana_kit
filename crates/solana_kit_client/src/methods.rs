@@ -5,6 +5,9 @@ use serde::ser::SerializeSeq;
 use serde::{Deserialize, Serialize, Serializer};
 use solana_kit_core::{Address, accounts::MaybeEncodedAccount};
 
+/// Economics, inflation and validator voting operations.
+pub mod economics;
+
 /// A typed operation whose params and result schema stay owned by its author.
 ///
 /// The client validates HTTP status, JSON syntax and envelope, request identity,

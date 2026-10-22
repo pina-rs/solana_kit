@@ -60,4 +60,7 @@ numeric-text-malformed: Ok(())
 composite-typed-composition: Ok(())
 composite-backward-bits: Ok(())
 composite-malformed-bounds: Ok(())
-solana-kit-core-v12: 62/62 cases passed
+rpc-economics-accounts-votes: Ok(())
+rpc-economics-inflation-rewards: Ok(())
+rpc-economics-malformed-config: Ok(())
+solana-kit-core-v13: 65/65 cases passed
