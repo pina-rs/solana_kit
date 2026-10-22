@@ -30,6 +30,12 @@ jobs:
           cargo +1.99.1 test --manifest-path verification/rpc-design/Cargo.toml --locked
           cargo +1.99.1 test -p solana_kit_client --all-features --locked
           cargo +1.99.1 doc -p solana_kit_client --no-deps --locked
+      - name: Check exact subscription declaration receipt
+        shell: bash
+        run: |
+          rustc +1.99.1 --edition 2024 verification/subscriptions-design/receipt.rs -o target/subscription-receipt
+          target/subscription-receipt docs/parity/capabilities.tsv target/subscriptions.tsv
+          cmp docs/parity/subscriptions.tsv target/subscriptions.tsv
   catalog:
     runs-on: ubuntu-24.04
     steps:

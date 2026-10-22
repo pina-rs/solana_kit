@@ -1,0 +1,21 @@
+check	result	evidence_scope
+cargo test -p solana_kit_client --offline	pass	21 new tests; old RPC tests retained; native in-memory execution
+cargo test --workspace --all-features --offline	pass	native workspace and documentation tests
+cargo check --workspace --no-default-features --offline	pass	compilation only
+cargo clippy --workspace --all-targets --all-features --offline -- -D warnings	pass	static analysis
+cargo +1.89.0 check --workspace --all-features --offline	pass	MSRV compilation only
+cargo check --workspace --all-features --target wasm32-unknown-unknown --offline	pass	compilation only
+cargo check --workspace --all-features --target wasm32-wasip1 --offline	pass	compilation only
+cargo check --workspace --all-features --target wasm32-wasip2 --offline	pass	compilation only
+RUSTDOCFLAGS=-Dwarnings cargo doc --workspace --all-features --no-deps --offline	pass	public documentation links and diagnostics
+cargo fmt --all --check	pass	workspace Rust source formatting
+actionlint	pass	workflow validation
+dprint check OWNED_MARKDOWN_FILES	pass	changed Markdown formatting only
+dprint check	baseline failure	five unchanged verification/boundaries TOMLs differ from formatter ordering
+improved solana_kit_xtask style OWNED_CHECKOUT	pass	monostyle0.3.26;178 scored files;readability98.88;complexity99.39;every category>=90
+cargo xtask gates	pass	core dependency closures;compiled guest imports;forbidden-import and Tokio-dependency negative controls
+rustc receipt.rs; subscription-receipt; cmp	pass	exact173 canonical IDs;68 partial;105 pending;0 complete;canonical unchanged
+monochange check	pass	publication disabled by existing configuration
+monochange preview --format json	pass	local release plan only;no manifests changed
+monochange publish packages --dry-run	blocked	branch has no durable first-parent release record;no publication attempted
+pinned Dart3.13.3 API and protocol tests	pass	87 original tests;isolated package configuration;no pub resolution

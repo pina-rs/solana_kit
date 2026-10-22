@@ -5,6 +5,9 @@
 mod errors;
 mod json;
 pub mod methods;
+/// Caller-owned bounded subscription protocol.
+pub mod subscriptions;
+
 mod validate;
 mod wire;
 

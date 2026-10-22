@@ -1,0 +1,4 @@
+case	public_test	registered_scope
+subscriptions-owner	subscriptions.rs	isolated native in-memory protocol; not shared suite
+subscriptions-families	subscription_families.rs	isolated native nine-family typed results; not shared suite
+subscriptions-ownership	subscription_designs.rs	isolated executable ownership comparison

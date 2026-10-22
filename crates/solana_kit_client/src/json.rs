@@ -73,7 +73,7 @@ pub fn request<R: Method>(id: u64, method: &R, limits: Limits) -> Result<Request
 }
 
 /// This lexical guard bounds nested containers before allocating parsed values.
-fn check_limits(body: &[u8], limits: Limits) -> Result<(), Error> {
+pub(crate) fn check_limits(body: &[u8], limits: Limits) -> Result<(), Error> {
     if body.len() > limits.bytes {
         return Err(Error::BodyLimit);
     }

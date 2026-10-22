@@ -1,0 +1,23 @@
+check	result	evidence_scope
+frozen Unit114 consumer source SHA256	unchanged	d6cc6ff2187038117b91bf80355540094a4e00fbe1563762d9412d38f4acebc9
+external cargo +1.89.0 test --offline -- --nocapture against original source	12 pass;2 fail	original two signature failures preserved;source1b30cd5d605eebdd7258c622bc4135eac117b057
+focused signature_notifications tests before fix	1 pass;1 fail	valid failed transaction rejected;malformed-known control passes
+external cargo +1.89.0 test --offline -- --nocapture against corrected source	14 pass;0 fail	unchanged ordinary external consumer;repository Rust flags removed;native public text-frame behavior
+cargo test -p solana_kit_client --test subscriptions --test subscription_families --test subscription_designs --test signature_notifications --offline	pass	21 original author tests and2 added regression tests;native in-memory protocol execution
+cargo test --workspace --all-features --offline	pass	native workspace tests and doctests
+cargo check --workspace --no-default-features --offline	pass	compilation only
+cargo +1.89.0 check --workspace --all-features --offline	pass	MSRV compilation only
+cargo check --workspace --all-features --target wasm32-unknown-unknown --offline	pass	compilation only
+cargo check --workspace --all-features --target wasm32-wasip1 --offline	pass	compilation only
+cargo check --workspace --all-features --target wasm32-wasip2 --offline	pass	compilation only
+cargo clippy --workspace --all-targets --all-features --offline -- -D warnings	pass	static analysis
+RUSTDOCFLAGS=-Dwarnings cargo doc --workspace --all-features --no-deps --offline	pass	public documentation diagnostics
+cargo fmt --all --check	pass	Rust formatting
+dprint check OWNED_MARKDOWN_FILES	pass	scoped Markdown formatting
+actionlint	pass	workflow validation
+improved solana_kit_xtask style OWNED_CHECKOUT	pass	monostyle0.3.26;every file and repository category>=90;no scoring exclusions added
+rustc receipt.rs; subscription-receipt; cmp	pass	173 exact canonical IDs;68 partial;105 pending;0 complete;canonical and scoped inventories unchanged
+monochange check	pass	local configuration and changeset checks
+monochange step validate	pass	local validation
+monochange preview --format json	pass	local release preview;no release-record or publication operation
+pinned Dart3.13.3 API and protocol tests	pass	87 original tests;no pub resolution
