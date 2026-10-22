@@ -13,12 +13,14 @@ immutable legacy/v0/v1 transactions, account snapshots, sysvar layouts, program
 errors, optional exact fixed points, and deterministic cryptography. The generated
 `solana_kit_system` slice adds bounded data codecs, typed account builders and strict
 parsers for all fourteen pinned System instructions, nonce account snapshots,
-and numeric custom errors. `solana_kit_client` adds typed balance, latest-blockhash and full-base64
+and numeric custom errors. `solana_kit_compute_budget` adds all five concrete
+instruction codecs, builders, parsers and instruction-list helpers.
+`solana_kit_client` adds typed balance, latest-blockhash and full-base64
 account reads, all nineteen node metadata operations and all eight economics
 operations, nine account and token operations and richer accountInfo,
 and all fifteen history, submission, full-result and simulation operations,
 through one executor-neutral protocol owner. All 54 catalog methods have typed
-implementations. The shared 75-case suite has
+implementations. The shared 77-case suite has
 [runtime execution evidence](docs/verification/runtimes.md).
 The core component is unreleased; the published `solana_kit` 0.0.0 umbrella remains
 a dependency-free name reservation with no SDK APIs. This bounded codec slice
