@@ -65,3 +65,7 @@ The caller supplies monotonically increasing generations within one connection.
 A private owner identity rejects handles from another connection. Replacement rejects old handles and old-generation ingestion, returns
 a gap, and starts an empty owner. No retry, reconnect, historical reconciliation,
 or replay is implicit. An ended handle retains a bounded slot until `forget`.
+
+Four [portable public protocol groups](../verification/subscription-runtime.md)
+extend the shared conformance registry. They execute complete memory-frame I/O.
+They do not establish WebSocket transport or device networking support.
