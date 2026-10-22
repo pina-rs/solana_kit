@@ -27,3 +27,7 @@ pub mod crypto;
 pub use encoding::ParseError;
 pub use instruction::{AccountMeta, AccountRole, Instruction};
 pub use values::{Address, Hash, Signature};
+
+/// Exact decimal and binary fixed-point arithmetic.
+#[cfg(feature = "fixed-points")]
+pub mod fixed_points;

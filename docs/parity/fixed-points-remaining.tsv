@@ -1,0 +1,6 @@
+id	reason
+dart:solana_kit_fixed_points:lib/src/binary_formatting.dart#binaryFixedPointToNumber	finite presentation vectors pass; extreme IEEE754 parity remains unaudited
+dart:solana_kit_fixed_points:lib/src/decimal_formatting.dart#decimalFixedPointToNumber	finite presentation vectors pass; extreme IEEE754 parity remains unaudited
+dart:solana_kit_fixed_points:lib/src/fixed_point_codec.dart#FixedPointCodec.new	custom callback constructor equivalence remains unevidenced; built-in typed codecs implemented
+dart:solana_kit_fixed_points:lib/src/fixed_point_codec.dart#FixedPointDecoder.new	custom callback constructor equivalence remains unevidenced; built-in typed codecs implemented
+dart:solana_kit_fixed_points:lib/src/fixed_point_codec.dart#FixedPointEncoder.new	custom callback constructor equivalence remains unevidenced; built-in typed codecs implemented

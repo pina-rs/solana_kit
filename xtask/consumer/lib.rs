@@ -44,6 +44,25 @@ mod tests {
         assert!(verify(&key.address(), b"changed message", &signature).is_err());
     }
 
+    /// The archive retains optional exact arithmetic and its independent wire layout.
+    #[test]
+    fn fixed_points_preserve_exact_rounding_and_bytes() {
+        use solana_kit_core::{
+            codecs::{Decoder, Encoder, Endian, Limits},
+            fixed_points::{DecimalShape, Rounding, Signedness},
+        };
+
+        let shape = DecimalShape::new(Signedness::Signed, 16, 2).expect("bounded shape");
+        let value = shape.parse("-1", Rounding::Strict).expect("exact decimal");
+        let rounded = value.checked_div_scalar(3, Rounding::Floor).expect("floor quotient");
+        let codec = shape.codec(Endian::Little).expect("byte-aligned shape");
+
+        assert_eq!(rounded.to_string(), "-0.34");
+        assert_eq!(codec.encode(&rounded, 2), Ok(vec![222, 255]));
+        assert_eq!(codec.decode(&[222, 255], Limits::new(2, 2)), Ok(rounded));
+        assert!(codec.decode(&[222], Limits::new(2, 2)).is_err());
+    }
+
     /// Exercises the transaction module from the extracted archive with explicit wire bytes.
     #[test]
     fn immutable_transaction_preserves_exact_signed_bytes() {

@@ -94,8 +94,12 @@ fn dependency_graphs() -> Result<()> {
         Some("wasm32-wasip1"),
         Some("wasm32-wasip2"),
     ] {
-        for crypto in [false, true] {
-            dependency_graph(target, crypto)?;
+        for features in ["", "crypto", "fixed-points", "crypto,fixed-points"] {
+            dependency_graph(target, features, "normal,build")?;
+
+            if features.contains("fixed-points") {
+                dependency_graph(target, features, "normal")?;
+            }
         }
     }
 
@@ -103,7 +107,7 @@ fn dependency_graphs() -> Result<()> {
 }
 
 /// Selects one feature/target closure without mixing host-only verification tools.
-fn dependency_graph(target: Option<&str>, crypto: bool) -> Result<()> {
+fn dependency_graph(target: Option<&str>, features: &str, edges: &str) -> Result<()> {
     let mut command = cargo();
     command.args([
         "tree",
@@ -112,7 +116,7 @@ fn dependency_graph(target: Option<&str>, crypto: bool) -> Result<()> {
         "solana_kit_core",
         "--no-default-features",
         "-e",
-        "normal,build",
+        edges,
         "--prefix",
         "none",
         "--format",
@@ -124,19 +128,42 @@ fn dependency_graph(target: Option<&str>, crypto: bool) -> Result<()> {
         command.args(["--target", target]);
     }
 
-    if crypto {
-        command.args(["--features", "crypto"]);
+    if !features.is_empty() {
+        command.args(["--features", features]);
     }
 
-    let label = format!("dependencies-{}-{crypto}", target.unwrap_or("native"));
+    let label = format!(
+        "dependencies-{}-{}-{edges}",
+        target.unwrap_or("native"),
+        features.replace(',', "-")
+    );
     let output = success(&mut command, &label)?;
-    let allowed = if crypto {
-        include_str!("../policy/crypto.txt")
+    let tree = String::from_utf8(output.stdout)?;
+    let allowed = dependency_policy(features);
+
+    if features.contains("fixed-points") {
+        ensure!(
+            packages(&tree).contains("autocfg") == (edges == "normal,build"),
+            "autocfg must be build-only in the fixed-point closure"
+        );
+    }
+
+    dependencies(&tree, &allowed)
+}
+
+/// Numeric build tooling is allowed only when the optional numeric graph is selected.
+fn dependency_policy(features: &str) -> String {
+    let mut allowed = if features.contains("crypto") {
+        include_str!("../policy/crypto.txt").to_owned()
     } else {
-        "solana_kit_core\nbs58"
+        "solana_kit_core\nbs58\n".to_owned()
     };
 
-    dependencies(&String::from_utf8(output.stdout)?, allowed)
+    if features.contains("fixed-points") {
+        allowed.push_str(include_str!("../policy/fixed-points.txt"));
+    }
+
+    allowed
 }
 
 /// Executes observable controls against exactly the same production checkers.
@@ -153,14 +180,16 @@ fn negative_controls() -> Result<()> {
         _ => bail!("forbidden import negative control was not rejected correctly"),
     }
 
-    match dependencies(
-        include_str!("../fixtures/forbidden-dependency.txt"),
-        include_str!("../policy/crypto.txt"),
-    ) {
-        Err(error) if error.to_string().contains("tokio") => {
-            println!("dependency negative control rejected: {error}")
+    for features in ["", "crypto", "fixed-points", "crypto,fixed-points"] {
+        match dependencies(
+            include_str!("../fixtures/forbidden-dependency.txt"),
+            &dependency_policy(features),
+        ) {
+            Err(error) if error.to_string().contains("tokio") => {
+                println!("dependency negative control ({features}) rejected: {error}")
+            }
+            _ => bail!("forbidden dependency negative control was not rejected correctly"),
         }
-        _ => bail!("forbidden dependency negative control was not rejected correctly"),
     }
 
     Ok(())
