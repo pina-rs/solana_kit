@@ -13,6 +13,11 @@ default = ["text-codecs"]
 text-codecs = ["solana_kit_core/text-codecs"]
 
 [dependencies]
+base64 = { version = "0.22.1", default-features = false, features = ["alloc"] }
+bs58 = { version = "0.5.1", default-features = false, features = ["alloc"] }
+
+serde_json = { version = "1.0.154", features = ["arbitrary_precision", "raw_value"] }
+
 hex-literal = "1.0.0"
 signer_capability_consumer = { path = "../signer-capabilities" }
 solana_kit_associated_token_account = { path = "../../crates/solana_kit_associated_token_account", features = ["crypto"] }

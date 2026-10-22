@@ -7,6 +7,8 @@ extern crate alloc;
 /// Explicit portable transaction confirmation strategies.
 pub mod confirmation;
 mod errors;
+/// Validated transaction accounts and ordered outer/inner instruction traces.
+pub mod introspection;
 mod json;
 pub mod methods;
 /// Caller-owned bounded subscription protocol.
