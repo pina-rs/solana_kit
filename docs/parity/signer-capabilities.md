@@ -73,6 +73,7 @@ partial and pending statuses. They are not placeholder APIs.
 Regenerate the receipt from the repository root with these commands.
 
 ```sh
+mkdir -p target
 rustc --edition 2024 -D warnings verification/signer-capabilities/receipt.rs -o target/signer-receipt
 target/signer-receipt docs/parity/capabilities.tsv docs/parity/signer-capabilities.tsv
 cargo test -p solana_kit_signers --all-features --locked
