@@ -28,14 +28,25 @@ fn invalid_schema_preserves_existing_output() {
     fs::create_dir(&directory).expect("isolated output directory");
     let output = directory.join("generated.rs");
     fs::write(&output, "prior output").expect("sentinel");
-    let mut malformed = root();
-    malformed["program"]["instructions"][0]["name"] = "../escaped".into();
-    assert!(generate::replace(&malformed, &output).is_err());
-    assert_eq!(
-        fs::read_to_string(&output).expect("preserved output"),
-        "prior output"
-    );
-    assert!(!directory.join("generated.rs.pending").exists());
+
+    for name in [
+        "../escaped",
+        "path/name",
+        "path\\name",
+        "café",
+        "0invalid",
+        "fn",
+    ] {
+        let mut malformed = root();
+        malformed["program"]["instructions"][0]["name"] = name.into();
+        assert!(generate::replace(&malformed, &output).is_err());
+        assert_eq!(
+            fs::read_to_string(&output).expect("preserved output"),
+            "prior output"
+        );
+        assert!(!directory.join("generated.rs.pending").exists());
+    }
+
     fs::remove_dir_all(directory).expect("clean temporary output");
 }
 

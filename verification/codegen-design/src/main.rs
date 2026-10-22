@@ -17,6 +17,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         Some("generate") => generate::run(),
         Some("proof") => proof::run(),
         Some("renderer") => renderer::run(),
-        _ => Err("usage: solana_kit_codegen_design inputs|generate|proof".into()),
+        _ => Err("usage: solana_kit_codegen_design inputs|generate|proof|renderer".into()),
     }
 }

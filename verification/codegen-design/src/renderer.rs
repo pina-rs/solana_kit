@@ -55,20 +55,23 @@ fn constructor(upstream: &str) -> Result<String, Error> {
     ))
 }
 
-/// Compiles original constructor expressions after mapping their crate paths.
-pub(crate) fn run() -> Result<(), Box<dyn std::error::Error>> {
-    let revision = "26f0136703d77ea64c77124d055115256a850954";
-    let source = fetch(
-        "renderer",
-        "https://github.com/codama-idl/renderers-rust",
-        revision,
-    )?;
+/// Checks the downloaded renderer and selected constructor against pinned hashes.
+fn verify_source(source: &Path) -> Result<PathBuf, Error> {
     let input = source.join("e2e/system/src/generated/instructions/create_account.rs");
-    let upstream = fs::read_to_string(&input)?;
-    let probe = constructor(&upstream)?;
     let cache = source.parent().ok_or("renderer cache missing")?;
-    let path = cache.join("dependency-map-probe.rs");
-    fs::write(&path, probe)?;
+
+    if hash(&cache.join("source.tar.gz"))?
+        != "08d2744525b6f57db6f1517b82764233eaf5fb901a22743d3f943a9635aab618"
+        || hash(&input)? != "0d68496e36e3e7c73f5c6c40cc6f0c05ca2cebbcd5df71a371672443c644410f"
+    {
+        return Err("renderer provenance checksum mismatch".into());
+    }
+
+    Ok(input)
+}
+
+/// Invokes rustc on the original expressions and retains exact diagnostics.
+fn compile_probe(cache: &Path, path: &Path) -> Result<(), Error> {
     let dependencies = Path::new(env!("CARGO_MANIFEST_DIR")).join("target/debug/deps");
     let library = core_library(&dependencies)?;
     let result = Command::new("rustc")
@@ -90,11 +93,30 @@ pub(crate) fn run() -> Result<(), Box<dyn std::error::Error>> {
     fs::write(cache.join("dependency-map-diagnostics.txt"), &diagnostics)?;
 
     if result.status.success()
-        || !diagnostics.contains("no function or associated item named `new`")
+        || !diagnostics.contains("error[E0599]")
+        || !diagnostics.contains("struct `AccountMeta`")
         || !diagnostics.contains("no field named `program_id`")
     {
         return Err(format!("unexpected dependency-map probe outcome: {diagnostics}").into());
     }
+
+    Ok(())
+}
+
+/// Compiles original constructor expressions after mapping their crate paths.
+pub(crate) fn run() -> Result<(), Error> {
+    let revision = "26f0136703d77ea64c77124d055115256a850954";
+    let source = fetch(
+        "renderer",
+        "https://github.com/codama-idl/renderers-rust",
+        revision,
+    )?;
+    let input = verify_source(&source)?;
+    let cache = source.parent().ok_or("renderer cache missing")?;
+    let probe = constructor(&fs::read_to_string(&input)?)?;
+    let path = cache.join("dependency-map-probe.rs");
+    fs::write(&path, probe)?;
+    compile_probe(cache, &path)?;
 
     println!(
         "official renderer {revision}: direct mapping rejected AccountMeta::new and program_id, as expected"

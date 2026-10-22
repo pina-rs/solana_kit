@@ -115,6 +115,46 @@ fn count(program: &Value, key: &str) -> String {
         .map_or_else(|| "unmodeled".into(), |items| items.len().to_string())
 }
 
+/// Describes the raw schema without inventing omitted capability counts.
+fn schema(path: &Path) -> Result<String, Error> {
+    let idl: Value = serde_json::from_slice(&fs::read(path)?)?;
+    let program = idl.get("program").unwrap_or(&idl);
+    let format = idl
+        .get("standard")
+        .map(Value::to_string)
+        .unwrap_or_else(|| {
+            if idl.get("kind").is_some() {
+                "Codama".into()
+            } else {
+                "Anchor/Shank".into()
+            }
+        });
+    let version = idl
+        .get("version")
+        .or_else(|| idl.pointer("/metadata/version"))
+        .map_or_else(|| "unspecified".into(), Value::to_string);
+
+    Ok(format!(
+        "{format}:{version}\t{}\t{}\t{}\t{}\tavailable",
+        count(program, "accounts"),
+        count(program, "instructions"),
+        count(program, "pdas"),
+        count(program, "errors")
+    ))
+}
+
+/// Records the first conventional root notice, leaving absent notices unresolved.
+fn license(source: &Path) -> Result<String, Error> {
+    let path = ["LICENSE", "LICENSE.md", "LICENSE.txt", "LICENSE-MIT"]
+        .into_iter()
+        .find(|candidate| source.join(candidate).exists());
+
+    path.map_or_else(
+        || Ok("unresolved".into()),
+        |path| hash(&source.join(path)).map(|digest| format!("{path}:{digest}")),
+    )
+}
+
 /// Writes an authoritative row for each input, keeping Loader v3/v4 separate.
 fn row(repo: &Value, dart: &Path) -> Result<String, Error> {
     let name = repo["name"].as_str().ok_or("missing repo name")?;
@@ -142,13 +182,7 @@ fn row(repo: &Value, dart: &Path) -> Result<String, Error> {
                 .any(|part| part.as_os_str() == "generated")
         })
         .count();
-    let license = ["LICENSE", "LICENSE.md", "LICENSE.txt", "LICENSE-MIT"]
-        .into_iter()
-        .find(|candidate| source.join(candidate).exists());
-    let license_record = license.map_or_else(
-        || Ok("unresolved".into()),
-        |path| hash(&source.join(path)).map(|digest| format!("{path}:{digest}")),
-    )?;
+    let license_record = license(&source)?;
     let prefix = format!(
         "{package}\t{name}\t{repository}\t{revision}\t{relative}\t{archive_hash}\t{license_record}\t{generated}\t{}",
         dart_files.len() - generated
@@ -167,30 +201,7 @@ fn row(repo: &Value, dart: &Path) -> Result<String, Error> {
         ));
     }
 
-    let idl: Value = serde_json::from_slice(&fs::read(&path)?)?;
-    let program = idl.get("program").unwrap_or(&idl);
-    let format = idl
-        .get("standard")
-        .map(Value::to_string)
-        .unwrap_or_else(|| {
-            if idl.get("kind").is_some() {
-                "Codama".into()
-            } else {
-                "Anchor/Shank".into()
-            }
-        });
-    let version = idl
-        .get("version")
-        .or_else(|| idl.pointer("/metadata/version"))
-        .map_or_else(|| "unspecified".into(), Value::to_string);
-    Ok(format!(
-        "{prefix}\t{}\t{format}:{version}\t{}\t{}\t{}\t{}\tavailable",
-        hash(&path)?,
-        count(program, "accounts"),
-        count(program, "instructions"),
-        count(program, "pdas"),
-        count(program, "errors")
-    ))
+    Ok(format!("{prefix}\t{}\t{}", hash(&path)?, schema(&path)?))
 }
 
 /// Downloads all 18 program revisions in bounded independent worker threads.
@@ -202,6 +213,7 @@ pub(crate) fn audit() -> Result<(), Error> {
         "https://github.com/openbudgetfun/solana_kit",
         "0138bb956d2d81ccc0c56edc602401c0df2f2b46",
     )?;
+    verify_dart(&dart)?;
     let mut rows = Vec::new();
 
     for chunk in repos
@@ -234,10 +246,53 @@ pub(crate) fn audit() -> Result<(), Error> {
     let header = "client\trepository_key\trepository\trevision\tidl_path\tarchive_sha256\tlicense_path_sha256\tdart_generated_files\tdart_handwritten_files\tidl_sha256\tschema_version\taccounts\tinstructions\tpdas\terrors\tstatus\n";
     let destination =
         Path::new(env!("CARGO_MANIFEST_DIR")).join("../../docs/parity/program-inputs.tsv");
-    fs::write(destination, format!("{header}{}\n", rows.join("\n")))?;
+    let actual = format!("{header}{}\n", rows.join("\n"));
+
+    if fs::read_to_string(destination)? != actual {
+        return Err("pinned input inventory differs from committed ledger".into());
+    }
+
     println!(
         "audited {} immutable program revisions for 17 clients",
         rows.len()
     );
+    Ok(())
+}
+
+/// Checks authority fixtures and script bytes against the immutable Dart archive.
+fn verify_dart(dart: &Path) -> Result<(), Error> {
+    let expected = "b229acdc682bf9ea4b00e6f215551d7e72d5d1aa85a98ec0ae42ebd71cd3259d";
+    let archive = dart
+        .parent()
+        .ok_or("missing Dart cache parent")?
+        .join("source.tar.gz");
+
+    if hash(&archive)? != expected {
+        return Err("Dart archive checksum mismatch".into());
+    }
+
+    let fixtures = [
+        (
+            "config/reference-repos.json",
+            include_bytes!("../fixtures/reference-repos.json").as_slice(),
+        ),
+        (
+            "config/programs/artifacts.json",
+            include_bytes!("../fixtures/artifacts.json").as_slice(),
+        ),
+    ];
+
+    for (relative, fixture) in fixtures {
+        if fs::read(dart.join(relative))? != fixture {
+            return Err(format!("Dart authority fixture mismatch: {relative}").into());
+        }
+    }
+
+    if hash(&dart.join("scripts/generate_program_packages.mjs"))?
+        != "405de73569eb4e24d9c09bf5d8a3327de022b4b9a21dd0f8d46f2b992ff61654"
+    {
+        return Err("Dart generation script checksum mismatch".into());
+    }
+
     Ok(())
 }
