@@ -8,6 +8,10 @@ publish = false
 rust-version.workspace = true
 description = "Host-neutral fixed-vector conformance for the real Solana Kit core"
 
+[features]
+default = ["text-codecs"]
+text-codecs = ["solana_kit_core/text-codecs"]
+
 [dependencies]
 hex-literal = "1.0.0"
 solana_kit_client = { path = "../../crates/solana_kit_client" }
