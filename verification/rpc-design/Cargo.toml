@@ -18,3 +18,7 @@ solana_kit_core = { path = "../../crates/solana_kit_core" }
 [dev-dependencies]
 futures = "=0.3.31"
 tokio = { version = "=1.54.1", features = ["rt-multi-thread", "macros", "net", "io-util", "sync", "time"] }
+
+[[bin]]
+name = "catalog"
+path = "src/catalog.rs"

@@ -49,11 +49,13 @@ impl<'de, T: Deserialize<'de>> Deserialize<'de> for Presence<T> {
 
 #[derive(Debug)]
 pub enum Error {
+    IdExhausted,
     Transport(TransportError),
     Status(u16),
     BodyLimit,
     DepthLimit,
     Json(serde_json::Error),
+    Schema(serde_json::Error),
     Envelope,
     Correlation,
     Remote(RemoteError),
@@ -168,7 +170,9 @@ pub fn response<R: DeserializeOwned>(id: u64, reply: Reply, limits: Limits) -> R
     }
 
     match (envelope.result, envelope.error) {
-        (Presence::Present(raw), Presence::Missing) => Ok(serde_json::from_str(raw.get())?),
+        (Presence::Present(raw), Presence::Missing) => {
+            serde_json::from_str(raw.get()).map_err(Error::Schema)
+        }
         (Presence::Missing, Presence::Present(raw)) => {
             Err(Error::Remote(serde_json::from_str(raw.get())?))
         }

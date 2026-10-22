@@ -6,6 +6,7 @@ pub mod json;
 pub mod methods;
 
 use std::future::Future;
+use std::sync::atomic::{AtomicU32, Ordering};
 
 use json::{Error, Limits};
 use methods::Method;
@@ -45,17 +46,30 @@ pub trait Transport {
 pub struct Client<T> {
     transport: T,
     limits: Limits,
+    next_id: AtomicU32,
 }
 
 impl<T: Transport> Client<T> {
     pub const fn new(transport: T, limits: Limits) -> Self {
-        Self { transport, limits }
+        Self {
+            transport,
+            limits,
+            next_id: AtomicU32::new(1),
+        }
     }
 
     /// Executes typed decoding after the actual associated exchange completes.
-    pub async fn call<R: Method>(&self, id: u64, method: R) -> Result<R::Response, Error> {
+    pub async fn call<R: Method>(&self, method: R) -> Result<R::Response, Error> {
+        let id = self
+            .next_id
+            .fetch_update(Ordering::Relaxed, Ordering::Relaxed, |id| id.checked_add(1))
+            .map_err(|_| Error::IdExhausted)?;
+        let id = u64::from(id);
         let request = json::request(id, &method, self.limits)?;
         let reply = self.transport.exchange(request).await?;
         json::response(id, reply, self.limits)
     }
 }
+
+#[cfg(test)]
+mod id_tests;

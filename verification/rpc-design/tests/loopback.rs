@@ -24,7 +24,6 @@ impl Transport for Loopback {
 }
 
 const SUCCESS: u16 = 200;
-const REQUEST_ID: u64 = 7;
 const HEADER_ALLOWANCE: usize = 1024;
 const RETAINED_OBSERVATION: Duration = Duration::from_millis(80);
 const BEFORE_ABORT: Duration = Duration::from_millis(160);
@@ -95,7 +94,7 @@ fn balance() -> Balance {
 
 /// Fixture parser asserts the complete exact request before reporting acceptance.
 async fn receive(stream: &mut TcpStream) {
-    let expected = br#"{"jsonrpc":"2.0","id":7,"method":"getBalance","params":["11111111111111111111111111111111"]}"#;
+    let expected = br#"{"jsonrpc":"2.0","id":1,"method":"getBalance","params":["11111111111111111111111111111111"]}"#;
     let mut bytes = Vec::new();
     let mut byte = [0];
 
@@ -127,7 +126,7 @@ async fn typed_call_executes_real_http_exchange() {
         let (mut stream, _) = listener.accept().await.unwrap();
         receive(&mut stream).await;
         let body =
-            br#"{"jsonrpc":"2.0","id":7,"result":{"context":{"slot":8},"value":9007199254740993}}"#;
+            br#"{"jsonrpc":"2.0","id":1,"result":{"context":{"slot":8},"value":9007199254740993}}"#;
         let header = format!(
             "HTTP/1.1 200 OK\r\nContent-Length: {}\r\nConnection: close\r\n\r\n",
             body.len()
@@ -136,7 +135,7 @@ async fn typed_call_executes_real_http_exchange() {
         stream.write_all(body).await.unwrap();
     });
     let client = Client::new(Loopback(address), Limits::default());
-    let result = tokio::time::timeout(Duration::from_secs(3), client.call(REQUEST_ID, balance()))
+    let result = tokio::time::timeout(Duration::from_secs(3), client.call(balance()))
         .await
         .unwrap()
         .unwrap();
@@ -170,7 +169,7 @@ async fn dropping_actual_pending_call_closes_owned_socket() {
     });
     let call = tokio::spawn(async move {
         let client = Client::new(Loopback(address), Limits::default());
-        client.call(REQUEST_ID, balance()).await
+        client.call(balance()).await
     });
     tokio::time::timeout(Duration::from_secs(3), ready)
         .await

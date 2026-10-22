@@ -36,3 +36,118 @@ and require a compile-negative native spawn control before choosing A.
 
 Neither candidate starts a runtime or detaches work. Both share one protocol
 codec, so the comparison changes the async boundary rather than JSON semantics.
+
+## Decision and ownership
+
+Choose candidate A. The executed generic spawn helper requires `T: Send + Sync`,
+`for<'a> T::Exchange<'a>: Send`, `R: Method + Send`, and `R::Response: Send`.
+It invokes the same `Client<T>::call` that the local Rc test invokes. The
+alternative loses Send at the erased exchange, as its E0277 doctest demonstrates.
+No unsafe Send assertion or duplicated request algorithm is needed. This is a
+native proof; JSON behavior in browser/WASI/interpreted guests remains to execute
+when real public adapters exist.
+
+Keep one `solana_kit_client` crate for typed RPC, HTTP contracts, pubsub,
+confirmation and account fetching. It owns request identity allocation, framing,
+JSON schemas, context and protocol errors. Use a sealed method/response mapping
+for standard operations; an arbitrary Deserialize type cannot stand in for a
+catalog response. Public client types are owned by Kit. Serde, RawValue and HTTP
+implementation types stay private. The pilot's exposed serde trait and explicit
+numeric ID are experimental seams to remove before public implementation.
+
+Adapters remain separate `solana_kit_native`, `solana_kit_browser`,
+`solana_kit_wasi` and `solana_kit_leptoskit` crates. Each adapter owns an explicitly
+chosen endpoint and caller-provided authentication; neither creates a runtime,
+reads ambient credentials nor retries automatically. A bounded request transfers
+owned JSON bytes and the response limit. Adapters must enforce that limit while
+receiving, before growing the body allocation; the client checks again before
+parsing. Cancellation drops owned operations; a separately owned driver must
+explicitly abort its task. Dropping a Tokio JoinHandle detaches it.
+
+The public error contract needs typed capability/denial, transport source, HTTP
+status, deadline, body/depth limit, malformed JSON, correlation, protocol envelope,
+remote JSON-RPC and typed domain/schema variants. Preserve remote code/message
+and bounded unknown data, including missing versus explicit null. Do not treat
+simulation `value.err` as a JSON-RPC framing error, or infer success from HTTP 200.
+The prototype's three-case TransportError is deliberately incomplete and must
+not be copied as the finished adapter taxonomy.
+
+## JSON boundaries and scope
+
+The pilot checks exact u64 text through u64::MAX without any f64 round trip,
+requires numeric matching IDs and JSON-RPC 2.0, rejects duplicate envelope fields,
+requires exactly one result/error, and distinguishes absent fields from JSON null.
+It rejects missing context/slot/value, invalid base58 address/hash, wrong account
+encoding labels, wrong HTTP status, excess bytes, nesting depth and trailing JSON.
+A lexical container guard runs before serde allocations; serde then validates
+syntax. No recursion-limit disabling, JavaScript JSON.parse, silent zero slot,
+empty account or fallback balance is used.
+
+The base64 account pilot retains the encoded string and typed label; it does not
+decode or validate base64 contents, support slices, zstd or jsonParsed. Those are
+explicit remaining operations, not a claim that arbitrary serde_json establishes
+a complete schema. In the public API, encoding and transaction-details choices
+must select explicit result variants; parsed account fallback and absent versus
+null transaction metadata need distinct owned variants. Use confirmed/finalized
+commitment types where processed is invalid, and a mint-or-program enum for token
+filters. Do not expose the reference's untyped comparison/filter maps as the
+finished Rust API. Integer widths and nullable members require per-method oracles.
+
+The loopback adapter is a fixture for a single success HTTP/1 response and owned
+socket drop, not a production HTTP parser. It has no TLS, pooling, redirects,
+chunking, authentication, timeout policy, WebSocket, or installed-host bridge.
+The retained-call control observes no EOF before abort; dropping the actual
+pending call then produces EOF. Neither this nor native compilation proves a
+browser, WASI, LeptosKit or mobile networking journey.
+
+## Exact catalog and implementation units
+
+[rpc-catalog.tsv](../parity/rpc-catalog.tsv) contains all 54 literal methods from
+Dart revision `0138bb956d2d81ccc0c56edc602401c0df2f2b46`, their exact parameter
+builder IDs, all canonical declarations in each defining file, source SHA-256,
+request signature and declared field summaries. Literal values have no invented
+canonical declaration IDs. The list constants themselves remain at the IDs in
+capabilities.tsv. This derived worklist never edits that canonical inventory.
+Only 14 methods have convenience wrappers; 40 require new typed caller paths.
+All response type names in this worklist are proposals. The three marked pilots
+are subsets and none of the 54 is marked fully implemented or verified.
+
+| Unit                             | Catalog methods | Verification obligation                                                                                            |
+| -------------------------------- | --------------: | ------------------------------------------------------------------------------------------------------------------ |
+| Protocol owner and account reads |               7 | Context, nullable accounts, all encodings/slices, program-account withContext, minimum rent and blockhash validity |
+| Node and epoch reads             |              19 | Each scalar/record/array, optional version fields, Alpenglow method-unavailable versus supported-null              |
+| Token reads                      |               5 | Exact raw amount strings, decimals, nullable uiAmount, owner/delegate filters and encoding variants                |
+| Economics and voting             |               8 | Context, per-address null rewards, bounded rates, supply and voting schemas                                        |
+| History                          |              10 | Nullable blocks/transactions/times, details and encoding variants, ranges, pagination and errors                   |
+| Submission and simulation        |               5 | Signature validation, message fee null, full simulation schema, uncertain-send semantics and no silent retry       |
+
+Split these families into cohesive smaller PRs when schema size warrants it.
+Each method requires exact request vectors including omission/null positional
+policy, independent successful responses, numeric boundaries, nullable/missing
+cases, remote errors and malformed/domain controls. The existing 14 convenience
+methods do not define the finish line. Submission policy remains separate from
+idempotent reads; preflight failure is not a successful send.
+
+After the protocol owner is public, verify each adapter with the same typed
+fixtures and real loopback HTTP success/status/error/deadline/body-limit/drop
+journeys. Run browser fetch in Chrome, named WASI HTTP capabilities in Wasmtime,
+and actual LeptosKit guest-to-host HTTP with denied capability/destination,
+quiet cancellation, unload and late replies. Native must preserve generic Send;
+browser/guest must execute local futures. TLS/WebSocket/subscription lifecycle
+and the later desktop/mobile journeys need their own evidence.
+
+## Protocol grounding
+
+The three pilot shapes were checked against primary documentation on 2026-10-22:
+[getBalance](https://solana.com/docs/rpc/http/getbalance),
+[getLatestBlockhash](https://solana.com/docs/rpc/http/getlatestblockhash),
+[getAccountInfo](https://solana.com/docs/rpc/http/getaccountinfo), and the
+[JSON-RPC specification](https://www.jsonrpc.org/specification).
+The [shared JSON structures](https://solana.com/docs/rpc/json-structures) identify
+encoding-dependent and nullable fields that the history units must verify.
+[getAgGenesisCert](https://solana.com/docs/rpc/http/getaggenesiscert) documents the
+Agave 4.3 capability boundary. The getTransactionsForAddress documentation URL
+was inaccessible during this audit; its typed response/config plan is grounded
+in pinned Dart source and still requires an authoritative upstream schema pin
+before implementation acceptance. The other 49 methods are source-audited
+planning entries, not an independently verified exhaustive protocol schema.

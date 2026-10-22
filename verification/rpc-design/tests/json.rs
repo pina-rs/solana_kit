@@ -79,7 +79,7 @@ fn u64_is_lossless_and_does_not_coerce_float_string_or_overflow() {
                 balance(envelope(&format!(
                     r#"{{"context":{CONTEXT},"value":{invalid}}}"#
                 ))),
-                Err(Error::Json(_))
+                Err(Error::Schema(_))
             ),
             "{invalid}"
         );
@@ -160,6 +160,7 @@ fn typed_blockhash_and_account_reject_bad_domain_values() {
         r#"{{"context":{CONTEXT},"value":{{"executable":false,"lamports":18446744073709551615,"owner":"{ADDRESS}","space":0,"rentEpoch":18446744073709551615,"data":["","base64"]}}}}"#
     );
     let value: solana_kit_rpc_design::methods::NullableContext<
+
         solana_kit_rpc_design::methods::Account,
     > = json::response(REQUEST_ID, reply(envelope(&account)), Limits::default()).unwrap();
     assert_eq!(value.value.unwrap().lamports, u64::MAX);

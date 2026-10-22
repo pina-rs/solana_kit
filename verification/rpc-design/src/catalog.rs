@@ -6,6 +6,8 @@ use std::error::Error;
 use std::fs;
 use std::path::Path;
 
+const METHOD_COUNT: usize = 54;
+const HASH_COLUMN: usize = 12;
 const PIN: &str = "0138bb956d2d81ccc0c56edc602401c0df2f2b46";
 const PLANS: &str = "getAccountInfo|accounts|Context<Option<AccountByEncoding>>
 getAgGenesisCert|node|Option<AlpenglowGenesisCertificate>
@@ -62,20 +64,29 @@ requestAirdrop|submission|Signature
 sendTransaction|submission|Signature
 simulateTransaction|submission|Context<Simulation>";
 
+/// Reconcile membership, source hashes and exact IDs before writing any worklist.
 fn main() -> Result<(), Box<dyn Error>> {
     let args: Vec<_> = std::env::args().collect();
     let reference = Path::new(args.get(1).ok_or("expected pinned reference directory")?);
+    verify_reference(reference)?;
     let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
     let source = reference.join("packages/solana_kit_rpc_api/lib/src");
     let catalog = fs::read_to_string(source.join("solana_rpc_api.dart"))?;
-    let methods: BTreeSet<_> = catalog.lines().filter_map(literal).collect();
+    let literals: Vec<_> = catalog.lines().filter_map(literal).collect();
+    let methods: BTreeSet<_> = literals.iter().copied().collect();
+
     let rows: Vec<_> = PLANS
         .lines()
         .map(|line| line.split('|').collect::<Vec<_>>())
         .collect();
+
     let planned: BTreeSet<_> = rows.iter().map(|row| row[0]).collect();
 
-    if methods != planned || methods.len() != 54 || rows.len() != 54 {
+    if methods != planned
+        || methods.len() != METHOD_COUNT
+        || rows.len() != METHOD_COUNT
+        || literals.len() != METHOD_COUNT
+    {
         return Err("literal catalog membership differs from the 54-row plan".into());
     }
 
@@ -91,6 +102,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     }
 
     let destination = root.join("docs/parity/rpc-catalog.tsv");
+
     if args.get(2).is_some_and(|arg| arg == "--write") {
         fs::write(destination, output)?;
     } else if fs::read_to_string(destination)? != output {
@@ -108,12 +120,15 @@ fn literal(line: &str) -> Option<&str> {
 
 fn snake(method: &str) -> String {
     let mut result = String::new();
+
     for character in method.chars() {
         if character.is_uppercase() {
             result.push('_');
         }
+
         result.extend(character.to_lowercase());
     }
+
     result
 }
 
@@ -127,28 +142,39 @@ fn render_row(
     let file = format!("{}.dart", snake(method));
     let text = fs::read_to_string(source.join(&file))?;
     let path = format!("packages/solana_kit_rpc_api/lib/src/{file}");
-    let entries: Vec<Vec<&str>> = ledger
-        .lines()
-        .skip(1)
-        .map(|line| line.split('\t').collect())
-        .filter(|entry: &Vec<&str>| entry[2] == path)
-        .collect();
-    let params = format!("{method}Params");
-    let params_entry = entries
-        .iter()
-        .find(|entry| entry[3] == params)
-        .ok_or("params canonical ID missing")?;
-    let actual_hash = format!("{:x}", Sha256::digest(text.as_bytes()));
+    let (params_id, ids, hash) = identity(ledger, &path, method, &text)?;
+    let (signature, fields) = declarations(&text)?;
 
-    if actual_hash != params_entry[12] {
-        return Err("source SHA-256 differs from canonical inventory".into());
-    }
+    let convenience = if conveniences.contains(&format!(" {method}(")) {
+        "yes"
+    } else {
+        "missing"
+    };
+    let status = if ["getBalance", "getLatestBlockhash", "getAccountInfo"].contains(&method) {
+        "private-pilot-subset"
+    } else {
+        "planned-schema-unverified"
+    };
 
-    let ids = entries
-        .iter()
-        .map(|entry| entry[0])
-        .collect::<Vec<_>>()
-        .join(";");
+    let provenance = format!("{PIN}:{path}");
+    let columns = [
+        method,
+        row[1],
+        row[2],
+        &params_id,
+        &ids,
+        &hash,
+        &signature,
+        &fields,
+        convenience,
+        status,
+        &provenance,
+    ];
+
+    Ok(columns.join("\t") + "\n")
+}
+
+fn declarations(text: &str) -> Result<(String, String), Box<dyn Error>> {
     let start = text
         .find("List<Object?> ")
         .ok_or("params signature missing")?;
@@ -165,29 +191,59 @@ fn render_row(
         .filter(|line| line.starts_with("final ") && !line.contains(" = ") && line.ends_with(';'))
         .collect::<Vec<_>>()
         .join(" ");
-    let convenience = if conveniences.contains(&format!(" {method}(")) {
-        "yes"
-    } else {
-        "missing"
-    };
-    let status = if ["getBalance", "getLatestBlockhash", "getAccountInfo"].contains(&method) {
-        "private-pilot-subset"
-    } else {
-        "planned-schema-unverified"
-    };
-    Ok(format!(
-        "{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}:{}\n",
-        method,
-        row[1],
-        row[2],
-        params_entry[0],
-        ids,
-        params_entry[12],
-        signature,
-        fields,
-        convenience,
-        status,
-        PIN,
-        path
-    ))
+    Ok((signature, fields))
+}
+
+fn identity(
+    ledger: &str,
+    path: &str,
+    method: &str,
+    text: &str,
+) -> Result<(String, String, String), Box<dyn Error>> {
+    let entries: Vec<Vec<&str>> = ledger
+        .lines()
+        .skip(1)
+        .map(|line| line.split('\t').collect())
+        .filter(|entry: &Vec<&str>| entry[2] == path)
+        .collect();
+    let params = format!("{method}Params");
+    let params_entry = entries
+        .iter()
+        .find(|entry| entry[3] == params)
+        .ok_or("params canonical ID missing")?;
+    let actual_hash = format!("{:x}", Sha256::digest(text.as_bytes()));
+
+    if actual_hash != params_entry[HASH_COLUMN] {
+        return Err("source SHA-256 differs from canonical inventory".into());
+    }
+
+    let ids = entries
+        .iter()
+        .map(|entry| entry[0])
+        .collect::<Vec<_>>()
+        .join(";");
+    Ok((params_entry[0].to_owned(), ids, actual_hash))
+}
+
+fn verify_reference(reference: &Path) -> Result<(), Box<dyn Error>> {
+    let revision = std::process::Command::new("git")
+        .arg("-C")
+        .arg(reference)
+        .args(["rev-parse", "HEAD"])
+        .output()?;
+    let status = std::process::Command::new("git")
+        .arg("-C")
+        .arg(reference)
+        .args(["status", "--porcelain"])
+        .output()?;
+
+    if !revision.status.success() || String::from_utf8(revision.stdout)?.trim() != PIN {
+        return Err("reference revision differs from immutable source pin".into());
+    }
+
+    if !status.status.success() || !status.stdout.is_empty() {
+        return Err("reference checkout must be clean".into());
+    }
+
+    Ok(())
 }
