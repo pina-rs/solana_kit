@@ -98,13 +98,15 @@ mobile application support. Separate accepted
 actual network evidence. The accepted
 [headless LeptosKit HTTP adapter](../verification/leptoskit-http.md) adds actual
 interpreted guest HTTP/TLS, Pending/wake, cancellation and awaited native teardown.
-WASI adapter correction and independent verification remain outside this snapshot.
+The accepted [public WASI HTTP adapter](../../crates/solana_kit_wasi/README.md)
+includes corrected denial and early-response behavior with independent verification.
 
 WASI core fixtures execute in Preview 1 and Preview 2. The separate Preview 2
 HTTP experiment executes clock, entropy, cancellation, and outbound HTTP through
 Wasmtime 50.0.0 with WASI 0.2.12. A second socket experiment executes validating
-TLS and WebSocket exchange through that host. Neither private experiment provides
-a public WASI adapter, destination policy, async socket lifecycle, or subscriptions.
+TLS and WebSocket exchange through that host. The public HTTP adapter adds
+caller-owned readiness and cancellation; host destination policy, a public socket
+adapter, subscriptions and installed mobile journeys remain separate requirements.
 An HTTP-only component host does not imply socket availability.
 
 Acceptance: repeatable execution logs, import/dependency allowlists, and a
