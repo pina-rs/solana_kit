@@ -18,6 +18,7 @@ mod instructions;
 mod registry;
 /// Portable public RPC protocol fixtures without network I/O.
 pub mod rpc;
+mod rpc_accounts;
 mod rpc_economics;
 mod rpc_fixture;
 mod rpc_node;
@@ -33,9 +34,9 @@ pub mod system_client;
 use alloc::vec::Vec;
 
 /// Immutable suite identity. Changes to fixtures or assertions require a new ID.
-pub const SUITE_ID: &str = "solana-kit-core-v13";
+pub const SUITE_ID: &str = "solana-kit-core-v14";
 /// Required number of cases; a truncated report cannot pass conformance.
-pub const EXPECTED_CASE_COUNT: usize = 65;
+pub const EXPECTED_CASE_COUNT: usize = 68;
 
 /// Selects authentic fixtures or the intentionally incorrect hash oracle.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -121,6 +122,7 @@ pub fn run(mode: FixtureMode) -> Report {
     cases.push(case("composite-backward-bits", composites::bits()));
     cases.push(case("composite-malformed-bounds", composites::malformed()));
     cases.extend(rpc_economics::cases());
+    cases.extend(rpc_accounts::cases());
 
     Report {
         suite_id: SUITE_ID,

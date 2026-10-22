@@ -63,4 +63,7 @@ composite-malformed-bounds: Ok(())
 rpc-economics-accounts-votes: Ok(())
 rpc-economics-inflation-rewards: Ok(())
 rpc-economics-malformed-config: Ok(())
-solana-kit-core-v13: 64/65 cases passed
+rpc-account-representations: Ok(())
+rpc-token-exact-quantities: Ok(())
+rpc-account-token-malformed: Ok(())
+solana-kit-core-v14: 67/68 cases passed
