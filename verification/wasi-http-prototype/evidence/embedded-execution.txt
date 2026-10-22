@@ -1,0 +1,62 @@
+PASS missing HTTP rejected before guest execution
+PASS no-network CLI baseline
+PASS no-network stderr baseline
+PASS host baseline: table baseline=0; flights=0; tasks restored; Store dropped
+OUTCOME denied Err(Transport(TransportError { kind: Denied, source: Some(Custom { kind: Other, error: "ErrorCode::HttpRequestDenied" }) }))
+PASS embedded denied Pending/readiness/Rc/registry
+PASS host denied: table baseline=0; flights=0; tasks restored; Store dropped
+OUTCOME denied-upload Err(Transport(TransportError { kind: Denied, source: Some(Custom { kind: Other, error: "ErrorCode::HttpRequestDenied" }) }))
+PASS embedded denied-upload Pending/readiness/Rc/registry
+PASS host denied-upload: table baseline=0; flights=0; tasks restored; Store dropped
+OUTCOME denied-response Err(Transport(TransportError { kind: Denied, source: Some(Custom { kind: Other, error: "ErrorCode::HttpRequestDenied" }) }))
+PASS embedded denied-response Pending/readiness/Rc/registry
+PASS host denied-response: table baseline=0; flights=0; tasks restored; Store dropped
+PASS early-status actual bounded upload
+PASS host early-status: table baseline=0; flights=0; tasks restored; Store dropped
+OUTCOME malformed-chunk Err(Transport(TransportError { kind: Io, source: Some(Custom { kind: Other, error: "hyper error: error reading a body from connection" }) }))
+PASS embedded malformed-chunk Pending/readiness/Rc/registry
+PASS host malformed-chunk: table baseline=0; flights=0; tasks restored; Store dropped
+OUTCOME truncated Err(Transport(TransportError { kind: Io, source: Some(Custom { kind: Other, error: "hyper error: error reading a body from connection" }) }))
+PASS embedded truncated Pending/readiness/Rc/registry
+PASS host truncated: table baseline=0; flights=0; tasks restored; Store dropped
+PASS upload-deadline actual bounded upload
+PASS host upload-deadline: table baseline=0; flights=0; tasks restored; Store dropped
+PASS embedded success Pending/readiness/Rc/registry
+PASS host success: table baseline=0; flights=0; tasks restored; Store dropped
+OUTCOME tls-untrusted Err(Transport(TransportError { kind: Io, source: Some(Custom { kind: Other, error: "ErrorCode::TlsProtocolError" }) }))
+PASS embedded tls-untrusted Pending/readiness/Rc/registry
+PASS host tls-untrusted: table baseline=0; flights=0; tasks restored; Store dropped
+OUTCOME tls-name Err(Transport(TransportError { kind: Io, source: Some(Custom { kind: Other, error: "ErrorCode::TlsProtocolError" }) }))
+PASS embedded tls-name Pending/readiness/Rc/registry
+PASS host tls-name: table baseline=0; flights=0; tasks restored; Store dropped
+OUTCOME tls-deadline Err(Transport(TransportError { kind: Deadline, source: None }))
+PASS embedded tls-deadline Pending/readiness/Rc/registry
+PASS host tls-deadline: table baseline=0; flights=0; tasks restored; Store dropped
+OUTCOME dns-deadline Err(Transport(TransportError { kind: Deadline, source: None }))
+PASS embedded dns-deadline Pending/readiness/Rc/registry
+PASS host dns-deadline: table baseline=0; flights=0; tasks restored; Store dropped
+PASS embedded redirect Pending/readiness/Rc/registry
+PASS host redirect: table baseline=0; flights=0; tasks restored; Store dropped
+PASS embedded cancel Pending/readiness/Rc/registry
+PASS host cancel: table baseline=0; flights=0; tasks restored; Store dropped
+PASS embedded repeated Pending/readiness/Rc/registry
+PASS host repeated: table baseline=0; flights=0; tasks restored; Store dropped
+OUTCOME repeated-denied Err(Transport(TransportError { kind: Denied, source: Some(Custom { kind: Other, error: "ErrorCode::HttpRequestDenied" }) }))
+OUTCOME repeated-denied Err(Transport(TransportError { kind: Denied, source: Some(Custom { kind: Other, error: "ErrorCode::HttpRequestDenied" }) }))
+OUTCOME repeated-denied Err(Transport(TransportError { kind: Denied, source: Some(Custom { kind: Other, error: "ErrorCode::HttpRequestDenied" }) }))
+OUTCOME repeated-denied Err(Transport(TransportError { kind: Denied, source: Some(Custom { kind: Other, error: "ErrorCode::HttpRequestDenied" }) }))
+OUTCOME repeated-denied Err(Transport(TransportError { kind: Denied, source: Some(Custom { kind: Other, error: "ErrorCode::HttpRequestDenied" }) }))
+OUTCOME repeated-denied Err(Transport(TransportError { kind: Denied, source: Some(Custom { kind: Other, error: "ErrorCode::HttpRequestDenied" }) }))
+OUTCOME repeated-denied Err(Transport(TransportError { kind: Denied, source: Some(Custom { kind: Other, error: "ErrorCode::HttpRequestDenied" }) }))
+OUTCOME repeated-denied Err(Transport(TransportError { kind: Denied, source: Some(Custom { kind: Other, error: "ErrorCode::HttpRequestDenied" }) }))
+OUTCOME repeated-denied Err(Transport(TransportError { kind: Denied, source: Some(Custom { kind: Other, error: "ErrorCode::HttpRequestDenied" }) }))
+OUTCOME repeated-denied Err(Transport(TransportError { kind: Denied, source: Some(Custom { kind: Other, error: "ErrorCode::HttpRequestDenied" }) }))
+OUTCOME repeated-denied Err(Transport(TransportError { kind: Denied, source: Some(Custom { kind: Other, error: "ErrorCode::HttpRequestDenied" }) }))
+OUTCOME repeated-denied Err(Transport(TransportError { kind: Denied, source: Some(Custom { kind: Other, error: "ErrorCode::HttpRequestDenied" }) }))
+PASS embedded repeated-denied Pending/readiness/Rc/registry
+PASS host repeated-denied: table baseline=0; flights=0; tasks restored; Store dropped
+PASS embedded repeated-cancel Pending/readiness/Rc/registry
+PASS host repeated-cancel: table baseline=0; flights=0; tasks restored; Store dropped
+PASS host store-drop: table baseline=0; flights=0; tasks restored; Store dropped
+PASS embedded replacement Pending/readiness/Rc/registry
+PASS host replacement: table baseline=0; flights=0; tasks restored; Store dropped

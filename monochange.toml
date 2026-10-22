@@ -39,7 +39,14 @@ publish = { enabled = false }
 
 # The dependency-free umbrella reservation remains independently at 0.0.0.
 [group.sdk]
-packages = ["solana_kit_core", "solana_kit_client", "solana_kit_native", "solana_kit_browser", "solana_kit_leptoskit"]
+packages = [
+  "solana_kit_core",
+  "solana_kit_client",
+  "solana_kit_native",
+  "solana_kit_browser",
+  "solana_kit_leptoskit",
+  "solana_kit_wasi",
+]
 changelog = { path = "crates/solana_kit_core/CHANGELOG.md", format = "keep_a_changelog" }
 
 [ecosystems.cargo]
@@ -81,4 +88,10 @@ publish = { enabled = false }
 [package.solana_kit_compute_budget]
 path = "crates/solana_kit_compute_budget"
 type = "cargo"
+publish = { enabled = false }
+
+[package.solana_kit_wasi]
+path = "crates/solana_kit_wasi"
+type = "cargo"
+changelog = false
 publish = { enabled = false }

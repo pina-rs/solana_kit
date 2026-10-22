@@ -35,8 +35,8 @@ struct Report {
 }
 
 /// Checks the installed version before executing a fresh report with generated files included.
-pub(crate) fn run() -> Result<()> {
-    if let Some(directory) = std::env::args_os().nth(2) {
+pub(crate) fn run(root: Option<&Path>) -> Result<()> {
+    if let Some(directory) = root {
         std::env::set_current_dir(directory).context("enter style repository")?;
     }
 
@@ -73,12 +73,8 @@ pub(crate) fn run() -> Result<()> {
 }
 
 /// Allows independent validation of a retained report without rerunning the analyzer.
-pub(crate) fn check_report() -> Result<()> {
-    let path = std::env::args()
-        .nth(2)
-        .context("usage: cargo xtask style-report <report.json>")?;
-
-    let report = read_report(Path::new(&path))?;
+pub(crate) fn check_report(path: &Path) -> Result<()> {
+    let report = read_report(path)?;
     print_report(&report);
 
     Ok(())
