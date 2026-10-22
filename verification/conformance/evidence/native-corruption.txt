@@ -40,4 +40,7 @@ program-error-source-facts: Ok(())
 fixed-point-exact-parsing: Ok(())
 fixed-point-exact-arithmetic: Ok(())
 fixed-point-exact-codecs: Ok(())
-solana-kit-core-v5: 41/42 cases passed
+system-create-account-literal: Ok(())
+system-create-seeded-utf8: Ok(())
+system-strict-data-bounds: Ok(())
+solana-kit-core-v6: 44/45 cases passed

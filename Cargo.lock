@@ -493,6 +493,7 @@ version = "0.1.0"
 dependencies = [
  "hex-literal",
  "solana_kit_core",
+ "solana_kit_system",
 ]
 
 [[package]]
@@ -513,6 +514,13 @@ dependencies = [
  "num-bigint",
  "num-traits",
  "sha2",
+]
+
+[[package]]
+name = "solana_kit_system"
+version = "0.1.0"
+dependencies = [
+ "solana_kit_core",
 ]
 
 [[package]]

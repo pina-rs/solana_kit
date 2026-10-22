@@ -48,3 +48,8 @@ repo = "solana_kit"
 [changesets.affected]
 enabled = true
 required = true
+
+[package.solana_kit_system]
+path = "crates/solana_kit_system"
+type = "cargo"
+publish = { enabled = false }

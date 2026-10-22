@@ -6,6 +6,7 @@ mod gates;
 mod process;
 mod runtimes;
 mod style;
+mod system_gate;
 
 use anyhow::{Context, Result, bail};
 

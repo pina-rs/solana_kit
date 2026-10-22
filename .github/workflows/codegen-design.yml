@@ -37,3 +37,22 @@ jobs:
       - name: Execute independent literal byte proof
         shell: bash
         run: cargo +1.99.1 run --locked --manifest-path verification/codegen-design/Cargo.toml -- proof
+      - name: Regenerate public System data and reject drift
+        shell: bash
+        run: |
+          cargo +1.99.1 run --locked --manifest-path verification/codegen-design/Cargo.toml -- system
+          git diff --exit-code -- crates/solana_kit_system/src/generated.rs
+          cargo +1.99.1 run --locked --manifest-path verification/codegen-design/Cargo.toml -- system-receipt
+          git diff --exit-code -- docs/parity/system-data.tsv
+          cargo +1.99.1 run --locked --manifest-path verification/codegen-design/Cargo.toml -- system
+          git diff --exit-code -- crates/solana_kit_system/src/generated.rs
+      - name: Check program portability and documentation
+        shell: bash
+        run: |
+          rustup target add --toolchain 1.99.1 wasm32-unknown-unknown wasm32-wasip1 wasm32-wasip2
+          cargo +1.99.1 check -p solana_kit_system --locked --target wasm32-unknown-unknown
+          cargo +1.99.1 check -p solana_kit_system --locked --target wasm32-wasip1
+          cargo +1.99.1 check -p solana_kit_system --locked --target wasm32-wasip2
+          RUSTDOCFLAGS='-D warnings' cargo +1.99.1 doc -p solana_kit_system --locked --no-deps
+          rustup toolchain install 1.89.0 --profile minimal
+          cargo +1.89.0 check -p solana_kit_system --locked
