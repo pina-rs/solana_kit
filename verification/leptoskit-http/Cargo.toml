@@ -1,0 +1,6 @@
+[workspace]
+members = ["guest", "host"]
+resolver = "3"
+
+[profile.release]
+panic = "abort"

@@ -1,0 +1,20 @@
+[package]
+name = "solana_kit_leptoskit_http_host"
+version = "0.1.0"
+edition = "2024"
+publish = false
+
+[dependencies]
+anyhow = "=1.0.104"
+leptoskit_bridge = { git = "https://github.com/ifiokjr/leptoskit", rev = "fecf8628d326ff7b03f295523e6bb584c3fdf88d" }
+leptoskit_native = { git = "https://github.com/ifiokjr/leptoskit", rev = "fecf8628d326ff7b03f295523e6bb584c3fdf88d" }
+leptoskit_wasm = { git = "https://github.com/ifiokjr/leptoskit", rev = "fecf8628d326ff7b03f295523e6bb584c3fdf88d" }
+serde_json = "=1.0.154"
+solana_kit_leptoskit = { path = "../../../crates/solana_kit_leptoskit", features = ["host"] }
+solana_kit_native = { path = "../../../crates/solana_kit_native" }
+tokio = { version = "=1.54.1", features = ["rt-multi-thread", "macros", "net", "time", "io-util"] }
+tokio-rustls = { version = "=0.26.6", default-features = false, features = ["ring", "tls12"] }
+wasmparser = "=0.262.0"
+
+[dev-dependencies]
+wat = "=1.262.0"

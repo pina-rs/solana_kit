@@ -4,6 +4,7 @@ members = [
   "crates/solana_kit_browser",
   "crates/solana_kit_client",
   "crates/solana_kit_core",
+  "crates/solana_kit_leptoskit",
   "crates/solana_kit_native",
   "crates/solana_kit_system",
   "verification/browser",
@@ -24,3 +25,4 @@ rust-version = "1.89"
 [workspace.dependencies]
 solana_kit_client = { version = "0.1.0", path = "crates/solana_kit_client" }
 solana_kit_core = { version = "0.1.0", path = "crates/solana_kit_core", default-features = false }
+solana_kit_native = { version = "0.1.0", path = "crates/solana_kit_native" }
