@@ -98,8 +98,8 @@ it. Both preserve NUL and produce the same encoding bytes. The receipt records
 this decoder difference. The pinned IDL and Dart Batch builder declare empty
 accounts; assembling arbitrary batch account lists remains a separate contract.
 
-Three Wasm compilations are portability checks. This unit does not register new
-portable runtime cases or claim browser, WASI host, interpreter, validator, device,
-wallet, network or registry release execution for Token. Existing portable cases
-and runtime owners remain unchanged. Atomic publication covers one generated
-module; it does not claim atomic replacement of a directory tree.
+The original generator unit's three Wasm compilations are portability checks.
+Subsequent [portable runtime execution](token-runtime.md) adds the literal matrix
+and strict groups on all five hosts. Validator, device, wallet submission, network
+and registry release execution remain separate. Atomic publication covers one
+generated module; it does not claim atomic replacement of a directory tree.

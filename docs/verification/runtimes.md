@@ -59,7 +59,19 @@ dispatches a `Press` event and requires the corrupted report and second commit.
 The guest's small unsafe FFI wrappers implement that pinned synchronous copy ABI;
 core and the host harness forbid unsafe code.
 
-## Current v24 message signer integration
+## Current v25 Token integration
+
+The105-case suite preserves all103 previous assertion groups and appends the
+93-row Token literal matrix and six strict Token groups. Actual native Rust,
+Chrome, both Wasmtime previews and the pinned LeptosKit host execute105/105 and
+104/105 under sole hash corruption. The one-fuel zero-commit control, closed
+import/dependency checks and all five freshly packaged-core consumer groups pass.
+The [Token runtime receipt](token-runtime.md) records the frozen executable and
+source-owned6,675,000,000-fuel allowance. Existing256 distinct message and256
+cached transaction cases remain intact. The source authority-role, BOM and Batch
+account differences remain explicit. This is off-chain fixture execution.
+
+## Historical v24 message signer integration
 
 The 103-case suite preserves every previous 101 function, ordered case and result.
 Two isolated groups execute the accepted bare-message snapshots and the entire
