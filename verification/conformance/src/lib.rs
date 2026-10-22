@@ -15,6 +15,7 @@ mod composites;
 mod cryptography;
 mod fixed_points;
 mod instructions;
+mod offchain;
 mod registry;
 /// Portable public RPC protocol fixtures without network I/O.
 pub mod rpc;
@@ -38,9 +39,9 @@ pub mod system_client;
 use alloc::vec::Vec;
 
 /// Immutable suite identity. Changes to fixtures or assertions require a new ID.
-pub const SUITE_ID: &str = "solana-kit-core-v15";
+pub const SUITE_ID: &str = "solana-kit-core-v16";
 /// Required number of cases; a truncated report cannot pass conformance.
-pub const EXPECTED_CASE_COUNT: usize = 72;
+pub const EXPECTED_CASE_COUNT: usize = 75;
 
 /// Selects authentic fixtures or the intentionally incorrect hash oracle.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -140,6 +141,7 @@ pub fn run(mode: FixtureMode) -> Report {
         "rpc-address-simulation",
         rpc_address_simulation::operations(),
     ));
+    cases.extend(registry::offchain());
 
     Report {
         suite_id: SUITE_ID,

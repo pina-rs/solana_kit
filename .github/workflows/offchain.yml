@@ -1,0 +1,29 @@
+name: Off-chain application messages
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  isolated-portable-cases:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install pinned toolchain
+        run: rustup toolchain install 1.99.1 --profile minimal --component rustfmt --component clippy --target wasm32-unknown-unknown --target wasm32-wasip1 --target wasm32-wasip2
+      - name: Execute isolated valid malformed and tamper cases
+        run: |
+          cargo +1.99.1 test --manifest-path verification/offchain/Cargo.toml --locked
+          cargo +1.99.1 fmt --manifest-path verification/offchain/Cargo.toml --check
+          cargo +1.99.1 clippy --manifest-path verification/offchain/Cargo.toml --all-targets --locked -- -D warnings
+      - name: Compile isolated cases for portable client targets
+        run: |
+          cargo +1.99.1 check --manifest-path verification/offchain/Cargo.toml --target wasm32-unknown-unknown --locked
+          cargo +1.99.1 check --manifest-path verification/offchain/Cargo.toml --target wasm32-wasip1 --locked
+          cargo +1.99.1 check --manifest-path verification/offchain/Cargo.toml --target wasm32-wasip2 --locked

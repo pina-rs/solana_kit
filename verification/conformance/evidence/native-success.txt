@@ -70,4 +70,7 @@ rpc-history-exact-queries: Ok(())
 rpc-submission-status-errors: Ok(())
 rpc-full-transaction-results: Ok(())
 rpc-address-simulation: Ok(())
-solana-kit-core-v15: 72/72 cases passed
+offchain-valid-wire: Ok(())
+offchain-malformed-bounds: Ok(())
+offchain-signature-tamper: Ok(())
+solana-kit-core-v16: 75/75 cases passed
