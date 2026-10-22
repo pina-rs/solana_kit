@@ -1,0 +1,48 @@
+name: WASI validating TLS WebSocket sockets
+
+on:
+  pull_request:
+    paths:
+      - verification/wasi-sockets/**
+      - docs/verification/wasi-sockets.md
+      - .github/workflows/wasi-sockets.yml
+      - rust-toolchain.toml
+      - monostyle.toml
+      - xtask/**
+  push:
+    branches: [main]
+    paths:
+      - verification/wasi-sockets/**
+      - .github/workflows/wasi-sockets.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  preview2-sockets:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install pinned Rust and Wasmtime
+        shell: bash
+        run: |
+          rustup toolchain install 1.99.1 --profile minimal --component rustfmt --component clippy --target wasm32-wasip2
+          sockets_host="$RUNNER_TEMP/wasi-sockets-host"
+          mkdir "$sockets_host"
+          curl --fail --silent --show-error --location --user-agent wasi-sockets-verifier https://github.com/bytecodealliance/wasmtime/releases/download/v50.0.0/wasmtime-v50.0.0-x86_64-linux.tar.xz --output "$sockets_host/host.tar.xz"
+          printf '%s  %s\n' 77c19ee0437991f9ac7837b9c269d9c7076744f85dad263fea5214cc2723c7ff "$sockets_host/host.tar.xz" | sha256sum --check --strict
+          tar -xf "$sockets_host/host.tar.xz" --strip-components=1 -C "$sockets_host"
+      - name: Check and execute real component sockets
+        shell: bash
+        run: |
+          cargo +1.99.1 fmt --manifest-path verification/wasi-sockets/Cargo.toml --all --check
+          cargo +1.99.1 clippy --locked --manifest-path verification/wasi-sockets/Cargo.toml --all-targets -- -D warnings
+          cargo +1.99.1 build --locked --manifest-path verification/wasi-sockets/Cargo.toml --bin guest --target wasm32-wasip2
+          cargo +1.99.1 clippy --locked --manifest-path verification/wasi-sockets/Cargo.toml --bin guest --target wasm32-wasip2 -- -D warnings
+          cargo +1.99.1 run --locked --manifest-path verification/wasi-sockets/Cargo.toml --bin runner -- "$RUNNER_TEMP/wasi-sockets-host/wasmtime"
+          cargo install monostyle --version 0.3.26 --locked
+          cargo +1.99.1 xtask style

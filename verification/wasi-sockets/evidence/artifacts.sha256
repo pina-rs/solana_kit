@@ -1,0 +1,5 @@
+381c0696122a1c7d3cf8ef5c237089388c5c7b42b0e1662f65c4f8cf3b237ac6  verification/wasi-sockets/target/wasm32-wasip2/debug/guest.wasm
+500501b35a3f58d92cf2ba04c80ccdf0bec3bf7c8d88086b88c74281e9846f11  verification/wasi-sockets/fixtures/ca.der
+f2cd34db8c4f960bb41120f20d3e104cea6f6fdc9a09ec0f288759795b0564a7  verification/wasi-sockets/fixtures/server-key.der
+a149f32802d842a86d452b64a51aacb810879b61011f9f7f733abacaaefe9670  verification/wasi-sockets/fixtures/server.der
+a05249acadcdbdbbe474571186a7ce5f2a2bd2967f1e7f8f887d5fcada3aa72a  verification/wasi-sockets/fixtures/wrong-ca.der

@@ -5,6 +5,8 @@ use anyhow::{Context, Result, ensure};
 use serde::Deserialize;
 use std::{collections::BTreeSet, path::Path, process::Command};
 
+mod coverage;
+
 const VERSION: &str = "monostyle 0.3.26";
 const FLOOR: f64 = 90.0;
 const REPORT: &str = "target/style-evidence/report.json";
@@ -34,29 +36,40 @@ struct Report {
 
 /// Checks the installed version before executing a fresh report with generated files included.
 pub(crate) fn run() -> Result<()> {
+    if let Some(directory) = std::env::args_os().nth(2) {
+        std::env::set_current_dir(directory).context("enter style repository")?;
+    }
+
     let version = process::success(Command::new("monostyle").arg("--version"), "style-version")?;
     ensure!(
         std::str::from_utf8(&version.stdout)?.trim() == VERSION,
         "style gate requires {VERSION}"
     );
+    let inventory = coverage::inventory()?;
     std::fs::create_dir_all("target/style-evidence")?;
     process::success(
-        Command::new("monostyle").args([
-            "check",
-            ".",
-            "--include-generated",
-            "--fail-under",
-            "90",
-            "--format",
-            "json",
-            "--output",
-            REPORT,
-            "--no-color",
-        ]),
+        Command::new("monostyle")
+            .args([
+                "check",
+                "--include-generated",
+                "--fail-under",
+                "90",
+                "--format",
+                "json",
+                "--output",
+                REPORT,
+                "--no-color",
+                "--",
+            ])
+            .args(&inventory),
         "style-check",
     )?;
 
-    validate_file(Path::new(REPORT))
+    let report = read_report(Path::new(REPORT))?;
+    coverage::check(&report, &inventory)?;
+    print_report(&report);
+
+    Ok(())
 }
 
 /// Allows independent validation of a retained report without rerunning the analyzer.
@@ -65,21 +78,26 @@ pub(crate) fn check_report() -> Result<()> {
         .nth(2)
         .context("usage: cargo xtask style-report <report.json>")?;
 
-    validate_file(Path::new(&path))
+    let report = read_report(Path::new(&path))?;
+    print_report(&report);
+
+    Ok(())
 }
 
 /// Reads complete JSON; missing fields and malformed or trailing data are errors.
-fn validate_file(path: &Path) -> Result<()> {
+fn read_report(path: &Path) -> Result<Report> {
     let bytes = std::fs::read(path).with_context(|| format!("read {}", path.display()))?;
-    let report = validate(&bytes).with_context(|| format!("validate {}", path.display()))?;
+    validate(&bytes).with_context(|| format!("validate {}", path.display()))
+}
+
+/// Reports success only after every applicable score and coverage check passes.
+fn print_report(report: &Report) {
     println!(
         "style: {} files; repository readability {:.2}, complexity {:.2}; every category >= {FLOOR}",
         report.files.len(),
         report.readability.value,
         report.complexity.value,
     );
-
-    Ok(())
 }
 
 /// Required cells mirror monostyle 0.3.26's ProjectReport and FileReport score objects.
