@@ -1,111 +1,188 @@
-//! Namespace and acyclic link validation over the complete selected program.
-use super::{Field, Program, Shape, Wire};
+//! Namespace, acyclic layout and instruction privilege validation.
+use super::{Program, Shape, extent};
 use crate::schema::Error;
 use std::collections::BTreeSet;
+const MAX_DEFINITIONS: usize = 64;
 
-fn links(fields: &[Field]) -> impl Iterator<Item = &str> {
-    fields.iter().filter_map(|field| match &field.wire {
-        Wire::Link(name) => Some(name.as_str()),
-        Wire::Number(_) => None,
-    })
-}
-
-fn visit(
-    program: &Program,
-    name: &str,
-    active: &mut BTreeSet<String>,
-    done: &mut BTreeSet<String>,
-) -> Result<(), Error> {
-    if done.contains(name) {
-        return Ok(());
-    }
-
-    if !active.insert(name.to_owned()) {
-        return Err("cyclic linked layout".into());
-    }
-
-    let definition = program
-        .definitions
-        .iter()
-        .find(|item| item.name == name)
-        .ok_or("unresolved linked layout")?;
-
-    if let Shape::Struct(fields) = &definition.shape {
-        for link in links(fields) {
-            visit(program, link, active, done)?;
-        }
-    }
-
-    active.remove(name);
-    done.insert(name.to_owned());
-    Ok(())
-}
+const RESERVED: &[&str] = &[
+    "Address",
+    "Instruction",
+    "Number",
+    "Constant",
+    "Encoder",
+    "Decoder",
+    "Error",
+    "Reader",
+    "Writer",
+    "Limits",
+    "Vec",
+    "Result",
+    "Ok",
+    "Err",
+    "PROGRAM",
+    "identify_instruction",
+    "parse_instruction",
+    "parse_instruction_with_program",
+    "identify_account",
+    "AccountMeta",
+    "AccountRole",
+    "String",
+    "Option",
+    "Some",
+    "None",
+    "Bool",
+    "Bytes",
+    "Utf8",
+    "FixedBytes",
+    "Mapped",
+    "OptionCodec",
+    "OwnedSequence",
+    "Sequence",
+    "Count",
+    "ByteSizePrefix",
+    "FrameConsumption",
+    "role_matches",
+];
 
 fn names(program: &Program) -> Result<(), Error> {
-    let mut names: BTreeSet<String> = [
-        "Address",
-        "Instruction",
-        "Number",
-        "Constant",
-        "Encoder",
-        "Decoder",
+    let mut names: BTreeSet<String> = RESERVED.iter().copied().map(str::to_owned).collect();
+    for suffix in [
+        "InstructionData",
+        "InstructionDataCodec",
         "Error",
-        "Reader",
-        "Writer",
-        "Limits",
-        "Vec",
-        "Result",
-        "Ok",
-        "Err",
-        "PROGRAM",
-        "identify_instruction",
-        "parse_instruction",
-    ]
-    .into_iter()
-    .map(str::to_owned)
-    .collect();
-    names.insert(format!("{}InstructionData", program.name));
-    names.insert(format!("{}InstructionDataCodec", program.name));
-
-    for name in program
+        "AccountKind",
+    ] {
+        names.insert(format!("{}{suffix}", program.name));
+    }
+    let declarations = program
         .definitions
         .iter()
         .map(|item| &item.name)
         .chain(program.instructions.iter().map(|item| &item.name))
-    {
-        if !names.insert(name.clone()) || !names.insert(format!("{name}Codec")) {
-            return Err("generated namespace collision".into());
-        }
+        .chain(program.accounts.iter().map(|item| &item.definition.name));
+
+    for name in declarations {
+        insert(&mut names, name)?;
     }
+
+    Ok(())
+}
+fn insert(names: &mut BTreeSet<String>, name: &str) -> Result<(), Error> {
+    if !names.insert(name.to_owned()) || !names.insert(format!("{name}Codec")) {
+        return Err("generated namespace collision".into());
+    }
+
     Ok(())
 }
 
-/// Resolve every link under a depth budget before any emitter can choose a layout.
 pub(super) fn validate(program: &Program) -> Result<(), Error> {
-    const MAX_DEFINITIONS: usize = 64;
-
     if program.definitions.len() > MAX_DEFINITIONS {
         return Err("linked definition budget exceeded".into());
     }
 
     names(program)?;
-    let tags: BTreeSet<_> = program.instructions.iter().map(|item| item.tag).collect();
-
-    if tags.len() != program.instructions.len() {
-        return Err("duplicate instruction discriminator".into());
-    }
-
-    let mut done = BTreeSet::new();
-
-    for definition in &program.definitions {
-        visit(program, &definition.name, &mut BTreeSet::new(), &mut done)?;
-    }
+    unique(
+        program.instructions.iter().map(|item| item.tag),
+        "duplicate instruction discriminator",
+    )?;
+    unique(
+        program.accounts.iter().map(|item| item.size),
+        "ambiguous account size discriminator",
+    )?;
+    errors(program)?;
+    definitions(program)?;
 
     for item in &program.instructions {
-        for link in links(&item.fields) {
-            visit(program, link, &mut BTreeSet::new(), &mut done)?;
+        instruction(program, item)?;
+    }
+
+    Ok(())
+}
+fn unique<T: Ord>(values: impl Iterator<Item = T>, error: &str) -> Result<(), Error> {
+    let mut seen = BTreeSet::new();
+
+    for value in values {
+        if !seen.insert(value) {
+            return Err(error.to_owned().into());
         }
     }
 
+    Ok(())
+}
+fn errors(program: &Program) -> Result<(), Error> {
+    unique(
+        program.errors.iter().map(|item| item.code),
+        "duplicate program error code",
+    )?;
+    unique(
+        program.errors.iter().map(|item| &item.name),
+        "duplicate program error name",
+    )?;
+
+    if program.errors.iter().any(|item| item.name == "Unknown") {
+        return Err("program error collides with unknown-code variant".into());
+    }
+
+    Ok(())
+}
+fn definitions(program: &Program) -> Result<(), Error> {
+    for item in &program.definitions {
+        if let Shape::Struct(fields) = &item.shape {
+            extent::fields(program, fields, &mut Vec::new())?;
+        }
+    }
+
+    for account in &program.accounts {
+        account_size(program, account)?;
+    }
+
+    Ok(())
+}
+fn account_size(program: &Program, account: &super::Account) -> Result<(), Error> {
+    let Shape::Struct(fields) = &account.definition.shape else {
+        return Err("account must be a record".into());
+    };
+
+    if extent::fields(program, fields, &mut Vec::new())?.fixed != Some(account.size) {
+        return Err("account size differs from explicit wire layout".into());
+    }
+
+    Ok(())
+}
+/// Reject ambiguous omission and resolve every linked role layout.
+fn instruction(program: &Program, item: &super::Instruction) -> Result<(), Error> {
+    if item.omit_optional
+        && item
+            .roles
+            .windows(2)
+            .any(|pair| pair[0].optional && !pair[1].optional)
+    {
+        return Err("omitted optional role precedes required role".into());
+    }
+
+    if item.omit_optional && item.remaining.is_some() {
+        return Err("omitted optional roles with remaining list are ambiguous".into());
+    }
+
+    for role in &item.roles {
+        role_link(program, role)?;
+    }
+
+    extent::fields(program, &item.fields, &mut Vec::new())?;
+
+    Ok(())
+}
+fn role_link(program: &Program, role: &super::Role) -> Result<(), Error> {
+    let Some(link) = &role.link else {
+        return Ok(());
+    };
+
+    if !program
+        .accounts
+        .iter()
+        .any(|account| &account.definition.name == link)
+    {
+        return Err("unresolved account layout link".into());
+    }
     Ok(())
 }

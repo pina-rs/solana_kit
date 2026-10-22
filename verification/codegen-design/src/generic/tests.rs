@@ -204,6 +204,50 @@ fn valid_input_cannot_replace_an_existing_pending_file() {
     assert!(replace(&fixture(), &policy(), &output).is_err());
     assert_eq!(fs::read(&output).unwrap(), b"old output");
     assert_eq!(fs::read(&pending).unwrap(), b"existing pending");
+
     fs::remove_file(output).unwrap();
     fs::remove_file(pending).unwrap();
+}
+
+#[test]
+fn role_only_program_executes_without_account_layouts_or_errors() {
+    let mut root = fixture();
+    root["program"]["instructions"][0]["accounts"] = json!([{
+        "kind":"instructionAccountNode", "name":"authority",
+        "isWritable":false, "isSigner":"either", "isOptional":false
+    }]);
+    root["program"]["instructions"][0]["remainingAccounts"] = json!([{"kind":"instructionRemainingAccountsNode","value":{"kind":"argumentValueNode","name":"signers"},"isSigner":true,"isOptional":true}]);
+    let directory = std::env::temp_dir().join(format!("kit-role-only-{}", std::process::id()));
+    fs::create_dir_all(&directory).unwrap();
+    replace(&root, &policy(), &directory.join("generated.rs")).unwrap();
+    let source = "extern crate alloc; include!(\"generated.rs\"); fn main() { let program=Address::from_bytes([2;32]); let accounts=[AccountMeta {address:PROGRAM,role:AccountRole::Readonly},AccountMeta {address:PROGRAM,role:AccountRole::ReadonlySigner}]; let limits=Limits::new(9,2); let value=RequestUnits {units:1,additional_fee:2}; let ix=value.instruction_with_program(program,&accounts,limits).unwrap(); assert_eq!(ix.accounts,accounts); assert_eq!(RequestUnits::parse_with_program(program,&ix,limits).unwrap(),value); assert!(parse_instruction_with_program(program,&ix,limits).is_ok()); }";
+    super::boundary::execute_source(&directory, source);
+}
+
+#[test]
+fn owned_address_collections_and_bytes_use_only_required_imports() {
+    let mut root = fixture();
+    root["program"]["instructions"]
+        .as_array_mut()
+        .unwrap()
+        .truncate(1);
+    root["program"]["instructions"][0]["arguments"][1]["type"] = json!({
+        "kind":"optionTypeNode", "fixed":false,
+        "prefix":{"kind":"numberTypeNode","format":"u8","endian":"le"},
+        "item":{"kind":"publicKeyTypeNode"}
+    });
+    root["program"]["instructions"][0]["arguments"][2]["type"] = json!({"kind":"arrayTypeNode","item":{"kind":"publicKeyTypeNode"},"count":{"kind":"fixedCountNode","value":2}});
+    let payload =
+        json!({"kind":"instructionArgumentNode","name":"payload","type":{"kind":"bytesTypeNode"}});
+    root["program"]["instructions"][0]["arguments"]
+        .as_array_mut()
+        .unwrap()
+        .push(payload);
+    root["program"]["errors"] = json!([{"kind":"errorNode","name":"syntaxWords","code":0,"message":"Utf8. ByteSizePrefix { Number::< : String"}]);
+    let directory = std::env::temp_dir().join(format!("kit-typed-imports-{}", std::process::id()));
+    fs::create_dir_all(&directory).unwrap();
+
+    replace(&root, &policy(), &directory.join("generated.rs")).unwrap();
+    let source = "extern crate alloc; include!(\"generated.rs\"); fn main() { let address=Address::from_bytes([2;32]); let value=RequestUnits {units:Some(address),additional_fee:vec![address,address],payload:vec![0,1,2]}; let limits=Limits::new(512,512); let ix=value.instruction(&[],limits).unwrap(); assert_eq!(RequestUnits::parse(&ix,limits).unwrap(),value); assert!(parse_instruction(&ix,limits).is_ok()); }";
+    super::boundary::execute_source(&directory, source);
 }

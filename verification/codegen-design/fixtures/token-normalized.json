@@ -1,0 +1,3431 @@
+{
+  "additionalPrograms": [],
+  "kind": "rootNode",
+  "program": {
+    "accounts": [
+      {
+        "data": {
+          "fields": [
+            {
+              "docs": [
+                "Optional authority used to mint new tokens. The mint authority may only",
+                "be provided during mint creation. If no mint authority is present",
+                "then the mint has a fixed supply and no further tokens may be minted."
+              ],
+              "kind": "structFieldTypeNode",
+              "name": "mintAuthority",
+              "type": {
+                "fixed": true,
+                "item": {
+                  "kind": "publicKeyTypeNode"
+                },
+                "kind": "optionTypeNode",
+                "prefix": {
+                  "endian": "le",
+                  "format": "u32",
+                  "kind": "numberTypeNode"
+                }
+              }
+            },
+            {
+              "docs": [
+                "Total supply of tokens."
+              ],
+              "kind": "structFieldTypeNode",
+              "name": "supply",
+              "type": {
+                "endian": "le",
+                "format": "u64",
+                "kind": "numberTypeNode"
+              }
+            },
+            {
+              "docs": [
+                "Number of base 10 digits to the right of the decimal place."
+              ],
+              "kind": "structFieldTypeNode",
+              "name": "decimals",
+              "type": {
+                "endian": "le",
+                "format": "u8",
+                "kind": "numberTypeNode"
+              }
+            },
+            {
+              "docs": [
+                "Is `true` if this structure has been initialized."
+              ],
+              "kind": "structFieldTypeNode",
+              "name": "isInitialized",
+              "type": {
+                "kind": "booleanTypeNode",
+                "size": {
+                  "endian": "le",
+                  "format": "u8",
+                  "kind": "numberTypeNode"
+                }
+              }
+            },
+            {
+              "docs": [
+                "Optional authority to freeze token accounts."
+              ],
+              "kind": "structFieldTypeNode",
+              "name": "freezeAuthority",
+              "type": {
+                "fixed": true,
+                "item": {
+                  "kind": "publicKeyTypeNode"
+                },
+                "kind": "optionTypeNode",
+                "prefix": {
+                  "endian": "le",
+                  "format": "u32",
+                  "kind": "numberTypeNode"
+                }
+              }
+            }
+          ],
+          "kind": "structTypeNode"
+        },
+        "discriminators": [
+          {
+            "kind": "sizeDiscriminatorNode",
+            "size": 82
+          }
+        ],
+        "docs": [],
+        "kind": "accountNode",
+        "name": "mint",
+        "size": 82
+      },
+      {
+        "data": {
+          "fields": [
+            {
+              "docs": [
+                "The mint associated with this account."
+              ],
+              "kind": "structFieldTypeNode",
+              "name": "mint",
+              "type": {
+                "kind": "publicKeyTypeNode"
+              }
+            },
+            {
+              "docs": [
+                "The owner of this account."
+              ],
+              "kind": "structFieldTypeNode",
+              "name": "owner",
+              "type": {
+                "kind": "publicKeyTypeNode"
+              }
+            },
+            {
+              "docs": [
+                "The amount of tokens this account holds."
+              ],
+              "kind": "structFieldTypeNode",
+              "name": "amount",
+              "type": {
+                "endian": "le",
+                "format": "u64",
+                "kind": "numberTypeNode"
+              }
+            },
+            {
+              "docs": [
+                "If `delegate` is `Some` then `delegated_amount` represents",
+                "the amount authorized by the delegate."
+              ],
+              "kind": "structFieldTypeNode",
+              "name": "delegate",
+              "type": {
+                "fixed": true,
+                "item": {
+                  "kind": "publicKeyTypeNode"
+                },
+                "kind": "optionTypeNode",
+                "prefix": {
+                  "endian": "le",
+                  "format": "u32",
+                  "kind": "numberTypeNode"
+                }
+              }
+            },
+            {
+              "docs": [
+                "The account's state."
+              ],
+              "kind": "structFieldTypeNode",
+              "name": "state",
+              "type": {
+                "kind": "definedTypeLinkNode",
+                "name": "accountState"
+              }
+            },
+            {
+              "docs": [
+                "If is_native.is_some, this is a native token, and the value logs the",
+                "rent-exempt reserve. An Account is required to be rent-exempt, so",
+                "the value is used by the Processor to ensure that wrapped SOL",
+                "accounts do not drop below this threshold."
+              ],
+              "kind": "structFieldTypeNode",
+              "name": "isNative",
+              "type": {
+                "fixed": true,
+                "item": {
+                  "endian": "le",
+                  "format": "u64",
+                  "kind": "numberTypeNode"
+                },
+                "kind": "optionTypeNode",
+                "prefix": {
+                  "endian": "le",
+                  "format": "u32",
+                  "kind": "numberTypeNode"
+                }
+              }
+            },
+            {
+              "docs": [
+                "The amount delegated."
+              ],
+              "kind": "structFieldTypeNode",
+              "name": "delegatedAmount",
+              "type": {
+                "endian": "le",
+                "format": "u64",
+                "kind": "numberTypeNode"
+              }
+            },
+            {
+              "docs": [
+                "Optional authority to close the account."
+              ],
+              "kind": "structFieldTypeNode",
+              "name": "closeAuthority",
+              "type": {
+                "fixed": true,
+                "item": {
+                  "kind": "publicKeyTypeNode"
+                },
+                "kind": "optionTypeNode",
+                "prefix": {
+                  "endian": "le",
+                  "format": "u32",
+                  "kind": "numberTypeNode"
+                }
+              }
+            }
+          ],
+          "kind": "structTypeNode"
+        },
+        "discriminators": [
+          {
+            "kind": "sizeDiscriminatorNode",
+            "size": 165
+          }
+        ],
+        "docs": [],
+        "kind": "accountNode",
+        "name": "token",
+        "size": 165
+      },
+      {
+        "data": {
+          "fields": [
+            {
+              "docs": [
+                "Number of signers required."
+              ],
+              "kind": "structFieldTypeNode",
+              "name": "m",
+              "type": {
+                "endian": "le",
+                "format": "u8",
+                "kind": "numberTypeNode"
+              }
+            },
+            {
+              "docs": [
+                "Number of valid signers."
+              ],
+              "kind": "structFieldTypeNode",
+              "name": "n",
+              "type": {
+                "endian": "le",
+                "format": "u8",
+                "kind": "numberTypeNode"
+              }
+            },
+            {
+              "docs": [
+                "Is `true` if this structure has been initialized."
+              ],
+              "kind": "structFieldTypeNode",
+              "name": "isInitialized",
+              "type": {
+                "kind": "booleanTypeNode",
+                "size": {
+                  "endian": "le",
+                  "format": "u8",
+                  "kind": "numberTypeNode"
+                }
+              }
+            },
+            {
+              "docs": [
+                "Signer public keys."
+              ],
+              "kind": "structFieldTypeNode",
+              "name": "signers",
+              "type": {
+                "count": {
+                  "kind": "fixedCountNode",
+                  "value": 11
+                },
+                "item": {
+                  "kind": "publicKeyTypeNode"
+                },
+                "kind": "arrayTypeNode"
+              }
+            }
+          ],
+          "kind": "structTypeNode"
+        },
+        "discriminators": [
+          {
+            "kind": "sizeDiscriminatorNode",
+            "size": 355
+          }
+        ],
+        "docs": [],
+        "kind": "accountNode",
+        "name": "multisig",
+        "size": 355
+      }
+    ],
+    "definedTypes": [
+      {
+        "docs": [],
+        "kind": "definedTypeNode",
+        "name": "accountState",
+        "type": {
+          "kind": "enumTypeNode",
+          "size": {
+            "endian": "le",
+            "format": "u8",
+            "kind": "numberTypeNode"
+          },
+          "variants": [
+            {
+              "kind": "enumEmptyVariantTypeNode",
+              "name": "uninitialized"
+            },
+            {
+              "kind": "enumEmptyVariantTypeNode",
+              "name": "initialized"
+            },
+            {
+              "kind": "enumEmptyVariantTypeNode",
+              "name": "frozen"
+            }
+          ]
+        }
+      },
+      {
+        "docs": [],
+        "kind": "definedTypeNode",
+        "name": "authorityType",
+        "type": {
+          "kind": "enumTypeNode",
+          "size": {
+            "endian": "le",
+            "format": "u8",
+            "kind": "numberTypeNode"
+          },
+          "variants": [
+            {
+              "kind": "enumEmptyVariantTypeNode",
+              "name": "mintTokens"
+            },
+            {
+              "kind": "enumEmptyVariantTypeNode",
+              "name": "freezeAccount"
+            },
+            {
+              "kind": "enumEmptyVariantTypeNode",
+              "name": "accountOwner"
+            },
+            {
+              "kind": "enumEmptyVariantTypeNode",
+              "name": "closeAccount"
+            }
+          ]
+        }
+      },
+      {
+        "docs": [],
+        "kind": "definedTypeNode",
+        "name": "batchDataItem",
+        "type": {
+          "fields": [
+            {
+              "kind": "structFieldTypeNode",
+              "name": "numberOfAccounts",
+              "type": {
+                "endian": "le",
+                "format": "u8",
+                "kind": "numberTypeNode"
+              }
+            },
+            {
+              "kind": "structFieldTypeNode",
+              "name": "instructionData",
+              "type": {
+                "kind": "sizePrefixTypeNode",
+                "prefix": {
+                  "endian": "le",
+                  "format": "u8",
+                  "kind": "numberTypeNode"
+                },
+                "type": {
+                  "kind": "bytesTypeNode"
+                }
+              }
+            }
+          ],
+          "kind": "structTypeNode"
+        }
+      }
+    ],
+    "errors": [
+      {
+        "code": 0,
+        "docs": [
+          "NotRentExempt: Lamport balance below rent-exempt threshold"
+        ],
+        "kind": "errorNode",
+        "message": "Lamport balance below rent-exempt threshold",
+        "name": "notRentExempt"
+      },
+      {
+        "code": 1,
+        "docs": [
+          "InsufficientFunds: Insufficient funds"
+        ],
+        "kind": "errorNode",
+        "message": "Insufficient funds",
+        "name": "insufficientFunds"
+      },
+      {
+        "code": 2,
+        "docs": [
+          "InvalidMint: Invalid Mint"
+        ],
+        "kind": "errorNode",
+        "message": "Invalid Mint",
+        "name": "invalidMint"
+      },
+      {
+        "code": 3,
+        "docs": [
+          "MintMismatch: Account not associated with this Mint"
+        ],
+        "kind": "errorNode",
+        "message": "Account not associated with this Mint",
+        "name": "mintMismatch"
+      },
+      {
+        "code": 4,
+        "docs": [
+          "OwnerMismatch: Owner does not match"
+        ],
+        "kind": "errorNode",
+        "message": "Owner does not match",
+        "name": "ownerMismatch"
+      },
+      {
+        "code": 5,
+        "docs": [
+          "FixedSupply: Fixed supply"
+        ],
+        "kind": "errorNode",
+        "message": "Fixed supply",
+        "name": "fixedSupply"
+      },
+      {
+        "code": 6,
+        "docs": [
+          "AlreadyInUse: Already in use"
+        ],
+        "kind": "errorNode",
+        "message": "Already in use",
+        "name": "alreadyInUse"
+      },
+      {
+        "code": 7,
+        "docs": [
+          "InvalidNumberOfProvidedSigners: Invalid number of provided signers"
+        ],
+        "kind": "errorNode",
+        "message": "Invalid number of provided signers",
+        "name": "invalidNumberOfProvidedSigners"
+      },
+      {
+        "code": 8,
+        "docs": [
+          "InvalidNumberOfRequiredSigners: Invalid number of required signers"
+        ],
+        "kind": "errorNode",
+        "message": "Invalid number of required signers",
+        "name": "invalidNumberOfRequiredSigners"
+      },
+      {
+        "code": 9,
+        "docs": [
+          "UninitializedState: State is unititialized"
+        ],
+        "kind": "errorNode",
+        "message": "State is unititialized",
+        "name": "uninitializedState"
+      },
+      {
+        "code": 10,
+        "docs": [
+          "NativeNotSupported: Instruction does not support native tokens"
+        ],
+        "kind": "errorNode",
+        "message": "Instruction does not support native tokens",
+        "name": "nativeNotSupported"
+      },
+      {
+        "code": 11,
+        "docs": [
+          "NonNativeHasBalance: Non-native account can only be closed if its balance is zero"
+        ],
+        "kind": "errorNode",
+        "message": "Non-native account can only be closed if its balance is zero",
+        "name": "nonNativeHasBalance"
+      },
+      {
+        "code": 12,
+        "docs": [
+          "InvalidInstruction: Invalid instruction"
+        ],
+        "kind": "errorNode",
+        "message": "Invalid instruction",
+        "name": "invalidInstruction"
+      },
+      {
+        "code": 13,
+        "docs": [
+          "InvalidState: State is invalid for requested operation"
+        ],
+        "kind": "errorNode",
+        "message": "State is invalid for requested operation",
+        "name": "invalidState"
+      },
+      {
+        "code": 14,
+        "docs": [
+          "Overflow: Operation overflowed"
+        ],
+        "kind": "errorNode",
+        "message": "Operation overflowed",
+        "name": "overflow"
+      },
+      {
+        "code": 15,
+        "docs": [
+          "AuthorityTypeNotSupported: Account does not support specified authority type"
+        ],
+        "kind": "errorNode",
+        "message": "Account does not support specified authority type",
+        "name": "authorityTypeNotSupported"
+      },
+      {
+        "code": 16,
+        "docs": [
+          "MintCannotFreeze: This token mint cannot freeze accounts"
+        ],
+        "kind": "errorNode",
+        "message": "This token mint cannot freeze accounts",
+        "name": "mintCannotFreeze"
+      },
+      {
+        "code": 17,
+        "docs": [
+          "AccountFrozen: Account is frozen"
+        ],
+        "kind": "errorNode",
+        "message": "Account is frozen",
+        "name": "accountFrozen"
+      },
+      {
+        "code": 18,
+        "docs": [
+          "MintDecimalsMismatch: The provided decimals value different from the Mint decimals"
+        ],
+        "kind": "errorNode",
+        "message": "The provided decimals value different from the Mint decimals",
+        "name": "mintDecimalsMismatch"
+      },
+      {
+        "code": 19,
+        "docs": [
+          "NonNativeNotSupported: Instruction does not support non-native tokens"
+        ],
+        "kind": "errorNode",
+        "message": "Instruction does not support non-native tokens",
+        "name": "nonNativeNotSupported"
+      }
+    ],
+    "instructions": [
+      {
+        "accounts": [
+          {
+            "docs": [
+              "Token mint account."
+            ],
+            "isOptional": false,
+            "isSigner": false,
+            "isWritable": true,
+            "kind": "instructionAccountNode",
+            "name": "mint"
+          },
+          {
+            "defaultValue": {
+              "kind": "publicKeyValueNode",
+              "publicKey": "SysvarRent111111111111111111111111111111111"
+            },
+            "display": {
+              "kind": "instructionAccountDisplayNode",
+              "skip": "always"
+            },
+            "docs": [
+              "Rent sysvar."
+            ],
+            "isOptional": false,
+            "isSigner": false,
+            "isWritable": false,
+            "kind": "instructionAccountNode",
+            "name": "rent"
+          }
+        ],
+        "arguments": [
+          {
+            "defaultValue": {
+              "kind": "numberValueNode",
+              "number": 0
+            },
+            "defaultValueStrategy": "omitted",
+            "display": {
+              "kind": "structFieldDisplayNode",
+              "skip": "always"
+            },
+            "docs": [],
+            "kind": "instructionArgumentNode",
+            "name": "discriminator",
+            "type": {
+              "endian": "le",
+              "format": "u8",
+              "kind": "numberTypeNode"
+            }
+          },
+          {
+            "docs": [
+              "Number of decimals in token account amounts."
+            ],
+            "kind": "instructionArgumentNode",
+            "name": "decimals",
+            "type": {
+              "endian": "le",
+              "format": "u8",
+              "kind": "numberTypeNode"
+            }
+          },
+          {
+            "docs": [
+              "Minting authority."
+            ],
+            "kind": "instructionArgumentNode",
+            "name": "mintAuthority",
+            "type": {
+              "kind": "publicKeyTypeNode"
+            }
+          },
+          {
+            "defaultValue": {
+              "kind": "noneValueNode"
+            },
+            "docs": [
+              "Optional authority that can freeze token accounts."
+            ],
+            "kind": "instructionArgumentNode",
+            "name": "freezeAuthority",
+            "type": {
+              "fixed": false,
+              "item": {
+                "kind": "publicKeyTypeNode"
+              },
+              "kind": "optionTypeNode",
+              "prefix": {
+                "endian": "le",
+                "format": "u8",
+                "kind": "numberTypeNode"
+              }
+            }
+          }
+        ],
+        "discriminators": [
+          {
+            "kind": "fieldDiscriminatorNode",
+            "name": "discriminator",
+            "offset": 0
+          }
+        ],
+        "display": {
+          "intent": "Initialize mint",
+          "interpolatedIntent": "Initialize mint ${accounts.mint} with ${data.decimals} decimals",
+          "kind": "instructionDisplayNode"
+        },
+        "docs": [
+          "Initializes a new mint and optionally deposits all the newly minted",
+          "tokens in an account.",
+          "",
+          "The `InitializeMint` instruction requires no signers and MUST be",
+          "included within the same Transaction as the system program's",
+          "`CreateAccount` instruction that creates the account being initialized.",
+          "Otherwise another party can acquire ownership of the uninitialized account."
+        ],
+        "kind": "instructionNode",
+        "name": "initializeMint",
+        "optionalAccountStrategy": "programId"
+      },
+      {
+        "accounts": [
+          {
+            "display": {
+              "kind": "instructionAccountDisplayNode",
+              "label": "Token Account"
+            },
+            "docs": [
+              "The account to initialize."
+            ],
+            "isOptional": false,
+            "isSigner": false,
+            "isWritable": true,
+            "kind": "instructionAccountNode",
+            "name": "account"
+          },
+          {
+            "docs": [
+              "The mint this account will be associated with."
+            ],
+            "isOptional": false,
+            "isSigner": false,
+            "isWritable": false,
+            "kind": "instructionAccountNode",
+            "name": "mint"
+          },
+          {
+            "docs": [
+              "The new account's owner/multisignature."
+            ],
+            "isOptional": false,
+            "isSigner": false,
+            "isWritable": false,
+            "kind": "instructionAccountNode",
+            "name": "owner"
+          },
+          {
+            "defaultValue": {
+              "kind": "publicKeyValueNode",
+              "publicKey": "SysvarRent111111111111111111111111111111111"
+            },
+            "display": {
+              "kind": "instructionAccountDisplayNode",
+              "skip": "always"
+            },
+            "docs": [
+              "Rent sysvar."
+            ],
+            "isOptional": false,
+            "isSigner": false,
+            "isWritable": false,
+            "kind": "instructionAccountNode",
+            "name": "rent"
+          }
+        ],
+        "arguments": [
+          {
+            "defaultValue": {
+              "kind": "numberValueNode",
+              "number": 1
+            },
+            "defaultValueStrategy": "omitted",
+            "display": {
+              "kind": "structFieldDisplayNode",
+              "skip": "always"
+            },
+            "docs": [],
+            "kind": "instructionArgumentNode",
+            "name": "discriminator",
+            "type": {
+              "endian": "le",
+              "format": "u8",
+              "kind": "numberTypeNode"
+            }
+          }
+        ],
+        "discriminators": [
+          {
+            "kind": "fieldDiscriminatorNode",
+            "name": "discriminator",
+            "offset": 0
+          }
+        ],
+        "display": {
+          "intent": "Initialize token account",
+          "interpolatedIntent": "Initialize token account ${accounts.account} for mint ${accounts.mint}",
+          "kind": "instructionDisplayNode"
+        },
+        "docs": [
+          "Initializes a new account to hold tokens. If this account is associated",
+          "with the native mint then the token balance of the initialized account",
+          "will be equal to the amount of SOL in the account. If this account is",
+          "associated with another mint, that mint must be initialized before this",
+          "command can succeed.",
+          "",
+          "The `InitializeAccount` instruction requires no signers and MUST be",
+          "included within the same Transaction as the system program's",
+          "`CreateAccount` instruction that creates the account being initialized.",
+          "Otherwise another party can acquire ownership of the uninitialized account."
+        ],
+        "kind": "instructionNode",
+        "name": "initializeAccount",
+        "optionalAccountStrategy": "programId"
+      },
+      {
+        "accounts": [
+          {
+            "docs": [
+              "The multisignature account to initialize."
+            ],
+            "isOptional": false,
+            "isSigner": false,
+            "isWritable": true,
+            "kind": "instructionAccountNode",
+            "name": "multisig"
+          },
+          {
+            "defaultValue": {
+              "kind": "publicKeyValueNode",
+              "publicKey": "SysvarRent111111111111111111111111111111111"
+            },
+            "display": {
+              "kind": "instructionAccountDisplayNode",
+              "skip": "always"
+            },
+            "docs": [
+              "Rent sysvar."
+            ],
+            "isOptional": false,
+            "isSigner": false,
+            "isWritable": false,
+            "kind": "instructionAccountNode",
+            "name": "rent"
+          }
+        ],
+        "arguments": [
+          {
+            "defaultValue": {
+              "kind": "numberValueNode",
+              "number": 2
+            },
+            "defaultValueStrategy": "omitted",
+            "display": {
+              "kind": "structFieldDisplayNode",
+              "skip": "always"
+            },
+            "docs": [],
+            "kind": "instructionArgumentNode",
+            "name": "discriminator",
+            "type": {
+              "endian": "le",
+              "format": "u8",
+              "kind": "numberTypeNode"
+            }
+          },
+          {
+            "display": {
+              "kind": "structFieldDisplayNode",
+              "label": "Required Signatures"
+            },
+            "docs": [
+              "The number of signers (M) required to validate this multisignature account."
+            ],
+            "kind": "instructionArgumentNode",
+            "name": "m",
+            "type": {
+              "endian": "le",
+              "format": "u8",
+              "kind": "numberTypeNode"
+            }
+          }
+        ],
+        "discriminators": [
+          {
+            "kind": "fieldDiscriminatorNode",
+            "name": "discriminator",
+            "offset": 0
+          }
+        ],
+        "display": {
+          "intent": "Initialize multisig",
+          "interpolatedIntent": "Initialize multisig ${accounts.multisig} requiring ${data.m} signatures",
+          "kind": "instructionDisplayNode"
+        },
+        "docs": [
+          "Initializes a multisignature account with N provided signers.",
+          "",
+          "Multisignature accounts can used in place of any single owner/delegate",
+          "accounts in any token instruction that require an owner/delegate to be",
+          "present. The variant field represents the number of signers (M)",
+          "required to validate this multisignature account.",
+          "",
+          "The `InitializeMultisig` instruction requires no signers and MUST be",
+          "included within the same Transaction as the system program's",
+          "`CreateAccount` instruction that creates the account being initialized.",
+          "Otherwise another party can acquire ownership of the uninitialized account."
+        ],
+        "kind": "instructionNode",
+        "name": "initializeMultisig",
+        "optionalAccountStrategy": "programId",
+        "remainingAccounts": [
+          {
+            "display": {
+              "kind": "instructionAccountDisplayNode",
+              "label": "Signers"
+            },
+            "kind": "instructionRemainingAccountsNode",
+            "value": {
+              "kind": "argumentValueNode",
+              "name": "signers"
+            }
+          }
+        ]
+      },
+      {
+        "accounts": [
+          {
+            "display": {
+              "kind": "instructionAccountDisplayNode",
+              "label": "From"
+            },
+            "docs": [
+              "The source account."
+            ],
+            "isOptional": false,
+            "isSigner": false,
+            "isWritable": true,
+            "kind": "instructionAccountNode",
+            "name": "source"
+          },
+          {
+            "display": {
+              "kind": "instructionAccountDisplayNode",
+              "label": "To"
+            },
+            "docs": [
+              "The destination account."
+            ],
+            "isOptional": false,
+            "isSigner": false,
+            "isWritable": true,
+            "kind": "instructionAccountNode",
+            "name": "destination"
+          },
+          {
+            "defaultValue": {
+              "kind": "identityValueNode"
+            },
+            "docs": [
+              "The source account's owner/delegate or its multisignature account."
+            ],
+            "isOptional": false,
+            "isSigner": "either",
+            "isWritable": false,
+            "kind": "instructionAccountNode",
+            "name": "authority"
+          }
+        ],
+        "arguments": [
+          {
+            "defaultValue": {
+              "kind": "numberValueNode",
+              "number": 3
+            },
+            "defaultValueStrategy": "omitted",
+            "display": {
+              "kind": "structFieldDisplayNode",
+              "skip": "always"
+            },
+            "docs": [],
+            "kind": "instructionArgumentNode",
+            "name": "discriminator",
+            "type": {
+              "endian": "le",
+              "format": "u8",
+              "kind": "numberTypeNode"
+            }
+          },
+          {
+            "docs": [
+              "The amount of tokens to transfer."
+            ],
+            "kind": "instructionArgumentNode",
+            "name": "amount",
+            "type": {
+              "display": {
+                "kind": "amountNumberDisplayNode",
+                "unit": {
+                  "kind": "stringValueNode",
+                  "string": "base units"
+                }
+              },
+              "endian": "le",
+              "format": "u64",
+              "kind": "numberTypeNode"
+            }
+          }
+        ],
+        "discriminators": [
+          {
+            "kind": "fieldDiscriminatorNode",
+            "name": "discriminator",
+            "offset": 0
+          }
+        ],
+        "display": {
+          "intent": "Transfer tokens",
+          "interpolatedIntent": "Transfer ${data.amount} from ${accounts.source} to ${accounts.destination}",
+          "kind": "instructionDisplayNode"
+        },
+        "docs": [
+          "Transfers tokens from one account to another either directly or via a delegate.",
+          "If this account is associated with the native mint then equal amounts",
+          "of SOL and Tokens will be transferred to the destination account."
+        ],
+        "kind": "instructionNode",
+        "name": "transfer",
+        "optionalAccountStrategy": "programId",
+        "remainingAccounts": [
+          {
+            "isOptional": true,
+            "isSigner": true,
+            "kind": "instructionRemainingAccountsNode",
+            "value": {
+              "kind": "argumentValueNode",
+              "name": "multiSigners"
+            }
+          }
+        ]
+      },
+      {
+        "accounts": [
+          {
+            "display": {
+              "kind": "instructionAccountDisplayNode",
+              "label": "Token Account"
+            },
+            "docs": [
+              "The source account."
+            ],
+            "isOptional": false,
+            "isSigner": false,
+            "isWritable": true,
+            "kind": "instructionAccountNode",
+            "name": "source"
+          },
+          {
+            "docs": [
+              "The delegate."
+            ],
+            "isOptional": false,
+            "isSigner": false,
+            "isWritable": false,
+            "kind": "instructionAccountNode",
+            "name": "delegate"
+          },
+          {
+            "docs": [
+              "The source account owner or its multisignature account."
+            ],
+            "isOptional": false,
+            "isSigner": "either",
+            "isWritable": false,
+            "kind": "instructionAccountNode",
+            "name": "owner"
+          }
+        ],
+        "arguments": [
+          {
+            "defaultValue": {
+              "kind": "numberValueNode",
+              "number": 4
+            },
+            "defaultValueStrategy": "omitted",
+            "display": {
+              "kind": "structFieldDisplayNode",
+              "skip": "always"
+            },
+            "docs": [],
+            "kind": "instructionArgumentNode",
+            "name": "discriminator",
+            "type": {
+              "endian": "le",
+              "format": "u8",
+              "kind": "numberTypeNode"
+            }
+          },
+          {
+            "docs": [
+              "The amount of tokens the delegate is approved for."
+            ],
+            "kind": "instructionArgumentNode",
+            "name": "amount",
+            "type": {
+              "display": {
+                "kind": "amountNumberDisplayNode",
+                "unit": {
+                  "kind": "stringValueNode",
+                  "string": "base units"
+                }
+              },
+              "endian": "le",
+              "format": "u64",
+              "kind": "numberTypeNode"
+            }
+          }
+        ],
+        "discriminators": [
+          {
+            "kind": "fieldDiscriminatorNode",
+            "name": "discriminator",
+            "offset": 0
+          }
+        ],
+        "display": {
+          "intent": "Approve delegate",
+          "interpolatedIntent": "Approve ${accounts.delegate} to spend ${data.amount} from ${accounts.source}",
+          "kind": "instructionDisplayNode"
+        },
+        "docs": [
+          "Approves a delegate. A delegate is given the authority over tokens on",
+          "behalf of the source account's owner."
+        ],
+        "kind": "instructionNode",
+        "name": "approve",
+        "optionalAccountStrategy": "programId",
+        "remainingAccounts": [
+          {
+            "isOptional": true,
+            "isSigner": true,
+            "kind": "instructionRemainingAccountsNode",
+            "value": {
+              "kind": "argumentValueNode",
+              "name": "multiSigners"
+            }
+          }
+        ]
+      },
+      {
+        "accounts": [
+          {
+            "display": {
+              "kind": "instructionAccountDisplayNode",
+              "label": "Token Account"
+            },
+            "docs": [
+              "The source account."
+            ],
+            "isOptional": false,
+            "isSigner": false,
+            "isWritable": true,
+            "kind": "instructionAccountNode",
+            "name": "source"
+          },
+          {
+            "docs": [
+              "The source account owner or its multisignature."
+            ],
+            "isOptional": false,
+            "isSigner": "either",
+            "isWritable": false,
+            "kind": "instructionAccountNode",
+            "name": "owner"
+          }
+        ],
+        "arguments": [
+          {
+            "defaultValue": {
+              "kind": "numberValueNode",
+              "number": 5
+            },
+            "defaultValueStrategy": "omitted",
+            "display": {
+              "kind": "structFieldDisplayNode",
+              "skip": "always"
+            },
+            "docs": [],
+            "kind": "instructionArgumentNode",
+            "name": "discriminator",
+            "type": {
+              "endian": "le",
+              "format": "u8",
+              "kind": "numberTypeNode"
+            }
+          }
+        ],
+        "discriminators": [
+          {
+            "kind": "fieldDiscriminatorNode",
+            "name": "discriminator",
+            "offset": 0
+          }
+        ],
+        "display": {
+          "intent": "Revoke delegate",
+          "interpolatedIntent": "Revoke the delegate of ${accounts.source}",
+          "kind": "instructionDisplayNode"
+        },
+        "docs": [
+          "Revokes the delegate's authority."
+        ],
+        "kind": "instructionNode",
+        "name": "revoke",
+        "optionalAccountStrategy": "programId",
+        "remainingAccounts": [
+          {
+            "isOptional": true,
+            "isSigner": true,
+            "kind": "instructionRemainingAccountsNode",
+            "value": {
+              "kind": "argumentValueNode",
+              "name": "multiSigners"
+            }
+          }
+        ]
+      },
+      {
+        "accounts": [
+          {
+            "display": {
+              "kind": "instructionAccountDisplayNode",
+              "label": "Account"
+            },
+            "docs": [
+              "The mint or account to change the authority of."
+            ],
+            "isOptional": false,
+            "isSigner": false,
+            "isWritable": true,
+            "kind": "instructionAccountNode",
+            "name": "owned"
+          },
+          {
+            "docs": [
+              "The current authority or the multisignature account of the mint or account to update."
+            ],
+            "isOptional": false,
+            "isSigner": "either",
+            "isWritable": false,
+            "kind": "instructionAccountNode",
+            "name": "owner"
+          }
+        ],
+        "arguments": [
+          {
+            "defaultValue": {
+              "kind": "numberValueNode",
+              "number": 6
+            },
+            "defaultValueStrategy": "omitted",
+            "display": {
+              "kind": "structFieldDisplayNode",
+              "skip": "always"
+            },
+            "docs": [],
+            "kind": "instructionArgumentNode",
+            "name": "discriminator",
+            "type": {
+              "endian": "le",
+              "format": "u8",
+              "kind": "numberTypeNode"
+            }
+          },
+          {
+            "docs": [
+              "The type of authority to update."
+            ],
+            "kind": "instructionArgumentNode",
+            "name": "authorityType",
+            "type": {
+              "kind": "definedTypeLinkNode",
+              "name": "authorityType"
+            }
+          },
+          {
+            "docs": [
+              "The new authority"
+            ],
+            "kind": "instructionArgumentNode",
+            "name": "newAuthority",
+            "type": {
+              "fixed": false,
+              "item": {
+                "kind": "publicKeyTypeNode"
+              },
+              "kind": "optionTypeNode",
+              "prefix": {
+                "endian": "le",
+                "format": "u8",
+                "kind": "numberTypeNode"
+              }
+            }
+          }
+        ],
+        "discriminators": [
+          {
+            "kind": "fieldDiscriminatorNode",
+            "name": "discriminator",
+            "offset": 0
+          }
+        ],
+        "display": {
+          "intent": "Set authority",
+          "interpolatedIntent": "Change an authority of ${accounts.owned}",
+          "kind": "instructionDisplayNode"
+        },
+        "docs": [
+          "Sets a new authority of a mint or account."
+        ],
+        "kind": "instructionNode",
+        "name": "setAuthority",
+        "optionalAccountStrategy": "programId",
+        "remainingAccounts": [
+          {
+            "isOptional": true,
+            "isSigner": true,
+            "kind": "instructionRemainingAccountsNode",
+            "value": {
+              "kind": "argumentValueNode",
+              "name": "multiSigners"
+            }
+          }
+        ]
+      },
+      {
+        "accounts": [
+          {
+            "accountLink": {
+              "kind": "accountLinkNode",
+              "name": "mint"
+            },
+            "docs": [
+              "The mint account."
+            ],
+            "isOptional": false,
+            "isSigner": false,
+            "isWritable": true,
+            "kind": "instructionAccountNode",
+            "name": "mint"
+          },
+          {
+            "display": {
+              "kind": "instructionAccountDisplayNode",
+              "label": "To"
+            },
+            "docs": [
+              "The account to mint tokens to."
+            ],
+            "isOptional": false,
+            "isSigner": false,
+            "isWritable": true,
+            "kind": "instructionAccountNode",
+            "name": "token"
+          },
+          {
+            "docs": [
+              "The mint's minting authority or its multisignature account."
+            ],
+            "isOptional": false,
+            "isSigner": "either",
+            "isWritable": false,
+            "kind": "instructionAccountNode",
+            "name": "mintAuthority"
+          }
+        ],
+        "arguments": [
+          {
+            "defaultValue": {
+              "kind": "numberValueNode",
+              "number": 7
+            },
+            "defaultValueStrategy": "omitted",
+            "display": {
+              "kind": "structFieldDisplayNode",
+              "skip": "always"
+            },
+            "docs": [],
+            "kind": "instructionArgumentNode",
+            "name": "discriminator",
+            "type": {
+              "endian": "le",
+              "format": "u8",
+              "kind": "numberTypeNode"
+            }
+          },
+          {
+            "docs": [
+              "The amount of new tokens to mint."
+            ],
+            "kind": "instructionArgumentNode",
+            "name": "amount",
+            "type": {
+              "display": {
+                "decimals": {
+                  "key": "decimals",
+                  "kind": "injectedValueNode"
+                },
+                "kind": "amountNumberDisplayNode"
+              },
+              "endian": "le",
+              "format": "u64",
+              "kind": "numberTypeNode"
+            }
+          }
+        ],
+        "discriminators": [
+          {
+            "kind": "fieldDiscriminatorNode",
+            "name": "discriminator",
+            "offset": 0
+          }
+        ],
+        "display": {
+          "intent": "Mint tokens",
+          "interpolatedIntent": "Mint ${data.amount} ${accounts.mint} to ${accounts.token}",
+          "kind": "instructionDisplayNode"
+        },
+        "docs": [
+          "Mints new tokens to an account. The native mint does not support minting."
+        ],
+        "kind": "instructionNode",
+        "name": "mintTo",
+        "optionalAccountStrategy": "programId",
+        "provides": [
+          {
+            "kind": "providedNode",
+            "name": "decimals",
+            "node": {
+              "account": "mint",
+              "kind": "accountFieldValueNode",
+              "path": "decimals"
+            }
+          }
+        ],
+        "remainingAccounts": [
+          {
+            "isOptional": true,
+            "isSigner": true,
+            "kind": "instructionRemainingAccountsNode",
+            "value": {
+              "kind": "argumentValueNode",
+              "name": "multiSigners"
+            }
+          }
+        ]
+      },
+      {
+        "accounts": [
+          {
+            "display": {
+              "kind": "instructionAccountDisplayNode",
+              "label": "Token Account"
+            },
+            "docs": [
+              "The account to burn from."
+            ],
+            "isOptional": false,
+            "isSigner": false,
+            "isWritable": true,
+            "kind": "instructionAccountNode",
+            "name": "account"
+          },
+          {
+            "accountLink": {
+              "kind": "accountLinkNode",
+              "name": "mint"
+            },
+            "docs": [
+              "The token mint."
+            ],
+            "isOptional": false,
+            "isSigner": false,
+            "isWritable": true,
+            "kind": "instructionAccountNode",
+            "name": "mint"
+          },
+          {
+            "defaultValue": {
+              "kind": "identityValueNode"
+            },
+            "docs": [
+              "The account's owner/delegate or its multisignature account."
+            ],
+            "isOptional": false,
+            "isSigner": "either",
+            "isWritable": false,
+            "kind": "instructionAccountNode",
+            "name": "authority"
+          }
+        ],
+        "arguments": [
+          {
+            "defaultValue": {
+              "kind": "numberValueNode",
+              "number": 8
+            },
+            "defaultValueStrategy": "omitted",
+            "display": {
+              "kind": "structFieldDisplayNode",
+              "skip": "always"
+            },
+            "docs": [
+              "The amount of tokens to burn."
+            ],
+            "kind": "instructionArgumentNode",
+            "name": "discriminator",
+            "type": {
+              "endian": "le",
+              "format": "u8",
+              "kind": "numberTypeNode"
+            }
+          },
+          {
+            "docs": [],
+            "kind": "instructionArgumentNode",
+            "name": "amount",
+            "type": {
+              "display": {
+                "decimals": {
+                  "key": "decimals",
+                  "kind": "injectedValueNode"
+                },
+                "kind": "amountNumberDisplayNode"
+              },
+              "endian": "le",
+              "format": "u64",
+              "kind": "numberTypeNode"
+            }
+          }
+        ],
+        "discriminators": [
+          {
+            "kind": "fieldDiscriminatorNode",
+            "name": "discriminator",
+            "offset": 0
+          }
+        ],
+        "display": {
+          "intent": "Burn tokens",
+          "interpolatedIntent": "Burn ${data.amount} ${accounts.mint} from ${accounts.account}",
+          "kind": "instructionDisplayNode"
+        },
+        "docs": [
+          "Burns tokens by removing them from an account. `Burn` does not support",
+          "accounts associated with the native mint, use `CloseAccount` instead."
+        ],
+        "kind": "instructionNode",
+        "name": "burn",
+        "optionalAccountStrategy": "programId",
+        "provides": [
+          {
+            "kind": "providedNode",
+            "name": "decimals",
+            "node": {
+              "account": "mint",
+              "kind": "accountFieldValueNode",
+              "path": "decimals"
+            }
+          }
+        ],
+        "remainingAccounts": [
+          {
+            "isOptional": true,
+            "isSigner": true,
+            "kind": "instructionRemainingAccountsNode",
+            "value": {
+              "kind": "argumentValueNode",
+              "name": "multiSigners"
+            }
+          }
+        ]
+      },
+      {
+        "accounts": [
+          {
+            "display": {
+              "kind": "instructionAccountDisplayNode",
+              "label": "Token Account"
+            },
+            "docs": [
+              "The account to close."
+            ],
+            "isOptional": false,
+            "isSigner": false,
+            "isWritable": true,
+            "kind": "instructionAccountNode",
+            "name": "account"
+          },
+          {
+            "display": {
+              "kind": "instructionAccountDisplayNode",
+              "label": "Recipient"
+            },
+            "docs": [
+              "The destination account."
+            ],
+            "isOptional": false,
+            "isSigner": false,
+            "isWritable": true,
+            "kind": "instructionAccountNode",
+            "name": "destination"
+          },
+          {
+            "docs": [
+              "The account's owner or its multisignature account."
+            ],
+            "isOptional": false,
+            "isSigner": "either",
+            "isWritable": false,
+            "kind": "instructionAccountNode",
+            "name": "owner"
+          }
+        ],
+        "arguments": [
+          {
+            "defaultValue": {
+              "kind": "numberValueNode",
+              "number": 9
+            },
+            "defaultValueStrategy": "omitted",
+            "display": {
+              "kind": "structFieldDisplayNode",
+              "skip": "always"
+            },
+            "docs": [],
+            "kind": "instructionArgumentNode",
+            "name": "discriminator",
+            "type": {
+              "endian": "le",
+              "format": "u8",
+              "kind": "numberTypeNode"
+            }
+          }
+        ],
+        "discriminators": [
+          {
+            "kind": "fieldDiscriminatorNode",
+            "name": "discriminator",
+            "offset": 0
+          }
+        ],
+        "display": {
+          "intent": "Close token account",
+          "interpolatedIntent": "Close ${accounts.account} and send its balance to ${accounts.destination}",
+          "kind": "instructionDisplayNode"
+        },
+        "docs": [
+          "Close an account by transferring all its SOL to the destination account.",
+          "Non-native accounts may only be closed if its token amount is zero."
+        ],
+        "kind": "instructionNode",
+        "name": "closeAccount",
+        "optionalAccountStrategy": "programId",
+        "remainingAccounts": [
+          {
+            "isOptional": true,
+            "isSigner": true,
+            "kind": "instructionRemainingAccountsNode",
+            "value": {
+              "kind": "argumentValueNode",
+              "name": "multiSigners"
+            }
+          }
+        ]
+      },
+      {
+        "accounts": [
+          {
+            "display": {
+              "kind": "instructionAccountDisplayNode",
+              "label": "Token Account"
+            },
+            "docs": [
+              "The account to freeze."
+            ],
+            "isOptional": false,
+            "isSigner": false,
+            "isWritable": true,
+            "kind": "instructionAccountNode",
+            "name": "account"
+          },
+          {
+            "docs": [
+              "The token mint."
+            ],
+            "isOptional": false,
+            "isSigner": false,
+            "isWritable": false,
+            "kind": "instructionAccountNode",
+            "name": "mint"
+          },
+          {
+            "docs": [
+              "The mint freeze authority or its multisignature account."
+            ],
+            "isOptional": false,
+            "isSigner": "either",
+            "isWritable": false,
+            "kind": "instructionAccountNode",
+            "name": "owner"
+          }
+        ],
+        "arguments": [
+          {
+            "defaultValue": {
+              "kind": "numberValueNode",
+              "number": 10
+            },
+            "defaultValueStrategy": "omitted",
+            "display": {
+              "kind": "structFieldDisplayNode",
+              "skip": "always"
+            },
+            "docs": [],
+            "kind": "instructionArgumentNode",
+            "name": "discriminator",
+            "type": {
+              "endian": "le",
+              "format": "u8",
+              "kind": "numberTypeNode"
+            }
+          }
+        ],
+        "discriminators": [
+          {
+            "kind": "fieldDiscriminatorNode",
+            "name": "discriminator",
+            "offset": 0
+          }
+        ],
+        "display": {
+          "intent": "Freeze token account",
+          "interpolatedIntent": "Freeze ${accounts.account}",
+          "kind": "instructionDisplayNode"
+        },
+        "docs": [
+          "Freeze an Initialized account using the Mint's freeze_authority (if set)."
+        ],
+        "kind": "instructionNode",
+        "name": "freezeAccount",
+        "optionalAccountStrategy": "programId",
+        "remainingAccounts": [
+          {
+            "isOptional": true,
+            "isSigner": true,
+            "kind": "instructionRemainingAccountsNode",
+            "value": {
+              "kind": "argumentValueNode",
+              "name": "multiSigners"
+            }
+          }
+        ]
+      },
+      {
+        "accounts": [
+          {
+            "display": {
+              "kind": "instructionAccountDisplayNode",
+              "label": "Token Account"
+            },
+            "docs": [
+              "The account to thaw."
+            ],
+            "isOptional": false,
+            "isSigner": false,
+            "isWritable": true,
+            "kind": "instructionAccountNode",
+            "name": "account"
+          },
+          {
+            "docs": [
+              "The token mint."
+            ],
+            "isOptional": false,
+            "isSigner": false,
+            "isWritable": false,
+            "kind": "instructionAccountNode",
+            "name": "mint"
+          },
+          {
+            "docs": [
+              "The mint freeze authority or its multisignature account."
+            ],
+            "isOptional": false,
+            "isSigner": "either",
+            "isWritable": false,
+            "kind": "instructionAccountNode",
+            "name": "owner"
+          }
+        ],
+        "arguments": [
+          {
+            "defaultValue": {
+              "kind": "numberValueNode",
+              "number": 11
+            },
+            "defaultValueStrategy": "omitted",
+            "display": {
+              "kind": "structFieldDisplayNode",
+              "skip": "always"
+            },
+            "docs": [],
+            "kind": "instructionArgumentNode",
+            "name": "discriminator",
+            "type": {
+              "endian": "le",
+              "format": "u8",
+              "kind": "numberTypeNode"
+            }
+          }
+        ],
+        "discriminators": [
+          {
+            "kind": "fieldDiscriminatorNode",
+            "name": "discriminator",
+            "offset": 0
+          }
+        ],
+        "display": {
+          "intent": "Thaw token account",
+          "interpolatedIntent": "Thaw ${accounts.account}",
+          "kind": "instructionDisplayNode"
+        },
+        "docs": [
+          "Thaw a Frozen account using the Mint's freeze_authority (if set)."
+        ],
+        "kind": "instructionNode",
+        "name": "thawAccount",
+        "optionalAccountStrategy": "programId",
+        "remainingAccounts": [
+          {
+            "isOptional": true,
+            "isSigner": true,
+            "kind": "instructionRemainingAccountsNode",
+            "value": {
+              "kind": "argumentValueNode",
+              "name": "multiSigners"
+            }
+          }
+        ]
+      },
+      {
+        "accounts": [
+          {
+            "display": {
+              "kind": "instructionAccountDisplayNode",
+              "label": "From"
+            },
+            "docs": [
+              "The source account."
+            ],
+            "isOptional": false,
+            "isSigner": false,
+            "isWritable": true,
+            "kind": "instructionAccountNode",
+            "name": "source"
+          },
+          {
+            "docs": [
+              "The token mint."
+            ],
+            "isOptional": false,
+            "isSigner": false,
+            "isWritable": false,
+            "kind": "instructionAccountNode",
+            "name": "mint"
+          },
+          {
+            "display": {
+              "kind": "instructionAccountDisplayNode",
+              "label": "To"
+            },
+            "docs": [
+              "The destination account."
+            ],
+            "isOptional": false,
+            "isSigner": false,
+            "isWritable": true,
+            "kind": "instructionAccountNode",
+            "name": "destination"
+          },
+          {
+            "defaultValue": {
+              "kind": "identityValueNode"
+            },
+            "docs": [
+              "The source account's owner/delegate or its multisignature account."
+            ],
+            "isOptional": false,
+            "isSigner": "either",
+            "isWritable": false,
+            "kind": "instructionAccountNode",
+            "name": "authority"
+          }
+        ],
+        "arguments": [
+          {
+            "defaultValue": {
+              "kind": "numberValueNode",
+              "number": 12
+            },
+            "defaultValueStrategy": "omitted",
+            "display": {
+              "kind": "structFieldDisplayNode",
+              "skip": "always"
+            },
+            "docs": [],
+            "kind": "instructionArgumentNode",
+            "name": "discriminator",
+            "type": {
+              "endian": "le",
+              "format": "u8",
+              "kind": "numberTypeNode"
+            }
+          },
+          {
+            "docs": [
+              "The amount of tokens to transfer."
+            ],
+            "kind": "instructionArgumentNode",
+            "name": "amount",
+            "type": {
+              "display": {
+                "decimals": {
+                  "key": "decimals",
+                  "kind": "injectedValueNode"
+                },
+                "kind": "amountNumberDisplayNode"
+              },
+              "endian": "le",
+              "format": "u64",
+              "kind": "numberTypeNode"
+            }
+          },
+          {
+            "display": {
+              "kind": "structFieldDisplayNode",
+              "skip": "whenInjected"
+            },
+            "docs": [
+              "Expected number of base 10 digits to the right of the decimal place."
+            ],
+            "kind": "instructionArgumentNode",
+            "name": "decimals",
+            "type": {
+              "endian": "le",
+              "format": "u8",
+              "kind": "numberTypeNode"
+            }
+          }
+        ],
+        "discriminators": [
+          {
+            "kind": "fieldDiscriminatorNode",
+            "name": "discriminator",
+            "offset": 0
+          }
+        ],
+        "display": {
+          "intent": "Transfer tokens",
+          "interpolatedIntent": "Transfer ${data.amount} ${accounts.mint} from ${accounts.source} to ${accounts.destination}",
+          "kind": "instructionDisplayNode"
+        },
+        "docs": [
+          "Transfers tokens from one account to another either directly or via a",
+          "delegate. If this account is associated with the native mint then equal",
+          "amounts of SOL and Tokens will be transferred to the destination account.",
+          "",
+          "This instruction differs from Transfer in that the token mint and",
+          "decimals value is checked by the caller. This may be useful when",
+          "creating transactions offline or within a hardware wallet."
+        ],
+        "kind": "instructionNode",
+        "name": "transferChecked",
+        "optionalAccountStrategy": "programId",
+        "provides": [
+          {
+            "kind": "providedNode",
+            "name": "decimals",
+            "node": {
+              "kind": "argumentValueNode",
+              "name": "decimals"
+            }
+          }
+        ],
+        "remainingAccounts": [
+          {
+            "isOptional": true,
+            "isSigner": true,
+            "kind": "instructionRemainingAccountsNode",
+            "value": {
+              "kind": "argumentValueNode",
+              "name": "multiSigners"
+            }
+          }
+        ]
+      },
+      {
+        "accounts": [
+          {
+            "display": {
+              "kind": "instructionAccountDisplayNode",
+              "label": "Token Account"
+            },
+            "docs": [
+              "The source account."
+            ],
+            "isOptional": false,
+            "isSigner": false,
+            "isWritable": true,
+            "kind": "instructionAccountNode",
+            "name": "source"
+          },
+          {
+            "docs": [
+              "The token mint."
+            ],
+            "isOptional": false,
+            "isSigner": false,
+            "isWritable": false,
+            "kind": "instructionAccountNode",
+            "name": "mint"
+          },
+          {
+            "docs": [
+              "The delegate."
+            ],
+            "isOptional": false,
+            "isSigner": false,
+            "isWritable": false,
+            "kind": "instructionAccountNode",
+            "name": "delegate"
+          },
+          {
+            "docs": [
+              "The source account owner or its multisignature account."
+            ],
+            "isOptional": false,
+            "isSigner": "either",
+            "isWritable": false,
+            "kind": "instructionAccountNode",
+            "name": "owner"
+          }
+        ],
+        "arguments": [
+          {
+            "defaultValue": {
+              "kind": "numberValueNode",
+              "number": 13
+            },
+            "defaultValueStrategy": "omitted",
+            "display": {
+              "kind": "structFieldDisplayNode",
+              "skip": "always"
+            },
+            "docs": [],
+            "kind": "instructionArgumentNode",
+            "name": "discriminator",
+            "type": {
+              "endian": "le",
+              "format": "u8",
+              "kind": "numberTypeNode"
+            }
+          },
+          {
+            "docs": [
+              "The amount of tokens the delegate is approved for."
+            ],
+            "kind": "instructionArgumentNode",
+            "name": "amount",
+            "type": {
+              "display": {
+                "decimals": {
+                  "key": "decimals",
+                  "kind": "injectedValueNode"
+                },
+                "kind": "amountNumberDisplayNode"
+              },
+              "endian": "le",
+              "format": "u64",
+              "kind": "numberTypeNode"
+            }
+          },
+          {
+            "display": {
+              "kind": "structFieldDisplayNode",
+              "skip": "whenInjected"
+            },
+            "docs": [
+              "Expected number of base 10 digits to the right of the decimal place."
+            ],
+            "kind": "instructionArgumentNode",
+            "name": "decimals",
+            "type": {
+              "endian": "le",
+              "format": "u8",
+              "kind": "numberTypeNode"
+            }
+          }
+        ],
+        "discriminators": [
+          {
+            "kind": "fieldDiscriminatorNode",
+            "name": "discriminator",
+            "offset": 0
+          }
+        ],
+        "display": {
+          "intent": "Approve delegate",
+          "interpolatedIntent": "Approve ${accounts.delegate} to spend ${data.amount} ${accounts.mint} from ${accounts.source}",
+          "kind": "instructionDisplayNode"
+        },
+        "docs": [
+          "Approves a delegate. A delegate is given the authority over tokens on",
+          "behalf of the source account's owner.",
+          "",
+          "This instruction differs from Approve in that the token mint and",
+          "decimals value is checked by the caller. This may be useful when",
+          "creating transactions offline or within a hardware wallet."
+        ],
+        "kind": "instructionNode",
+        "name": "approveChecked",
+        "optionalAccountStrategy": "programId",
+        "provides": [
+          {
+            "kind": "providedNode",
+            "name": "decimals",
+            "node": {
+              "kind": "argumentValueNode",
+              "name": "decimals"
+            }
+          }
+        ],
+        "remainingAccounts": [
+          {
+            "isOptional": true,
+            "isSigner": true,
+            "kind": "instructionRemainingAccountsNode",
+            "value": {
+              "kind": "argumentValueNode",
+              "name": "multiSigners"
+            }
+          }
+        ]
+      },
+      {
+        "accounts": [
+          {
+            "docs": [
+              "The mint."
+            ],
+            "isOptional": false,
+            "isSigner": false,
+            "isWritable": true,
+            "kind": "instructionAccountNode",
+            "name": "mint"
+          },
+          {
+            "display": {
+              "kind": "instructionAccountDisplayNode",
+              "label": "To"
+            },
+            "docs": [
+              "The account to mint tokens to."
+            ],
+            "isOptional": false,
+            "isSigner": false,
+            "isWritable": true,
+            "kind": "instructionAccountNode",
+            "name": "token"
+          },
+          {
+            "docs": [
+              "The mint's minting authority or its multisignature account."
+            ],
+            "isOptional": false,
+            "isSigner": "either",
+            "isWritable": false,
+            "kind": "instructionAccountNode",
+            "name": "mintAuthority"
+          }
+        ],
+        "arguments": [
+          {
+            "defaultValue": {
+              "kind": "numberValueNode",
+              "number": 14
+            },
+            "defaultValueStrategy": "omitted",
+            "display": {
+              "kind": "structFieldDisplayNode",
+              "skip": "always"
+            },
+            "docs": [],
+            "kind": "instructionArgumentNode",
+            "name": "discriminator",
+            "type": {
+              "endian": "le",
+              "format": "u8",
+              "kind": "numberTypeNode"
+            }
+          },
+          {
+            "docs": [
+              "The amount of new tokens to mint."
+            ],
+            "kind": "instructionArgumentNode",
+            "name": "amount",
+            "type": {
+              "display": {
+                "decimals": {
+                  "key": "decimals",
+                  "kind": "injectedValueNode"
+                },
+                "kind": "amountNumberDisplayNode"
+              },
+              "endian": "le",
+              "format": "u64",
+              "kind": "numberTypeNode"
+            }
+          },
+          {
+            "display": {
+              "kind": "structFieldDisplayNode",
+              "skip": "whenInjected"
+            },
+            "docs": [
+              "Expected number of base 10 digits to the right of the decimal place."
+            ],
+            "kind": "instructionArgumentNode",
+            "name": "decimals",
+            "type": {
+              "endian": "le",
+              "format": "u8",
+              "kind": "numberTypeNode"
+            }
+          }
+        ],
+        "discriminators": [
+          {
+            "kind": "fieldDiscriminatorNode",
+            "name": "discriminator",
+            "offset": 0
+          }
+        ],
+        "display": {
+          "intent": "Mint tokens",
+          "interpolatedIntent": "Mint ${data.amount} ${accounts.mint} to ${accounts.token}",
+          "kind": "instructionDisplayNode"
+        },
+        "docs": [
+          "Mints new tokens to an account. The native mint does not support minting.",
+          "",
+          "This instruction differs from MintTo in that the decimals value is",
+          "checked by the caller. This may be useful when creating transactions",
+          "offline or within a hardware wallet."
+        ],
+        "kind": "instructionNode",
+        "name": "mintToChecked",
+        "optionalAccountStrategy": "programId",
+        "provides": [
+          {
+            "kind": "providedNode",
+            "name": "decimals",
+            "node": {
+              "kind": "argumentValueNode",
+              "name": "decimals"
+            }
+          }
+        ],
+        "remainingAccounts": [
+          {
+            "isOptional": true,
+            "isSigner": true,
+            "kind": "instructionRemainingAccountsNode",
+            "value": {
+              "kind": "argumentValueNode",
+              "name": "multiSigners"
+            }
+          }
+        ]
+      },
+      {
+        "accounts": [
+          {
+            "display": {
+              "kind": "instructionAccountDisplayNode",
+              "label": "Token Account"
+            },
+            "docs": [
+              "The account to burn from."
+            ],
+            "isOptional": false,
+            "isSigner": false,
+            "isWritable": true,
+            "kind": "instructionAccountNode",
+            "name": "account"
+          },
+          {
+            "docs": [
+              "The token mint."
+            ],
+            "isOptional": false,
+            "isSigner": false,
+            "isWritable": true,
+            "kind": "instructionAccountNode",
+            "name": "mint"
+          },
+          {
+            "defaultValue": {
+              "kind": "identityValueNode"
+            },
+            "docs": [
+              "The account's owner/delegate or its multisignature account."
+            ],
+            "isOptional": false,
+            "isSigner": "either",
+            "isWritable": false,
+            "kind": "instructionAccountNode",
+            "name": "authority"
+          }
+        ],
+        "arguments": [
+          {
+            "defaultValue": {
+              "kind": "numberValueNode",
+              "number": 15
+            },
+            "defaultValueStrategy": "omitted",
+            "display": {
+              "kind": "structFieldDisplayNode",
+              "skip": "always"
+            },
+            "docs": [],
+            "kind": "instructionArgumentNode",
+            "name": "discriminator",
+            "type": {
+              "endian": "le",
+              "format": "u8",
+              "kind": "numberTypeNode"
+            }
+          },
+          {
+            "docs": [
+              "The amount of tokens to burn."
+            ],
+            "kind": "instructionArgumentNode",
+            "name": "amount",
+            "type": {
+              "display": {
+                "decimals": {
+                  "key": "decimals",
+                  "kind": "injectedValueNode"
+                },
+                "kind": "amountNumberDisplayNode"
+              },
+              "endian": "le",
+              "format": "u64",
+              "kind": "numberTypeNode"
+            }
+          },
+          {
+            "display": {
+              "kind": "structFieldDisplayNode",
+              "skip": "whenInjected"
+            },
+            "docs": [
+              "Expected number of base 10 digits to the right of the decimal place."
+            ],
+            "kind": "instructionArgumentNode",
+            "name": "decimals",
+            "type": {
+              "endian": "le",
+              "format": "u8",
+              "kind": "numberTypeNode"
+            }
+          }
+        ],
+        "discriminators": [
+          {
+            "kind": "fieldDiscriminatorNode",
+            "name": "discriminator",
+            "offset": 0
+          }
+        ],
+        "display": {
+          "intent": "Burn tokens",
+          "interpolatedIntent": "Burn ${data.amount} ${accounts.mint} from ${accounts.account}",
+          "kind": "instructionDisplayNode"
+        },
+        "docs": [
+          "Burns tokens by removing them from an account. `BurnChecked` does not",
+          "support accounts associated with the native mint, use `CloseAccount` instead.",
+          "",
+          "This instruction differs from Burn in that the decimals value is checked",
+          "by the caller. This may be useful when creating transactions offline or",
+          "within a hardware wallet."
+        ],
+        "kind": "instructionNode",
+        "name": "burnChecked",
+        "optionalAccountStrategy": "programId",
+        "provides": [
+          {
+            "kind": "providedNode",
+            "name": "decimals",
+            "node": {
+              "kind": "argumentValueNode",
+              "name": "decimals"
+            }
+          }
+        ],
+        "remainingAccounts": [
+          {
+            "isOptional": true,
+            "isSigner": true,
+            "kind": "instructionRemainingAccountsNode",
+            "value": {
+              "kind": "argumentValueNode",
+              "name": "multiSigners"
+            }
+          }
+        ]
+      },
+      {
+        "accounts": [
+          {
+            "display": {
+              "kind": "instructionAccountDisplayNode",
+              "label": "Token Account"
+            },
+            "docs": [
+              "The account to initialize."
+            ],
+            "isOptional": false,
+            "isSigner": false,
+            "isWritable": true,
+            "kind": "instructionAccountNode",
+            "name": "account"
+          },
+          {
+            "docs": [
+              "The mint this account will be associated with."
+            ],
+            "isOptional": false,
+            "isSigner": false,
+            "isWritable": false,
+            "kind": "instructionAccountNode",
+            "name": "mint"
+          },
+          {
+            "defaultValue": {
+              "kind": "publicKeyValueNode",
+              "publicKey": "SysvarRent111111111111111111111111111111111"
+            },
+            "display": {
+              "kind": "instructionAccountDisplayNode",
+              "skip": "always"
+            },
+            "docs": [
+              "Rent sysvar."
+            ],
+            "isOptional": false,
+            "isSigner": false,
+            "isWritable": false,
+            "kind": "instructionAccountNode",
+            "name": "rent"
+          }
+        ],
+        "arguments": [
+          {
+            "defaultValue": {
+              "kind": "numberValueNode",
+              "number": 16
+            },
+            "defaultValueStrategy": "omitted",
+            "display": {
+              "kind": "structFieldDisplayNode",
+              "skip": "always"
+            },
+            "docs": [],
+            "kind": "instructionArgumentNode",
+            "name": "discriminator",
+            "type": {
+              "endian": "le",
+              "format": "u8",
+              "kind": "numberTypeNode"
+            }
+          },
+          {
+            "docs": [
+              "The new account's owner/multisignature."
+            ],
+            "kind": "instructionArgumentNode",
+            "name": "owner",
+            "type": {
+              "kind": "publicKeyTypeNode"
+            }
+          }
+        ],
+        "discriminators": [
+          {
+            "kind": "fieldDiscriminatorNode",
+            "name": "discriminator",
+            "offset": 0
+          }
+        ],
+        "display": {
+          "intent": "Initialize token account",
+          "interpolatedIntent": "Initialize token account ${accounts.account} for mint ${accounts.mint}",
+          "kind": "instructionDisplayNode"
+        },
+        "docs": [
+          "Like InitializeAccount, but the owner pubkey is passed via instruction",
+          "data rather than the accounts list. This variant may be preferable",
+          "when using Cross Program Invocation from an instruction that does",
+          "not need the owner's `AccountInfo` otherwise."
+        ],
+        "kind": "instructionNode",
+        "name": "initializeAccount2",
+        "optionalAccountStrategy": "programId"
+      },
+      {
+        "accounts": [
+          {
+            "display": {
+              "kind": "instructionAccountDisplayNode",
+              "label": "Token Account"
+            },
+            "docs": [
+              "The native token account to sync with its underlying lamports."
+            ],
+            "isOptional": false,
+            "isSigner": false,
+            "isWritable": true,
+            "kind": "instructionAccountNode",
+            "name": "account"
+          },
+          {
+            "defaultValue": {
+              "kind": "publicKeyValueNode",
+              "publicKey": "SysvarRent111111111111111111111111111111111"
+            },
+            "display": {
+              "kind": "instructionAccountDisplayNode",
+              "skip": "always"
+            },
+            "docs": [
+              "Rent sysvar."
+            ],
+            "isOptional": true,
+            "isSigner": false,
+            "isWritable": false,
+            "kind": "instructionAccountNode",
+            "name": "rent"
+          }
+        ],
+        "arguments": [
+          {
+            "defaultValue": {
+              "kind": "numberValueNode",
+              "number": 17
+            },
+            "defaultValueStrategy": "omitted",
+            "display": {
+              "kind": "structFieldDisplayNode",
+              "skip": "always"
+            },
+            "docs": [],
+            "kind": "instructionArgumentNode",
+            "name": "discriminator",
+            "type": {
+              "endian": "le",
+              "format": "u8",
+              "kind": "numberTypeNode"
+            }
+          }
+        ],
+        "discriminators": [
+          {
+            "kind": "fieldDiscriminatorNode",
+            "name": "discriminator",
+            "offset": 0
+          }
+        ],
+        "display": {
+          "intent": "Sync wrapped SOL",
+          "interpolatedIntent": "Sync the wrapped SOL balance of ${accounts.account}",
+          "kind": "instructionDisplayNode"
+        },
+        "docs": [
+          "Given a wrapped / native token account (a token account containing SOL)",
+          "updates its amount field based on the account's underlying `lamports`.",
+          "This is useful if a non-wrapped SOL account uses",
+          "`system_instruction::transfer` to move lamports to a wrapped token",
+          "account, and needs to have its token `amount` field updated."
+        ],
+        "kind": "instructionNode",
+        "name": "syncNative",
+        "optionalAccountStrategy": "omitted"
+      },
+      {
+        "accounts": [
+          {
+            "display": {
+              "kind": "instructionAccountDisplayNode",
+              "label": "Token Account"
+            },
+            "docs": [
+              "The account to initialize."
+            ],
+            "isOptional": false,
+            "isSigner": false,
+            "isWritable": true,
+            "kind": "instructionAccountNode",
+            "name": "account"
+          },
+          {
+            "docs": [
+              "The mint this account will be associated with."
+            ],
+            "isOptional": false,
+            "isSigner": false,
+            "isWritable": false,
+            "kind": "instructionAccountNode",
+            "name": "mint"
+          }
+        ],
+        "arguments": [
+          {
+            "defaultValue": {
+              "kind": "numberValueNode",
+              "number": 18
+            },
+            "defaultValueStrategy": "omitted",
+            "display": {
+              "kind": "structFieldDisplayNode",
+              "skip": "always"
+            },
+            "docs": [],
+            "kind": "instructionArgumentNode",
+            "name": "discriminator",
+            "type": {
+              "endian": "le",
+              "format": "u8",
+              "kind": "numberTypeNode"
+            }
+          },
+          {
+            "docs": [
+              "The new account's owner/multisignature."
+            ],
+            "kind": "instructionArgumentNode",
+            "name": "owner",
+            "type": {
+              "kind": "publicKeyTypeNode"
+            }
+          }
+        ],
+        "discriminators": [
+          {
+            "kind": "fieldDiscriminatorNode",
+            "name": "discriminator",
+            "offset": 0
+          }
+        ],
+        "display": {
+          "intent": "Initialize token account",
+          "interpolatedIntent": "Initialize token account ${accounts.account} for mint ${accounts.mint}",
+          "kind": "instructionDisplayNode"
+        },
+        "docs": [
+          "Like InitializeAccount2, but does not require the Rent sysvar to be provided."
+        ],
+        "kind": "instructionNode",
+        "name": "initializeAccount3",
+        "optionalAccountStrategy": "programId"
+      },
+      {
+        "accounts": [
+          {
+            "docs": [
+              "The multisignature account to initialize."
+            ],
+            "isOptional": false,
+            "isSigner": false,
+            "isWritable": true,
+            "kind": "instructionAccountNode",
+            "name": "multisig"
+          }
+        ],
+        "arguments": [
+          {
+            "defaultValue": {
+              "kind": "numberValueNode",
+              "number": 19
+            },
+            "defaultValueStrategy": "omitted",
+            "display": {
+              "kind": "structFieldDisplayNode",
+              "skip": "always"
+            },
+            "docs": [],
+            "kind": "instructionArgumentNode",
+            "name": "discriminator",
+            "type": {
+              "endian": "le",
+              "format": "u8",
+              "kind": "numberTypeNode"
+            }
+          },
+          {
+            "display": {
+              "kind": "structFieldDisplayNode",
+              "label": "Required Signatures"
+            },
+            "docs": [
+              "The number of signers (M) required to validate this multisignature account."
+            ],
+            "kind": "instructionArgumentNode",
+            "name": "m",
+            "type": {
+              "endian": "le",
+              "format": "u8",
+              "kind": "numberTypeNode"
+            }
+          }
+        ],
+        "discriminators": [
+          {
+            "kind": "fieldDiscriminatorNode",
+            "name": "discriminator",
+            "offset": 0
+          }
+        ],
+        "display": {
+          "intent": "Initialize multisig",
+          "interpolatedIntent": "Initialize multisig ${accounts.multisig} requiring ${data.m} signatures",
+          "kind": "instructionDisplayNode"
+        },
+        "docs": [
+          "Like InitializeMultisig, but does not require the Rent sysvar to be provided."
+        ],
+        "kind": "instructionNode",
+        "name": "initializeMultisig2",
+        "optionalAccountStrategy": "programId",
+        "remainingAccounts": [
+          {
+            "display": {
+              "kind": "instructionAccountDisplayNode",
+              "label": "Signers"
+            },
+            "kind": "instructionRemainingAccountsNode",
+            "value": {
+              "kind": "argumentValueNode",
+              "name": "signers"
+            }
+          }
+        ]
+      },
+      {
+        "accounts": [
+          {
+            "docs": [
+              "The mint to initialize."
+            ],
+            "isOptional": false,
+            "isSigner": false,
+            "isWritable": true,
+            "kind": "instructionAccountNode",
+            "name": "mint"
+          }
+        ],
+        "arguments": [
+          {
+            "defaultValue": {
+              "kind": "numberValueNode",
+              "number": 20
+            },
+            "defaultValueStrategy": "omitted",
+            "display": {
+              "kind": "structFieldDisplayNode",
+              "skip": "always"
+            },
+            "docs": [],
+            "kind": "instructionArgumentNode",
+            "name": "discriminator",
+            "type": {
+              "endian": "le",
+              "format": "u8",
+              "kind": "numberTypeNode"
+            }
+          },
+          {
+            "docs": [
+              "Number of base 10 digits to the right of the decimal place."
+            ],
+            "kind": "instructionArgumentNode",
+            "name": "decimals",
+            "type": {
+              "endian": "le",
+              "format": "u8",
+              "kind": "numberTypeNode"
+            }
+          },
+          {
+            "docs": [
+              "The authority/multisignature to mint tokens."
+            ],
+            "kind": "instructionArgumentNode",
+            "name": "mintAuthority",
+            "type": {
+              "kind": "publicKeyTypeNode"
+            }
+          },
+          {
+            "defaultValue": {
+              "kind": "noneValueNode"
+            },
+            "docs": [
+              "The optional freeze authority/multisignature of the mint."
+            ],
+            "kind": "instructionArgumentNode",
+            "name": "freezeAuthority",
+            "type": {
+              "fixed": false,
+              "item": {
+                "kind": "publicKeyTypeNode"
+              },
+              "kind": "optionTypeNode",
+              "prefix": {
+                "endian": "le",
+                "format": "u8",
+                "kind": "numberTypeNode"
+              }
+            }
+          }
+        ],
+        "discriminators": [
+          {
+            "kind": "fieldDiscriminatorNode",
+            "name": "discriminator",
+            "offset": 0
+          }
+        ],
+        "display": {
+          "intent": "Initialize mint",
+          "interpolatedIntent": "Initialize mint ${accounts.mint} with ${data.decimals} decimals",
+          "kind": "instructionDisplayNode"
+        },
+        "docs": [
+          "Like [`InitializeMint`], but does not require the Rent sysvar to be provided."
+        ],
+        "kind": "instructionNode",
+        "name": "initializeMint2",
+        "optionalAccountStrategy": "programId"
+      },
+      {
+        "accounts": [
+          {
+            "docs": [
+              "The mint to calculate for."
+            ],
+            "isOptional": false,
+            "isSigner": false,
+            "isWritable": false,
+            "kind": "instructionAccountNode",
+            "name": "mint"
+          }
+        ],
+        "arguments": [
+          {
+            "defaultValue": {
+              "kind": "numberValueNode",
+              "number": 21
+            },
+            "defaultValueStrategy": "omitted",
+            "display": {
+              "kind": "structFieldDisplayNode",
+              "skip": "always"
+            },
+            "docs": [],
+            "kind": "instructionArgumentNode",
+            "name": "discriminator",
+            "type": {
+              "endian": "le",
+              "format": "u8",
+              "kind": "numberTypeNode"
+            }
+          }
+        ],
+        "discriminators": [
+          {
+            "kind": "fieldDiscriminatorNode",
+            "name": "discriminator",
+            "offset": 0
+          }
+        ],
+        "display": {
+          "intent": "Get account data size",
+          "interpolatedIntent": "Get the account size for mint ${accounts.mint}",
+          "kind": "instructionDisplayNode"
+        },
+        "docs": [
+          "Gets the required size of an account for the given mint as a",
+          "little-endian `u64`.",
+          "",
+          "Return data can be fetched using `sol_get_return_data` and deserializing",
+          "the return data as a little-endian `u64`."
+        ],
+        "kind": "instructionNode",
+        "name": "getAccountDataSize",
+        "optionalAccountStrategy": "programId"
+      },
+      {
+        "accounts": [
+          {
+            "display": {
+              "kind": "instructionAccountDisplayNode",
+              "label": "Token Account"
+            },
+            "docs": [
+              "The account to initialize."
+            ],
+            "isOptional": false,
+            "isSigner": false,
+            "isWritable": true,
+            "kind": "instructionAccountNode",
+            "name": "account"
+          }
+        ],
+        "arguments": [
+          {
+            "defaultValue": {
+              "kind": "numberValueNode",
+              "number": 22
+            },
+            "defaultValueStrategy": "omitted",
+            "display": {
+              "kind": "structFieldDisplayNode",
+              "skip": "always"
+            },
+            "docs": [],
+            "kind": "instructionArgumentNode",
+            "name": "discriminator",
+            "type": {
+              "endian": "le",
+              "format": "u8",
+              "kind": "numberTypeNode"
+            }
+          }
+        ],
+        "discriminators": [
+          {
+            "kind": "fieldDiscriminatorNode",
+            "name": "discriminator",
+            "offset": 0
+          }
+        ],
+        "display": {
+          "intent": "Initialize immutable owner",
+          "interpolatedIntent": "Make the owner of ${accounts.account} immutable",
+          "kind": "instructionDisplayNode"
+        },
+        "docs": [
+          "Initialize the Immutable Owner extension for the given token account",
+          "",
+          "Fails if the account has already been initialized, so must be called",
+          "before `InitializeAccount`.",
+          "",
+          "No-ops in this version of the program, but is included for compatibility",
+          "with the Associated Token Account program."
+        ],
+        "kind": "instructionNode",
+        "name": "initializeImmutableOwner",
+        "optionalAccountStrategy": "programId"
+      },
+      {
+        "accounts": [
+          {
+            "docs": [
+              "The mint to calculate for."
+            ],
+            "isOptional": false,
+            "isSigner": false,
+            "isWritable": false,
+            "kind": "instructionAccountNode",
+            "name": "mint"
+          }
+        ],
+        "arguments": [
+          {
+            "defaultValue": {
+              "kind": "numberValueNode",
+              "number": 23
+            },
+            "defaultValueStrategy": "omitted",
+            "display": {
+              "kind": "structFieldDisplayNode",
+              "skip": "always"
+            },
+            "docs": [],
+            "kind": "instructionArgumentNode",
+            "name": "discriminator",
+            "type": {
+              "endian": "le",
+              "format": "u8",
+              "kind": "numberTypeNode"
+            }
+          },
+          {
+            "docs": [
+              "The amount of tokens to reformat."
+            ],
+            "kind": "instructionArgumentNode",
+            "name": "amount",
+            "type": {
+              "display": {
+                "kind": "amountNumberDisplayNode",
+                "unit": {
+                  "kind": "stringValueNode",
+                  "string": "base units"
+                }
+              },
+              "endian": "le",
+              "format": "u64",
+              "kind": "numberTypeNode"
+            }
+          }
+        ],
+        "discriminators": [
+          {
+            "kind": "fieldDiscriminatorNode",
+            "name": "discriminator",
+            "offset": 0
+          }
+        ],
+        "display": {
+          "intent": "Convert amount to UI amount",
+          "kind": "instructionDisplayNode"
+        },
+        "docs": [
+          "Convert an Amount of tokens to a UiAmount `string`, using the given",
+          "mint. In this version of the program, the mint can only specify the",
+          "number of decimals.",
+          "",
+          "Fails on an invalid mint.",
+          "",
+          "Return data can be fetched using `sol_get_return_data` and deserialized",
+          "with `String::from_utf8`."
+        ],
+        "kind": "instructionNode",
+        "name": "amountToUiAmount",
+        "optionalAccountStrategy": "programId"
+      },
+      {
+        "accounts": [
+          {
+            "docs": [
+              "The mint to calculate for."
+            ],
+            "isOptional": false,
+            "isSigner": false,
+            "isWritable": false,
+            "kind": "instructionAccountNode",
+            "name": "mint"
+          }
+        ],
+        "arguments": [
+          {
+            "defaultValue": {
+              "kind": "numberValueNode",
+              "number": 24
+            },
+            "defaultValueStrategy": "omitted",
+            "display": {
+              "kind": "structFieldDisplayNode",
+              "skip": "always"
+            },
+            "docs": [],
+            "kind": "instructionArgumentNode",
+            "name": "discriminator",
+            "type": {
+              "endian": "le",
+              "format": "u8",
+              "kind": "numberTypeNode"
+            }
+          },
+          {
+            "display": {
+              "kind": "structFieldDisplayNode",
+              "label": "UI Amount"
+            },
+            "docs": [
+              "The ui_amount of tokens to reformat."
+            ],
+            "kind": "instructionArgumentNode",
+            "name": "uiAmount",
+            "type": {
+              "encoding": "utf8",
+              "kind": "stringTypeNode"
+            }
+          }
+        ],
+        "discriminators": [
+          {
+            "kind": "fieldDiscriminatorNode",
+            "name": "discriminator",
+            "offset": 0
+          }
+        ],
+        "display": {
+          "intent": "Convert UI amount to amount",
+          "kind": "instructionDisplayNode"
+        },
+        "docs": [
+          "Convert a UiAmount of tokens to a little-endian `u64` raw Amount, using",
+          "the given mint. In this version of the program, the mint can only",
+          "specify the number of decimals.",
+          "",
+          "Return data can be fetched using `sol_get_return_data` and deserializing",
+          "the return data as a little-endian `u64`."
+        ],
+        "kind": "instructionNode",
+        "name": "uiAmountToAmount",
+        "optionalAccountStrategy": "programId"
+      },
+      {
+        "accounts": [
+          {
+            "display": {
+              "kind": "instructionAccountDisplayNode",
+              "label": "From"
+            },
+            "docs": [
+              "The source account."
+            ],
+            "isOptional": false,
+            "isSigner": false,
+            "isWritable": true,
+            "kind": "instructionAccountNode",
+            "name": "source"
+          },
+          {
+            "display": {
+              "kind": "instructionAccountDisplayNode",
+              "label": "To"
+            },
+            "docs": [
+              "The destination account."
+            ],
+            "isOptional": false,
+            "isSigner": false,
+            "isWritable": true,
+            "kind": "instructionAccountNode",
+            "name": "destination"
+          },
+          {
+            "docs": [
+              "The source account owner or its multisignature account."
+            ],
+            "isOptional": false,
+            "isSigner": "either",
+            "isWritable": false,
+            "kind": "instructionAccountNode",
+            "name": "authority"
+          }
+        ],
+        "arguments": [
+          {
+            "defaultValue": {
+              "kind": "numberValueNode",
+              "number": 38
+            },
+            "defaultValueStrategy": "omitted",
+            "display": {
+              "kind": "structFieldDisplayNode",
+              "skip": "always"
+            },
+            "docs": [],
+            "kind": "instructionArgumentNode",
+            "name": "discriminator",
+            "type": {
+              "endian": "le",
+              "format": "u8",
+              "kind": "numberTypeNode"
+            }
+          }
+        ],
+        "discriminators": [
+          {
+            "kind": "fieldDiscriminatorNode",
+            "name": "discriminator",
+            "offset": 0
+          }
+        ],
+        "display": {
+          "intent": "Withdraw excess SOL",
+          "interpolatedIntent": "Withdraw excess SOL from ${accounts.source} to ${accounts.destination}",
+          "kind": "instructionDisplayNode"
+        },
+        "docs": [
+          "Rescue SOL sent to any TokenProgram-owned account",
+          "by sending them to any other account, leaving behind only",
+          "lamports for rent exemption."
+        ],
+        "kind": "instructionNode",
+        "name": "withdrawExcessLamports",
+        "optionalAccountStrategy": "programId",
+        "remainingAccounts": [
+          {
+            "isOptional": true,
+            "isSigner": true,
+            "kind": "instructionRemainingAccountsNode",
+            "value": {
+              "kind": "argumentValueNode",
+              "name": "multiSigners"
+            }
+          }
+        ]
+      },
+      {
+        "accounts": [
+          {
+            "display": {
+              "kind": "instructionAccountDisplayNode",
+              "label": "From"
+            },
+            "docs": [
+              "The source account."
+            ],
+            "isOptional": false,
+            "isSigner": false,
+            "isWritable": true,
+            "kind": "instructionAccountNode",
+            "name": "source"
+          },
+          {
+            "display": {
+              "kind": "instructionAccountDisplayNode",
+              "label": "To"
+            },
+            "docs": [
+              "The destination account."
+            ],
+            "isOptional": false,
+            "isSigner": false,
+            "isWritable": true,
+            "kind": "instructionAccountNode",
+            "name": "destination"
+          },
+          {
+            "docs": [
+              "The source account owner or its multisignature account."
+            ],
+            "isOptional": false,
+            "isSigner": "either",
+            "isWritable": false,
+            "kind": "instructionAccountNode",
+            "name": "authority"
+          }
+        ],
+        "arguments": [
+          {
+            "defaultValue": {
+              "kind": "numberValueNode",
+              "number": 45
+            },
+            "defaultValueStrategy": "omitted",
+            "display": {
+              "kind": "structFieldDisplayNode",
+              "skip": "always"
+            },
+            "docs": [],
+            "kind": "instructionArgumentNode",
+            "name": "discriminator",
+            "type": {
+              "endian": "le",
+              "format": "u8",
+              "kind": "numberTypeNode"
+            }
+          },
+          {
+            "defaultValue": {
+              "kind": "noneValueNode"
+            },
+            "docs": [
+              "Optional amount of lamports to transfer.",
+              "If not provided, the instruction will unwrap all lamports in excess of rent exemption."
+            ],
+            "kind": "instructionArgumentNode",
+            "name": "amount",
+            "type": {
+              "fixed": false,
+              "item": {
+                "display": {
+                  "decimals": {
+                    "kind": "numberValueNode",
+                    "number": 9
+                  },
+                  "kind": "amountNumberDisplayNode",
+                  "unit": {
+                    "kind": "stringValueNode",
+                    "string": "SOL"
+                  }
+                },
+                "endian": "le",
+                "format": "u64",
+                "kind": "numberTypeNode"
+              },
+              "kind": "optionTypeNode",
+              "prefix": {
+                "endian": "le",
+                "format": "u8",
+                "kind": "numberTypeNode"
+              }
+            }
+          }
+        ],
+        "discriminators": [
+          {
+            "kind": "fieldDiscriminatorNode",
+            "name": "discriminator",
+            "offset": 0
+          }
+        ],
+        "display": {
+          "intent": "Unwrap SOL",
+          "interpolatedIntent": "Unwrap SOL from ${accounts.source} to ${accounts.destination}",
+          "kind": "instructionDisplayNode"
+        },
+        "docs": [
+          "Transfer lamports from a native SOL account to a destination account."
+        ],
+        "kind": "instructionNode",
+        "name": "unwrapLamports",
+        "optionalAccountStrategy": "programId",
+        "remainingAccounts": [
+          {
+            "isOptional": true,
+            "isSigner": true,
+            "kind": "instructionRemainingAccountsNode",
+            "value": {
+              "kind": "argumentValueNode",
+              "name": "multiSigners"
+            }
+          }
+        ]
+      },
+      {
+        "accounts": [],
+        "arguments": [
+          {
+            "defaultValue": {
+              "kind": "numberValueNode",
+              "number": 255
+            },
+            "defaultValueStrategy": "omitted",
+            "display": {
+              "kind": "structFieldDisplayNode",
+              "skip": "always"
+            },
+            "docs": [],
+            "kind": "instructionArgumentNode",
+            "name": "discriminator",
+            "type": {
+              "endian": "le",
+              "format": "u8",
+              "kind": "numberTypeNode"
+            }
+          },
+          {
+            "display": {
+              "kind": "structFieldDisplayNode",
+              "label": "Batched Instructions"
+            },
+            "docs": [
+              "Instruction data for batch instructions."
+            ],
+            "kind": "instructionArgumentNode",
+            "name": "data",
+            "type": {
+              "count": {
+                "kind": "remainderCountNode"
+              },
+              "item": {
+                "kind": "definedTypeLinkNode",
+                "name": "batchDataItem"
+              },
+              "kind": "arrayTypeNode"
+            }
+          }
+        ],
+        "discriminators": [
+          {
+            "kind": "fieldDiscriminatorNode",
+            "name": "discriminator",
+            "offset": 0
+          }
+        ],
+        "display": {
+          "intent": "Batch instructions",
+          "kind": "instructionDisplayNode"
+        },
+        "docs": [
+          "Executes a batch of instructions. The instructions to be executed are",
+          "specified in sequence on the instruction data."
+        ],
+        "kind": "instructionNode",
+        "name": "batch",
+        "optionalAccountStrategy": "programId"
+      }
+    ],
+    "kind": "programNode",
+    "name": "token",
+    "origin": "shank",
+    "pdas": [],
+    "prefix": "",
+    "publicKey": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
+    "version": "3.3.0"
+  },
+  "standard": "codama",
+  "version": "1.0.0"
+}

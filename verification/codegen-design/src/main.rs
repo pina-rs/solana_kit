@@ -5,6 +5,7 @@ mod builders;
 mod client_receipt;
 mod generate;
 mod generated;
+mod generated_style;
 mod generic;
 mod inputs;
 mod proof;
@@ -14,6 +15,10 @@ mod schema;
 mod system;
 mod system_errors;
 mod system_receipt;
+mod token;
+mod token_receipt;
+#[cfg(test)]
+mod token_tests;
 
 #[cfg(test)]
 mod client_oracle;
@@ -32,10 +37,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let arguments: Vec<_> = std::env::args().collect();
 
     match arguments.get(1).map(String::as_str) {
+        Some("generated-style") => generated_style::run(),
         Some("inputs") => inputs::audit(),
         Some("generate") => generate::run(),
         Some("compute-budget") => generic::run(),
         Some("compute-budget-receipt") => generic::receipt(),
+        Some("token") => token::run(),
+        Some("token-normalize") => token::freeze(),
+        Some("token-receipt") => token_receipt::run(),
 
         Some("system") => system::run(),
         Some("system-builders") => builders::run(),

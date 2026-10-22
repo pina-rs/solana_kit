@@ -1031,6 +1031,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "solana_kit_token"
+version = "0.1.0"
+dependencies = [
+ "solana_kit_core",
+]
+
+[[package]]
 name = "solana_kit_wallet"
 version = "0.1.0"
 dependencies = [

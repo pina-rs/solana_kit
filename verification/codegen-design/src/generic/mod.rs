@@ -1,12 +1,28 @@
 //! Bounded second-program generator with explicit input trust and finite types.
+mod account_output;
 #[cfg(test)]
 mod boundary;
+mod constants;
+mod dispatch_output;
 mod emit;
+mod enum_output;
+mod errors;
+mod expressions;
+mod extent;
+mod imports;
+
+mod invocations;
+
 mod layout;
+
+mod normalize;
 #[cfg(test)]
 mod oracle;
 mod parse;
+mod provided;
 mod receipt;
+mod roles;
+mod wire;
 
 #[cfg(test)]
 mod tests;
@@ -26,6 +42,18 @@ pub(crate) struct Program {
     pub(crate) address: Address,
     pub(crate) definitions: Vec<Definition>,
     pub(crate) instructions: Vec<Instruction>,
+    pub(crate) accounts: Vec<Account>,
+    pub(crate) errors: Vec<ProgramError>,
+}
+
+pub(crate) struct Account {
+    pub(crate) definition: Definition,
+    pub(crate) size: usize,
+}
+pub(crate) struct ProgramError {
+    pub(crate) name: String,
+    pub(crate) code: u32,
+    pub(crate) message: String,
 }
 
 pub(crate) struct Definition {
@@ -46,16 +74,58 @@ pub(crate) struct Field {
 pub(crate) enum Wire {
     Number(&'static str),
     Link(String),
+    Address,
+    Bool,
+    Text,
+    Bytes,
+    Option {
+        item: Box<Wire>,
+        prefix: &'static str,
+        fixed: bool,
+    },
+    Array {
+        item: Box<Wire>,
+        count: Option<usize>,
+    },
+    Prefix {
+        item: Box<Wire>,
+        prefix: &'static str,
+    },
+}
+
+pub(crate) enum Signer {
+    Never,
+    Required,
+    Either,
+}
+pub(crate) struct Role {
+    pub(crate) name: String,
+    pub(crate) writable: bool,
+    pub(crate) signer: Signer,
+    pub(crate) optional: bool,
+    pub(crate) link: Option<String>,
+}
+pub(crate) struct Remaining {
+    pub(crate) signer: bool,
+    pub(crate) writable: bool,
 }
 
 pub(crate) struct Instruction {
     pub(crate) name: String,
     pub(crate) tag: u8,
     pub(crate) fields: Vec<Field>,
+    pub(crate) roles: Vec<Role>,
+    pub(crate) remaining: Option<Remaining>,
+    pub(crate) omit_optional: bool,
 }
 
 pub(crate) fn render(root: &Value, policy: &Policy<'_>) -> Result<String, Error> {
-    emit::program(&parse::program(root, policy)?)
+    emit::program(&parse::program(&normalize_input(root)?, policy)?)
+}
+
+/// Exposes the same structural normalization for frozen source-backed input snapshots.
+pub(crate) fn normalize_input(root: &Value) -> Result<Value, Error> {
+    normalize::records(root)
 }
 
 pub(crate) fn replace(root: &Value, policy: &Policy<'_>, output: &Path) -> Result<(), Error> {

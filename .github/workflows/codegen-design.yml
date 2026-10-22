@@ -24,6 +24,12 @@ jobs:
         run: |
           cargo +1.99.1 fmt --manifest-path verification/codegen-design/Cargo.toml --check
           cargo +1.99.1 clippy --locked --manifest-path verification/codegen-design/Cargo.toml --all-targets -- -D warnings
+      - name: Install pinned generated-output style tool
+        shell: bash
+        run: cargo +1.99.1 install monostyle --version 0.3.26 --locked
+      - name: Score every generated corpus source
+        shell: bash
+        run: cargo +1.99.1 run --locked --manifest-path verification/codegen-design/Cargo.toml -- generated-style
       - name: Run private generator regression tests
         shell: bash
         run: cargo +1.99.1 test --locked --manifest-path verification/codegen-design/Cargo.toml

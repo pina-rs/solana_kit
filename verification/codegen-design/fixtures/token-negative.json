@@ -1,0 +1,21 @@
+[
+  ["/program/accounts/0/size",83],
+  ["/program/accounts/0/data/fields/0/type/prefix/format","u8"],
+  ["/program/accounts/0/data/fields/3/type/size/format","u32"],
+  ["/program/accounts/1/data/fields/4/type/name","missing"],
+  ["/program/accounts/2/data/fields/3/type/count/value",18446744073709551615],
+  ["/program/instructions/0/arguments/0/defaultValue/number",256],
+  ["/program/instructions/3/accounts/2/isSigner","unknown"],
+  ["/program/instructions/3/remainingAccounts/0/isSigner","either"],
+  ["/program/instructions/7/provides/0/node/path","missing"],
+  ["/program/instructions/7/accounts/0/accountLink/name","missing"],
+  ["/program/instructions/0/name","TokenError"],
+  ["/program/accounts/0/name","String"],
+  ["/program/definedTypes/0/name","Mapped"],
+  ["/program/errors/0/name","Unknown"],
+  ["/program/errors/0/code",1],
+  ["/program/instructions/27/arguments/1/type/item/fields/1/type/prefix/format","i8"],
+  ["/program/instructions/27/arguments/1/type/item/kind","mapTypeNode"],
+  ["/program/instructions/27/arguments/1/type",{"kind":"arrayTypeNode","item":{"kind":"numberTypeNode","format":"u8","endian":"le"},"count":{"kind":"fixedCountNode","value":4294967296}}],
+  ["/program/accounts/2",{"kind":"accountNode","name":"multisig","docs":[],"size":4294967296,"discriminators":[{"kind":"sizeDiscriminatorNode","size":4294967296}],"data":{"kind":"structTypeNode","fields":[{"kind":"structFieldTypeNode","name":"m","type":{"kind":"numberTypeNode","format":"u8","endian":"le"}},{"kind":"structFieldTypeNode","name":"signers","type":{"kind":"arrayTypeNode","item":{"kind":"numberTypeNode","format":"u8","endian":"le"},"count":{"kind":"fixedCountNode","value":4294967295}}}]}}]
+]

@@ -1,5 +1,8 @@
 //! Validates every selected semantic node before constructing the private IR.
-use super::{Definition, Field, Instruction, Policy, Program, Shape, Wire, layout};
+use super::{
+    Account, Definition, Field, Instruction, Policy, Program, ProgramError, Shape, layout, roles,
+    wire,
+};
 use crate::schema::{Error, identifier};
 use serde_json::Value;
 use std::collections::BTreeSet;
@@ -13,14 +16,18 @@ fn u8_type() -> Value {
 pub(super) fn keys(node: &Value, allowed: &[&str]) -> Result<(), Error> {
     let object = node.as_object().ok_or("expected schema object")?;
 
-    if object.keys().any(|key| !allowed.contains(&key.as_str())) {
-        return Err("unsupported semantic schema property".into());
+    if let Some(key) = object.keys().find(|key| !allowed.contains(&key.as_str())) {
+        return Err(format!(
+            "unsupported semantic schema property {key} in {}",
+            node["kind"]
+        )
+        .into());
     }
 
     Ok(())
 }
 
-fn array<'a>(node: &'a Value, key: &str) -> Result<&'a [Value], Error> {
+pub(super) fn array<'a>(node: &'a Value, key: &str) -> Result<&'a [Value], Error> {
     Ok(node[key].as_array().ok_or("expected schema array")?)
 }
 
@@ -46,34 +53,17 @@ pub(super) fn name(node: &Value) -> Result<String, Error> {
 }
 
 /// Unsupported nested properties can carry wire constraints and must fail closed.
-fn wire(node: &Value) -> Result<Wire, Error> {
-    match node["kind"].as_str() {
-        Some("numberTypeNode") => {
-            keys(node, &["kind", "format", "endian", "display"])?;
-            if node["endian"] != "le" {
-                return Err("only little endian numbers are supported".into());
-            }
-            match node["format"].as_str() {
-                Some("u8") => Ok(Wire::Number("u8")),
-                Some("u32") => Ok(Wire::Number("u32")),
-                Some("u64") => Ok(Wire::Number("u64")),
-                _ => Err("unsupported numeric layout".into()),
-            }
-        }
-        Some("definedTypeLinkNode") => {
-            keys(node, &["kind", "name"])?;
-            Ok(Wire::Link(name(node)?))
-        }
-        _ => Err("unsupported field layout".into()),
-    }
-}
-
 fn fields(nodes: &[Value], kind: &str) -> Result<Vec<Field>, Error> {
     let mut names = BTreeSet::new();
     let mut output = Vec::new();
 
     for node in nodes {
-        keys(node, &["kind", "name", "type", "docs", "display"])?;
+        keys(
+            node,
+            &["kind", "name", "type", "docs", "display", "defaultValue"],
+        )?;
+
+        argument_default(node)?;
 
         if node["kind"] != kind {
             return Err("unexpected field node kind".into());
@@ -87,11 +77,24 @@ fn fields(nodes: &[Value], kind: &str) -> Result<Vec<Field>, Error> {
 
         output.push(Field {
             name,
-            wire: wire(&node["type"])?,
+            wire: wire::parse(&node["type"])?,
         });
     }
 
     Ok(output)
+}
+
+fn argument_default(node: &Value) -> Result<(), Error> {
+    let Some(default) = node.get("defaultValue") else {
+        return Ok(());
+    };
+    keys(default, &["kind"])?;
+
+    if default["kind"] != "noneValueNode" || node["type"]["kind"] != "optionTypeNode" {
+        return Err("unsupported argument default".into());
+    }
+
+    Ok(())
 }
 
 fn shape(node: &Value) -> Result<Shape, Error> {
@@ -121,7 +124,7 @@ fn definition(node: &Value) -> Result<Definition, Error> {
     })
 }
 
-fn instruction(node: &Value) -> Result<Instruction, Error> {
+fn instruction(node: &Value, accounts: &[Account]) -> Result<Instruction, Error> {
     keys(
         node,
         &[
@@ -134,21 +137,29 @@ fn instruction(node: &Value) -> Result<Instruction, Error> {
             "arguments",
             "discriminators",
             "optionalAccountStrategy",
+            "remainingAccounts",
+            "provides",
         ],
     )?;
 
-    if node["kind"] != "instructionNode" || node["optionalAccountStrategy"] != "programId" {
+    if node["kind"] != "instructionNode"
+        || ![serde_json::json!("programId"), serde_json::json!("omitted")]
+            .contains(&node["optionalAccountStrategy"])
+    {
         return Err("unsupported instruction contract".into());
     }
 
-    empty(node, "accounts")?;
     let arguments = array(node, "arguments")?;
     let tag = discriminator(node)?;
+    super::provided::validate(node, accounts)?;
 
     Ok(Instruction {
         name: name(node)?,
         tag,
         fields: fields(&arguments[1..], "instructionArgumentNode")?,
+        roles: roles::parse(array(node, "accounts")?)?,
+        remaining: roles::remaining(node)?,
+        omit_optional: node["optionalAccountStrategy"] == "omitted",
     })
 }
 
@@ -202,17 +213,19 @@ pub(super) fn program(root: &Value, policy: &Policy<'_>) -> Result<Program, Erro
         return Err("untrusted program identity".into());
     }
 
-    for key in ["pdas", "accounts", "errors"] {
-        empty(node, key)?;
-    }
+    empty(node, "pdas")?;
 
     let definitions = array(node, "definedTypes")?
         .iter()
         .map(definition)
         .collect::<Result<_, _>>()?;
+    let accounts = array(node, "accounts")?
+        .iter()
+        .map(account)
+        .collect::<Result<Vec<_>, _>>()?;
     let instructions = array(node, "instructions")?
         .iter()
-        .map(instruction)
+        .map(|node| instruction(node, &accounts))
         .collect::<Result<Vec<_>, _>>()?;
 
     if instructions.is_empty() {
@@ -224,9 +237,57 @@ pub(super) fn program(root: &Value, policy: &Policy<'_>) -> Result<Program, Erro
         address,
         definitions,
         instructions,
+        accounts,
+        errors: array(node, "errors")?
+            .iter()
+            .map(program_error)
+            .collect::<Result<_, _>>()?,
     };
     layout::validate(&output)?;
     Ok(output)
+}
+
+fn account(node: &Value) -> Result<Account, Error> {
+    keys(
+        node,
+        &["kind", "name", "data", "size", "discriminators", "docs"],
+    )?;
+    let size = usize::try_from(
+        node["size"]
+            .as_u64()
+            .ok_or("explicit account size required")?,
+    )?;
+
+    if node["kind"] != "accountNode"
+        || node["discriminators"]
+            != serde_json::json!([{"kind":"sizeDiscriminatorNode","size":size}])
+    {
+        return Err("unsupported account discriminator".into());
+    }
+    Ok(Account {
+        definition: Definition {
+            name: name(node)?,
+            shape: shape(&node["data"])?,
+        },
+        size,
+    })
+}
+
+fn program_error(node: &Value) -> Result<ProgramError, Error> {
+    keys(node, &["kind", "name", "code", "message", "docs"])?;
+
+    if node["kind"] != "errorNode" {
+        return Err("unexpected error kind".into());
+    }
+
+    Ok(ProgramError {
+        name: name(node)?,
+        code: u32::try_from(node["code"].as_u64().ok_or("invalid error code")?)?,
+        message: node["message"]
+            .as_str()
+            .ok_or("missing error message")?
+            .to_owned(),
+    })
 }
 
 /// Only explicit contiguous u8 unit variants have an evidenced layout in this slice.
