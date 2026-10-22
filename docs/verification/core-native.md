@@ -1,5 +1,9 @@
 # Portable core native verification
 
+This records the historical v1 primitive pilot. The current suite is v2 with
+31 cases; see [the codec receipt](core-codecs.md). The native evidence files were
+regenerated for v2, so the older 25-case command outputs below are historical.
+
 Executed on 2026-10-22, macOS ARM64, with Rust/Cargo stable 1.99.1. The
 `feat/portable-core` implementation is based on
 `fafc32fe09e87d5b51b41670a53dbafde34a22ea`.

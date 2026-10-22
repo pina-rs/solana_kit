@@ -30,6 +30,10 @@ fn integer_widths_orders_and_signed_boundaries() {
             let reversed: Vec<_> = bytes.iter().rev().copied().collect();
             assert_eq!(Number::<$kind>::BE.encode(&value, 32).unwrap(), reversed);
             assert_eq!(Number::<$kind>::BE.decode(&reversed, LIMITS), Ok(value));
+            assert_eq!(
+                codec.decode(&bytes[..bytes.len() - 1], LIMITS),
+                Err(Error::Truncated)
+            );
         };
     }
 
@@ -65,6 +69,17 @@ fn floating_point_wire_bits_are_preserved() {
     assert_eq!(
         Number::<f64>::BE.decode(&[127, 240, 0, 0, 0, 0, 0, 0], LIMITS),
         Ok(f64::INFINITY)
+    );
+
+    assert_eq!(Number::<f32>::BE.encode(&1.0, 4).unwrap(), [63, 128, 0, 0]);
+    assert_eq!(Number::<f32>::BE.decode(&[63, 128, 0, 0], LIMITS), Ok(1.0));
+    assert_eq!(
+        Number::<f64>::LE.encode(&1.0, 8).unwrap(),
+        [0, 0, 0, 0, 0, 0, 240, 63]
+    );
+    assert_eq!(
+        Number::<f64>::LE.decode(&[0, 0, 0, 0, 0, 0, 240, 63], LIMITS),
+        Ok(1.0)
     );
 }
 

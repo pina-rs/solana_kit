@@ -5,6 +5,26 @@
 //! operation may have advanced its cursor. Allocating decoders must claim their
 //! output elements against the shared [`Limits::max_items`] budget. Byte and
 //! element limits apply to an entire operation, including nested codecs.
+//!
+//! # Errors and composition
+//!
+//! Reads and writes return [`Error::Truncated`] for insufficient storage and
+//! [`Error::Overflow`] for lengths that cannot be represented or added. Numeric
+//! ranges are enforced by the Rust input type. [`Error::LimitExceeded`] rejects
+//! oversized input or element claims before allocation; allocation failures
+//! return [`Error::AllocationFailed`]. Boolean, option, and constant validation
+//! returns [`Error::InvalidDiscriminator`], and UTF-8 validation returns
+//! [`Error::InvalidUtf8`]. Compact integers reject redundant bytes as
+//! [`Error::NonCanonical`]. Exact frames and full decoding reject unread bytes
+//! as [`Error::TrailingBytes`]. Size mismatches and non-progressing remainder
+//! codecs return [`Error::InvalidValue`].
+//!
+//! The element budget counts each allocated sequence entry and each allocated
+//! byte of bytes/text, including nested allocations. It is not a heap-byte quota
+//! for arbitrary caller-defined types. Custom allocating decoders must call
+//! [`Reader::claim`]. No built-in codec recurses internally; nesting is selected
+//! by the caller's concrete codec types. Remainder codecs belong at the end of
+//! their enclosing frame. UTF-8 preserves both nulls and a leading BOM.
 
 mod cursor;
 mod numbers;

@@ -23,4 +23,10 @@ account-role-merge-matrix: Ok(())
 instruction-ordered-accounts: Ok(())
 instruction-preserved-data: Ok(())
 fixed-value-byte-lengths: Ok(())
-solana-kit-core-v1: 24/25 cases passed
+codec-integer-byte-fixtures: Ok(())
+codec-short-u16-canonical: Ok(())
+codec-string-length-widths: Ok(())
+codec-bounded-sequences: Ok(())
+codec-distinct-options: Ok(())
+codec-exact-framing: Ok(())
+solana-kit-core-v2: 30/31 cases passed
