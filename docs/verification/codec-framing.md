@@ -73,10 +73,14 @@ tests replay each row and independently test nonzero offsets, literal bytes,
 nested frames, shared claims, malformed prefixes, empty/overlapping/wide
 delimiters, zero/exact/oversized widths, and failure cursor state.
 
-Two portable functions in `verification/conformance/src/framing.rs` execute
-through native tests. Their isolated crate compiles them for the three Wasm
-targets. They remain unregistered in the central runtime suite. Wasm compilation
-is not browser, WASI-host, LeptosKit or installed-device execution.
+The two unchanged accepted functions in
+`verification/conformance/src/framing.rs` append through their own fixed-size
+registration array after the preserved first 83 groups. The shared v20 suite
+executes 85 canonical cases and observes 84 passes under sole hash corruption
+across native Rust, Chrome, both Wasmtime previews and actual pinned LeptosKit.
+The [framing runtime receipt](codec-framing-runtime.md) records the executed
+artifacts, ordinary consumers, negative controls and limits. Installed-device
+execution remains separate.
 
 Dart runtime metadata classes have no parallel Rust hierarchy. Explicit widths
 are caller contracts. Prefix adapters validate their numeric domain. Inner writes
