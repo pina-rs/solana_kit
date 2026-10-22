@@ -41,11 +41,22 @@ pub(crate) fn call<M: Method>(
     params: &str,
     result: &str,
 ) -> Result<M::Response, Error> {
-    framed(
+    call_with_limits(method, name, params, result, Limits::default())
+}
+
+pub(crate) fn call_with_limits<M: Method>(
+    method: M,
+    name: &str,
+    params: &str,
+    result: &str,
+    limits: Limits,
+) -> Result<M::Response, Error> {
+    framed_with_limits(
         method,
         name,
         params,
         &format!(r#"{{"jsonrpc":"2.0","id":1,"result":{result}}}"#),
+        limits,
     )
 }
 
@@ -55,12 +66,22 @@ pub(crate) fn framed<M: Method>(
     params: &str,
     response: &str,
 ) -> Result<M::Response, Error> {
+    framed_with_limits(method, name, params, response, Limits::default())
+}
+
+fn framed_with_limits<M: Method>(
+    method: M,
+    name: &str,
+    params: &str,
+    response: &str,
+    limits: Limits,
+) -> Result<M::Response, Error> {
     let client = Client::new(
         Fixture {
             request: format!(r#"{{"jsonrpc":"2.0","id":1,"method":"{name}","params":{params}}}"#),
             response: response.into(),
         },
-        Limits::default(),
+        limits,
     );
     let mut future = pin!(client.call(method));
 

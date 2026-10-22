@@ -66,4 +66,8 @@ rpc-economics-malformed-config: Ok(())
 rpc-account-representations: Ok(())
 rpc-token-exact-quantities: Ok(())
 rpc-account-token-malformed: Ok(())
-solana-kit-core-v14: 67/68 cases passed
+rpc-history-exact-queries: Ok(())
+rpc-submission-status-errors: Ok(())
+rpc-full-transaction-results: Ok(())
+rpc-address-simulation: Ok(())
+solana-kit-core-v15: 71/72 cases passed
