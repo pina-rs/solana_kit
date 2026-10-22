@@ -1,6 +1,7 @@
 [package]
 name = "solana_kit_leptoskit_verification"
 version = "0.1.0"
+default-run = "solana_kit_leptoskit_verification"
 edition = "2024"
 publish = false
 

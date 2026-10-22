@@ -9,13 +9,22 @@ The initial typed operations are getBalance, getLatestBlockhash and full-base64
 getAccountInfo, together with all nineteen node metadata operations in `methods::node`
 and all eight economic operations in `methods::economics`. The `methods::accounts`
 and `methods::tokens` modules add nine operations and richer accountInfo.
-These 39 operations leave 15 of the 54 catalog methods for later slices. Account
+The `methods::history`, `methods::submission`, `methods::transaction_results`,
+`methods::address_history` and `methods::simulation` modules add the final fifteen
+operations. All 54 catalog methods have typed implementations. Account
 reads preserve encoding, slices, allocation, metadata and requested null identities.
 Compressed bytes remain encoded; parsed program payloads retain exact JSON.
 Raw token amounts parse decimal strings directly to u64, independently of display
 values. The original full-base64 AccountInfo contract remains available.
 
-Applications implement Transport or select a future platform adapter. The adapter
+Address history defaults to signature pages capped at 1000 entries. Explicit full
+pages retain their 100-entry cap and strict version negotiation. Transaction and
+block reads preserve historical missing-metadata version omission. Submission
+accepts opaque bytes without a global legacy packet cap, automatic retry or
+confirmation. Full result graphs keep exact quantities and preserve opaque JSON
+only for program-defined data and unknown future transaction failures.
+
+Applications implement Transport or select an explicit platform adapter. The adapter
 owns its endpoint, caller authentication, response-header budget, deadline and
 cancellation. Enforce Request's body limit while receiving; the client checks it
 again before parsing. The client never retries, creates a runtime, reads ambient
@@ -53,7 +62,9 @@ before wrapping; a fresh client needs its own adapter correlation namespace.
 
 The portable protocol executes with memory transports in native Rust, a real
 browser, WASI Preview 1 and 2, and the actual pinned LeptosKit interpreted host.
-Those fixtures include every node and economics method with typed results and literal requests.
+Those fixtures include all 54 catalog methods with typed results and literal requests.
+The [complete catalog runtime receipt](../../docs/verification/rpc-history.md)
+records the 72-case suite and bounded declaration accounting.
 The [economics runtime receipt](../../docs/verification/rpc-economics.md) retains
 the exact 42-ID accounting and the three partial or pending declarations.
 They do not prove production network adapters or installed browser/mobile journeys.

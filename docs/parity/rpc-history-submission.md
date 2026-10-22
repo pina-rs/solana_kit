@@ -1,5 +1,17 @@
 # History and submission RPC slice
 
+All 15 history/submission operations now have typed public implementations.
+The exact [ledger](rpc-history-submission.tsv) retains 146 canonical IDs,
+130 implemented and 16 pending. The pending contracts are 14 Dart hashCode/toString
+conveniences and two response equality contracts. Method coverage does not
+complete those declaration contracts or Phase 4. The
+[address/simulation receipt](rpc-address-simulation.md) records the final two
+schemas, including signatures as the address-history default. The
+[runtime receipt](../verification/rpc-history.md) records actual execution of
+all 54 catalog methods and the unchanged earlier 68 portable cases.
+
+## Historical 13-operation native receipt
+
 This is exclusively an off-chain application SDK. Use Pina or official Solana
 program libraries for on-chain programs. This slice implements 13 of the 15
 history/submission catalog operations; it does not complete Phase 4.
@@ -42,8 +54,8 @@ err fields must agree on success versus failure. Error payload equality is not
 claimed; both original typed values are retained. Node transaction failure remains
 a successful RPC result, distinct from RPC/HTTP/transport failure.
 
-The scoped [ledger](rpc-history-submission.tsv) accounts for all 146 canonical
-Dart IDs exactly once: 67 implemented and 79 pending. Pending includes every ID
+The scoped ledger at that checkpoint accounted for all 146 canonical
+Dart IDs exactly once: 67 implemented and 79 pending. Pending then included every ID
 for the two large operations below and Dart hashCode/toString conveniences.
 The canonical global inventory and source catalog remain unchanged.
 

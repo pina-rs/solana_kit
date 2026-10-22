@@ -70,7 +70,30 @@ Two deliberate differences remain explicit:
   preserves every valid UTF-8 byte, including BOM and null characters. The
   original-source divergence is an executed negative control, not a parity claim.
 
-## Executed evidence
+## Portable runtime integration
+
+Signed executable source `1fd7a56f94b0589517c7586c012b23fedff0756b` integrates the
+exact independently accepted offchain source and appends its three unchanged
+portable functions after the corrected history suite's 72 groups. Suite
+`solana-kit-core-v16` passes 75/75 groups natively, in actual Chrome, in Wasmtime
+50.0.0 Preview 1 and 2, and in the actual pinned LeptosKit WasmHost. Each host
+observes the sole hash corruption at 74/75. The first 72 case IDs, order and report
+bytes remain exact. See the [runtime receipt](../verification/runtimes.md).
+
+The unchanged independent Rust 1.89 consumer passes with default features and
+crypto after only a dependency manifest path adaptation. It retains every source,
+lock and original Dart oracle byte, and matches all four message, unsigned
+envelope, signed envelope and deterministic signature fixtures. All 83 IDs remain
+partial and none complete. Both documented V0 differences above remain explicit.
+Offchain production algorithms, golden fixtures, dependencies and source pins
+remain unchanged. The default core normal/build closure remains core plus bs58.
+
+The full host command also passes graph/import controls and all five packaged-core
+consumer groups. This proves synchronous offchain-client behavior. It establishes
+no complete phase, validator, installed app, device or registry release readiness.
+No publish dry run or release record was created during this integration.
+
+## Historical Unit101 evidence
 
 The original pinned Dart package's complete suite executed locally with Dart
 3.13.3 and passed 1122 tests. The existing local package configuration needed

@@ -1,5 +1,9 @@
 # Typed RPC foundation receipt
 
+This historical foundation receipt covers the first three operations. The
+[complete catalog runtime receipt](../verification/rpc-history.md) records all
+54 implemented methods and the current 72-case executed suite.
+
 This slice implements public typed getBalance and getLatestBlockhash reads and
 getAccountInfo with complete canonical-base64 account data. It is exclusively
 for off-chain clients; use Pina or official Solana libraries on chain.
@@ -36,7 +40,7 @@ hash control fails exactly one case on each host. These use memory transports;
 HTTP networking, browser fetch, host networking and device journeys remain open.
 See the [runtime receipt](../verification/runtimes.md) for exact source and hashes.
 
-Remaining 51 typed catalog operations:
+Historical 51 pending operations at the foundation checkpoint:
 
 - getAgGenesisCert
 - getBlock
