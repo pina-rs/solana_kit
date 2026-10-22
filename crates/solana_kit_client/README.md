@@ -7,11 +7,13 @@ randomness dependency. Native and local futures share one Client protocol owner.
 
 The initial typed operations are getBalance, getLatestBlockhash and full-base64
 getAccountInfo, together with all nineteen node metadata operations in `methods::node`
-and all eight economic operations in `methods::economics`.
-These 30 operations leave 24 of the 54 catalog methods for later slices. Account reads
-validate base64 and allocation size, preserving metadata and the requested
-address in core present/missing types. Other account encodings and data slices
-remain pending. Exact u64 values never pass through floating-point numbers.
+and all eight economic operations in `methods::economics`. The `methods::accounts`
+and `methods::tokens` modules add nine operations and richer accountInfo.
+These 39 operations leave 15 of the 54 catalog methods for later slices. Account
+reads preserve encoding, slices, allocation, metadata and requested null identities.
+Compressed bytes remain encoded; parsed program payloads retain exact JSON.
+Raw token amounts parse decimal strings directly to u64, independently of display
+values. The original full-base64 AccountInfo contract remains available.
 
 Applications implement Transport or select a future platform adapter. The adapter
 owns its endpoint, caller authentication, response-header budget, deadline and

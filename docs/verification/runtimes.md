@@ -36,7 +36,21 @@ dispatches a `Press` event and requires the corrupted report and second commit.
 The guest's small unsafe FFI wrappers implement that pinned synchronous copy ABI;
 core and the host harness forbid unsafe code.
 
-## Current v13 economics RPC receipt
+## Current v14 account and token RPC receipt
+
+The `solana-kit-core-v14` suite preserves the first 65 case lines and appends
+three account/token groups. Clean signed source
+`f7f1107a8770bba12544aac10586ebefcdd33438` executes all nine new methods and richer
+accountInfo through the public Client and existing memory fixture. The public
+catalog now implements 39 of 54 methods, leaving 15 pending.
+
+The [account/token receipt](rpc-account-token.md) records actual host results,
+full-width values, literal requests, malformed controls and representation limits.
+The exact 100-ID account/token ledger retains 88 typed, four Debug partial,
+four equality pending and four Hash pending entries. These are protocol
+executions, with no new networking, device, validator, registry or complete-phase claim.
+
+## Historical v13 economics RPC receipt
 
 The `solana-kit-core-v13` suite preserves the first 62 case lines and appends
 three economics groups. Clean signed source

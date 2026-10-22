@@ -15,8 +15,9 @@ errors, optional exact fixed points, and deterministic cryptography. The generat
 parsers for all fourteen pinned System instructions, nonce account snapshots,
 and numeric custom errors. `solana_kit_client` adds typed balance, latest-blockhash and full-base64
 account reads, all nineteen node metadata operations and all eight economics
-operations through one executor-neutral protocol owner. These implement 30 of
-the 54 catalog methods. The shared 65-case suite has
+operations, plus nine account and token operations and richer accountInfo,
+through one executor-neutral protocol owner. These implement 39 of
+the 54 catalog methods. The shared 68-case suite has
 [runtime execution evidence](docs/verification/runtimes.md).
 The core component is unreleased; the published `solana_kit` 0.0.0 umbrella remains
 a dependency-free name reservation with no SDK APIs. This bounded codec slice

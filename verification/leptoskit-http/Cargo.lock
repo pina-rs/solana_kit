@@ -526,6 +526,7 @@ name = "solana_kit_client"
 version = "0.1.0"
 dependencies = [
  "base64",
+ "bs58",
  "serde",
  "serde_json",
  "solana_kit_core",
