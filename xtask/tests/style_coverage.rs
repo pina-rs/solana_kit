@@ -31,6 +31,7 @@ impl Repository {
         repository.write("ignored.rs", b"pub fn tracked_ignored() {}\n");
         repository.git(&["add", "."]);
         repository.git(&["add", "--force", "ignored.rs"]);
+        repository.add_global_ignore();
         repository
     }
 
@@ -45,6 +46,19 @@ impl Repository {
 
     fn write(&self, path: &str, bytes: &[u8]) {
         fs::write(self.0.join(path), bytes).expect("write fixture");
+    }
+
+    /// A repository-local setting simulates a global exclude without editing user configuration.
+    fn add_global_ignore(&self) {
+        self.write("global-excludes", b"global.rs\n");
+        let excludes = self.0.join("global-excludes");
+        self.git(&[
+            "config",
+            "core.excludesFile",
+            excludes.to_str().expect("path"),
+        ]);
+        self.write("global.rs", b"pub fn tracked_global() {}\n");
+        self.git(&["add", "--force", "global.rs"]);
     }
 
     /// Uses a child process because style selects its repository working directory.
@@ -114,7 +128,12 @@ fn authored_files_cannot_escape_the_actual_analyzer() {
         .map(|file| file["path"].as_str().expect("path"))
         .collect();
 
-    for path in ["src/bin/catalog.rs", "src/generated.rs", "ignored.rs"] {
+    for path in [
+        "src/bin/catalog.rs",
+        "src/generated.rs",
+        "ignored.rs",
+        "global.rs",
+    ] {
         assert!(paths.contains(&path), "missing {path}");
     }
 
