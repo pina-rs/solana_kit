@@ -6,6 +6,16 @@ mod encode;
 pub use decode::decode;
 pub use encode::encode;
 
+pub const MAX_PACKET: usize = 4096;
+const MAX_SIGNERS: u8 = 12;
+const MAX_ADDRESSES: usize = 64;
+const MAX_INSTRUCTIONS: usize = 64;
+const HEAP_BIT: u32 = 16;
+const MIN_HEAP: u32 = 32768;
+const MAX_HEAP: u32 = 262144;
+const HEAP_ALIGNMENT: u32 = 1024;
+const KNOWN_MASK: u32 = 31;
+
 /// Specified v1 message fields, with no lookup-table representation.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Message {
@@ -44,11 +54,11 @@ impl Message {
         let minimum = usize::from(signers) + usize::from(readonly_unsigned);
         let unique: std::collections::BTreeSet<_> = self.addresses.iter().collect();
 
-        if signers > 12 || readonly_signers >= signers || self.addresses.len() < minimum {
+        if signers > MAX_SIGNERS || readonly_signers >= signers || self.addresses.len() < minimum {
             return Err(Invalid);
         }
 
-        if self.addresses.len() > 64 || self.instructions.len() > 64 {
+        if self.addresses.len() > MAX_ADDRESSES || self.instructions.len() > MAX_INSTRUCTIONS {
             return Err(Invalid);
         }
 
@@ -66,7 +76,7 @@ impl Message {
     }
 
     fn validate_heap(&self) -> Result<(), Invalid> {
-        if self.mask & 16 == 0 {
+        if self.mask & HEAP_BIT == 0 {
             return Ok(());
         }
 
@@ -75,7 +85,7 @@ impl Message {
             .map_err(|_| Invalid)?;
         let heap = u32::from_le_bytes(bytes);
 
-        if !(32768..=262144).contains(&heap) || !heap.is_multiple_of(1024) {
+        if !(MIN_HEAP..=MAX_HEAP).contains(&heap) || !heap.is_multiple_of(HEAP_ALIGNMENT) {
             return Err(Invalid);
         }
 
@@ -87,7 +97,9 @@ impl Message {
             return Err(Invalid);
         }
 
-        if instruction.accounts.len() > 255 || instruction.data.len() > 65535 {
+        if instruction.accounts.len() > usize::from(u8::MAX)
+            || instruction.data.len() > usize::from(u16::MAX)
+        {
             return Err(Invalid);
         }
 
@@ -105,7 +117,7 @@ impl Message {
 
 /// Each supported mask bit represents four bytes; the priority pair is atomic.
 pub fn config_size(mask: u32) -> Result<usize, Invalid> {
-    if mask & !31 != 0 || matches!(mask & 3, 1 | 2) {
+    if mask & !KNOWN_MASK != 0 || matches!(mask & 3, 1 | 2) {
         return Err(Invalid);
     }
 

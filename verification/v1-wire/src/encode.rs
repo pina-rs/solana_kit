@@ -1,4 +1,4 @@
-use crate::{Invalid, Message};
+use crate::{Invalid, MAX_PACKET, Message};
 
 /// Encodes the complete signed envelope, enforcing the inclusive 4096-byte cap.
 pub fn encode(message: &Message, signatures: &[[u8; 64]]) -> Result<Vec<u8>, Invalid> {
@@ -40,7 +40,7 @@ pub fn encode(message: &Message, signatures: &[[u8; 64]]) -> Result<Vec<u8>, Inv
         bytes.extend(signature);
     }
 
-    if bytes.len() > 4096 {
+    if bytes.len() > MAX_PACKET {
         return Err(Invalid);
     }
 

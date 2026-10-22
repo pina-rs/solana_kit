@@ -6,7 +6,9 @@ use std::process::Command;
 use base64::{Engine, engine::general_purpose::STANDARD};
 use serde_json::{Value, json};
 use solana_kit_core::{Address, crypto::Keypair};
-use solana_kit_v1_wire_proof::{Instruction, Message, encode};
+use solana_kit_v1_wire_proof::{Instruction, MAX_PACKET, Message, encode};
+
+const STATUS_POLL_MS: u64 = 200;
 
 fn rpc(method: &str, params: Value) -> Result<Value, Box<dyn Error>> {
     let body = json!({"jsonrpc":"2.0", "id":1, "method":method, "params":params});
@@ -57,6 +59,7 @@ fn control_wire(payer: &[u8; 32], hash: &[u8; 32], key: &Keypair) -> Vec<u8> {
     message.extend([1, 2, 2, 0, 1, 12]);
     message.extend(2u32.to_le_bytes());
     message.extend(10_000_000u64.to_le_bytes());
+
     let mut wire = vec![1];
     wire.extend(key.sign(&message).as_bytes());
     wire.extend(message);
@@ -82,10 +85,11 @@ fn base_message(payer: [u8; 32], hash: [u8; 32]) -> Message {
     }
 }
 
+/// Polls local fixture submissions with matching commitment to avoid hash ambiguity.
 fn send_and_confirm(name: &str, wire: &[u8]) -> Result<(), Box<dyn Error>> {
     let response = rpc(
         "sendTransaction",
-        json!([STANDARD.encode(wire), {"encoding":"base64"}]),
+        json!([STANDARD.encode(wire), {"encoding":"base64", "preflightCommitment":"confirmed"}]),
     )?;
     println!("{name} send={response}");
     let signature = response["result"].as_str().ok_or("submission rejected")?;
@@ -106,15 +110,17 @@ fn send_and_confirm(name: &str, wire: &[u8]) -> Result<(), Box<dyn Error>> {
                 json!([signature, {"encoding":"json", "commitment":"confirmed", "maxSupportedTransactionVersion":1}]),
             )?;
             println!("{name} fetched={fetched}");
+
             return Ok(());
         }
 
-        std::thread::sleep(std::time::Duration::from_millis(200));
+        std::thread::sleep(std::time::Duration::from_millis(STATUS_POLL_MS));
     }
 
     Err("confirmation deadline".into())
 }
 
+/// Requires an executed legacy control before interpreting v1 feature-gate results.
 fn main() -> Result<(), Box<dyn Error>> {
     let key = Keypair::from_seed(&std::array::from_fn(|index| {
         u8::try_from(index + 1).unwrap()
@@ -146,6 +152,16 @@ fn main() -> Result<(), Box<dyn Error>> {
     let small = signature_wire(&message, &key)?;
     let small_result = simulate("v1-small", &small)?;
 
+    if std::env::args().nth(1).as_deref() == Some("--expect-disabled") {
+        let error = small_result["result"]["value"]["err"].as_str();
+
+        if error != Some("UnsupportedVersion") {
+            return Err("disabled feature did not report UnsupportedVersion".into());
+        }
+
+        return Ok(());
+    }
+
     if small_result.get("error").is_some() || !small_result["result"]["value"]["err"].is_null() {
         return Err("v1 support probe rejected; see exact response".into());
     }
@@ -172,10 +188,10 @@ fn large_probe(mut message: Message, key: &Keypair) -> Result<(), Box<dyn Error>
     }
 
     send_and_confirm("v1-large-noop", &wire)?;
-    let increase = 4096 - wire.len();
+    let increase = MAX_PACKET - wire.len();
     message.instructions[1].data.extend(vec![7; increase]);
     let exact = signature_wire(&message, key)?;
-    assert_eq!(exact.len(), 4096);
+    assert_eq!(exact.len(), MAX_PACKET);
     let exact_result = simulate("v1-exact-cap", &exact)?;
 
     if exact_result.get("error").is_some() || !exact_result["result"]["value"]["err"].is_null() {

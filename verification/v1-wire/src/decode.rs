@@ -1,4 +1,4 @@
-use crate::{Instruction, Invalid, Message, config_size};
+use crate::{Instruction, Invalid, MAX_PACKET, Message, config_size};
 
 struct Cursor<'a>(&'a [u8]);
 
@@ -16,7 +16,7 @@ impl<'a> Cursor<'a> {
 
 /// Decodes exact complete envelopes; no compact-u16 aliases or trailing padding.
 pub fn decode(bytes: &[u8]) -> Result<(Message, Vec<[u8; 64]>), Invalid> {
-    if bytes.len() > 4096 {
+    if bytes.len() > MAX_PACKET {
         return Err(Invalid);
     }
 
@@ -37,24 +37,7 @@ pub fn decode(bytes: &[u8]) -> Result<(Message, Vec<[u8; 64]>), Invalid> {
     }
 
     let config = cursor.take(config_size(mask)?)?.to_vec();
-    let mut headers = Vec::new();
-
-    for _ in 0..instruction_count {
-        headers.push(cursor.array::<4>()?);
-    }
-
-    let mut instructions = Vec::new();
-
-    for [program, accounts, low, high] in headers {
-        instructions.push(Instruction {
-            program,
-            accounts: cursor.take(usize::from(accounts))?.to_vec(),
-            data: cursor
-                .take(usize::from(u16::from_le_bytes([low, high])))?
-                .to_vec(),
-        });
-    }
-
+    let instructions = instructions(&mut cursor, instruction_count)?;
     let mut signatures = Vec::new();
 
     for _ in 0..header[0] {
@@ -76,4 +59,26 @@ pub fn decode(bytes: &[u8]) -> Result<(Message, Vec<[u8; 64]>), Invalid> {
     }
 
     Ok((message, signatures))
+}
+
+fn instructions(cursor: &mut Cursor<'_>, count: u8) -> Result<Vec<Instruction>, Invalid> {
+    let mut headers = Vec::new();
+
+    for _ in 0..count {
+        headers.push(cursor.array::<4>()?);
+    }
+
+    let mut instructions = Vec::new();
+
+    for [program, accounts, low, high] in headers {
+        instructions.push(Instruction {
+            program,
+            accounts: cursor.take(usize::from(accounts))?.to_vec(),
+            data: cursor
+                .take(usize::from(u16::from_le_bytes([low, high])))?
+                .to_vec(),
+        });
+    }
+
+    Ok(instructions)
 }
