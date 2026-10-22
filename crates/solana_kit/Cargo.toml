@@ -1,0 +1,11 @@
+[package]
+name = "solana_kit"
+version = "0.0.0"
+authors.workspace = true
+edition.workspace = true
+include = ["src/**", "README.md", "LICENSE"]
+license.workspace = true
+readme = "README.md"
+repository = "https://github.com/pina-rs/solana_kit/tree/main/crates/solana_kit"
+rust-version.workspace = true
+description = "Reserved for the portable Rust Solana Kit ecosystem; no SDK APIs are available yet"
