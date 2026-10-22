@@ -71,7 +71,7 @@ fn field(argument: &Value) -> Result<(String, String), Error> {
     Ok((format!("    pub {name}: {ty},\n"), encoding))
 }
 
-/// Encodes a fixed discriminator only after verifying its width and location.
+/// Encodes a numeric discriminator only after verifying its node kinds and layout.
 fn discriminator(node: &Value) -> Result<u32, Error> {
     let first = node
         .pointer("/arguments/0")
@@ -80,8 +80,10 @@ fn discriminator(node: &Value) -> Result<u32, Error> {
         serde_json::json!([{"kind":"fieldDiscriminatorNode","name":"discriminator","offset":0}]);
 
     if first["name"] != "discriminator"
+        || first["type"]["kind"] != "numberTypeNode"
         || first["type"]["format"] != "u32"
         || first["type"]["endian"] != "le"
+        || first["defaultValue"]["kind"] != "numberValueNode"
         || node["discriminators"] != expected
     {
         return Err("unsupported discriminator contract".into());

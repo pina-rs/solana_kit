@@ -97,7 +97,10 @@ they are separate from the emitter and are not computed by the implementation.
 They are hand-audited wire oracles, not an executed Dart or validator oracle.
 
 The generator resolves supported types and validates all selected fields before
-formatting in memory. Only then does it create a sibling pending file, flush it,
+formatting in memory. Selected discriminators require `numberTypeNode` with u32
+little-endian layout and `numberValueNode` with a u32-range literal, at offset zero.
+Missing or different node kinds are rejected even when numeric fields remain.
+Only then does it create a sibling pending file, flush it,
 and rename it over the destination. Invalid schemas preserve existing output.
 This single-file replacement is atomic on the tested local filesystem; it is not
 a multi-file crash-durability protocol. A failed write can leave a pending file,
@@ -140,8 +143,11 @@ before client generation. No duplicate public API was added.
 | Output lifecycle                          | Render and format in staging; preserve prior tree on any validation/formatter failure; compare independent deterministic output; test interrupted writes |
 
 Current controls execute traversal rejection, duplicate instruction/field names,
-unsupported selected types, invalid discriminator values, deterministic source,
-and unchanged output on invalid input. The rest of this table is required future
+unsupported selected types, invalid discriminator values, missing/wrong selected
+discriminator kinds, deterministic source, and unchanged output on invalid input.
+Kind controls cover both selected instructions and preserve absent or existing
+pending files; valid generation also rejects an existing pending sentinel.
+The rest of this table is required future
 work. The Dart renderer at `packages/codama-renderers-dart/` has
 `test/security.test.ts`, `test/render-collisions.test.ts`,
 `test/type-manifest-security.test.ts`, `test/instruction-signer-security.test.ts`
