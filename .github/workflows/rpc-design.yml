@@ -21,6 +21,7 @@ jobs:
       - name: Install pinned Rust
         run: rustup toolchain install 1.99.1 --profile minimal --component rustfmt --component clippy
       - name: Verify actual generic futures, JSON boundaries and loopback cancellation
+        shell: bash
         env:
           RUSTDOCFLAGS: -D warnings
         run: |
