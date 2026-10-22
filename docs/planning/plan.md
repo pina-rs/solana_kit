@@ -34,11 +34,11 @@ Use small PRs that each end with an independently observable result. Merge only
 after their checks and review pass. Record deviations and evidence in the parity
 ledger and decision trail. Keep prospective tasks here, rather than in changesets.
 
-The initial, uncalibrated estimate is 20–35 implementation/review units across the
-phases below. This is a planning estimate, not an audited workload count or a time
-or delivery commitment. Symbol-level
-inventory and the host transport experiments will refine it. Generated clients
-reduce repeated work; wallet and mobile host integration are the largest unknowns.
+The initial estimate of 20–35 implementation/review units predates the declaration
+inventory and is superseded. The [pinned inventory](../parity/capabilities.tsv) records 17,948 declarations
+across 71 top-level packages. This measures scope, not completed capabilities or
+remaining effort. Generated clients reduce repeated work; wallet and mobile host
+integration still need actual application journeys.
 
 Verification rigor is high because malformed encodings, signing mistakes, integer
 loss, or incorrect expiry can produce valid-looking but incorrect transactions.
@@ -78,19 +78,29 @@ not broad capability completion:
    assuming browser globals or OS APIs.
 5. Compile a downstream crate without repository-specific rustflags or patches.
 
-The expanded 51-case portable-core/program/protocol suite now executes natively, in real Chrome,
-in Wasmtime 50.0.0 Preview 1/2 commands, and in the pinned actual LeptosKit
-headless WasmHost. Each host observes the corrupt-hash negative control.
-`cargo xtask all` reproduces those runs, binary import/dependency gates, and a
-clean external consumer. See the [runtime receipt](../verification/runtimes.md)
-for exact versions, artifact hashes, commands and limits. Async contracts,
-System Program reuse, host capabilities and device journeys remain open.
+All five narrow experiments have executed evidence. The
+[Phase 1 evidence matrix](../verification/phase-one.md) links their source,
+commands, pins, negative controls, and limits. `cargo xtask all` reproduces the
+shared portable suite, import/dependency gates, and a clean packaged-core consumer.
+The current accepted suite passes all 59 cases and rejects only the corrupt-hash
+case in the 58/59 negative run on native Rust, Chrome, both WASI previews, and the
+actual pinned LeptosKit `WasmHost`. The
+[numeric receipt](../parity/numeric-string-codecs.md) records this expanded suite.
+Separate private workspaces prove generic native/local async behavior, the
+official CreateAccount constructor, actual LeptosKit async capabilities, and named
+WASI host capabilities. These experiments do not establish installed desktop or
+mobile application support. Separate accepted
+[native HTTP](../verification/native-http.md) and
+[Window Fetch HTTP](../verification/browser-http-integration.md) adapters have
+actual network evidence. WASI and LeptosKit network adapters remain outside this
+accepted snapshot while correction, independent review, and integration continue.
 
-Start WASI core checks with Preview 1 and Preview 2; implement the named Preview 2
-HTTP host contract first. Pin the host and WASI interface versions. Execute its
-clock, entropy, cancellation, and outbound HTTP operations. Choose and prove a
-TLS-capable WebSocket backend or explicit host bridge before advertising WASI
-subscriptions. An HTTP-only component host does not imply socket availability.
+WASI core fixtures execute in Preview 1 and Preview 2. The separate Preview 2
+HTTP experiment executes clock, entropy, cancellation, and outbound HTTP through
+Wasmtime 50.0.0 with WASI 0.2.12. A second socket experiment executes validating
+TLS and WebSocket exchange through that host. Neither private experiment provides
+a public WASI adapter, destination policy, async socket lifecycle, or subscriptions.
+An HTTP-only component host does not imply socket availability.
 
 Acceptance: repeatable execution logs, import/dependency allowlists, and a
 release preview for a real initial package. Record compile-only cells honestly.
@@ -135,7 +145,7 @@ construction requirements from validation of externally received transactions.
 The immutable legacy/v0/v1 slice compiles owned instructions and lookup snapshots,
 preserves exact signed bytes, validates received protocol wire independently of
 local compiler restrictions, and signs/verifies through optional deterministic
-crypto. Seven transaction cases execute in the shared 51-case suite, including
+crypto. Seven transaction cases execute in the shared suite, now 59 cases, including
 version-one message-first envelopes, inline configuration, exact 4096/4097-byte
 boundaries and signature tampering. Legacy/v0 retain their 1232-byte packet cap. The
 [transaction ledger](../parity/message-transactions.md) retains all 746 source
@@ -251,11 +261,12 @@ Keep unsupported, compiled, executed, and device-verified states distinct. Do no
 infer a runtime from `target_arch = "wasm32"`; browser and LeptosKit guests share
 the same Rust target. See [the architecture](../architecture/design.md).
 
-The public RPC foundation implements typed balance, latest-blockhash and
-full-base64 account reads through one executor-neutral protocol owner. It retains
-all 54 source-audited catalog entries and 398 canonical declaration IDs; 51 typed
-operations and alternate account encodings remain pending. Three public protocol
-groups now execute with memory transports in native Rust, Chrome, WASI Preview1/2
-and the actual pinned LeptosKit host. This does not establish network adapter or
-device support. See the
-[RPC foundation receipt](../parity/rpc-foundation.md). Phase 4 remains incomplete.
+The public client implements 22 of the 54 source-audited catalog operations.
+The original [RPC foundation](../parity/rpc-foundation.md) supplies three operations;
+the [node catalog receipt](../verification/rpc-node.md) adds 19. The catalog retains
+398 canonical declaration IDs. Operation coverage does not complete those IDs or
+the remaining 32 operations. Foundation and node protocol groups execute with
+memory transports across native Rust, Chrome, both WASI previews, and the actual
+pinned LeptosKit host. Accepted native and Window Fetch HTTP adapters add separate
+network evidence. Neither result establishes installed device support or full
+Phase 4 completion.
