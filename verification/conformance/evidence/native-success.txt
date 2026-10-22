@@ -81,4 +81,6 @@ subscriptions-lifecycle: Ok(())
 subscriptions-malformed-bounds: Ok(())
 memo-utf8-signers: Ok(())
 associated-token-metadata-pda: Ok(())
-solana-kit-core-v19: 83/83 cases passed
+codec-framing-transforms: Ok(())
+codec-framing-boundaries: Ok(())
+solana-kit-core-v20: 85/85 cases passed
