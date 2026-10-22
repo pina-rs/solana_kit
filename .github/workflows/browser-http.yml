@@ -32,7 +32,9 @@ jobs:
           printf '%s  %s\n' 4fe2433044363e5233d642e70fa50278b471bda08032d922402c8bd7c6d743fd "$host_dir/driver.zip" | sha256sum --check --strict
           unzip -q "$host_dir/chrome.zip" -d "$host_dir"
           unzip -q "$host_dir/driver.zip" -d "$host_dir"
-          printf 'CHROME=%s/chrome-linux64/chrome\nCHROMEDRIVER=%s/chromedriver-linux64/chromedriver\n' "$host_dir" "$host_dir" >> "$GITHUB_ENV"
+          capabilities="$host_dir/webdriver.json"
+          jq -n --arg binary "$host_dir/chrome-linux64/chrome" '{"goog:chromeOptions": {binary: $binary}}' > "$capabilities"
+          printf 'WASM_BINDGEN_TEST_WEBDRIVER_JSON=%s\nCHROMEDRIVER=%s/chromedriver-linux64/chromedriver\n' "$capabilities" "$host_dir" >> "$GITHUB_ENV"
       - name: Check browser API and run real HTTP journeys
         shell: bash
         env:
