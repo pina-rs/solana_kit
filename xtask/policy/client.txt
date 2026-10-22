@@ -1,0 +1,15 @@
+base64 v0.22.1
+bs58 v0.5.1
+itoa v1.0.18
+memchr v2.8.3
+proc-macro2 v1.0.107
+quote v1.0.47
+serde v1.0.229
+serde_core v1.0.229
+serde_derive v1.0.229
+serde_json v1.0.154
+solana_kit_client v0.1.0
+solana_kit_core v0.1.0
+syn v3.0.9
+unicode-ident v1.0.27
+zmij v1.0.23

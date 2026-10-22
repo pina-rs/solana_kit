@@ -78,7 +78,7 @@ not broad capability completion:
    assuming browser globals or OS APIs.
 5. Compile a downstream crate without repository-specific rustflags or patches.
 
-The expanded 48-case portable-core/program suite now executes natively, in real Chrome,
+The expanded 51-case portable-core/program/protocol suite now executes natively, in real Chrome,
 in Wasmtime 50.0.0 Preview 1/2 commands, and in the pinned actual LeptosKit
 headless WasmHost. Each host observes the corrupt-hash negative control.
 `cargo xtask all` reproduces those runs, binary import/dependency gates, and a
@@ -135,7 +135,7 @@ construction requirements from validation of externally received transactions.
 The immutable legacy/v0/v1 slice compiles owned instructions and lookup snapshots,
 preserves exact signed bytes, validates received protocol wire independently of
 local compiler restrictions, and signs/verifies through optional deterministic
-crypto. Seven transaction cases execute in the shared 48-case suite, including
+crypto. Seven transaction cases execute in the shared 51-case suite, including
 version-one message-first envelopes, inline configuration, exact 4096/4097-byte
 boundaries and signature tampering. Legacy/v0 retain their 1232-byte packet cap. The
 [transaction ledger](../parity/message-transactions.md) retains all 746 source
@@ -250,3 +250,12 @@ execution is outside the SDK's supported targets.
 Keep unsupported, compiled, executed, and device-verified states distinct. Do not
 infer a runtime from `target_arch = "wasm32"`; browser and LeptosKit guests share
 the same Rust target. See [the architecture](../architecture/design.md).
+
+The public RPC foundation implements typed balance, latest-blockhash and
+full-base64 account reads through one executor-neutral protocol owner. It retains
+all 54 source-audited catalog entries and 398 canonical declaration IDs; 51 typed
+operations and alternate account encodings remain pending. Three public protocol
+groups now execute with memory transports in native Rust, Chrome, WASI Preview1/2
+and the actual pinned LeptosKit host. This does not establish network adapter or
+device support. See the
+[RPC foundation receipt](../parity/rpc-foundation.md). Phase 4 remains incomplete.

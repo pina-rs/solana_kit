@@ -200,5 +200,6 @@ pub(crate) fn run() -> Result<()> {
     guest()?;
     dependency_graphs()?;
     crate::system_gate::run()?;
+    crate::client_gate::run()?;
     negative_controls()
 }

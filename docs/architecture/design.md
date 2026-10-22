@@ -217,3 +217,13 @@ with missing host behavior. Keep platform-specific wallet availability explicit.
 First implement the workspace/release/fixture foundation and a real four-host
 primitive and constructor experiment. The [delivery plan](../planning/plan.md)
 defines the evidence required before expanding the SDK.
+
+## Implemented RPC foundation
+
+The public solana_kit_client now provides Client<T>, concrete-future Transport,
+typed Balance, LatestBlockhash and full-base64 AccountInfo operations. It uses std
+without a runtime or network dependency. Account results reuse core owned types.
+The open Method trait permits typed provider extensions while the client owns
+all envelopes, correlation, bounds and remote errors. See the
+[RPC foundation receipt](../parity/rpc-foundation.md) for exact coverage and the
+remaining 51 catalog operations. Proposed platform adapters above remain pending.
