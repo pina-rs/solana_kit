@@ -258,14 +258,19 @@ impl Transaction {
             return Err(Error::InvalidSignature);
         }
 
-        let index = self
-            .message
-            .signers()
-            .iter()
-            .position(|key| *key == signer)
-            .ok_or(Error::UnknownSigner)?;
+        if !self.message.signers().contains(&signer) {
+            return Err(Error::UnknownSigner);
+        }
+
         let mut result = self.clone();
-        result.signatures[index] = Some(signature);
+
+        // Received wire can repeat a signer address. One signature over these
+        // identical bytes authorizes every slot owned by that same key.
+        for (address, slot) in self.message.signers().iter().zip(&mut result.signatures) {
+            if *address == signer {
+                *slot = Some(signature);
+            }
+        }
 
         Ok(result)
     }

@@ -12,13 +12,14 @@ mod addresses;
 mod codecs;
 mod cryptography;
 mod instructions;
+mod transactions;
 
 use alloc::{vec, vec::Vec};
 
 /// Immutable suite identity. Changes to fixtures or assertions require a new ID.
-pub const SUITE_ID: &str = "solana-kit-core-v2";
+pub const SUITE_ID: &str = "solana-kit-core-v3";
 /// Required number of cases; a truncated report cannot pass conformance.
-pub const EXPECTED_CASE_COUNT: usize = 31;
+pub const EXPECTED_CASE_COUNT: usize = 35;
 
 /// Selects authentic fixtures or the intentionally incorrect hash oracle.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -120,6 +121,16 @@ pub fn run(mode: FixtureMode) -> Report {
         case("codec-bounded-sequences", codecs::bounded_sequences()),
         case("codec-distinct-options", codecs::options()),
         case("codec-exact-framing", codecs::framing()),
+        case("transaction-legacy-wire", transactions::legacy_wire()),
+        case(
+            "transaction-v0-lookup-positions",
+            transactions::lookup_positions(),
+        ),
+        case("transaction-malformed-wire", transactions::malformed_wire()),
+        case(
+            "transaction-openssl-signature",
+            transactions::openssl_signature(),
+        ),
     ];
 
     Report {

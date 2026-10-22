@@ -20,3 +20,25 @@ capability inventory. Pending rows are deliberate follow-ups, including v1's
 message-first envelope, durable nonces, introspection, off-chain messages and
 modifying, partial and sending signers. A legacy/v0 vertical slice does not
 complete phase 3. No implementation or runtime proof is claimed by a pending row.
+
+## Wire and signature evidence
+
+`Message::compile`, `Message::decode`, and `Transaction` expose the vertical
+slice. Inputs to compilation are owned instructions and lookup snapshots; returned
+messages expose only immutable slices and copied metadata. `with_signature`
+checks slot ownership and exact signed bytes. Cryptographic verification is an
+explicit `crypto` feature operation; structural decoding alone does not establish
+signature authenticity.
+
+Table snapshots are ordered by base58 table address; when an account appears in
+several snapshots the first table in that order wins, and the first matching index
+within that table wins. Signers and invoked programs stay static. Account role
+groups and loaded partitions use the pinned Dart compiler's base58 ordering.
+
+Fixtures follow the pinned Dart message codec field layout and protocol-valid
+constraints from cached official `solana-message` 4.4.1 (Apache-2.0). No official
+implementation code was copied into the SDK. The deterministic signature fixture
+uses RFC 8032 test 1's public seed, signing the explicit legacy message through
+Node's OpenSSL-backed `crypto.sign` independently of Rust's Ed25519 implementation.
+All fixtures are synthetic public data. The private oracle and its dependencies
+are excluded from application dependency graphs.
