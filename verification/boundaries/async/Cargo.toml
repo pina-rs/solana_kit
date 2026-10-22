@@ -1,0 +1,13 @@
+[package]
+name = "solana_kit_async_boundaries"
+version = "0.1.0"
+authors.workspace = true
+edition.workspace = true
+license.workspace = true
+publish = false
+rust-version.workspace = true
+
+[dependencies]
+futures = { version = "=0.3.31", features = ["executor"] }
+solana_kit_boundary_contract = { path = "../contract" }
+tokio = { version = "=1.48.0", features = ["rt-multi-thread", "macros", "sync", "net", "io-util", "time"] }

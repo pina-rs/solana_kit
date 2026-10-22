@@ -1,0 +1,12 @@
+[package]
+name = "solana_kit_system_boundary"
+version = "0.1.0"
+publish = false
+authors.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+solana-system-interface = { version = "=3.3.0", default-features = false, features = ["bincode"] }
+solana-address = { version = "=2.7.0", default-features = false }

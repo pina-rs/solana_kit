@@ -1,0 +1,12 @@
+[package]
+name = "solana_kit_system_guest_boundary"
+version = "0.1.0"
+publish = false
+edition.workspace = true
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+serde_json = "=1.0.154"
+solana_kit_system_boundary = { path = "../system" }

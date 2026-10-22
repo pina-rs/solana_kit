@@ -1,0 +1,18 @@
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 6.68s
+     Running unittests src/lib.rs (verification/boundaries/target/wasm32-unknown-unknown/debug/deps/solana_kit_system_browser_boundary-a6408463b74aa301.wasm)
+Running headless tests in Chrome on `http://127.0.0.1:59348/`
+Try find `webdriver.json` for configure browser's capabilities:
+Not found
+Loading Wasm module...
+
+running 2 tests
+test tests::official_create_account_matches_oracle ... ok
+test tests::corrupted_fixture_is_rejected ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 filtered out; finished in 0.00s
+
+   Doc-tests solana_kit_system_browser_boundary
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s

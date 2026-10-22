@@ -1,0 +1,10 @@
+[package]
+name = "solana_kit_system_browser_boundary"
+version = "0.1.0"
+publish = false
+edition.workspace = true
+
+[target.'cfg(target_arch = "wasm32")'.dev-dependencies]
+solana_kit_system_boundary = { path = "../system" }
+wasm-bindgen = "=0.2.128"
+wasm-bindgen-test = "=0.3.78"

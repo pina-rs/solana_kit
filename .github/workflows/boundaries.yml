@@ -1,0 +1,87 @@
+name: Async and System boundaries
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  native-contracts:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, macos-15, windows-2025]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Check private contract workspace
+        shell: bash
+        run: |
+          rustup toolchain install 1.99.1 --profile minimal --component rustfmt --component clippy
+          cargo +1.99.1 fmt --manifest-path verification/boundaries/Cargo.toml --all --check
+          cargo +1.99.1 test --manifest-path verification/boundaries/Cargo.toml --workspace --locked
+          cargo +1.99.1 clippy --manifest-path verification/boundaries/Cargo.toml --workspace --all-targets --locked -- -D warnings
+
+  system-hosts:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install pinned tools
+        shell: bash
+        run: |
+          rustup toolchain install 1.99.1 --profile minimal --component rustfmt --component clippy --target wasm32-unknown-unknown --target wasm32-wasip1 --target wasm32-wasip2
+          cargo +1.99.1 install wasm-bindgen-cli --version 0.2.128 --locked
+      - name: Download checksum-pinned hosts
+        shell: bash
+        run: |
+          host_dir="$RUNNER_TEMP/system-hosts"
+          mkdir "$host_dir"
+          curl --fail --location --silent --show-error https://github.com/bytecodealliance/wasmtime/releases/download/v50.0.0/wasmtime-v50.0.0-x86_64-linux.tar.xz --output "$host_dir/wasmtime.tar.xz"
+          curl --fail --location --silent --show-error https://storage.googleapis.com/chrome-for-testing-public/155.0.8059.84/linux64/chrome-linux64.zip --output "$host_dir/chrome.zip"
+          curl --fail --location --silent --show-error https://storage.googleapis.com/chrome-for-testing-public/155.0.8059.84/linux64/chromedriver-linux64.zip --output "$host_dir/driver.zip"
+          printf '%s  %s\n' 77c19ee0437991f9ac7837b9c269d9c7076744f85dad263fea5214cc2723c7ff "$host_dir/wasmtime.tar.xz" | sha256sum --check --strict
+          printf '%s  %s\n' cf0f049892dea22e6a6db26d47ed0d7776b7158edcbec4634086633df8bafcbc "$host_dir/chrome.zip" | sha256sum --check --strict
+          printf '%s  %s\n' 4fe2433044363e5233d642e70fa50278b471bda08032d922402c8bd7c6d743fd "$host_dir/driver.zip" | sha256sum --check --strict
+          tar -xJf "$host_dir/wasmtime.tar.xz" -C "$host_dir"
+          unzip -q "$host_dir/chrome.zip" -d "$host_dir"
+          unzip -q "$host_dir/driver.zip" -d "$host_dir"
+          printf 'WASMTIME=%s/wasmtime-v50.0.0-x86_64-linux/wasmtime\nCHROME=%s/chrome-linux64/chrome\nCHROMEDRIVER=%s/chromedriver-linux64/chromedriver\n' "$host_dir" "$host_dir" "$host_dir" >> "$GITHUB_ENV"
+      - name: Execute browser constructor and corrupt oracle
+        shell: bash
+        env:
+          CARGO_TARGET_WASM32_UNKNOWN_UNKNOWN_RUNNER: wasm-bindgen-test-runner
+          WASM_BINDGEN_USE_BROWSER: "1"
+          WASM_BINDGEN_TEST_ONLY_WEB: "1"
+        run: cargo +1.99.1 test --manifest-path verification/boundaries/Cargo.toml -p solana_kit_system_browser_boundary --target wasm32-unknown-unknown --locked
+      - name: Execute WASI constructor and exit controls
+        shell: bash
+        run: |
+          test "$("$WASMTIME" --version | cut -d ' ' -f 2)" = '50.0.0'
+          for target in wasm32-wasip1 wasm32-wasip2; do
+            cargo +1.99.1 build --manifest-path verification/boundaries/Cargo.toml -p solana_kit_system_boundary --locked --target "$target"
+            artifact="verification/boundaries/target/$target/debug/solana_kit_system_boundary.wasm"
+            "$WASMTIME" run "$artifact" > "$RUNNER_TEMP/success.txt"
+            diff -u verification/boundaries/evidence/system-native-success.txt "$RUNNER_TEMP/success.txt"
+            if "$WASMTIME" run "$artifact" --corrupt-fixture > "$RUNNER_TEMP/corrupt.txt"; then
+              echo "Corrupted System oracle unexpectedly succeeded"
+              exit 1
+            else
+              corrupt_status=$?
+            fi
+            test "$corrupt_status" -eq 1
+            diff -u verification/boundaries/evidence/system-native-corruption.txt "$RUNNER_TEMP/corrupt.txt"
+          done
+      - name: Execute actual pinned LeptosKit host
+        shell: bash
+        run: |
+          cargo +1.99.1 build --manifest-path verification/boundaries/Cargo.toml -p solana_kit_system_guest_boundary --target wasm32-unknown-unknown --release --locked
+          cargo +1.99.1 run --manifest-path verification/boundaries/leptoskit/Cargo.toml --locked -- "$GITHUB_WORKSPACE/verification/boundaries/target/wasm32-unknown-unknown/release/solana_kit_system_guest_boundary.wasm"
+          cargo +1.99.1 fmt --manifest-path verification/boundaries/leptoskit/Cargo.toml --check
+          cargo +1.99.1 clippy --manifest-path verification/boundaries/leptoskit/Cargo.toml --locked -- -D warnings
