@@ -11,6 +11,7 @@ extern crate alloc;
 mod accounts_sysvars;
 mod addresses;
 mod codecs;
+mod composites;
 mod cryptography;
 mod fixed_points;
 mod instructions;
@@ -31,9 +32,9 @@ pub mod system_client;
 use alloc::vec::Vec;
 
 /// Immutable suite identity. Changes to fixtures or assertions require a new ID.
-pub const SUITE_ID: &str = "solana-kit-core-v11";
+pub const SUITE_ID: &str = "solana-kit-core-v12";
 /// Required number of cases; a truncated report cannot pass conformance.
-pub const EXPECTED_CASE_COUNT: usize = 59;
+pub const EXPECTED_CASE_COUNT: usize = 62;
 
 /// Selects authentic fixtures or the intentionally incorrect hash oracle.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -134,6 +135,12 @@ pub fn run(mode: FixtureMode) -> Report {
     cases.push(case("numeric-text-codecs", text_numbers::text()));
     cases.push(case("numeric-wide-text", text_numbers::wide()));
     cases.push(case("numeric-text-malformed", text_numbers::malformed()));
+    cases.push(case(
+        "composite-typed-composition",
+        composites::composition(),
+    ));
+    cases.push(case("composite-backward-bits", composites::bits()));
+    cases.push(case("composite-malformed-bounds", composites::malformed()));
 
     Report {
         suite_id: SUITE_ID,
