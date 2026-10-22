@@ -61,3 +61,33 @@ iOS simulator app loops have not been wired or executed by this unit. The packag
 requires unpublished pinned LeptosKit source; registry release prerequisites remain
 open and publishing is disabled. No mobile/device or whole-ecosystem completion
 is implied.
+
+## Integrated-source replay
+
+The accepted adapter and fixture production source remain unchanged after
+integration with the current core, client, native and browser implementations.
+Both the Rust 1.99.1 and Rust 1.89.0 rebuilt guests execute the two-instance
+HTTP/TLS, Pending/wake, cancellation, peer EOF and awaited-unload journeys above.
+The six adapter source controls and four compiled-artifact ABI controls pass.
+
+The executed Rust 1.99.1 guest has SHA-256
+`4aa4154d6a3e6bf0f4f33b88b6fe8a52551b70e398c248acb247a0ef1e1d03e1`.
+The separately rebuilt and executed Rust 1.89.0 guest has SHA-256
+`103f9b89912da753da5faaba11bac36db635569e3a69a6b63e047eb30a745008`.
+These identify the local debug builds, without a cross-machine hash promise.
+The committed fixture receipt records direct stdout and the 1.99.1 artifact.
+
+An unchanged independent consumer passes four ordinary public-API test groups
+under Rust 1.89.0 from a separate Cargo workspace, with compiler flags and
+wrappers absent. It observes host-owned destinations and authorization, delayed
+application delivery after real native completion, cancellation before join,
+cancellation of a proven successful ready reply, retained-call capacity and EOF,
+awaited unload, and a real guest destination trap that preserves ready bytes.
+All successful fixture peers and tasks finish and are awaited.
+
+The separate plain-core guest still passes its exact three-import policy and
+unchanged dependency negative controls. The existing portable protocol suite is
+unchanged by this adapter. Its host evidence remains in the
+[runtime receipt](runtimes.md). This HTTP replay adds no protocol cases or device
+claim. A clean offline archive attempt fails on unpublished
+`leptoskit_bridge` 0.1.0, so it provides no registry-install evidence.
