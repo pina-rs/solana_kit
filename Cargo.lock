@@ -946,6 +946,7 @@ dependencies = [
  "solana_kit_memo",
  "solana_kit_signers",
  "solana_kit_system",
+ "solana_kit_token",
  "solana_kit_wallet_verification",
 ]
 
@@ -1025,6 +1026,13 @@ dependencies = [
 
 [[package]]
 name = "solana_kit_system"
+version = "0.1.0"
+dependencies = [
+ "solana_kit_core",
+]
+
+[[package]]
+name = "solana_kit_token"
 version = "0.1.0"
 dependencies = [
  "solana_kit_core",

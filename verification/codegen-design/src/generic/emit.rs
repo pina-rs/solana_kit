@@ -1,23 +1,18 @@
 //! Emits concrete bounded codecs from the validated finite model.
-use super::{Field, Program, Shape, Wire};
+use super::{
+    Field, Program, Shape,
+    expressions::{codec, rust_type, value},
+};
 use crate::schema::Error;
 
 const U8_TAG_COUNT: usize = 256;
 
-fn rust_type(wire: &Wire) -> String {
-    match wire {
-        Wire::Number(name) => (*name).to_owned(),
-        Wire::Link(name) => name.clone(),
-    }
-}
-fn codec(wire: &Wire) -> String {
-    match wire {
-        Wire::Number(name) => format!("Number::<{name}>::LE"),
-        Wire::Link(name) => format!("{name}Codec"),
-    }
-}
-
-fn structure(name: &str, fields: &[Field], tag: Option<u8>) -> String {
+fn structure(
+    name: &str,
+    fields: &[Field],
+    tag: Option<u8>,
+    program: &Program,
+) -> Result<String, Error> {
     let mut out = format!(
         "/// Validated data for `{name}`.\n#[derive(Clone, Debug, Eq, PartialEq)]\npub struct {name} {{\n"
     );
@@ -35,9 +30,9 @@ fn structure(name: &str, fields: &[Field], tag: Option<u8>) -> String {
 
     for field in fields {
         out.push_str(&format!(
-            "let size = size.checked_add({}.encoded_len(&value.{})?).ok_or(Error::Overflow)?;\n",
-            codec(&field.wire),
-            field.name
+            "let size = size.checked_add({}.encoded_len({})?).ok_or(Error::Overflow)?;\n",
+            codec(&field.wire, program)?,
+            value(&field.wire, &format!("value.{}", field.name))
         ));
     }
 
@@ -45,25 +40,31 @@ fn structure(name: &str, fields: &[Field], tag: Option<u8>) -> String {
         out.push_str("let _ = value;\n");
     }
 
-    out.push_str(&write_and_read(name, fields, tag));
-    out
+    out.push_str(&write_and_read(name, fields, tag, program)?);
+    Ok(out)
 }
 
 /// Both directions consume the same validated field list so linked layouts cannot drift.
-fn write_and_read(name: &str, fields: &[Field], tag: Option<u8>) -> String {
+fn write_and_read(
+    name: &str,
+    fields: &[Field],
+    tag: Option<u8>,
+    program: &Program,
+) -> Result<String, Error> {
     let mut out = format!(
         "Ok(size)\n}}\nfn write(&self, value: &{name}, writer: &mut Writer<'_>) -> Result<(), Error> {{\n"
     );
 
     if let Some(tag) = tag {
+        let tag = super::constants::tag(program, tag);
         out.push_str(&format!("Constant(&[{tag}]).write(&(), writer)?;\n"));
     }
 
     for field in fields {
         out.push_str(&format!(
-            "{}.write(&value.{}, writer)?;\n",
-            codec(&field.wire),
-            field.name
+            "{}.write({}, writer)?;\n",
+            codec(&field.wire, program)?,
+            value(&field.wire, &format!("value.{}", field.name))
         ));
     }
 
@@ -74,6 +75,7 @@ fn write_and_read(name: &str, fields: &[Field], tag: Option<u8>) -> String {
     out.push_str(&format!("Ok(())\n}}\n}}\nimpl Decoder<{name}> for {name}Codec {{\nfn read(&self, reader: &mut Reader<'_>) -> Result<{name}, Error> {{\n"));
 
     if let Some(tag) = tag {
+        let tag = super::constants::tag(program, tag);
         out.push_str(&format!("Constant(&[{tag}]).read(reader)?;\n"));
     }
 
@@ -87,41 +89,12 @@ fn write_and_read(name: &str, fields: &[Field], tag: Option<u8>) -> String {
         out.push_str(&format!(
             "{}: {}.read(reader)?,\n",
             field.name,
-            codec(&field.wire)
+            codec(&field.wire, program)?
         ));
     }
 
     out.push_str("})\n}\n}\n");
-    out
-}
-
-fn enumeration(name: &str, variants: &[String]) -> String {
-    let mut out = format!(
-        "/// Finite u8 tagged enum.\n#[derive(Clone, Debug, Eq, PartialEq)]\npub enum {name} {{\n"
-    );
-
-    for variant in variants {
-        out.push_str(&format!("/// The `{variant}` variant.\n{variant},\n"));
-    }
-
-    out.push_str(&format!("}}\n/// Strict codec for [`{name}`].\n#[derive(Clone, Copy, Debug)]\npub struct {name}Codec;\nimpl Encoder<{name}> for {name}Codec {{\nfn encoded_len(&self, _: &{name}) -> Result<usize, Error> {{ Ok(1) }}\nfn write(&self, value: &{name}, writer: &mut Writer<'_>) -> Result<(), Error> {{\nlet tag = match value {{\n"));
-
-    for (tag, variant) in variants.iter().enumerate() {
-        out.push_str(&format!("{name}::{variant} => {tag}u8,\n"));
-    }
-
-    out.push_str(&format!("}};\nNumber::<u8>::LE.write(&tag, writer)\n}}\n}}\nimpl Decoder<{name}> for {name}Codec {{\nfn read(&self, reader: &mut Reader<'_>) -> Result<{name}, Error> {{\nmatch Number::<u8>::LE.read(reader)? {{\n"));
-
-    for (tag, variant) in variants.iter().enumerate() {
-        out.push_str(&format!("{tag} => Ok({name}::{variant}),\n"));
-    }
-
-    if variants.len() < U8_TAG_COUNT {
-        out.push_str("_ => Err(Error::InvalidDiscriminator),\n");
-    }
-
-    out.push_str("}\n}\n}\n");
-    out
+    Ok(out)
 }
 
 fn builders(name: &str) -> String {
@@ -132,12 +105,17 @@ fn builders(name: &str) -> String {
 
 /// Dispatch delegates each direction to the concrete codec, preserving its bounds.
 fn dispatch(program: &Program) -> String {
+    if program.instructions.len() > super::dispatch_output::INLINE_LIMIT {
+        return super::dispatch_output::emit(program);
+    }
+
     let name = format!("{}InstructionData", program.name);
     let fallback = if program.instructions.len() == U8_TAG_COUNT {
         ""
     } else {
         "_ => Err(Error::InvalidDiscriminator),\n"
     };
+
     let mut out = format!(
         "/// All selected instruction data variants.\n#[derive(Clone, Debug, Eq, PartialEq)]\npub enum {name} {{\n"
     );
@@ -145,7 +123,9 @@ fn dispatch(program: &Program) -> String {
     for item in &program.instructions {
         out.push_str(&format!(
             "/// Data for tag {}.\n{}({}),\n",
-            item.tag, item.name, item.name
+            super::constants::tag(program, item.tag),
+            item.name,
+            item.name
         ));
     }
 
@@ -172,19 +152,37 @@ fn dispatch(program: &Program) -> String {
     for item in &program.instructions {
         out.push_str(&format!(
             "{} => Ok({name}::{}({}Codec.read(reader)?)),\n",
-            item.tag, item.name, item.name
+            super::constants::tag(program, item.tag),
+            item.name,
+            item.name
         ));
     }
 
     out.push_str(fallback);
-    out.push_str("}\n}\n}\n/// Identifies a tag without asserting the full payload is valid.\npub fn identify_instruction(data: &[u8]) -> Result<u8, Error> {\nlet tag = *data.first().ok_or(Error::Truncated)?;\n\nmatch tag {\n");
+    out.push_str("}\n}\n}\n");
+    out.push_str(&identification(program, &name, fallback));
+    out
+}
+
+fn identification(program: &Program, name: &str, fallback: &str) -> String {
+    let mut out="/// Identifies a tag without asserting the full payload is valid.\npub fn identify_instruction(data: &[u8]) -> Result<u8, Error> {\nlet tag = *data.first().ok_or(Error::Truncated)?;\n\nmatch tag {\n".to_owned();
 
     for item in &program.instructions {
-        out.push_str(&format!("{} => Ok(tag),\n", item.tag));
+        out.push_str(&format!(
+            "{} => Ok(tag),\n",
+            super::constants::tag(program, item.tag)
+        ));
     }
 
     out.push_str(fallback);
-    out.push_str(&format!("}}\n}}\n/// Fully parses a canonical invocation with the fixed selected program identity.\npub fn parse_instruction(instruction: &Instruction, limits: Limits) -> Result<{name}, Error> {{\nif instruction.program_address != PROGRAM || !instruction.accounts.is_empty() {{ return Err(Error::InvalidValue); }}\n\n{name}Codec.decode(&instruction.data, limits)\n}}\n"));
+
+    if !super::constants::extended(program) {
+        out.push_str(&format!("}}\n}}\n/// Fully parses a canonical invocation with the fixed selected program identity.\npub fn parse_instruction(instruction: &Instruction, limits: Limits) -> Result<{name}, Error> {{\nif instruction.program_address != PROGRAM || !instruction.accounts.is_empty() {{ return Err(Error::InvalidValue); }}\n\n{name}Codec.decode(&instruction.data, limits)\n}}\n"));
+    } else {
+        out.push_str("}\n}\n");
+        out.push_str(&super::invocations::dispatch(program));
+    }
+
     out
 }
 
@@ -197,7 +195,8 @@ pub(super) fn program(program: &Program) -> Result<String, Error> {
         .map(u8::to_string)
         .collect::<Vec<_>>()
         .join(",");
-    let number = if needs_number(program) {
+    let required = super::imports::collect(program);
+    let number = if required.contains("Number") {
         "Number, "
     } else {
         ""
@@ -207,34 +206,83 @@ pub(super) fn program(program: &Program) -> Result<String, Error> {
         "// Generated from a validated Codama model. See README.md and upstream notices.\nuse alloc::vec::Vec;\nuse solana_kit_core::{{Address, Instruction, codecs::{{Constant, Decoder, Encoder, Error, Limits, {number}Reader, Writer}}}};\n/// Selected trusted program identity.\npub const PROGRAM: Address = Address::from_bytes([{bytes}]);\n"
     );
 
+    out.push_str(&super::constants::emit(program));
+
+    if super::constants::extended(program) {
+        out.push_str(&super::invocations::helpers());
+    }
+
+    out.push_str(&declarations(program)?);
+    out.push_str(&super::errors::emit(program));
+    out.push_str(&super::account_output::emit(program));
+    out.push_str(&dispatch(program));
+    imports(&mut out, &required);
+    Ok(out)
+}
+
+/// Preserve declaration order and separate ownership.
+fn declarations(program: &Program) -> Result<String, Error> {
+    let mut out = String::new();
+
     for item in &program.definitions {
         out.push_str(&match &item.shape {
-            Shape::Struct(fields) => structure(&item.name, fields, None),
-            Shape::Enum(variants) => enumeration(&item.name, variants),
+            Shape::Struct(fields) => structure(&item.name, fields, None, program)?,
+            Shape::Enum(variants) => super::enum_output::emit(&item.name, variants),
         });
     }
 
     for item in &program.instructions {
-        out.push_str(&structure(&item.name, &item.fields, Some(item.tag)));
-        out.push_str(&builders(&item.name));
+        out.push_str(&instruction(program, item)?);
     }
 
-    out.push_str(&dispatch(program));
+    for account in &program.accounts {
+        let Shape::Struct(fields) = &account.definition.shape else {
+            return Err("account must be record".into());
+        };
+        out.push_str(&structure(&account.definition.name, fields, None, program)?);
+    }
 
     Ok(out)
 }
 
-fn needs_number(program: &Program) -> bool {
-    let numeric = |fields: &[Field]| {
-        fields
-            .iter()
-            .any(|field| matches!(field.wire, Wire::Number(_)))
-    };
-    program.definitions.iter().any(|item| match &item.shape {
-        Shape::Enum(_) => true,
-        Shape::Struct(fields) => numeric(fields),
-    }) || program
-        .instructions
-        .iter()
-        .any(|item| numeric(&item.fields))
+fn instruction(program: &Program, item: &super::Instruction) -> Result<String, Error> {
+    let mut out = structure(&item.name, &item.fields, Some(item.tag), program)?;
+
+    if !super::constants::extended(program) && item.roles.is_empty() && item.remaining.is_none() {
+        out.push_str(&builders(&item.name));
+    } else {
+        out.push_str(&super::invocations::emit(item));
+    }
+
+    Ok(out)
+}
+
+/// Render only requirements collected from validated typed layouts.
+fn imports(out: &mut String, required: &super::imports::Imports) {
+    for (name, import) in [
+        ("Mapped", "Mapped"),
+        ("FixedBytes", "FixedBytes"),
+        ("Bool", "Bool"),
+        ("Utf8", "Utf8"),
+        ("Bytes", "Bytes"),
+        ("OptionCodec", "OptionCodec"),
+        ("OwnedSequence", "OwnedSequence, Sequence, Count"),
+        ("ByteSizePrefix", "ByteSizePrefix, FrameConsumption"),
+    ] {
+        if required.contains(name) {
+            out.push_str(&format!("use solana_kit_core::codecs::{{{import}}};\n"));
+        }
+    }
+
+    if required.contains("String") {
+        out.push_str("use alloc::string::String;\n");
+    }
+
+    if required.contains("AccountMeta") {
+        out.push_str("use solana_kit_core::AccountMeta;\n");
+    }
+
+    if required.contains("AccountRole") {
+        out.push_str("use solana_kit_core::AccountRole;\n");
+    }
 }

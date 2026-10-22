@@ -24,8 +24,10 @@ account reads, all nineteen node metadata operations and all eight economics
 operations, nine account and token operations and richer accountInfo,
 and all fifteen history, submission, full-result and simulation operations,
 through one executor-neutral protocol owner. All 54 catalog methods have typed
-implementations. The shared 103-case wallet, transaction/message signer and durable nonce suite has
-[runtime execution evidence](docs/verification/runtimes.md).
+implementations. The shared 105-case wallet, transaction/message signer, durable
+nonce and Token suite has [runtime execution evidence](docs/verification/runtimes.md).
+The [Token runtime receipt](docs/verification/token-runtime.md) records its literal
+constructor, account, role and error checks on all five hosts.
 Nine typed RPC subscription families use a bounded caller-owned connection.
 Their [portable protocol receipt](docs/verification/subscription-runtime.md)
 establishes memory-frame execution, without a WebSocket transport claim.

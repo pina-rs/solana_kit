@@ -161,3 +161,19 @@ work. The Dart renderer at `packages/codama-renderers-dart/` has
 `test/security.test.ts`, `test/render-collisions.test.ts`,
 `test/type-manifest-security.test.ts`, `test/instruction-signer-security.test.ts`
 and normalization script are source references, not tests executed in this unit.
+
+## Generated output style corpus
+
+The private `generated-style` command requires monostyle 0.3.26 and the repository
+configuration. It generates the unchanged full 256-variant enum and instruction
+reproducers, sparse and empty payloads, linked records, Token, and the independent
+role-only and anonymous compound layouts. Every emitted Rust file is explicitly
+passed to monostyle with `--include-generated`, including ignored target outputs.
+Missing tools, versions, configuration, inventory entries or scores below 90 fail
+the command. The focused generator workflow installs the pinned tool and runs it.
+The tracked-source style gate remains a separate check.
+
+Unit enums use a typed table in declaration order for encoding and decoding;
+large instruction dispatches use bounded concrete match helpers. The table lookup
+checks conversion to u8 and does not add a representation or ABI guarantee. These
+changes retain every admitted tag and the existing bounded codec contracts.

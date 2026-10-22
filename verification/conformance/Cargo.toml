@@ -23,4 +23,5 @@ solana_kit_durable_nonce_verification = { path = "../durable-nonce" }
 solana_kit_memo = { path = "../../crates/solana_kit_memo" }
 solana_kit_signers = { path = "../../crates/solana_kit_signers", features = ["crypto"] }
 solana_kit_system = { path = "../../crates/solana_kit_system" }
+solana_kit_token = { path = "../../crates/solana_kit_token" }
 solana_kit_wallet_verification = { path = "../wallet-runtime" }
