@@ -1,16 +1,18 @@
-//! Three isolated version-one cases, awaiting integration into the host registry.
+//! Version-one wire, bounds and tampering cases shared by every host.
 
 use crate::{CaseResult, case, require};
 use alloc::vec::Vec;
 use solana_kit_core::{
-    Address, Hash,
+    Address, Hash, Instruction,
     crypto::Keypair,
     transaction::{Error, HeapSize, Lifetime, Message, Transaction, V1Config},
 };
 
 const HEAP_BYTES: u32 = 32768;
+const MAX_ENVELOPE_BYTES: usize = 4096;
+const EXACT_LIMIT_DATA_BYTES: usize = 3922;
 
-/// Runs the candidate cases without changing the established shared suite.
+/// Runs all three version-one groups through the shared host registry.
 #[must_use]
 pub fn cases() -> [CaseResult; 3] {
     [
@@ -45,6 +47,34 @@ fn message_first() -> Result<(), &'static str> {
     require(
         decoded.encode(false).map_err(|_| "v1 encoding failed")? == literal,
         "v1 exact received bytes changed",
+    )?;
+    packet_limits()
+}
+
+fn packet_limits() -> Result<(), &'static str> {
+    let instruction = Instruction {
+        program_address: Address::from_bytes([5; 32]),
+        accounts: Vec::new(),
+        data: alloc::vec![7; EXACT_LIMIT_DATA_BYTES],
+    };
+    let message = Message::compile_v1(
+        Address::from_bytes([3; 32]),
+        lifetime(),
+        &[instruction],
+        V1Config::default(),
+    )
+    .map_err(|_| "v1 inclusive boundary compilation failed")?;
+    let mut wire = Transaction::new(message)
+        .encode(false)
+        .map_err(|_| "v1 inclusive boundary encoding failed")?;
+    require(
+        wire.len() == MAX_ENVELOPE_BYTES && Transaction::decode(&wire).is_ok(),
+        "v1 inclusive 4096-byte boundary rejected",
+    )?;
+    wire.push(0);
+    require(
+        Transaction::decode(&wire) == Err(Error::PacketTooLarge),
+        "v1 4097-byte envelope accepted",
     )
 }
 

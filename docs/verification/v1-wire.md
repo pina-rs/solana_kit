@@ -52,7 +52,11 @@ advance, rollback or confirmation behavior.
 ## Executed local validator result
 
 Installed `solana-test-validator` 4.2.0 reports source `ac82b5d4`, feature-set
-`21b0d33a` (RPC decimal 565236538). All ports bind loopback. No remote cluster,
+`21b0d33a` (RPC decimal 565236538). All probe requests use loopback. Independent
+inspection of this installed validator observed the RPC listener on `*:20899`
+despite `--bind-address 127.0.0.1`; its CLI has no RPC-bind option. The bind flag
+does not establish loopback-only RPC exposure. Each owned validator was stopped
+after its isolated probe. No remote cluster,
 funds, secrets or custom on-chain programs are used. Genesis funds a public
 fixture payer; deterministic signatures use its published fixture seed.
 
