@@ -1,6 +1,6 @@
 //! Negative controls for the report boundary, independent of monostyle's exit status.
 
-use super::{FLOOR, validate};
+use super::{FLOOR, coverage, validate};
 use serde_json::{Value, json};
 
 const HIGH_AGGREGATE: f64 = 99.8;
@@ -102,4 +102,34 @@ fn rejects_overflowing_line_totals() {
         report["files"].as_array_mut().expect("array").push(second);
         assert!(validate(report.to_string().as_bytes()).is_err());
     }
+}
+
+#[test]
+fn coverage_rejects_unknown_missing_and_aliased_paths() {
+    let inventory = ["generated.rs".to_owned()].into_iter().collect();
+
+    for path in ["unknown.rs", "../generated.rs", "/generated.rs"] {
+        let mut input = report();
+        input["files"][0]["path"] = json!(path);
+        let report = validate(input.to_string().as_bytes()).expect("valid score report");
+        assert!(coverage::check(&report, &inventory).is_err());
+    }
+
+    let input = validate(report().to_string().as_bytes()).expect("valid score report");
+    let missing = ["generated.rs".to_owned(), "missing.rs".to_owned()]
+        .into_iter()
+        .collect();
+    assert!(coverage::check(&input, &missing).is_err());
+
+    let mut duplicate = report();
+    let mut alias = duplicate["files"][0].clone();
+    alias["path"] = json!("./generated.rs");
+    duplicate["files"]
+        .as_array_mut()
+        .expect("files")
+        .push(alias);
+    duplicate["total_lines"] = json!(20);
+    duplicate["code_lines"] = json!(16);
+    let input = validate(duplicate.to_string().as_bytes()).expect("valid score report");
+    assert!(coverage::check(&input, &inventory).is_err());
 }
