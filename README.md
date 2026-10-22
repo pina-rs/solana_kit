@@ -24,7 +24,7 @@ account reads, all nineteen node metadata operations and all eight economics
 operations, nine account and token operations and richer accountInfo,
 and all fifteen history, submission, full-result and simulation operations,
 through one executor-neutral protocol owner. All 54 catalog methods have typed
-implementations. The shared 97-case wallet and signer suite has
+implementations. The shared 101-case wallet, signer and durable nonce suite has
 [runtime execution evidence](docs/verification/runtimes.md).
 Nine typed RPC subscription families use a bounded caller-owned connection.
 Their [portable protocol receipt](docs/verification/subscription-runtime.md)

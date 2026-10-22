@@ -9,7 +9,7 @@ pressing its report each execute the whole suite. Wasmi 2 meters Wasm operations
 dynamic copying, and first-use lazy function translation. It does not meter
 elapsed time. The upstream application default and production source are unchanged.
 
-The harness grants the current 97-case suite **2,725,000,000 fuel per entry**.
+The harness grants the current 101-case suite **2,785,000,000 fuel per entry**.
 The host computes `15_000_000 × (EXPECTED_CASE_COUNT - 1) +
 5_000_000 × (MAX_BATCH + 1)` with checked arithmetic. These are pooled workload
 allowances, not individual case limits. The inputs are compile-time fixture
@@ -17,10 +17,10 @@ metadata, never guest reports. Missing cases, invalid batch sizes, and arithmeti
 overflow reject. A separate fresh guest with one fuel must trap with
 `OutOfFuel` before committing anything. Production host defaults are unchanged.
 
-The current total is 15,000,000 times 96 ordinary groups plus 5,000,000 times
-257 authenticated transactions. All 97 canonical cases and the 96/97 sole-hash
+The current total is 15,000,000 times 100 ordinary groups plus 5,000,000 times
+257 authenticated transactions. All 101 canonical cases and the 100/101 sole-hash
 corruption report execute through the actual pinned host. The 92-case minimum
-measurements below are historical; no 97-case minimum is claimed.
+measurements below are historical; no 101-case minimum is claimed.
 
 ## Accepted signer workload and historical 92-case measurements
 

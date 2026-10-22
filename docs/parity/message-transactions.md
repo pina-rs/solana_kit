@@ -6,8 +6,8 @@ or official Solana program libraries for those.
 
 The legacy/v0 slice preserves immutable signed message bytes and ordered signer
 slots. Local construction requires explicit blockhash expiry or durable nonce
-metadata. External
-wire decoding cannot recover that metadata and must retain an unresolved token.
+metadata. External wire decoding cannot recover that metadata and must retain an
+unresolved token.
 Incoming messages have a separate protocol validation path: local compiler
 restrictions must not reject otherwise valid received messages.
 
