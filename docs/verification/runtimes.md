@@ -36,7 +36,70 @@ dispatches a `Press` event and requires the corrupted report and second commit.
 The guest's small unsafe FFI wrappers implement that pinned synchronous copy ABI;
 core and the host harness forbid unsafe code.
 
-## Current v11 numeric and text codec receipt
+## Current v13 economics RPC receipt
+
+The `solana-kit-core-v13` suite preserves the first 62 case lines and appends
+three economics groups. Clean signed source
+`42d89dedcd5bed621fecf9dba440d499b1c1e95a` executed
+`cargo +1.99.1 xtask all` on 2026-10-22. All eight economics methods execute
+literal requests and typed responses through the public client and the existing
+memory transport fixture. The client now implements 30 of the 54 catalog methods.
+
+Native Rust, Chrome, Wasmtime Preview 1 and Preview 2, and the pinned actual
+LeptosKit host each check all 65 canonical passes and the 64/65 corruption result.
+Only `sha256-fips-abc` fails. Graph and compiled-import controls remain unchanged
+and pass, as do all five packaged-core consumer tests. The unchanged independent
+economics consumer also passes all five groups on Rust 1.89 without repository
+flags or patches. The [economics receipt](rpc-economics.md) records exact
+requests, malformed/config boundaries, versions, artifact hashes and limits.
+All 42 economics declaration IDs retain their 39 implemented, two partial and
+one pending statuses. This protocol execution adds no networking, device,
+validator, registry or complete-phase claim.
+
+## Historical v12 composite codec receipt
+
+The `solana-kit-core-v12` suite preserves the first 59 case lines and appends
+three existing composite groups. Clean signed source
+`1be097b26d0c389b5f710c428d3fc5e93d0e3bfa` executed `cargo +1.99.1 xtask all`
+on 2026-10-22. The added groups check typed padded composition, backward bits,
+allocation exhaustion, invalid choice tags and sentinel overlap rejection.
+The [composite receipt](composite-codecs.md) retains the bounded contracts and
+exact 235-ID residual set. Existing numeric, transaction, System and RPC groups
+remain in their original order.
+
+| Actual host               | Canonical                   | Corruption control             |
+| ------------------------- | --------------------------- | ------------------------------ |
+| Native command            | 62/62, exit 0               | 61/62, exit 1                  |
+| Real Chrome               | Full 62/62 report checked   | Full 61/62 report checked      |
+| Wasmtime Preview 1        | 62/62, exit 0               | 61/62, exit 1                  |
+| Wasmtime Preview 2        | 62/62, exit 0               | 61/62, exit 1                  |
+| Actual LeptosKit WasmHost | Full 62/62 JSON, one commit | Full 61/62 JSON, second commit |
+
+Rust 1.99.1, Chrome 155.0.8059.85, ChromeDriver 155.0.8059.84, Wasmtime 50.0.0
+and the pinned actual LeptosKit host above performed these runs. Only
+`sha256-fips-abc` fails in corruption mode. All unchanged 32 core normal/build
+selections, 16 numeric normal-only queries, four System queries, four client
+queries and their negative controls pass. The compiled guest still imports
+exactly `leptoskit::{node_create,node_set_props,commit}`. All five extracted
+packaged-core consumer tests pass. No manifest, feature, lock, dependency policy
+or package owner changed.
+
+```text
+8b266b31d49f0a93366bd90c19c6a9d6714f5d219dd1a2d02b8c3e2762a93a6a  wasm32-wasip1
+d20728c8f50bce853452192ca867613babf132a102bdd3a50bbf35cb6af2af3c  wasm32-wasip2
+b45f81aa806cd69697ef509b2c40bdf381e7e589f7c22bc856f90a5d81b40786  leptoskit-guest
+```
+
+An ordinary external Rust 1.89 consumer replays the unchanged independent five
+groups. They exercise 64,386 binary payload/delimiter pairs, 1,061 freshly
+reproduced original-Dart rows and allocation rejection guards. Its lock and
+assertions remain unchanged. The independent accounting auditor rechecks all
+244 IDs, nine implemented-bounded, 24 partial and 211 uncovered, exact 235-ID
+residual membership and all 37 defining-source digests. This execution proves
+bounded off-chain client behavior, not complete composite parity, networking,
+validator support or installed-device journeys.
+
+## Historical v11 numeric and text codec receipt
 
 The `solana-kit-core-v11` suite preserves the first 56 case lines and appends
 three numeric and text groups. Clean signed source

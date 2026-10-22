@@ -6,8 +6,9 @@ It uses std and owned Kit values without a runtime, network, JavaScript or ambie
 randomness dependency. Native and local futures share one Client protocol owner.
 
 The initial typed operations are getBalance, getLatestBlockhash and full-base64
-getAccountInfo, together with all nineteen node metadata operations in `methods::node`.
-These 22 operations leave 32 of the 54 catalog methods for later slices. Account reads
+getAccountInfo, together with all nineteen node metadata operations in `methods::node`
+and all eight economic operations in `methods::economics`.
+These 30 operations leave 24 of the 54 catalog methods for later slices. Account reads
 validate base64 and allocation size, preserving metadata and the requested
 address in core present/missing types. Other account encodings and data slices
 remain pending. Exact u64 values never pass through floating-point numbers.
@@ -50,5 +51,7 @@ before wrapping; a fresh client needs its own adapter correlation namespace.
 
 The portable protocol executes with memory transports in native Rust, a real
 browser, WASI Preview 1 and 2, and the actual pinned LeptosKit interpreted host.
-Those fixtures include every node method with typed results and literal requests.
+Those fixtures include every node and economics method with typed results and literal requests.
+The [economics runtime receipt](../../docs/verification/rpc-economics.md) retains
+the exact 42-ID accounting and the three partial or pending declarations.
 They do not prove production network adapters or installed browser/mobile journeys.

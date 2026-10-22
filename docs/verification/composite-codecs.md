@@ -45,14 +45,17 @@ truncation, invalid tags, full-buffer trailing bytes, cumulative allocation
 claims, callback failures, zero-progress remainder reads and count overflow.
 Another 434 small binary payload/delimiter pairs compare accepted encoding against
 the first delimiter position and verify roundtrips. Three isolated portable
-functions execute natively without changing the shared conformance registry.
+functions originally executed natively without changing the shared registry.
+The [v12 runtime integration](runtimes.md#historical-v12-composite-codec-receipt)
+now appends those exact functions and executes them in native Rust, Chrome,
+Wasmtime Preview 1 and Preview 2, and the pinned actual LeptosKit host.
 
 A clean Rust 1.89 consumer without patches or repository flags executes typed
 record conversion, dependent Vec fields with exact limits, and unchanged array
 coercion. Workspace, default-feature and MSRV tests, warning-denied Clippy/docs,
 formatting and Monochange checks pass. Core compiles for wasm32-unknown-unknown,
-wasm32-wasip1 and wasm32-wasip2. These new cases have not executed in a browser,
-WASI host, LeptosKit or device. That integration remains separate.
+wasm32-wasip1 and wasm32-wasip2. The later v12 receipt records actual runtime
+integration. Device journeys remain unverified.
 
 ## Exact scope and differences
 
