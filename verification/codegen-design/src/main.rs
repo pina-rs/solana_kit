@@ -5,6 +5,7 @@ mod builders;
 mod client_receipt;
 mod generate;
 mod generated;
+mod generic;
 mod inputs;
 mod proof;
 mod renderer;
@@ -33,6 +34,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     match arguments.get(1).map(String::as_str) {
         Some("inputs") => inputs::audit(),
         Some("generate") => generate::run(),
+        Some("compute-budget") => generic::run(),
+        Some("compute-budget-receipt") => generic::receipt(),
+
         Some("system") => system::run(),
         Some("system-builders") => builders::run(),
         Some("system-errors") => system_errors::run(),

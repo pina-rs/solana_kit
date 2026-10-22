@@ -8,6 +8,8 @@
 //! [`FixtureMode::CorruptHash`] as a negative control for the host's failure path.
 extern crate alloc;
 
+pub mod compute_budget;
+
 mod accounts_sysvars;
 mod addresses;
 mod codecs;
@@ -39,9 +41,9 @@ pub mod system_client;
 use alloc::vec::Vec;
 
 /// Immutable suite identity. Changes to fixtures or assertions require a new ID.
-pub const SUITE_ID: &str = "solana-kit-core-v16";
+pub const SUITE_ID: &str = "solana-kit-core-v17";
 /// Required number of cases; a truncated report cannot pass conformance.
-pub const EXPECTED_CASE_COUNT: usize = 75;
+pub const EXPECTED_CASE_COUNT: usize = 77;
 
 /// Selects authentic fixtures or the intentionally incorrect hash oracle.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -142,6 +144,7 @@ pub fn run(mode: FixtureMode) -> Report {
         rpc_address_simulation::operations(),
     ));
     cases.extend(registry::offchain());
+    cases.extend(compute_budget::cases());
 
     Report {
         suite_id: SUITE_ID,

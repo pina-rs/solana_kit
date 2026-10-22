@@ -15,5 +15,6 @@ text-codecs = ["solana_kit_core/text-codecs"]
 [dependencies]
 hex-literal = "1.0.0"
 solana_kit_client = { path = "../../crates/solana_kit_client" }
+solana_kit_compute_budget = { path = "../../crates/solana_kit_compute_budget" }
 solana_kit_core = { path = "../../crates/solana_kit_core", features = ["crypto", "fixed-points", "text-codecs"] }
 solana_kit_system = { path = "../../crates/solana_kit_system" }

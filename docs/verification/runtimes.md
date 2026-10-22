@@ -37,7 +37,62 @@ dispatches a `Press` event and requires the corrupted report and second commit.
 The guest's small unsafe FFI wrappers implement that pinned synchronous copy ABI;
 core and the host harness forbid unsafe code.
 
-## Current v16 offchain message receipt
+## Current v17 Compute Budget receipt
+
+Signed executable source `cedc862fa559cb5430c10e8fbc9bb4c7a4d6aedf` merges the
+accepted offchain parent `87b1816163fa4c7b0e6fe82e1619a5d1d962c462` and executes
+`solana-kit-core-v17`. Its first 75 case IDs, order and canonical/corruption
+report bytes match that final parent. It appends
+`compute-budget-full-width-price` and `compute-budget-ordering-historical`.
+The fixture owner returns these two entries as an ordered array.
+
+On 2026-10-22, `CARGO_NET_OFFLINE=true cargo +1.99.1 xtask all` passed using warm
+exclusive targets after the final parent merge. Rust 1.99.1, Chrome
+155.0.8059.85, ChromeDriver 155.0.8059.84, Wasmtime 50.0.0 and the pinned actual
+LeptosKit host above executed the suite. Only the driver startup timeout was
+set to 30 seconds.
+
+| Actual host               | Canonical                   | Corruption control             |
+| ------------------------- | --------------------------- | ------------------------------ |
+| Native command            | 77/77, exit 0               | 76/77, exit 1                  |
+| Real Chrome               | Full 77/77 report checked   | Full 76/77 report checked      |
+| Wasmtime Preview 1        | 77/77, exit 0               | 76/77, exit 1                  |
+| Wasmtime Preview 2        | 77/77, exit 0               | 76/77, exit 1                  |
+| Actual LeptosKit WasmHost | Full 77/77 JSON, one commit | Full 76/77 JSON, second commit |
+
+Only `sha256-fips-abc` fails in corruption mode. The two appended assertion
+functions retain their accepted bodies. All five concrete Compute Budget
+codecs, builders, parsers and corrected instruction-list helpers remain exact
+to the accepted source. Historical RequestUnits tag0 is wire support and does
+not establish modern validator acceptance. The
+[Compute Budget receipt](compute-budget.md) retains all 84 source IDs with
+61 implemented and 23 partial. All 55 general renderer IDs remain pending.
+
+All 26 private generator tests pass. Unchanged independent Rust 1.89 consumers
+execute 8,192 literal helper cases, 34 original Dart vectors, complete and sparse
+dispatch, full enums, empty/numeric layouts and linked types. The original
+6,656-case Dart matrix remains applicable through exact helper-source equality.
+The generator remains bounded to the documented finite layouts.
+
+The full host command also passes compiled-import and selected dependency
+policies, their negative controls, and all five extracted packaged-core consumer
+groups. Guest imports remain exactly `leptoskit::{node_create,node_set_props,commit}`.
+The independent Compute Budget normal/build closure is program, Kit core and
+bs58 0.5.1 on native and all three Wasm targets.
+
+Executed artifact SHA-256 values follow. Paths are relative to the owned checkout.
+
+```text
+6031c7c8a154a7ac428f811edfa64532b4b91da792a78e8b89c4c8023555bcc5  target/wasm32-wasip1/debug/solana_kit_conformance.wasm
+dada23b048f8c7a1cea4b0d646b85861bd852053b181c215e6c609f8f3eb8703  target/wasm32-wasip2/debug/solana_kit_conformance.wasm
+1aed9322ffc081acb0990fae564b8a32b0b8ea1b4b234ec73fcae73941331753  target/wasm32-unknown-unknown/release/solana_kit_conformance_guest.wasm
+```
+
+This is off-chain application-client evidence. It establishes no complete phase,
+validator, wallet, installed app, mobile device or registry release readiness.
+The following receipts retain their historical counts and artifacts.
+
+## Historical v16 offchain message receipt
 
 Signed executable source `1fd7a56f94b0589517c7586c012b23fedff0756b` executes
 `solana-kit-core-v16`. It preserves the corrected history parent's first 72 case

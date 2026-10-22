@@ -82,8 +82,8 @@ All five narrow experiments have executed evidence. The
 [Phase 1 evidence matrix](../verification/phase-one.md) links their source,
 commands, pins, negative controls, and limits. `cargo xtask all` reproduces the
 shared portable suite, import/dependency gates, and a clean packaged-core consumer.
-The current accepted suite passes all 75 cases and rejects only the corrupt-hash
-case in the 74/75 negative run on native Rust, Chrome, both WASI previews, and the
+The current accepted suite passes all 77 cases and rejects only the corrupt-hash
+case in the 76/77 negative run on native Rust, Chrome, both WASI previews, and the
 actual pinned LeptosKit `WasmHost`. The
 [portable runtime receipt](../verification/runtimes.md)
 records this expanded suite. The

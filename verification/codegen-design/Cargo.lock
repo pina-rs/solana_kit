@@ -230,6 +230,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "solana-compute-budget-interface"
+version = "3.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8292c436b269ad23cecc8b24f7da3ab07ca111661e25e00ce0e1d22771951ab9"
+dependencies = [
+ "solana-instruction 3.5.1",
+ "solana-sdk-ids",
+]
+
+[[package]]
 name = "solana-define-syscall"
 version = "4.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -340,6 +350,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "dcf09694a0fc14e5ffb18f9b7b7c0f15ecb6eac5b5610bf76a1853459d19daf9"
 
 [[package]]
+name = "solana-sdk-ids"
+version = "3.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "def234c1956ff616d46c9dd953f251fa7096ddbaa6d52b165218de97882b7280"
+dependencies = [
+ "solana-address",
+]
+
+[[package]]
 name = "solana-sha256-hasher"
 version = "3.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -372,11 +391,20 @@ dependencies = [
  "serde_json",
  "sha2",
  "solana-address",
+ "solana-compute-budget-interface",
  "solana-instruction 3.5.1",
  "solana-nonce",
  "solana-system-interface",
+ "solana_kit_compute_budget",
  "solana_kit_core",
  "solana_kit_system",
+]
+
+[[package]]
+name = "solana_kit_compute_budget"
+version = "0.1.0"
+dependencies = [
+ "solana_kit_core",
 ]
 
 [[package]]
