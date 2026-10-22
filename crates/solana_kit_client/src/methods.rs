@@ -155,3 +155,6 @@ impl Method for AccountInfo {
         crate::wire::account(self.0, result)
     }
 }
+
+/// Typed node, epoch, health and leader operations.
+pub mod node;

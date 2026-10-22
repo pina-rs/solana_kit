@@ -17,6 +17,8 @@ mod instructions;
 mod registry;
 /// Portable public RPC protocol fixtures without network I/O.
 pub mod rpc;
+mod rpc_fixture;
+mod rpc_node;
 mod transactions;
 /// Version-one client wire fixtures shared by every host.
 pub mod v1;
@@ -28,9 +30,9 @@ pub mod system_client;
 use alloc::vec::Vec;
 
 /// Immutable suite identity. Changes to fixtures or assertions require a new ID.
-pub const SUITE_ID: &str = "solana-kit-core-v9";
+pub const SUITE_ID: &str = "solana-kit-core-v10";
 /// Required number of cases; a truncated report cannot pass conformance.
-pub const EXPECTED_CASE_COUNT: usize = 53;
+pub const EXPECTED_CASE_COUNT: usize = 56;
 
 /// Selects authentic fixtures or the intentionally incorrect hash oracle.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -115,6 +117,18 @@ pub fn run(mode: FixtureMode) -> Report {
     cases.push(case(
         "system-client-nonce-snapshot",
         system_client::nonce_snapshot(),
+    ));
+    cases.push(case(
+        "rpc-node-scalar-metadata",
+        rpc_node::scalar_metadata(),
+    ));
+    cases.push(case(
+        "rpc-node-structured-metadata",
+        rpc_node::structured_metadata(),
+    ));
+    cases.push(case(
+        "rpc-node-certificate-failures",
+        rpc_node::certificate_and_failures(),
     ));
 
     Report {
