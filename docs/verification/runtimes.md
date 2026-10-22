@@ -36,7 +36,45 @@ dispatches a `Press` event and requires the corrupted report and second commit.
 The guest's small unsafe FFI wrappers implement that pinned synchronous copy ABI;
 core and the host harness forbid unsafe code.
 
-## Current v3 executed receipt
+## Current v4 executed receipt
+
+The integrated `solana-kit-core-v4` suite preserves all preceding 35 cases and
+adds four account/sysvar cases. Fresh local macOS ARM64 execution on 2026-10-22
+at signed integration checkpoint `c18863db96bec6239c576c966c05c9dfc899a63f`
+used Rust 1.99.1, Chrome 155.0.8059.85, ChromeDriver 155.0.8059.84, Wasmtime
+50.0.0, and the pinned actual LeptosKit host. The committed source and native
+goldens were clean for this `cargo xtask all` run, which exited 0.
+
+| Execution                 | Canonical                      | Corruption control                                     |
+| ------------------------- | ------------------------------ | ------------------------------------------------------ |
+| Native command            | 39/39, exit 0                  | 38/39, exit 1                                          |
+| Real headless Chrome      | Full 39/39 report checked      | Full 38/39 report checked; both browser tests passed   |
+| Wasmtime Preview 1        | 39/39, exit 0                  | 38/39, exit 1                                          |
+| Wasmtime Preview 2        | 39/39, exit 0                  | 38/39, exit 1                                          |
+| Actual LeptosKit WasmHost | Full 39/39 JSON and one commit | Press event produced full 38/39 JSON and second commit |
+
+The sole corrupted case remains `sha256-fips-abc`, with `SHA-256 digest mismatch`.
+The account cases execute the independent signed Clock bytes, account metadata
+and missing snapshots, u64 history bounds, and lossless program-error facts.
+Every host checks suite identity, exact count, every outcome, and failure state.
+All eight default/crypto dependency closures, exact guest imports, both forbidden
+fixtures, and all four extracted packaged-core consumer tests passed. No core
+dependencies were added; the default graph remains `bs58` only.
+
+Executed v4 artifact SHA-256 values (local debug WASI artifacts, release guest):
+
+```text
+fdac326ef0a8c2b6e969ca33489415f3f811ba1addd3746b124af5148f65c2e4  wasm32-wasip1
+c698a1970f91cff926ee27d505d4ee69dc93eb2f126ce5537fa6b36182e463af  wasm32-wasip2
+1646059fbcf4e86854a95eafeb48a642bdf58bb31597784df3973a1a191093ab  leptoskit-guest
+```
+
+The [account/sysvar receipt](accounts-sysvars.md) maps 151 declarations and
+retains all 78 unresolved declarations. Account fetching remains pending;
+this deterministic client slice does not complete Phase 2, transports, or device
+journeys. Earlier receipts below describe their historical artifacts.
+
+## Historical v3 executed receipt
 
 The integrated `solana-kit-core-v3` suite has 35 cases: the preceding 31
 primitive/codec cases and four immutable legacy/v0 transaction cases. Fresh

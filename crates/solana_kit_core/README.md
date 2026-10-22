@@ -1,7 +1,8 @@
 # solana_kit_core
 
 Portable off-chain client types for Solana addresses, hashes, signatures,
-ordered instructions, bounded binary codecs, and immutable legacy/v0 transactions.
+ordered instructions, bounded binary codecs, account snapshots, sysvar layouts,
+program errors, and immutable legacy/v0 transactions.
 The default dependency graph contains only `bs58`. The optional `crypto` feature
 adds SHA-256, validated program-derived addresses, and deterministic Ed25519
 signing and strict verification through RustCrypto implementations.
@@ -22,6 +23,12 @@ preserves its exact signed bytes and records the lifetime token as unresolved,
 because expiry height is absent from the wire. Optional `crypto` signs and
 verifies those frozen bytes; structural decoding alone does not authenticate
 signatures. V1, durable nonces and general signer capabilities remain pending.
+
+`accounts` owns present and missing snapshots and decodes data while preserving
+metadata and enforcing the expected owner and reported size. `sysvars` provides
+nine bounded wire layouts and thirteen typed addresses. `program_error` retains
+custom, known and unknown failures without inferring instruction attribution.
+RPC account fetching remains pending; see the account/sysvar capability receipt.
 
 ```rust
 use solana_kit_core::{AccountMeta, AccountRole, Address, Instruction};
