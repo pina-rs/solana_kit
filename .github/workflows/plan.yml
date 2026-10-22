@@ -83,7 +83,7 @@ jobs:
         shell: bash
         run: |
           cargo +1.99.1 install monostyle --version 0.3.26 --locked
-          monostyle check . --fail-under 90 --no-color
+          cargo +1.99.1 xtask style
       - name: Validate ownership and preview release files
         shell: bash
         run: |

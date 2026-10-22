@@ -5,6 +5,7 @@ mod consumer;
 mod gates;
 mod process;
 mod runtimes;
+mod style;
 
 use anyhow::{Context, Result, bail};
 
@@ -16,6 +17,8 @@ fn main() -> Result<()> {
         .context("usage: cargo xtask <command>")?;
 
     match command.as_str() {
+        "style" => style::run(),
+        "style-report" => style::check_report(),
         "native" => runtimes::native(),
         "browser" => runtimes::browser(),
         "wasi" => runtimes::wasi(),

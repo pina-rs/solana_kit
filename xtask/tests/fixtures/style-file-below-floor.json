@@ -1,0 +1,22 @@
+{
+  "readability": { "value": 100.0 },
+  "complexity": { "value": 99.887 },
+  "total_lines": 100,
+  "code_lines": 100,
+  "files": [
+    {
+      "path": "clean.rs",
+      "total_lines": 99,
+      "code_lines": 99,
+      "readability": { "value": 100.0 },
+      "complexity": { "value": 100.0 }
+    },
+    {
+      "path": "generated.rs",
+      "total_lines": 1,
+      "code_lines": 1,
+      "readability": { "value": 100.0 },
+      "complexity": { "value": 88.7 }
+    }
+  ]
+}
