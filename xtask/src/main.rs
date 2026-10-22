@@ -1,6 +1,7 @@
 //! Reproducible runtime verification commands; unavailable tools are hard errors.
 #![forbid(unsafe_code)]
 
+mod client_gate;
 mod consumer;
 mod gates;
 mod process;

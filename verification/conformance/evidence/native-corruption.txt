@@ -46,4 +46,7 @@ system-strict-data-bounds: Ok(())
 transaction-v1-message-first: Ok(())
 transaction-v1-inline-config: Ok(())
 transaction-v1-signature-suffix: Ok(())
-solana-kit-core-v7: 47/48 cases passed
+rpc-exact-balance-u64: Ok(())
+rpc-bounded-opaque-json: Ok(())
+rpc-local-pending-correlation: Ok(())
+solana-kit-core-v8: 50/51 cases passed
