@@ -29,4 +29,8 @@ codec-string-length-widths: Ok(())
 codec-bounded-sequences: Ok(())
 codec-distinct-options: Ok(())
 codec-exact-framing: Ok(())
-solana-kit-core-v2: 30/31 cases passed
+transaction-legacy-wire: Ok(())
+transaction-v0-lookup-positions: Ok(())
+transaction-malformed-wire: Ok(())
+transaction-openssl-signature: Ok(())
+solana-kit-core-v3: 34/35 cases passed

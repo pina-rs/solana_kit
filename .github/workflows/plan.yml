@@ -28,6 +28,7 @@ jobs:
           cargo +1.99.1 fmt --all --check
           cargo +1.99.1 test --workspace --all-features --locked
           cargo +1.99.1 clippy --workspace --all-targets --all-features --locked -- -D warnings
+          RUSTDOCFLAGS="-D warnings" cargo +1.99.1 doc --workspace --all-features --no-deps --locked
           cargo +1.99.1 check -p solana_kit_core --no-default-features --locked
           cargo +1.99.1 check -p solana_kit_core --no-default-features --features crypto --locked
       - name: Execute canonical suite and corrupt-fixture exit control

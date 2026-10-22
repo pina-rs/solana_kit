@@ -1,7 +1,7 @@
 # solana_kit_core
 
 Portable off-chain client types for Solana addresses, hashes, signatures,
-ordered instructions, and bounded binary codecs.
+ordered instructions, bounded binary codecs, and immutable legacy/v0 transactions.
 The default dependency graph contains only `bs58`. The optional `crypto` feature
 adds SHA-256, validated program-derived addresses, and deterministic Ed25519
 signing and strict verification through RustCrypto implementations.
@@ -14,6 +14,14 @@ The crate uses `no_std` plus `alloc`, with no executor, JavaScript, filesystem,
 network, or random-number source. Callers supply signing seeds and own the
 security and erasure of their seed storage. Signing keys erase their owned
 secret material on drop through `ed25519-dalek`'s `zeroize` feature.
+
+The `transaction` module compiles and strictly decodes immutable legacy/v0
+messages, retains ordered signature slots, and encodes packets within 1232 bytes.
+Local compilation requires explicit blockhash expiry metadata. Received wire
+preserves its exact signed bytes and records the lifetime token as unresolved,
+because expiry height is absent from the wire. Optional `crypto` signs and
+verifies those frozen bytes; structural decoding alone does not authenticate
+signatures. V1, durable nonces and general signer capabilities remain pending.
 
 ```rust
 use solana_kit_core::{AccountMeta, AccountRole, Address, Instruction};

@@ -12,13 +12,14 @@ mod addresses;
 mod codecs;
 mod cryptography;
 mod instructions;
+mod transactions;
 
 use alloc::{vec, vec::Vec};
 
 /// Immutable suite identity. Changes to fixtures or assertions require a new ID.
-pub const SUITE_ID: &str = "solana-kit-core-v2";
+pub const SUITE_ID: &str = "solana-kit-core-v3";
 /// Required number of cases; a truncated report cannot pass conformance.
-pub const EXPECTED_CASE_COUNT: usize = 31;
+pub const EXPECTED_CASE_COUNT: usize = 35;
 
 /// Selects authentic fixtures or the intentionally incorrect hash oracle.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -82,7 +83,7 @@ fn require(condition: bool, explanation: &'static str) -> Result<(), &'static st
 /// the expected hash fixture; the implementation and comparison remain intact.
 #[must_use]
 pub fn run(mode: FixtureMode) -> Report {
-    let cases = vec![
+    let mut cases = vec![
         case("address-base58-golden", addresses::golden()),
         case("address-invalid-alphabet", addresses::invalid_alphabet()),
         case("address-invalid-length", addresses::invalid_length()),
@@ -121,6 +122,7 @@ pub fn run(mode: FixtureMode) -> Report {
         case("codec-distinct-options", codecs::options()),
         case("codec-exact-framing", codecs::framing()),
     ];
+    cases.extend(transactions::cases());
 
     Report {
         suite_id: SUITE_ID,

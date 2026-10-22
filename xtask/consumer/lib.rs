@@ -43,4 +43,52 @@ mod tests {
         );
         assert!(verify(&key.address(), b"changed message", &signature).is_err());
     }
+
+    /// Exercises the transaction module from the extracted archive with explicit wire bytes.
+    #[test]
+    fn immutable_transaction_preserves_exact_signed_bytes() {
+        use solana_kit_core::{
+            Instruction,
+            crypto::Keypair,
+            transaction::{Lifetime, Message, Transaction, Version},
+        };
+
+        let key = Keypair::from_seed(&[7; 32]);
+        let program = Address::from([2; 32]);
+        let blockhash = Hash::from([3; 32]);
+        let lifetime = Lifetime::Blockhash {
+            blockhash,
+            last_valid_block_height: 42,
+        };
+        let instruction = Instruction {
+            program_address: program,
+            accounts: vec![],
+            data: vec![],
+        };
+        let message = Message::compile(
+            Version::Legacy,
+            key.address(),
+            lifetime,
+            &[instruction],
+            &[],
+        )
+        .expect("valid legacy message");
+        let mut expected = vec![1, 0, 1, 2];
+        expected.extend(key.address().as_bytes());
+        expected.extend(program.as_bytes());
+        expected.extend(blockhash.as_bytes());
+        expected.extend([1, 1, 0, 0]);
+        assert_eq!(message.bytes(), expected);
+
+        let signed = Transaction::new(message).sign(&key).expect("owned signer");
+        let packet = signed.encode(true).expect("complete signature slots");
+        let received = Transaction::decode(&packet).expect("valid packet");
+        assert_eq!(received.message().bytes(), expected);
+        assert_eq!(
+            received.message().lifetime(),
+            Lifetime::Unresolved(blockhash)
+        );
+        assert_eq!(received.verify(), Ok(()));
+        assert_eq!(received.encode(true), Ok(packet));
+    }
 }
