@@ -40,7 +40,7 @@ core and the host harness forbid unsafe code.
 
 The integrated `solana-kit-core-v5` suite preserves all preceding 39 cases and
 adds three exact fixed-point cases. Fresh local macOS ARM64 execution on
-2026-10-22 at signed checkpoint `84ca61b0eb5fec7c74ca4916740099d79b34f066`
+2026-10-22 at signed checkpoint `9a8c5a52d1f7d90ade1b8fb7e4648e7ee8990c43`
 used Rust 1.99.1, Chrome 155.0.8059.85, ChromeDriver 155.0.8059.84,
 Wasmtime 50.0.0 and the pinned actual LeptosKit host. Source and native goldens
 were clean for this `cargo xtask all` run, which exited 0.
@@ -70,8 +70,8 @@ passes all five tests, including actual fixed-point arithmetic and wire bytes.
 Executed v5 artifact SHA-256 values (local debug WASI artifacts, release guest):
 
 ```text
-c4a8df243e588b2dccc8c07a90898bd4ae4d8cc7c3c54fc35a4153caef5bdf15  wasm32-wasip1
-6d70ece8425dbfd0f09ea2ff5350045df44e7c01731ad92c38369a4180f32dd4  wasm32-wasip2
+3a3717685636b73a2aa192b305a05d12babba55034ba85d079725821dbcc3c5c  wasm32-wasip1
+c5beea1bc5085d004d77da07e2a00224fa7debe477f5cbf862f759cebac7002a  wasm32-wasip2
 6cfd3128dada0eb65a3e2a28a5fac3f73d4c7466060a4fcee58e0e0c2c81b0e8  leptoskit-guest
 ```
 
