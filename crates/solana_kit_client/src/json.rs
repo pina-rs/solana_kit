@@ -7,11 +7,14 @@ use serde::{Deserialize, Deserializer, Serialize};
 use serde_json::value::RawValue;
 
 use crate::methods::Method;
-use crate::{Reply, Request, TransportError};
+use crate::{Error, Reply, Request};
 
+/// Explicit JSON body and nesting budgets.
 #[derive(Debug, Clone, Copy)]
 pub struct Limits {
+    /// Maximum request and reply bytes.
     pub bytes: usize,
+    /// Maximum nested JSON containers, checked before value allocation.
     pub depth: usize,
 }
 
@@ -24,52 +27,19 @@ impl Default for Limits {
     }
 }
 
-/// Unknown error data is retained as exact JSON, not called an exhaustive schema.
-#[derive(Debug, Deserialize)]
-pub struct RemoteError {
-    pub code: i64,
-    pub message: String,
-    #[serde(default)]
-    pub data: Presence<Box<RawValue>>,
-}
-
 /// Missing and explicit JSON null differ, including for a nullable success result.
 #[derive(Debug, Default, PartialEq, Eq)]
 pub enum Presence<T> {
     #[default]
+    /// The field was absent.
     Missing,
+    /// The field was present; T decides whether null is valid.
     Present(T),
 }
 
 impl<'de, T: Deserialize<'de>> Deserialize<'de> for Presence<T> {
     fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
         T::deserialize(deserializer).map(Self::Present)
-    }
-}
-
-#[derive(Debug)]
-pub enum Error {
-    IdExhausted,
-    Transport(TransportError),
-    Status(u16),
-    BodyLimit,
-    DepthLimit,
-    Json(serde_json::Error),
-    Schema(serde_json::Error),
-    Envelope,
-    Correlation,
-    Remote(RemoteError),
-}
-
-impl From<TransportError> for Error {
-    fn from(error: TransportError) -> Self {
-        Self::Transport(error)
-    }
-}
-
-impl From<serde_json::Error> for Error {
-    fn from(error: serde_json::Error) -> Self {
-        Self::Json(error)
     }
 }
 
@@ -159,6 +129,7 @@ pub fn response<R: DeserializeOwned>(id: u64, reply: Reply, limits: Limits) -> R
     }
 
     check_limits(&reply.body, limits)?;
+    crate::validate::unique(&reply.body)?;
     let envelope: Envelope = serde_json::from_slice(&reply.body)?;
 
     if envelope.jsonrpc != "2.0" {

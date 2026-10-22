@@ -6,9 +6,9 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 use std::task::Poll;
 
 use solana_kit_rpc_design::alternatives::{ErasedClient, ErasedTransport};
-use solana_kit_rpc_design::json::{Error, Limits};
 use solana_kit_rpc_design::methods::{Balance, Method};
 use solana_kit_rpc_design::{Client, Reply, Request, Transport, TransportError};
+use solana_kit_rpc_design::{Error, Limits};
 
 const BALANCE: &str =
     r#"{"jsonrpc":"2.0","id":1,"result":{"context":{"slot":3},"value":18446744073709551615}}"#;
@@ -110,7 +110,7 @@ fn same_generic_client_holds_rc_across_observed_pending() {
 fn erased_candidate_runs_locally() {
     let counter = Rc::new(AtomicUsize::new(0));
     let client = ErasedClient(Local(Rc::clone(&counter)));
-    let value = futures::executor::block_on(client.call(1, balance())).unwrap();
+    let value = futures::executor::block_on(client.call(balance())).unwrap();
     assert_eq!(value.value, u64::MAX);
     assert_eq!(counter.load(Ordering::SeqCst), 1);
 }
@@ -150,5 +150,8 @@ fn client_executes_blockhash_and_nullable_account_typed_paths() {
 
     let account = futures::executor::block_on(account_client.call(request)).unwrap();
 
-    assert!(account.value.is_none());
+    assert!(matches!(
+        account.value,
+        solana_kit_core::accounts::MaybeAccount::Missing(_)
+    ));
 }

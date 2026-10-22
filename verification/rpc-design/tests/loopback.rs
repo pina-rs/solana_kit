@@ -9,9 +9,9 @@ use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::{TcpListener, TcpStream};
 use tokio::sync::oneshot;
 
-use solana_kit_rpc_design::json::{Error, Limits};
 use solana_kit_rpc_design::methods::Balance;
 use solana_kit_rpc_design::{Client, Reply, Request, Transport, TransportError};
+use solana_kit_rpc_design::{Error, Limits, TransportFailureKind};
 
 struct Loopback(SocketAddr);
 
@@ -31,7 +31,7 @@ const BEFORE_ABORT: Duration = Duration::from_millis(160);
 async fn exchange(address: SocketAddr, request: Request) -> Result<Reply, TransportError> {
     let mut stream = TcpStream::connect(address)
         .await
-        .map_err(|_| TransportError::Io)?;
+        .map_err(|_| TransportError::new(TransportFailureKind::Io))?;
     let headers = format!(
         "POST / HTTP/1.1\r\nHost: localhost\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n",
         request.body.len()
@@ -39,25 +39,25 @@ async fn exchange(address: SocketAddr, request: Request) -> Result<Reply, Transp
     stream
         .write_all(headers.as_bytes())
         .await
-        .map_err(|_| TransportError::Io)?;
+        .map_err(|_| TransportError::new(TransportFailureKind::Io))?;
     stream
         .write_all(&request.body)
         .await
-        .map_err(|_| TransportError::Io)?;
+        .map_err(|_| TransportError::new(TransportFailureKind::Io))?;
     let bytes = read_bounded(&mut stream, request.max_reply_bytes + HEADER_ALLOWANCE).await?;
     let split = bytes
         .windows(4)
         .position(|window| window == b"\r\n\r\n")
-        .ok_or(TransportError::Io)?;
+        .ok_or(TransportError::new(TransportFailureKind::Io))?;
 
     if !bytes.starts_with(b"HTTP/1.1 200 OK\r\n") {
-        return Err(TransportError::Io);
+        return Err(TransportError::new(TransportFailureKind::Io));
     }
 
     let body = bytes[split + 4..].to_vec();
 
     if body.len() > request.max_reply_bytes {
-        return Err(TransportError::BodyLimit);
+        return Err(TransportError::new(TransportFailureKind::BodyLimit));
     }
 
     Ok(Reply {
@@ -74,14 +74,14 @@ async fn read_bounded(stream: &mut TcpStream, limit: usize) -> Result<Vec<u8>, T
         let count = stream
             .read(&mut chunk)
             .await
-            .map_err(|_| TransportError::Io)?;
+            .map_err(|_| TransportError::new(TransportFailureKind::Io))?;
 
         if count == 0 {
             return Ok(bytes);
         }
 
         if bytes.len() + count > limit {
-            return Err(TransportError::BodyLimit);
+            return Err(TransportError::new(TransportFailureKind::BodyLimit));
         }
 
         bytes.extend_from_slice(&chunk[..count]);
@@ -184,6 +184,6 @@ async fn dropping_actual_pending_call_closes_owned_socket() {
 
 #[test]
 fn explicit_transport_failure_remains_distinct() {
-    let error = Error::from(TransportError::Denied);
-    assert!(matches!(error, Error::Transport(TransportError::Denied)));
+    let error = Error::from(TransportError::new(TransportFailureKind::Denied));
+    assert!(matches!(error, Error::Transport(error) if error.kind == TransportFailureKind::Denied));
 }

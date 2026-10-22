@@ -1,0 +1,49 @@
+# solana_kit_client
+
+Executor-neutral typed Solana RPC for off-chain application code. This crate is
+not for Solana on-chain programs; use Pina or official Solana program libraries.
+It uses std and owned Kit values without a runtime, network, JavaScript or ambient
+randomness dependency. Native and local futures share one Client protocol owner.
+
+The initial typed operations are getBalance, getLatestBlockhash and full-base64
+getAccountInfo. All 54 catalog methods remain the delivery target. Account reads
+validate base64 and allocation size, preserving metadata and the requested
+address in core present/missing types. Other account encodings and data slices
+remain pending. Exact u64 values never pass through floating-point numbers.
+
+Applications implement Transport or select a future platform adapter. The adapter
+owns its endpoint, caller authentication, response-header budget, deadline and
+cancellation. Enforce Request's body limit while receiving; the client checks it
+again before parsing. The client never retries, creates a runtime, reads ambient
+credentials or promises a network capability the host did not grant.
+
+Method is an open typed extension contract: providers own their parameter and
+result schemas while Client retains HTTP status, JSON-RPC framing, correlation,
+remote errors and byte/depth budgets. A response decoder receives only the
+validated success fragment. Public built-in results use Kit domain values.
+
+```rust
+use serde::{Deserialize, Serialize};
+use solana_kit_client::{Error, methods::Method};
+
+#[derive(Serialize)]
+struct ProviderStatus(Vec<String>);
+#[derive(Deserialize)]
+struct Status { healthy: bool }
+impl Method for ProviderStatus {
+    type Response = Status;
+    const NAME: &'static str = "providerStatus";
+    fn decode(&self, result: &str) -> Result<Status, Error> {
+        serde_json::from_str(result).map_err(Error::Schema)
+    }
+}
+```
+
+Errors distinguish transport capability/policy/deadline failures and original
+adapter causes from HTTP status, malformed JSON, schema/domain failures,
+correlation and remote JSON-RPC failures. Remote error data retains missing versus
+explicit null. Client IDs are monotonic, exactly browser-representable and fail
+before wrapping; a fresh client needs its own adapter correlation namespace.
+
+The portable crate compiles for browser Wasm and WASI. These checks do not prove
+production network adapters or installed browser/mobile host journeys.

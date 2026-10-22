@@ -24,10 +24,16 @@ type = "cargo"
 changelog = false
 publish = { enabled = false }
 
+[package.solana_kit_client]
+path = "crates/solana_kit_client"
+type = "cargo"
+changelog = false
+publish = { enabled = false }
+
 # Add implemented client/adapter packages here when their versions converge.
 # The dependency-free umbrella reservation remains independently at 0.0.0.
 [group.sdk]
-packages = ["solana_kit_core"]
+packages = ["solana_kit_core", "solana_kit_client"]
 changelog = { path = "crates/solana_kit_core/CHANGELOG.md", format = "keep_a_changelog" }
 
 [ecosystems.cargo]

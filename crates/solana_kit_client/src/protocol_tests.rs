@@ -1,8 +1,7 @@
-use solana_kit_rpc_design::json::{self, Error, Limits, Presence};
-use solana_kit_rpc_design::methods::{
-    AccountInfo, Balance, Commitment, LatestBlockhash, ReadConfig,
-};
-use solana_kit_rpc_design::{Reply, Request};
+use crate::Error;
+use crate::json::{self, Limits, Presence};
+use crate::methods::{AccountInfo, Balance, Commitment, LatestBlockhash, ReadConfig};
+use crate::{Reply, Request};
 
 const REQUEST_ID: u64 = 7;
 const ADDRESS: &str = "11111111111111111111111111111111";
@@ -20,7 +19,7 @@ fn envelope(result: &str) -> Vec<u8> {
 }
 
 fn balance(body: impl Into<Vec<u8>>) -> Result<u64, Error> {
-    let value: solana_kit_rpc_design::methods::Contextual<u64> =
+    let value: crate::methods::Contextual<u64> =
         json::response(REQUEST_ID, reply(body), Limits::default())?;
     assert_eq!(value.context.slot, u64::MAX);
     Ok(value.value)
@@ -114,9 +113,8 @@ fn framing_rejects_wrong_version_id_ambiguous_duplicate_and_trailing_data() {
 #[test]
 fn required_context_value_and_nullable_account_have_distinct_missing_policy() {
     let null = envelope(&format!(r#"{{"context":{CONTEXT},"value":null}}"#));
-    let value: solana_kit_rpc_design::methods::NullableContext<
-        solana_kit_rpc_design::methods::Account,
-    > = json::response(REQUEST_ID, reply(null), Limits::default()).unwrap();
+    let value: crate::wire::NullableContext<crate::wire::Account> =
+        json::response(REQUEST_ID, reply(null), Limits::default()).unwrap();
     assert!(value.value.is_none());
 
     for malformed in [
@@ -125,11 +123,11 @@ fn required_context_value_and_nullable_account_have_distinct_missing_policy() {
         r#"{"context":{},"value":null}"#.into(),
     ] {
         assert!(
-            json::response::<
-                solana_kit_rpc_design::methods::NullableContext<
-                    solana_kit_rpc_design::methods::Account,
-                >,
-            >(REQUEST_ID, reply(envelope(&malformed)), Limits::default())
+            json::response::<crate::wire::NullableContext<crate::wire::Account>>(
+                REQUEST_ID,
+                reply(envelope(&malformed)),
+                Limits::default()
+            )
             .is_err()
         );
     }
@@ -140,16 +138,11 @@ fn typed_blockhash_and_account_reject_bad_domain_values() {
     let block = format!(
         r#"{{"context":{CONTEXT},"value":{{"blockhash":"{ADDRESS}","lastValidBlockHeight":18446744073709551615}}}}"#
     );
-    let decoded: solana_kit_rpc_design::methods::Contextual<
-        solana_kit_rpc_design::methods::BlockhashValue,
-    > = json::response(REQUEST_ID, reply(envelope(&block)), Limits::default()).unwrap();
+    let decoded: crate::methods::Contextual<crate::methods::BlockhashValue> =
+        json::response(REQUEST_ID, reply(envelope(&block)), Limits::default()).unwrap();
     assert_eq!(decoded.value.last_valid_block_height, u64::MAX);
     assert!(
-        json::response::<
-            solana_kit_rpc_design::methods::Contextual<
-                solana_kit_rpc_design::methods::BlockhashValue,
-            >,
-        >(
+        json::response::<crate::methods::Contextual<crate::methods::BlockhashValue>>(
             REQUEST_ID,
             reply(envelope(&block.replace(ADDRESS, "invalid"))),
             Limits::default()
@@ -159,9 +152,8 @@ fn typed_blockhash_and_account_reject_bad_domain_values() {
     let account = format!(
         r#"{{"context":{CONTEXT},"value":{{"executable":false,"lamports":18446744073709551615,"owner":"{ADDRESS}","space":0,"rentEpoch":18446744073709551615,"data":["","base64"]}}}}"#
     );
-    let value: solana_kit_rpc_design::methods::NullableContext<
-        solana_kit_rpc_design::methods::Account,
-    > = json::response(REQUEST_ID, reply(envelope(&account)), Limits::default()).unwrap();
+    let value: crate::wire::NullableContext<crate::wire::Account> =
+        json::response(REQUEST_ID, reply(envelope(&account)), Limits::default()).unwrap();
     assert_eq!(value.value.unwrap().lamports, u64::MAX);
 
     for malformed in [
@@ -170,11 +162,11 @@ fn typed_blockhash_and_account_reject_bad_domain_values() {
         account.replace("false", "0"),
     ] {
         assert!(
-            json::response::<
-                solana_kit_rpc_design::methods::NullableContext<
-                    solana_kit_rpc_design::methods::Account,
-                >,
-            >(REQUEST_ID, reply(envelope(&malformed)), Limits::default())
+            json::response::<crate::wire::NullableContext<crate::wire::Account>>(
+                REQUEST_ID,
+                reply(envelope(&malformed)),
+                Limits::default()
+            )
             .is_err()
         );
     }
@@ -237,7 +229,7 @@ fn body_and_depth_limits_precede_json_and_http_status_precedes_success() {
 
 #[test]
 fn optional_api_version_preserves_absence_and_rejects_explicit_null() {
-    use solana_kit_rpc_design::methods::Contextual;
+    use crate::methods::Contextual;
     let missing = envelope(r#"{"context":{"slot":1},"value":0}"#);
     let value: Contextual<u64> =
         json::response(REQUEST_ID, reply(missing), Limits::default()).unwrap();
