@@ -63,6 +63,17 @@ into package parsing, state validation, and reference comparison so it meets the
 target through clearer ownership rather than adjusted scoring.
 
 Monochange 0.16.0 explicitly registers `solana_kit` and `solana_kit_core`.
+The Ubuntu planning job downloads its official Linux x86_64 GNU release archive
+into `$RUNNER_TEMP/monochange-0.16.0`, checks SHA-256
+`26ff7caf1ce4951c0309ff8227d59ea218d01b189545b0aa30360d54a2ff237a`
+before extraction, prepends that directory to `PATH`, and asserts version 0.16.0
+before running every existing ownership and release gate. This avoids the
+release's source-build dependency on an unstable Rust coverage attribute;
+SDK builds remain on stable Rust 1.99.1 and the core MSRV stays 1.89.0.
+The archive digest and single-file `monochange` layout were checked on macOS
+ARM64, including rejection of a deliberately wrong digest. Linux binary
+execution requires the Ubuntu CI run.
+
 Cargo auto-registration stays disabled. Private `solana_kit_conformance` has
 `publish = false` and is visible in discovery, but is not a registered release
 or publish target. Component and ecosystem publishing are disabled. Umbrella
