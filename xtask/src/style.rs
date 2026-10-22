@@ -106,8 +106,8 @@ fn validate(bytes: &[u8]) -> Result<Report> {
         report
             .files
             .iter()
-            .map(|file| file.total_lines)
-            .sum::<usize>()
+            .try_fold(0usize, |total, file| total.checked_add(file.total_lines))
+            .context("scored file total_lines overflow")?
             == report.total_lines,
         "scored file total_lines do not match repository total"
     );
@@ -115,8 +115,8 @@ fn validate(bytes: &[u8]) -> Result<Report> {
         report
             .files
             .iter()
-            .map(|file| file.code_lines)
-            .sum::<usize>()
+            .try_fold(0usize, |total, file| total.checked_add(file.code_lines))
+            .context("scored file code_lines overflow")?
             == report.code_lines,
         "scored file code_lines do not match repository total"
     );

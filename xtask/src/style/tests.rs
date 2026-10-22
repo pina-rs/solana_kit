@@ -1,10 +1,10 @@
 //! Negative controls for the report boundary, independent of monostyle's exit status.
 
 use super::{FLOOR, validate};
+use serde_json::{Value, json};
 
 const HIGH_AGGREGATE: f64 = 99.8;
 const ABOVE_MAXIMUM: f64 = 100.1;
-use serde_json::{Value, json};
 
 /// Builds the required cells from the actual pinned JSON model.
 fn report() -> Value {
@@ -88,6 +88,18 @@ fn rejects_out_of_range_or_non_numeric_scores() {
     for value in [json!(ABOVE_MAXIMUM), json!(-1), Value::Null, json!("NaN")] {
         let mut report = report();
         report["files"][0]["complexity"]["value"] = value;
+        assert!(validate(report.to_string().as_bytes()).is_err());
+    }
+}
+
+#[test]
+fn rejects_overflowing_line_totals() {
+    for count in ["total_lines", "code_lines"] {
+        let mut report = report();
+        report["files"][0][count] = json!(usize::MAX);
+        let mut second = report["files"][0].clone();
+        second["path"] = json!("another.rs");
+        report["files"].as_array_mut().expect("array").push(second);
         assert!(validate(report.to_string().as_bytes()).is_err());
     }
 }
