@@ -198,6 +198,14 @@ fn strict_lengths_headers_indices_and_truncation() {
         assert_eq!(Message::decode(&bytes), Err(Error::InvalidLength));
     }
 
+    for prefix in [&[][..], &[128][..], &[128, 128][..]] {
+        assert_eq!(Transaction::decode(prefix), Err(Error::Truncated));
+    }
+
+    for prefix in [&[128, 0][..], &[128, 128, 0][..], &[255, 255, 4][..]] {
+        assert_eq!(Transaction::decode(prefix), Err(Error::InvalidLength));
+    }
+
     let mut bytes = fixture.clone();
     bytes[0] = 129;
     assert_eq!(Message::decode(&bytes), Err(Error::UnsupportedVersion));

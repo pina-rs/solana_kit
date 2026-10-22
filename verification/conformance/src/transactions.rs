@@ -7,7 +7,7 @@ use solana_kit_core::{
     transaction::{Error, Lifetime, LookupTable, Message, Transaction, Version},
 };
 
-use crate::require;
+use crate::{CaseResult, case, require};
 
 const SIGNATURE: [u8; 64] = [
     179, 0, 170, 254, 234, 124, 169, 9, 108, 48, 231, 29, 49, 65, 187, 140, 250, 66, 209, 172, 185,
@@ -19,6 +19,16 @@ const SEED: [u8; 32] = [
     157, 97, 177, 157, 239, 253, 90, 96, 186, 132, 74, 244, 146, 236, 44, 196, 68, 73, 197, 105,
     123, 50, 105, 25, 112, 59, 172, 3, 28, 174, 127, 96,
 ];
+
+/// Keeps the transaction assertion registry with its fixtures.
+pub(super) fn cases() -> [CaseResult; 4] {
+    [
+        case("transaction-legacy-wire", legacy_wire()),
+        case("transaction-v0-lookup-positions", lookup_positions()),
+        case("transaction-malformed-wire", malformed_wire()),
+        case("transaction-openssl-signature", openssl_signature()),
+    ]
+}
 
 /// Explicit field layout audited against pinned Dart and official Solana.
 fn legacy_bytes() -> Vec<u8> {

@@ -83,7 +83,7 @@ fn require(condition: bool, explanation: &'static str) -> Result<(), &'static st
 /// the expected hash fixture; the implementation and comparison remain intact.
 #[must_use]
 pub fn run(mode: FixtureMode) -> Report {
-    let cases = vec![
+    let mut cases = vec![
         case("address-base58-golden", addresses::golden()),
         case("address-invalid-alphabet", addresses::invalid_alphabet()),
         case("address-invalid-length", addresses::invalid_length()),
@@ -121,17 +121,8 @@ pub fn run(mode: FixtureMode) -> Report {
         case("codec-bounded-sequences", codecs::bounded_sequences()),
         case("codec-distinct-options", codecs::options()),
         case("codec-exact-framing", codecs::framing()),
-        case("transaction-legacy-wire", transactions::legacy_wire()),
-        case(
-            "transaction-v0-lookup-positions",
-            transactions::lookup_positions(),
-        ),
-        case("transaction-malformed-wire", transactions::malformed_wire()),
-        case(
-            "transaction-openssl-signature",
-            transactions::openssl_signature(),
-        ),
     ];
+    cases.extend(transactions::cases());
 
     Report {
         suite_id: SUITE_ID,

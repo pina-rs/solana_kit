@@ -1,7 +1,8 @@
-//! Private bounded legacy/v0 wire operations, pending shared codec integration.
+//! Private bounded legacy/v0 wire operations using the shared compact codec.
 
 use alloc::vec::Vec;
 
+use crate::codecs::{self, Decoder, Encoder, Limits, ShortU16, Writer};
 use crate::{Address, Hash, Signature};
 
 use super::{
@@ -11,7 +12,6 @@ use super::{
 
 const VERSION_MASK: u8 = 128;
 const SHORT_MASK: u8 = VERSION_MASK - 1;
-const SHORT_BITS: usize = 7;
 const MAX_ACCOUNTS: usize = 256;
 const SIGNATURE_SIZE: usize = 64;
 
@@ -234,11 +234,8 @@ pub(super) fn encode_transaction(
 }
 
 fn packet_size(message: usize, signatures: usize) -> Result<(), Error> {
-    let prefix = if signatures < usize::from(VERSION_MASK) {
-        1
-    } else {
-        2
-    };
+    let count = u16::try_from(signatures).map_err(|_| Error::InvalidLength)?;
+    let prefix = ShortU16.encoded_len(&count).map_err(length_error)?;
 
     if message + signatures * SIGNATURE_SIZE + prefix > PACKET_SIZE {
         return Err(Error::PacketTooLarge);
@@ -258,19 +255,23 @@ fn sequence(bytes: &mut Vec<u8>, value: &[u8]) -> Result<(), Error> {
     Ok(())
 }
 
-// The bounded u16 value emits seven-bit groups until no continuation remains.
+// A stack buffer avoids allocating a separate vector for each compact count.
 fn length(bytes: &mut Vec<u8>, value: usize) -> Result<(), Error> {
-    let mut value = u16::try_from(value).map_err(|_| Error::InvalidLength)?;
+    let value = u16::try_from(value).map_err(|_| Error::InvalidLength)?;
+    let mut buffer = [0; 3];
+    let mut writer = Writer::new(&mut buffer);
+    ShortU16.write(&value, &mut writer).map_err(length_error)?;
+    let count = writer.position();
+    bytes.extend_from_slice(&buffer[..count]);
 
-    loop {
-        let low = u8::try_from(value & u16::from(SHORT_MASK)).map_err(|_| Error::InvalidLength)?;
-        value >>= SHORT_BITS;
+    Ok(())
+}
 
-        bytes.push(low | if value > 0 { VERSION_MASK } else { 0 });
-
-        if value == 0 {
-            return Ok(());
-        }
+// Preserve the transaction error contract while delegating canonicality checks.
+fn length_error(error: codecs::Error) -> Error {
+    match error {
+        codecs::Error::Truncated => Error::Truncated,
+        _ => Error::InvalidLength,
     }
 }
 
@@ -321,28 +322,14 @@ impl<'a> Reader<'a> {
         Ok(self.array::<1>()?[0])
     }
 
-    // Short-u16 permits at most three bytes. Reject alias encodings and upper
-    // bits in the final group so malformed counts cannot wrap or overallocate.
+    // Counts allocate nothing; the shared codec rejects aliases and overflow.
     fn length(&mut self) -> Result<usize, Error> {
-        // Security: canonical counts prevent aliases, overflow and oversized
-        // allocation attempts from attacker-controlled packet bytes.
-        let mut value = 0;
+        let (value, offset) = ShortU16
+            .decode_prefix(self.bytes, self.offset, Limits::new(PACKET_SIZE, 0))
+            .map_err(length_error)?;
+        self.offset = offset;
 
-        for position in 0..3 {
-            let byte = self.byte()?;
-
-            if (position == 2 && byte > 3) || (position > 0 && byte == 0) {
-                return Err(Error::InvalidLength);
-            }
-
-            value |= usize::from(byte & SHORT_MASK) << (SHORT_BITS * position);
-
-            if byte & VERSION_MASK == 0 {
-                return Ok(value);
-            }
-        }
-
-        Err(Error::InvalidLength)
+        Ok(usize::from(value))
     }
 
     fn sequence(&mut self) -> Result<Vec<u8>, Error> {

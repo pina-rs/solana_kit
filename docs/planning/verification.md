@@ -1,10 +1,12 @@
 # Planning and native pilot verification
 
 The foundation established ledger integrity and a dependency-free name reservation.
-The native pilot now implements deterministic primitives in `solana_kit_core`;
-its [behavioral receipt](../verification/core-native.md) records the exact 25-case
-suite, independent fixtures, negative controls, and dependency inspection.
-These results do not complete Phase 1 or establish other runtime execution.
+The native pilot implemented deterministic primitives in `solana_kit_core`;
+its [historical receipt](../verification/core-native.md) records the original
+25-case suite. The current [runtime receipt](../verification/runtimes.md)
+covers all 35 primitive, codec, and transaction cases with independent fixtures,
+negative controls, actual hosts, and dependency inspection. These results do
+not complete Phase 1 or establish transport or device behavior.
 
 Compile and run the dependency-free Rust checker from the repository root:
 
@@ -28,8 +30,8 @@ cargo +1.99.1 package -p solana_kit --locked
 monostyle check . --fail-under 90
 ```
 
-The canonical CLI must exit 0 with 25/25 cases. The corrupt-fixture command must
-exit 1 with the SHA-256 comparison failure and 24/25 cases; CI checks the exact
+The canonical CLI must exit 0 with 35/35 cases. The corrupt-fixture command must
+exit 1 with the SHA-256 comparison failure and 34/35 cases; CI checks the exact
 committed output as well as the status, so a compilation failure cannot satisfy
 the negative control. Rust 1.99.1 is pinned in `rust-toolchain.toml` and CI.
 The native CI matrix executes on Linux, macOS, and Windows. The local integration

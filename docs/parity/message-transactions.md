@@ -42,3 +42,11 @@ uses RFC 8032 test 1's public seed, signing the explicit legacy message through
 Node's OpenSSL-backed `crypto.sign` independently of Rust's Ed25519 implementation.
 All fixtures are synthetic public data. The private oracle and its dependencies
 are excluded from application dependency graphs.
+
+The integrated wire parser and writer reuse `codecs::ShortU16`; compact writes
+use a three-byte stack buffer and decoding uses the shared bounded cursor.
+Codec truncation remains transaction `Error::Truncated`; noncanonical and
+overflow counts remain `Error::InvalidLength`. Received wire acceptance and
+packet/trailing-byte policy are unchanged. The four transaction cases execute
+with all 31 primitive/codec cases as `solana-kit-core-v3` on every host in the
+[runtime receipt](../verification/runtimes.md).
