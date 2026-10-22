@@ -38,6 +38,47 @@ core and the host harness forbid unsafe code.
 
 ## Current v7 executed receipt
 
+After the fixed-point presentation correction, the unchanged 48-case
+`solana-kit-core-v7` suite was freshly executed on 2026-10-22 at signed source
+checkpoint `5d9bf3e4c1bc5fa06e051745737ec1e65d0c30ad`. Rust 1.99.1,
+Chrome 155.0.8059.85, ChromeDriver 155.0.8059.84, Wasmtime 50.0.0 and the
+actual pinned LeptosKit host all executed through `cargo xtask all`, which exited 0.
+
+| Execution                 | Canonical                      | Corruption control                                     |
+| ------------------------- | ------------------------------ | ------------------------------------------------------ |
+| Native command            | 48/48, exit 0                  | 47/48, exit 1                                          |
+| Real headless Chrome      | Full 48/48 report checked      | Full 47/48 report checked; both browser tests passed   |
+| Wasmtime Preview 1        | 48/48, exit 0                  | 47/48, exit 1                                          |
+| Wasmtime Preview 2        | 48/48, exit 0                  | 47/48, exit 1                                          |
+| Actual LeptosKit WasmHost | Full 48/48 JSON and one commit | Press event produced full 47/48 JSON and second commit |
+
+Only `sha256-fips-abc` fails in corruption mode. All case assertions, their
+order, goldens and V1 production source are unchanged from the initial v7
+receipt below. Core fixed-point production matches corrected parent
+`ce571db4ae71ce22910d5cf3f4c822a215308431`; its five finite-presentation
+regressions execute separately natively and on MSRV 1.89, not as new portable cases.
+The V1 packet limits remain 4096 bytes inclusive, with legacy/v0 limited to 1232.
+
+All 16 core normal/build feature-target queries, eight numeric normal-only
+queries, four separate System graph queries and their concrete negative controls
+pass unchanged. The guest imports exactly `node_create`, `node_set_props` and
+`commit` from LeptosKit. All five extracted packaged-core consumer tests pass.
+
+Fresh executed artifact SHA-256 values:
+
+```text
+2fcb4eba2dd1c4448075dfe9c9b7da708b51e48fdee5a4a0f9f95443faa6799f  wasm32-wasip1
+57867865b48f96ac137437ce3229754da6337b6652f976c803e0850cda9f13c7  wasm32-wasip2
+30a217c710408551effed354fde26c50bd5c51ad28f97ffd75d76df0e9776c45  leptoskit-guest
+```
+
+This remains bounded synchronous off-chain client evidence. On-chain programs
+must use Pina or official Solana program libraries. The initial v7 limits and
+separate local-validator evidence below remain applicable; no validator was
+restarted merely to repeat unchanged V1 source.
+
+## Historical initial v7 executed receipt
+
 The integrated `solana-kit-core-v7` suite preserves all preceding 45 cases and
 appends three V1 groups. Execution on 2026-10-22 at signed source checkpoint
 `3d04ed4daa814b9907dbcaccbd4eb0393229a3bb` used Rust 1.99.1,
