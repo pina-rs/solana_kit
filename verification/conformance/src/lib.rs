@@ -9,15 +9,16 @@
 extern crate alloc;
 
 mod addresses;
+mod codecs;
 mod cryptography;
 mod instructions;
 
 use alloc::{vec, vec::Vec};
 
 /// Immutable suite identity. Changes to fixtures or assertions require a new ID.
-pub const SUITE_ID: &str = "solana-kit-core-v1";
+pub const SUITE_ID: &str = "solana-kit-core-v2";
 /// Required number of cases; a truncated report cannot pass conformance.
-pub const EXPECTED_CASE_COUNT: usize = 25;
+pub const EXPECTED_CASE_COUNT: usize = 31;
 
 /// Selects authentic fixtures or the intentionally incorrect hash oracle.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -113,6 +114,12 @@ pub fn run(mode: FixtureMode) -> Report {
         ),
         case("instruction-preserved-data", instructions::preserved_data()),
         case("fixed-value-byte-lengths", addresses::byte_lengths()),
+        case("codec-integer-byte-fixtures", codecs::numbers()),
+        case("codec-short-u16-canonical", codecs::short_u16()),
+        case("codec-string-length-widths", codecs::strings()),
+        case("codec-bounded-sequences", codecs::bounded_sequences()),
+        case("codec-distinct-options", codecs::options()),
+        case("codec-exact-framing", codecs::framing()),
     ];
 
     Report {

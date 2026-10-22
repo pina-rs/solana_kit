@@ -9,6 +9,9 @@ mod encoding;
 mod instruction;
 mod values;
 
+/// Bounded deterministic binary codecs.
+pub mod codecs;
+
 #[cfg(feature = "crypto")]
 pub mod crypto;
 
