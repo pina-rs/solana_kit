@@ -137,7 +137,7 @@ preserves exact signed bytes, validates received protocol wire independently of
 local compiler restrictions, and signs/verifies through optional deterministic
 crypto. Its four transaction cases remain in the shared 45-case suite. The
 [transaction ledger](../parity/message-transactions.md) retains all 746 source
-IDs: 22 partial and 724 pending, none complete. V1, durable nonces, full
+IDs: 33 partial and 713 pending, none complete. Durable nonces, full
 introspection, off-chain messages, general signer capabilities, confirmation,
 and instruction plans remain outstanding; Phase 3 is incomplete.
 

@@ -1,9 +1,9 @@
-# Private v1 envelope and validator proof
+# Version-one client envelope and validator proof
 
-This is off-chain client wire verification, not an SDK API or an on-chain
-program. Use Pina or official Solana program libraries for on-chain programs.
-The public core currently supports legacy/v0 only. This experiment must remain
-outside application normal/build dependency graphs.
+This verifies the owned public version-one client API alongside a private
+independent wire oracle. It is exclusively for off-chain application code; use
+Pina or official Solana program libraries for on-chain programs. The private
+validator/oracle dependencies stay outside application normal/build graphs.
 
 ## Authorities
 
@@ -75,15 +75,15 @@ activation state.
 ## Reproduction and limits
 
 Run `cargo +1.99.1 test --manifest-path verification/v1-wire/Cargo.toml --locked`.
-Five tests compare an independently assembled 138-byte literal envelope, all
+Five wire tests and a specific RPC-error negative control compare an independently assembled 138-byte literal envelope, all
 three Dart fixtures and boundary cases against official Rust deserialization,
 validation and exact serialization. They reject every truncated fixture prefix,
 trailing bytes, wrong versions/masks, duplicates, invalid signer partitions and
 packet overflow; exercise inclusive 12/64/64 maxima and all 16 valid low-bit masks.
 
 Start a separate installed 4.2.0 test validator with isolated temporary ledger,
-`--bind-address 127.0.0.1 --rpc-port 18899 --gossip-port 18898 --faucet-port 18902
---dynamic-port-range 19000-19100 --mint
+`--bind-address 127.0.0.1 --rpc-port 19899 --gossip-port 19898 --faucet-port 19902
+--dynamic-port-range 20000-20100 --mint
 9C6hybhQ6Aycep9jaUnP6uL9ZYvDjUp1aSkFWPUFJtpj`. Run the private binary with
 `cargo +1.99.1 run --manifest-path verification/v1-wire/Cargo.toml --locked`.
 For the negative control stop that process, use a fresh ledger and add
@@ -93,11 +93,17 @@ For the negative control stop that process, use a fresh ledger and add
 The probe is a bounded local experiment using `curl` as its loopback HTTP driver,
 not a public RPC transport. It does not establish browser/WASI/LeptosKit support,
 wallet approval, multi-signer runtime behavior, QUIC ingress, mobile/device
-journeys, or complete v1 SDK parity. Its codec rejects unsupported versions;
+journeys, durable nonce lifecycle, or complete Phase 3 parity. Its codec rejects unsupported versions;
 callers cannot silently treat v1 as v0 or apply the old 1232-byte packet cap.
 
 One source discrepancy must remain visible: the pinned Dart raw v1 config decoder
 only reads known bits and does not reject unknown mask bits, whereas official
-Rust 4.4.1 explicitly rejects them to preserve signed bytes. This private codec
-follows the stricter official rule. The SIMD document still carries review/status
+Rust 4.4.1 explicitly rejects them to preserve signed bytes. The public SDK and private oracle
+follow the stricter official rule. The SIMD document still carries review/status
 placeholder metadata; installed validator behavior is evidenced separately.
+
+The validator binary constructs v1 messages through `Message::compile_v1` and
+signs/encodes through `Transaction`; expected literal/official fixtures remain
+independent. Its oversized-packet check requires code -32602 and the explicit
+4097/max4096 size text. Unit controls reject internal errors, invalid base64 and
+wrong-size errors as evidence for that boundary.

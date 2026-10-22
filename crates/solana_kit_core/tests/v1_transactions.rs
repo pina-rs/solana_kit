@@ -189,3 +189,51 @@ fn signatures_cover_message_prefix_and_are_immutable() {
         Err(Error::InvalidSignature)
     );
 }
+
+fn received_counts(addresses: u8, signers: u8, instructions: u8) -> Vec<u8> {
+    let mut bytes = minimal();
+    bytes.truncate(42);
+    bytes[1] = signers;
+    bytes[40] = instructions;
+    bytes[41] = addresses;
+
+    for address in 1..=addresses {
+        bytes.extend([address; 32]);
+    }
+
+    for _ in 0..instructions {
+        bytes.extend([1, 0, 0, 0]);
+    }
+
+    bytes
+}
+
+#[test]
+fn received_v1_maxima_and_builder_lookup_exclusion() {
+    assert!(Message::decode(&received_counts(12, 12, 0)).is_ok());
+    assert!(Message::decode(&received_counts(64, 1, 0)).is_ok());
+    assert!(Message::decode(&received_counts(2, 1, 64)).is_ok());
+
+    for bytes in [
+        received_counts(13, 13, 0),
+        received_counts(65, 1, 0),
+        received_counts(2, 1, 65),
+    ] {
+        assert_eq!(Message::decode(&bytes), Err(Error::InvalidV1Limits));
+    }
+
+    let table = solana_kit_core::transaction::LookupTable {
+        address: Address::from_bytes([8; 32]),
+        addresses: vec![],
+    };
+    assert_eq!(
+        Message::compile(
+            Version::V1,
+            Address::from_bytes([3; 32]),
+            lifetime(),
+            &[],
+            &[table]
+        ),
+        Err(Error::InvalidLookup)
+    );
+}
