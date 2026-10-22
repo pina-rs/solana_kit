@@ -105,19 +105,32 @@ fn send_and_confirm(name: &str, wire: &[u8]) -> Result<(), Box<dyn Error>> {
                 return Err("confirmed transaction execution failed".into());
             }
 
-            let fetched = rpc(
-                "getTransaction",
-                json!([signature, {"encoding":"json", "commitment":"confirmed", "maxSupportedTransactionVersion":1}]),
-            )?;
-            println!("{name} fetched={fetched}");
-
-            return Ok(());
+            return readback(name, signature);
         }
 
         std::thread::sleep(std::time::Duration::from_millis(STATUS_POLL_MS));
     }
 
     Err("confirmation deadline".into())
+}
+
+fn readback(name: &str, signature: &str) -> Result<(), Box<dyn Error>> {
+    let fetched = rpc(
+        "getTransaction",
+        json!([signature, {"encoding":"json", "commitment":"confirmed", "maxSupportedTransactionVersion":1}]),
+    )?;
+    let expected = if name == "legacy-control" {
+        json!("legacy")
+    } else {
+        json!(1)
+    };
+
+    if fetched["result"]["version"] != expected || !fetched["result"]["meta"]["err"].is_null() {
+        return Err("readback version or execution status mismatch".into());
+    }
+
+    println!("{name} fetched={fetched}");
+    Ok(())
 }
 
 /// Requires an executed legacy control before interpreting v1 feature-gate results.
@@ -139,15 +152,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         .as_str()
         .ok_or("missing blockhash")?
         .parse()?;
-    let control = control_wire(key.address().as_bytes(), hash.as_bytes(), &key);
-    let control_result = simulate("legacy-control", &control)?;
-
-    if !control_result["result"]["value"]["err"].is_null() || control_result.get("error").is_some()
-    {
-        return Err("legacy control failed".into());
-    }
-
-    send_and_confirm("legacy-control", &control)?;
+    legacy_control(&key, &hash)?;
     let message = base_message(*key.address().as_bytes(), *hash.as_bytes());
     let small = signature_wire(&message, &key)?;
     let small_result = simulate("v1-small", &small)?;
@@ -167,8 +172,21 @@ fn main() -> Result<(), Box<dyn Error>> {
     }
 
     send_and_confirm("v1-small", &small)?;
+    signature_negative(&small)?;
     large_probe(message, &key)?;
     Ok(())
+}
+
+fn legacy_control(key: &Keypair, hash: &Address) -> Result<(), Box<dyn Error>> {
+    let control = control_wire(key.address().as_bytes(), hash.as_bytes(), key);
+    let control_result = simulate("legacy-control", &control)?;
+
+    if !control_result["result"]["value"]["err"].is_null() || control_result.get("error").is_some()
+    {
+        return Err("legacy control failed".into());
+    }
+
+    send_and_confirm("legacy-control", &control)
 }
 
 fn large_probe(mut message: Message, key: &Keypair) -> Result<(), Box<dyn Error>> {
@@ -198,12 +216,26 @@ fn large_probe(mut message: Message, key: &Keypair) -> Result<(), Box<dyn Error>
         return Err("4096-byte v1 rejected".into());
     }
 
+    send_and_confirm("v1-exact-cap", &exact)?;
     let mut over = exact;
     over.push(0);
     let rejected = simulate("v1-over-cap", &over)?;
 
     if rejected.get("error").is_none() {
         return Err("4097 bytes unexpectedly accepted at RPC boundary".into());
+    }
+
+    Ok(())
+}
+
+fn signature_negative(wire: &[u8]) -> Result<(), Box<dyn Error>> {
+    let mut corrupt = wire.to_vec();
+    let last = corrupt.last_mut().ok_or("empty wire")?;
+    *last ^= 1;
+    let response = simulate("v1-corrupt-signature", &corrupt)?;
+
+    if response["result"]["value"]["err"].as_str() != Some("SignatureFailure") {
+        return Err("corrupted signature was not rejected".into());
     }
 
     Ok(())

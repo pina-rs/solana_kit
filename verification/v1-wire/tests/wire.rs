@@ -104,3 +104,50 @@ fn inclusive_packet_cap_includes_signature_and_fixed_lengths() {
     oversized.push(0);
     assert!(decode(&oversized).is_err());
 }
+
+#[test]
+fn structural_maxima_and_config_order_match_official() {
+    let mut message = minimal();
+    message.addresses = (1..=12).map(|value| [value; 32]).collect();
+    message.header[0] = 12;
+    official(&encode(&message, &[[0; 64]; 12]).unwrap());
+    message.header[0] = 13;
+    message.addresses.push([13; 32]);
+    assert!(encode(&message, &[[0; 64]; 13]).is_err());
+
+    message = minimal();
+    message.addresses = (1..=64).map(|value| [value; 32]).collect();
+    official(&encode(&message, &[[0; 64]]).unwrap());
+    message.addresses.push([65; 32]);
+    assert!(encode(&message, &[[0; 64]]).is_err());
+
+    message = minimal();
+    message.addresses.push([9; 32]);
+    let instruction = solana_kit_v1_wire_proof::Instruction {
+        program: 1,
+        accounts: vec![],
+        data: vec![],
+    };
+    message.instructions = vec![instruction.clone(); 64];
+    official(&encode(&message, &[[0; 64]]).unwrap());
+    message.instructions.push(instruction);
+    assert!(encode(&message, &[[0; 64]]).is_err());
+
+    for mask in 0u32..32 {
+        message = minimal();
+        message.mask = mask;
+
+        if matches!(mask & 3, 1 | 2) {
+            continue;
+        }
+
+        message.config = vec![0; mask.count_ones() as usize * 4];
+
+        if mask & 16 != 0 {
+            let length = message.config.len();
+            message.config[length - 4..].copy_from_slice(&32768u32.to_le_bytes());
+        }
+
+        official(&encode(&message, &[[0; 64]]).unwrap());
+    }
+}
