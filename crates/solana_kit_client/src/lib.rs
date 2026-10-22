@@ -2,6 +2,10 @@
 #![deny(missing_docs)]
 #![doc = include_str!("../README.md")]
 
+extern crate alloc;
+
+/// Explicit portable transaction confirmation strategies.
+pub mod confirmation;
 mod errors;
 mod json;
 pub mod methods;

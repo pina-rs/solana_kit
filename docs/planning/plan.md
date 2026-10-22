@@ -212,6 +212,14 @@ and iOS application wiring, other capabilities and full Phase 4 coverage open.
 
 ## Phase 5: subscriptions and orchestration
 
+The bounded [confirmation frontier](../verification/transaction-confirmation.md)
+implements typed event policy, explicit observer ownership and exact submission
+guards. Three groups append to the unchanged Token105 suite and execute on all
+five portable hosts. All 59 declaration IDs remain 31 partial and 28 pending, with
+none complete. Actual nonce RPC authentication, asynchronous subscription and
+timer factories, polling convenience and installed application journeys remain
+outside this result. Phase 5 remains incomplete.
+
 Deliver nine reference subscription families, including separately marked
 unstable methods; lifetime-aware transaction confirmation; resource estimation;
 and sequential/parallel instruction plans.

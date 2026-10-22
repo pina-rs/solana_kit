@@ -103,4 +103,7 @@ message-snapshots: Ok(())
 message-batches: Ok(())
 token-literal-oracles: Ok(())
 token-strict-errors: Ok(())
-solana-kit-core-v25: 104/105 cases passed
+confirmation-policy-ordering: Ok(())
+confirmation-pending-cleanup: Ok(())
+confirmation-exact-submission: Ok(())
+solana-kit-core-v26: 107/108 cases passed
