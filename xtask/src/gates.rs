@@ -6,6 +6,16 @@ use std::{collections::BTreeSet, path::Path};
 use wasmparser::{Parser, Payload};
 
 const GUEST: &str = "target/wasm32-unknown-unknown/release/solana_kit_conformance_guest.wasm";
+const FEATURES: [&str; 8] = [
+    "",
+    "crypto",
+    "fixed-points",
+    "crypto,fixed-points",
+    "text-codecs",
+    "crypto,text-codecs",
+    "fixed-points,text-codecs",
+    "crypto,fixed-points,text-codecs",
+];
 const ALLOWED_IMPORTS: &[(&str, &str)] = &[
     ("leptoskit", "node_create"),
     ("leptoskit", "node_set_props"),
@@ -94,7 +104,7 @@ fn dependency_graphs() -> Result<()> {
         Some("wasm32-wasip1"),
         Some("wasm32-wasip2"),
     ] {
-        for features in ["", "crypto", "fixed-points", "crypto,fixed-points"] {
+        for features in FEATURES {
             dependency_graph(target, features, "normal,build")?;
 
             if features.contains("fixed-points") {
@@ -163,6 +173,10 @@ fn dependency_policy(features: &str) -> String {
         allowed.push_str(include_str!("../policy/fixed-points.txt"));
     }
 
+    if features.contains("text-codecs") {
+        allowed.push_str("base64\n");
+    }
+
     allowed
 }
 
@@ -177,22 +191,43 @@ fn negative_controls() -> Result<()> {
         Err(error) if error.to_string().contains("forbidden import env::random") => {
             println!("import negative control rejected: {error}")
         }
+
         _ => bail!("forbidden import negative control was not rejected correctly"),
     }
 
-    for features in ["", "crypto", "fixed-points", "crypto,fixed-points"] {
-        match dependencies(
+    for features in FEATURES {
+        reject_dependency(
             include_str!("../fixtures/forbidden-dependency.txt"),
-            &dependency_policy(features),
-        ) {
-            Err(error) if error.to_string().contains("tokio") => {
-                println!("dependency negative control ({features}) rejected: {error}")
-            }
-            _ => bail!("forbidden dependency negative control was not rejected correctly"),
+            features,
+            "tokio",
+        )?;
+
+        if !features.contains("text-codecs") {
+            let leaked = format!("{}base64\n", dependency_policy(features));
+
+            reject_dependency(&leaked, features, "base64")?;
         }
     }
 
     Ok(())
+}
+
+/// Requires the intended forbidden crate, not an unrelated fixture failure.
+fn reject_dependency(tree: &str, features: &str, forbidden: &str) -> Result<()> {
+    match dependencies(tree, &dependency_policy(features)) {
+        Err(error) if error.to_string().contains(forbidden) => {
+            println!("dependency negative control ({features}, {forbidden}) rejected: {error}");
+            Ok(())
+        }
+
+        _ => bail!("forbidden dependency {forbidden} was not rejected correctly"),
+    }
+}
+
+/// Runs selected graphs and negative controls without requiring a guest artifact.
+pub(crate) fn graphs() -> Result<()> {
+    dependency_graphs()?;
+    negative_controls()
 }
 
 /// Runs both real graph gates and their required failing fixtures.
