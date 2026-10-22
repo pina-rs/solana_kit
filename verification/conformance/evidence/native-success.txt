@@ -99,4 +99,6 @@ nonce-construction: Ok(())
 nonce-wire: Ok(())
 nonce-negatives: Ok(())
 nonce-signatures: Ok(())
-solana-kit-core-v23: 101/101 cases passed
+message-snapshots: Ok(())
+message-batches: Ok(())
+solana-kit-core-v24: 103/103 cases passed

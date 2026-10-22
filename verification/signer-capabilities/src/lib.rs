@@ -2,6 +2,10 @@
 #![no_std]
 #![forbid(unsafe_code)]
 
+mod messages;
+
+pub use messages::{ACCEPTED_MESSAGES, message_batches, message_snapshots};
+
 use solana_kit_core::{Signature, crypto::Keypair};
 use solana_kit_signers::{Error, SignatureOutput};
 
