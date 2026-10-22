@@ -79,4 +79,6 @@ subscriptions-nine-families: Ok(())
 subscriptions-typed-variants: Ok(())
 subscriptions-lifecycle: Ok(())
 subscriptions-malformed-bounds: Ok(())
-solana-kit-core-v18: 81/81 cases passed
+memo-utf8-signers: Ok(())
+associated-token-metadata-pda: Ok(())
+solana-kit-core-v19: 83/83 cases passed
