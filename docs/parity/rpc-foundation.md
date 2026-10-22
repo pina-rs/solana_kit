@@ -27,10 +27,14 @@ responses, account metadata and typed downstream extensions. The private HTTP
 fixture verifies exact requests and socket EOF after pending-call cancellation,
 with a retained-call negative. It is a fixture, not a production HTTP adapter.
 
-The isolated verification/rpc-design/src/conformance.rs contains small portable
-protocol cases ready for host integration. This slice executes them natively and
-compiles the public crate for three Wasm targets; it does not add them to the
-39-case portable-core suite or claim actual browser/WASI/LeptosKit RPC execution.
+One fixture owner, verification/conformance/src/rpc.rs, is shared with the private
+pilot. Its three groups append to the existing48 cases: exact balance/context/u64,
+bounded opaque1e400/error/escaped-duplicate/schema checks, and local Rc use across
+observed Pending/wake with abandonment/correlation. All51 cases execute in native
+Rust, actual Chrome, Wasmtime Preview1/2 and pinned actual LeptosKit. The corrupt
+hash control fails exactly one case on each host. These use memory transports;
+HTTP networking, browser fetch, host networking and device journeys remain open.
+See the [runtime receipt](../verification/runtimes.md) for exact source and hashes.
 
 Remaining 51 typed catalog operations:
 

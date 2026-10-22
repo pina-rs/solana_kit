@@ -36,7 +36,52 @@ dispatches a `Press` event and requires the corrupted report and second commit.
 The guest's small unsafe FFI wrappers implement that pinned synchronous copy ABI;
 core and the host harness forbid unsafe code.
 
-## Current v7 executed receipt
+## Current v8 public RPC protocol receipt
+
+The `solana-kit-core-v8` suite preserves the first48 case lines and appends three
+public-client protocol groups. Signed clean source
+`709ec9588865df8dd55362412891c234295a72a7` executed `cargo xtask all` on2026-10-22
+using Rust1.99.1, Chrome155.0.8059.85/driver155.0.8059.84, Wasmtime50.0.0 and the
+same pinned actual LeptosKit WasmHost. Public client source/tests equal accepted
+`6dc82ec165293b8a61007357d16d24f2e06ed510`; core production equals the V1 parent.
+
+| Actual host               | Canonical                  | Corruption control            |
+| ------------------------- | -------------------------- | ----------------------------- |
+| Native command            | 51/51, exit0               | 50/51, exit1                  |
+| Real Chrome               | Full51/51 report checked   | Full50/51 report checked      |
+| Wasmtime Preview1         | 51/51, exit0               | 50/51, exit1                  |
+| Wasmtime Preview2         | 51/51, exit0               | 50/51, exit1                  |
+| Actual LeptosKit WasmHost | Full51/51 JSON, one commit | Full50/51 JSON, second commit |
+
+Only `sha256-fips-abc` fails in the control. The three appended groups execute
+exactgetBalance request/context/u64MAX, bounded opaque1e400/error and strict
+escaped-duplicate/schema checks, and concrete localRc use after observedPending
+and wake, abandonment and correct correlation. One shared fixture owner serves
+private/native and all guest runners. These are pure protocol/memory transports;
+this receipt does not prove HTTP networking, browser fetch, host I/O or devices.
+
+All16 core graph queries,8 numeric normal-only queries,4 System queries and their
+actual Tokio controls remain. Four additional native/Wasm normal+build queries
+use a separate exact-version closed client policy of13 external packages plus
+owned client/core. Its actual Tokio negative fails. No core/System allowlist was
+widened. Actual compiled guest imports remain exactly LeptosKit node_create,
+node_set_props and commit. All5 clean packaged-core consumer tests pass.
+
+Executed artifact SHA-256 values:
+
+```text
+1a4c70f8199f7ec4adb0c6916178269c0ad3e22be09696fb2e5b5d6bf06a9523  wasm32-wasip1
+0a20813ff27fb347e4e8246e5da3f42f15c3913f660b8a3ef96e8645503287f3  wasm32-wasip2
+2ab453111ab245d1578502ffeef61b86dc8425cec13af3259f7dba956196260e  leptoskit-guest
+```
+
+Raw per-operation stdout/stderr/status stay in ignored target/runtime-evidence.
+The client intentionally uses std; core still supports no_std+alloc. This is
+exclusively off-chain client code. On-chain programs use Pina or official Solana
+program libraries. Remaining51 RPC operations, production adapters, subscriptions,
+wallets, devices and registry-release preparation are not completed by this proof.
+
+## Historical refreshed v7 executed receipt
 
 After the fixed-point presentation correction and signed integration of merged
 main `b74b8f893ba38c10cb208dfeadebb49ed7473d5e`, the unchanged 48-case

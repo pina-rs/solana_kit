@@ -30,5 +30,7 @@ call abort followed by socket EOF; retaining the call first produces no EOF.
 
 See [the design](../../docs/architecture/rpc.md) for the selected boundary,
 public crate ownership, all 54 implementation scopes and precise limits.
-Portable cases in src/conformance.rs are isolated from the core suite and await
-actual host integration. No browser, WASI, interpreted guest or mobile RPC runtime is claimed here.
+Portable cases share one owner at ../conformance/src/rpc.rs with the51-case host
+suite. They execute with memory transports in native Rust, Chrome, WASI and the
+actual pinned LeptosKit guest. This is protocol execution, not HTTP networking
+or a mobile-device journey. See the [runtime receipt](../../docs/verification/runtimes.md).

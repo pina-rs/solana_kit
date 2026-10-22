@@ -12,7 +12,8 @@ hashes, signatures, ordered instructions, account roles, bounded binary codecs,
 immutable legacy/v0/v1 transactions, account snapshots, sysvar layouts, program
 errors, optional exact fixed points, and deterministic cryptography. The generated
 `solana_kit_system` slice adds bounded data codecs for all fourteen pinned System
-instructions. Their shared 48-case suite has
+instructions. `solana_kit_client` adds typed balance, latest-blockhash and full-base64
+account reads through one executor-neutral protocol owner. The shared 51-case suite has
 [runtime execution evidence](docs/verification/runtimes.md).
 The core component is unreleased; the published `solana_kit` 0.0.0 umbrella remains
 a dependency-free name reservation with no SDK APIs. This bounded codec slice
@@ -26,6 +27,10 @@ and retains five remaining declarations out of 126 canonical IDs.
 The [System data receipt](docs/verification/system-data.md) records 83 data
 equivalents, 28 partial mappings and 130 pending declarations; account builders
 and validator execution remain unfinished.
+
+Three portable RPC protocol cases execute with memory transports on every core
+host. HTTP networking, remaining RPC operations, subscriptions and application
+journeys remain separate work; see the [RPC receipt](docs/parity/rpc-foundation.md).
 
 - [Delivery plan](docs/planning/plan.md)
 - [Architecture and API proposal](docs/architecture/design.md)
