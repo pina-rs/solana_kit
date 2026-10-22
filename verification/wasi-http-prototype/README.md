@@ -53,9 +53,20 @@ Wasmtime50's official outgoing handler consumes request-options in WIT but leave
 that owned resource in its table. The private `embedded_outgoing` binding
 delegates the actual official handler and deletes the consumed options handle.
 It does not replace the network or TLS implementation. After each completed
-journey the table must contain only the two lazily initialized CLI output
-streams, matching an executed no-network baseline. Dropping the Store releases
-those streams. Owned network flights and Tokio task counts return to baseline.
+journey the complete typed table must match the exact handles created by the
+official CLI stdin, stdout and stderr bindings and the executed no-network warm
+baseline. Resource type alone never grants CLI ownership. An extra output stream
+fails the checker even though legitimate CLI output uses the same type. Dropping
+the Store releases those streams. Owned network flights and Tokio task counts
+return to baseline.
+
+Rust1.89's bundled Preview1 compatibility adapter initializes stdin, stdout and
+stderr together on the first stdout write. Rust1.99.1 retains only stdout and
+stderr in these components. The former two-output-stream assertion rejected
+Rust1.89's legitimate stdin handle. `embedded_resources` records provenance by
+delegating the official CLI bindings, then checks every retained handle's type
+and exact warm identity. RequestOptions must still be zero. Unit negative controls
+inject RequestOptions, a non-CLI resource and an extra stream of a CLI type.
 
 Build `embedded_guest` for wasm32-wasip2, then run the native `embedded` binary
 with the same manifest. No host executable argument is required. The default
@@ -63,6 +74,11 @@ executes every case. An optional case name selects one journey after the baselin
 The original CLI runner retains all thirteen journeys and the exact outer
 sixteen-interface policy now rejects a validated unknown-interface component.
 The separate portable core retains its original three-import grant.
+
+The independent `cli_guest` component contains only stdout and stderr writes.
+Build it with each toolchain and run `embedded --cli-only` to isolate compiler
+stdio initialization from the SDK and HTTP. Focused CI runs both components with
+Rust1.99.1 and Rust1.89 through the same native host.
 
 `evidence/embedded-execution.txt` records the actual assertions. To reproduce the
 official50 owned-options leak, run `embedded denied --unpatched-host`. That
@@ -78,9 +94,10 @@ design probe. No diagnostic-string parsing or host categorization override is
 used. A host that exposes the structured HTTP framing code receives the
 adapter's InvalidResponse classification.
 
-Native MSRV1.89 endpoint tests pass. Local MSRV Wasm targets were unavailable;
-its production Preview2 compilation and actual embedded MSRV component execution
-are focused CI gates. Local MSRV Preview2 execution remains unproved. Ordinary source
+Native MSRV1.89 endpoint tests pass. Local Rust1.89 Preview2 execution now passes
+all twenty embedded cases and the independent CLI-only component. Actual Linux
+Preview2 compilation and embedded MSRV execution remain focused CI gates before
+merge. Ordinary source
 consumption works through this isolated workspace. Registry archive preparation
 stops at deliberately unpublished solana_kit_client0.1.0. No release was attempted.
 

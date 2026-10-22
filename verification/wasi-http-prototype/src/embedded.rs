@@ -3,6 +3,7 @@
 mod embedded_outgoing;
 mod embedded_peer;
 mod embedded_policy;
+mod embedded_resources;
 
 use embedded_policy::{Counts, Policy};
 use std::path::Path;
@@ -18,6 +19,7 @@ struct State {
     wasi: WasiCtx,
     http: WasiHttpCtx,
     policy: Policy,
+    cli_streams: embedded_resources::Snapshot,
 }
 
 const STORE_DROP_LIMIT: Duration = Duration::from_millis(80);
@@ -42,6 +44,7 @@ impl State {
 
         Ok(Self {
             table: ResourceTable::new(),
+            cli_streams: embedded_resources::Snapshot::new(),
             wasi: WasiCtx::builder()
                 .inherit_stdio()
                 .args(&["embedded", &endpoint, guest_mode])
@@ -104,23 +107,23 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .install_default()
         .expect("one crypto provider");
     let engine = Engine::default();
-    let path = Path::new(env!("CARGO_MANIFEST_DIR"))
-        .join("target/wasm32-wasip2/debug/embedded_guest.wasm");
-    let component = Component::from_file(&engine, path)?;
-    let mut linker = Linker::new(&engine);
-    wasmtime_wasi::p2::add_to_linker_async(&mut linker)?;
-    assert!(
-        linker.instantiate_pre(&component).is_err(),
-        "missing HTTP must reject instantiation"
-    );
-    println!("PASS missing HTTP rejected before guest execution");
+    let cli_only = std::env::args().any(|argument| argument == "--cli-only");
+    let guest = if cli_only {
+        "cli_guest"
+    } else {
+        "embedded_guest"
+    };
 
-    wasmtime_wasi_http::p2::add_only_http_to_linker_async(&mut linker)?;
-    if !std::env::args().any(|argument| argument == "--unpatched-host") {
-        embedded_outgoing::add(&mut linker)?;
-    }
+    let path = Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join(format!("target/wasm32-wasip2/debug/{guest}.wasm"));
+    let component = Component::from_file(&engine, path)?;
+    let linker = linker(&engine, &component, cli_only)?;
     let selected = std::env::args().nth(1);
     let baseline = run(&engine, &component, &linker, "baseline", None).await?;
+
+    if cli_only {
+        return Ok(());
+    }
 
     for mode in [
         "denied",
@@ -147,10 +150,37 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             continue;
         }
 
-        run(&engine, &component, &linker, mode, Some(baseline)).await?;
+        run(&engine, &component, &linker, mode, Some(&baseline)).await?;
     }
 
     Ok(())
+}
+
+/// The CLI-only probe has no HTTP import to reject before installing grants.
+fn linker(
+    engine: &Engine,
+    component: &Component,
+    cli_only: bool,
+) -> wasmtime::Result<Linker<State>> {
+    let mut linker = Linker::new(engine);
+    wasmtime_wasi::p2::add_to_linker_async(&mut linker)?;
+
+    if !cli_only {
+        assert!(
+            linker.instantiate_pre(component).is_err(),
+            "missing HTTP must reject instantiation"
+        );
+        println!("PASS missing HTTP rejected before guest execution");
+    }
+
+    wasmtime_wasi_http::p2::add_only_http_to_linker_async(&mut linker)?;
+    embedded_resources::add(&mut linker)?;
+
+    if !std::env::args().any(|argument| argument == "--unpatched-host") {
+        embedded_outgoing::add(&mut linker)?;
+    }
+
+    Ok(linker)
 }
 
 /// The owner can finish normally or be cancelled with its Store still pending.
@@ -159,8 +189,8 @@ async fn run(
     component: &Component,
     linker: &Linker<State>,
     mode: &str,
-    expected_resources: Option<usize>,
-) -> Result<usize, Box<dyn std::error::Error>> {
+    expected_resources: Option<&embedded_resources::Snapshot>,
+) -> Result<embedded_resources::Snapshot, Box<dyn std::error::Error>> {
     let peer = embedded_peer::Peer::start(mode);
     let counts = Counts::default();
     let state = State::new(mode, peer.port, counts.clone())?;
@@ -182,13 +212,23 @@ async fn run(
 
     let resources = if mode == "store-drop" {
         assert!(result.is_err(), "owner must still be pending at Store drop");
-        expected_resources.expect("warm resources")
+        expected_resources.expect("warm resources").clone()
     } else {
         result??.map_err(|()| "guest assertion failed")?;
         resources(&mut store, expected_resources)
     };
 
     drop(store);
+    teardown(&counts, task_baseline, mode).await;
+    peer.finish();
+    println!(
+        "PASS host {mode}: table baseline={baseline}; flights=0; tasks restored; Store dropped"
+    );
+    Ok(resources)
+}
+
+/// Store destruction must terminate actual network work and restore task counts.
+async fn teardown(counts: &Counts, task_baseline: usize, mode: &str) {
     tokio::time::sleep(TASK_SETTLE).await;
     assert_eq!(
         counts.active.load(Ordering::SeqCst),
@@ -206,38 +246,15 @@ async fn run(
     if matches!(mode, "denied" | "dns-deadline") {
         assert_eq!(counts.opened.load(Ordering::SeqCst), 0);
     }
-
-    peer.finish();
-    println!(
-        "PASS host {mode}: table baseline={baseline}; flights=0; tasks restored; Store dropped"
-    );
-    Ok(resources)
 }
 
-fn resources(store: &mut Store<State>, expected: Option<usize>) -> usize {
-    let count = store.data_mut().table.iter_mut().count();
-    let options = store
-        .data_mut()
-        .table
-        .iter_mut()
-        .filter(|(_, entry)| entry.is::<wasmtime_wasi_http::RequestOptions>())
-        .count();
-    assert_eq!(
-        options, 0,
-        "owned request-options leaked from the host table"
-    );
-    assert!(
-        store
-            .data_mut()
-            .table
-            .iter_mut()
-            .all(|(_, entry)| entry.is::<wasmtime_wasi::p2::DynOutputStream>()),
-        "only CLI output streams may remain"
-    );
+fn resources(
+    store: &mut Store<State>,
+    expected: Option<&embedded_resources::Snapshot>,
+) -> embedded_resources::Snapshot {
+    let state = store.data_mut();
+    let actual = embedded_resources::snapshot(&mut state.table, &state.cli_streams, expected);
 
-    if let Some(expected) = expected {
-        assert_eq!(count, expected, "table did not return to warm baseline");
-    }
-
-    count
+    println!("CLI warm resources {actual:?}");
+    actual
 }
