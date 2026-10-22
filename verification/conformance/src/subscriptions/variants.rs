@@ -240,15 +240,7 @@ fn blocks() -> Check {
         r#"{{"slot":18446744073709551615,"err":null,"block":{{"blockhash":"{ADDRESS}","previousBlockhash":"{ADDRESS}","parentSlot":9007199254740993,"blockTime":-9223372036854775808,"blockHeight":18446744073709551615}}}}"#
     ));
     let result = delivered(request(), expected, "blockNotification", &raw)?;
-    let block = result.value.block.ok_or("block absent")?;
-    crate::require(
-        result.value.slot == u64::MAX
-            && block.parent_slot == 9007199254740993
-            && block.block_time == Some(i64::MIN)
-            && block.block_height == Some(u64::MAX)
-            && matches!(block.transactions, tr::BlockTransactions::None),
-        "typed block differs",
-    )?;
+    block_header(result.value)?;
 
     for (error, version) in [
         (r#""BlockStoreError""#, false),
@@ -267,6 +259,18 @@ fn blocks() -> Check {
     }
 
     Ok(())
+}
+
+fn block_header(info: BlockInfo) -> Check {
+    let block = info.block.ok_or("block absent")?;
+    crate::require(
+        info.slot == u64::MAX
+            && block.parent_slot == 9007199254740993
+            && block.block_time == Some(i64::MIN)
+            && block.block_height == Some(u64::MAX)
+            && matches!(block.transactions, tr::BlockTransactions::None),
+        "typed block differs",
+    )
 }
 
 pub(super) fn variants() -> Check {
