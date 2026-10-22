@@ -82,8 +82,8 @@ All five narrow experiments have executed evidence. The
 [Phase 1 evidence matrix](../verification/phase-one.md) links their source,
 commands, pins, negative controls, and limits. `cargo xtask all` reproduces the
 shared portable suite, import/dependency gates, and a clean packaged-core consumer.
-The current suite passes all 90 cases and rejects only the corrupt-hash
-case in the 89/90 negative run on native Rust, Chrome, both WASI previews, and the
+The current suite passes all 97 cases and rejects only the corrupt-hash
+case in the 96/97 negative run on native Rust, Chrome, both WASI previews, and the
 actual pinned LeptosKit `WasmHost`. The
 [portable runtime receipt](../verification/runtimes.md)
 records this expanded suite. The
@@ -98,13 +98,15 @@ mobile application support. Separate accepted
 actual network evidence. The accepted
 [headless LeptosKit HTTP adapter](../verification/leptoskit-http.md) adds actual
 interpreted guest HTTP/TLS, Pending/wake, cancellation and awaited native teardown.
-WASI adapter correction and independent verification remain outside this snapshot.
+The accepted [public WASI HTTP adapter](../../crates/solana_kit_wasi/README.md)
+includes corrected denial and early-response behavior with independent verification.
 
 WASI core fixtures execute in Preview 1 and Preview 2. The separate Preview 2
 HTTP experiment executes clock, entropy, cancellation, and outbound HTTP through
 Wasmtime 50.0.0 with WASI 0.2.12. A second socket experiment executes validating
-TLS and WebSocket exchange through that host. Neither private experiment provides
-a public WASI adapter, destination policy, async socket lifecycle, or subscriptions.
+TLS and WebSocket exchange through that host. The public HTTP adapter adds
+caller-owned readiness and cancellation; host destination policy, a public socket
+adapter, subscriptions and installed mobile journeys remain separate requirements.
 An HTTP-only component host does not imply socket availability.
 
 Acceptance: repeatable execution logs, import/dependency allowlists, and a
@@ -150,16 +152,23 @@ construction requirements from validation of externally received transactions.
 The immutable legacy/v0/v1 slice compiles owned instructions and lookup snapshots,
 preserves exact signed bytes, validates received protocol wire independently of
 local compiler restrictions, and signs/verifies through optional deterministic
-crypto. Seven transaction cases execute in the shared suite, now 90 cases, including
+crypto. Seven transaction cases execute in the shared suite, now 97 cases, including
 version-one message-first envelopes, inline configuration, exact 4096/4097-byte
 boundaries and signature tampering. Legacy/v0 retain their 1232-byte packet cap. The
 [transaction ledger](../parity/message-transactions.md) retains all 746 source
 IDs: 33 partial and 713 pending, none complete. Durable nonces, full
-introspection, general signer capabilities, confirmation,
+introspection, remaining signer capabilities, confirmation,
 and instruction plans remain outstanding; Phase 3 is incomplete.
 The bounded [offchain message receipt](../parity/offchain-messages.md) retains
 all 83 IDs as partial, with none complete. Its three groups now execute through
 the shared suite on every named portable host.
+
+The accepted [signer runtime receipt](../verification/signer-runtime.md) adds
+explicit local/native heterogeneous composition, borrowed logical identity and
+bounded ordered transaction batches. All seven signer groups execute with the
+wallet frontier in the 97-case suite. Its declaration receipt retains 26 partial,
+59 pending and zero complete IDs. Message batches, attachment, configuration,
+generation and persistence remain pending.
 
 ## Phase 4: RPC and host transports
 

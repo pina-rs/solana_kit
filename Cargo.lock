@@ -819,6 +819,14 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "77549399552de45a898a580c1b41d445bf730df867cc44e6c0233bbc4b8329de"
 
 [[package]]
+name = "signer_capability_consumer"
+version = "0.0.0"
+dependencies = [
+ "solana_kit_core",
+ "solana_kit_signers",
+]
+
+[[package]]
 name = "slab"
 version = "0.4.12"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -911,11 +919,13 @@ name = "solana_kit_conformance"
 version = "0.1.0"
 dependencies = [
  "hex-literal",
+ "signer_capability_consumer",
  "solana_kit_associated_token_account",
  "solana_kit_client",
  "solana_kit_compute_budget",
  "solana_kit_core",
  "solana_kit_memo",
+ "solana_kit_signers",
  "solana_kit_system",
  "solana_kit_wallet_verification",
 ]
@@ -977,6 +987,14 @@ dependencies = [
  "tokio-rustls",
  "tokio-tungstenite",
  "webpki-roots",
+]
+
+[[package]]
+name = "solana_kit_signers"
+version = "0.1.0"
+dependencies = [
+ "solana_kit_core",
+ "tokio",
 ]
 
 [[package]]

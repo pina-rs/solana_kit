@@ -6,11 +6,10 @@ use leptoskit_wasm::{EventKind, WasmError, WasmHost};
 use serde_json::Value;
 use solana_kit_conformance::{EXPECTED_CASE_COUNT, FixtureMode, SUITE_ID, run};
 
+mod fuel;
+
 const VIEWPORT_WIDTH: f32 = 320.0;
 const VIEWPORT_HEIGHT: f32 = 480.0;
-// This is a pooled allowance for the whole entry, including lazy translation.
-// The measured 77-case baseline needs 995m fuel; 15m per case retains headroom.
-const FUEL_ALLOWANCE_PER_CASE: u64 = 15_000_000;
 
 /// Requires the real interpreter to reject an insufficient finite allowance.
 fn reject_insufficient_fuel(wasm: &[u8]) -> Result<()> {
@@ -66,9 +65,7 @@ fn main() -> Result<()> {
         .nth(1)
         .context("usage: host <Rust guest.wasm>")?;
     let wasm = std::fs::read(path).context("read compiled Rust guest")?;
-    let fuel_budget = FUEL_ALLOWANCE_PER_CASE
-        .checked_mul(u64::try_from(EXPECTED_CASE_COUNT)?)
-        .context("suite fuel allowance overflow")?;
+    let fuel_budget = fuel::allowance()?;
 
     reject_insufficient_fuel(&wasm)?;
     let mut host = WasmHost::headless(&wasm).context("instantiate actual LeptosKit WasmHost")?;

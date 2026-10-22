@@ -59,7 +59,25 @@ dispatches a `Press` event and requires the corrupted report and second commit.
 The guest's small unsafe FFI wrappers implement that pinned synchronous copy ABI;
 core and the host harness forbid unsafe code.
 
-## Current v21 wallet receipt
+## Current v22 wallet and signer integration
+
+The 97-case suite preserves all 90 wallet-frontier cases and appends the seven
+accepted signer assertions unchanged. The checked private interpreter workload is
+15,000,000 times 96 ordinary groups plus 5,000,000 times 257 authenticated batch
+transactions: 2,725,000,000 per entry. The original 256 successful signatures,
+257-item preflight rejection and ordered early stop remain intact.
+The [signer runtime receipt](signer-runtime.md) separates historical 92-case
+measurements from current combined execution.
+
+Signed executable `66b90da63acd1efd90ce16853d71bc0fd1e55dde` passes a complete
+fresh `cargo +1.99.1 xtask all`: native Rust, Chrome, both Wasmtime previews and
+the actual pinned LeptosKit host check 97 canonical cases and 96/97 under sole
+hash corruption. Exact imports, graph negatives, one-fuel zero-commit control
+and five freshly extracted packaged-core consumer groups pass. Existing host,
+wallet and public signer algorithms remain unchanged. This is off-chain fixture
+execution, with no installed-device or real-wallet claim.
+
+## Historical v21 wallet receipt
 
 The wallet assertions are also integrated onto the current native WebSocket
 frontier `5ce9e806906af2bdb1e3f16a7d2e8c78b525f3fd`. Every existing SDK, host,

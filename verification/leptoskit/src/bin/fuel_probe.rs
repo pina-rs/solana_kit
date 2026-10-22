@@ -35,6 +35,10 @@ fn main() -> Result<()> {
         bail!(error);
     }
 
+    println!(
+        "fuel={budget} selector={selector:?} commits={}",
+        host.commits()
+    );
     let root = host.surface().root().context("missing report node")?;
     let text = host
         .surface()
@@ -42,10 +46,6 @@ fn main() -> Result<()> {
         .text
         .as_deref()
         .context("missing report")?;
-    println!(
-        "fuel={budget} selector={selector:?} commits={}",
-        host.commits()
-    );
     println!("{text}");
     Ok(())
 }

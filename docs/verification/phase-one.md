@@ -6,6 +6,13 @@ complete the ecosystem, production adapters, or installed application journeys.
 All proofs concern off-chain application clients. On-chain programs use Pina or
 official Solana program libraries.
 
+The current shared v22 suite executes 97 canonical cases and 96/97 with sole
+hash corruption on all five named hosts. It preserves all 90 wallet-frontier
+cases and appends seven unchanged signer groups, including every 256-success
+batch assertion. The [signer receipt](signer-runtime.md) records the signed
+executable, checked private workload and historical 92-case measurement limits.
+The 90-case matrix entry below is historical experiment evidence.
+
 ## Experiment matrix
 
 | Experiment                       | Executed evidence                                                                                                                                                                                                                                                                                                                                                            | Boundary of the result                                                                                                                                                              |
