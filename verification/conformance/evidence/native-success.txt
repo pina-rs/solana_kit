@@ -33,4 +33,8 @@ transaction-legacy-wire: Ok(())
 transaction-v0-lookup-positions: Ok(())
 transaction-malformed-wire: Ok(())
 transaction-openssl-signature: Ok(())
-solana-kit-core-v3: 35/35 cases passed
+sysvar-clock-signed-fixture: Ok(())
+account-metadata-and-absence: Ok(())
+sysvar-history-u64-bounds: Ok(())
+program-error-source-facts: Ok(())
+solana-kit-core-v4: 39/39 cases passed

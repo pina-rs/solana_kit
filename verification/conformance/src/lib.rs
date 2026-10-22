@@ -123,8 +123,8 @@ pub fn run(mode: FixtureMode) -> Report {
         case("codec-distinct-options", codecs::options()),
         case("codec-exact-framing", codecs::framing()),
     ];
-    cases.extend(accounts_sysvars::cases());
     cases.extend(transactions::cases());
+    cases.extend(accounts_sysvars::cases());
 
     Report {
         suite_id: SUITE_ID,

@@ -42,10 +42,11 @@ and decoding, all truncated prefixes for small layouts, trailing rejection,
 nonzero offsets, malformed tags/counts/bit-vector lengths, allocation budgets,
 metadata preservation, missing accounts, wrong owners/sizes, custom matching and
 lossless unknown logs. `verification/conformance/src/accounts_sysvars.rs` adds
-four host-neutral cases. This branch's suite is temporarily
-`solana-kit-core-v3-accounts`, 35 cases; the coordinator combines sibling modules
-and selects the final integration identity. Earlier v2/31 evidence remains
-historical. Target compilation is not runtime execution.
+four host-neutral cases. The integrated `solana-kit-core-v4` suite preserves all
+35 preceding codec/transaction cases and adds those four cases. The
+[runtime receipt](runtimes.md) records actual execution on every core host and
+the corrupt-hash control. Earlier v3/35 and v2/31 evidence remains historical.
+Target compilation alone is not runtime execution.
 
 The [capability receipt](../parity/accounts-sysvars.tsv) preserves all 229
 canonical declarations from the three source packages, including exact IDs,
