@@ -12,7 +12,7 @@ The final numeric parent `1395d3ac2db4b331d00b73a263b19e5c2d38462c` adds only
 documentation beyond that executed numeric source. Its 59-case protocol suite
 passes natively, in Chrome, in WASI Preview 1 and 2, and in the pinned actual
 LeptosKit WasmHost. Each host observes the sole corrupt-hash failure. The
-[numeric receipt](numeric-string-codecs.md) retains that separate proof.
+[numeric receipt](../parity/numeric-string-codecs.md) retains that separate proof.
 
 The original [browser receipt](browser-http.md) describes the supported API and
 its boundaries. This integration adds no production behavior. Both actual Chrome
