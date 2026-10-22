@@ -8,7 +8,9 @@ libraries there. The historical Unit70 receipt remains unchanged.
 configs, full or signatures pages, confirmed/finalized commitment, exact slot,
 signature and signed time comparisons (including time.eq), execution/token account
 filters, ascending/descending order, validated slot:position cursors, and the
-100-full/1000-signature limits. Full requests select base58/base64/json/jsonParsed
+100-full/1000-signature limits. Omitted details select signatures, including
+omitted configuration and an explicitly empty configuration. Explicit full
+retains its 100-entry cap. Full requests select base58/base64/json/jsonParsed
 and legacy/numbered 0/1 version negotiation. Mandatory transactionIndex and nullable
 paginationToken cannot disappear. Full pages reuse the existing owned transaction
 and metadata decoder; no raw standard response escapes to callers.
@@ -50,7 +52,7 @@ actual objects resembling serde's private number representation reject.
 Public literal fixtures execute both operations through the actual Client,
 including field-removal/domain mutations, required nulls, maximum integers,
 context/correlation/body bounds, escaped duplicate keys, allocation failures and
-version/encoding refusal. Wasm target checks here are compilation only; no browser,
-WASI, LeptosKit network, validator, installed app or mobile journey is claimed.
-This branch does not include concurrent node/economics catalog modules or network
-adapters. It does not establish whole Phase4 or registry release readiness.
+version/encoding refusal. The [complete catalog runtime receipt](../verification/rpc-history.md)
+adds actual native, Chrome, WASI and LeptosKit memory-protocol execution.
+These operations establish no network, validator, installed app, mobile,
+whole Phase 4 or registry release readiness.
