@@ -56,5 +56,7 @@ input SHA-256 `bb1a83194457a7fc735f9e5a806ecaced94a17276fc7b45f356171810f15b63a`
 The upstream Apache-2.0 notice is retained in `SYSTEM-LICENSE`. Private official
 constructor and nonce oracles remain outside application dependencies.
 Regenerate using `system`, `system-builders` and `system-errors` commands in
-`verification/codegen-design`. Full host-registry integration of the two new
-client cases and validator execution remain separate evidence work.
+`verification/codegen-design`. The two client cases execute in the shared
+53-case suite on native Rust, real Chrome, Wasmtime Preview 1 and Preview 2, and
+the pinned actual LeptosKit host. The corruption control passes 52 of 53 cases
+on every host. Validator and durable nonce transaction journeys remain pending.
