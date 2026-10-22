@@ -1,0 +1,20 @@
+# Immutable research inputs. These pins describe references, not Rust compatibility claims.
+inspected_on = "2026-10-22"
+
+[dart]
+repository = "https://github.com/openbudgetfun/solana_kit"
+commit = "0138bb956d2d81ccc0c56edc602401c0df2f2b46"
+upstream_kit_reference = "8.5.0"
+top_level_dart_packages = 70
+top_level_renderer_packages = 1
+
+[wasm_solana]
+repository = "https://github.com/pina-rs/wasm_solana"
+commit = "6f43f957a069902195fe55bff89b5531211e170a"
+
+[leptoskit]
+repository = "https://github.com/ifiokjr/leptoskit"
+commit = "fecf8628d326ff7b03f295523e6bb584c3fdf88d"
+guest_target = "wasm32-unknown-unknown"
+guest_engine = "wasmi"
+guest_engine_major = 2
