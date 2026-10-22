@@ -78,7 +78,7 @@ not broad capability completion:
    assuming browser globals or OS APIs.
 5. Compile a downstream crate without repository-specific rustflags or patches.
 
-The initial 25-case portable-core suite now executes natively, in real Chrome,
+The expanded 31-case portable-core suite now executes natively, in real Chrome,
 in Wasmtime 50.0.0 Preview 1/2 commands, and in the pinned actual LeptosKit
 headless WasmHost. Each host observes the corrupt-hash negative control.
 `cargo xtask all` reproduces those runs, binary import/dependency gates, and a
@@ -109,6 +109,12 @@ features must leave simple instruction users with a small graph.
 Acceptance: cross-language golden vectors plus malformed lengths, seeds, curve
 points, overflow, truncated data, invalid discriminators, and trailing-data
 policy. Execute the portable layer across all four environment classes.
+
+The bounded codec slice implements 53 wire operations and partially implements
+21 factories from the 1,387-ID Phase 2 inventory. Its per-unit receipt leaves
+1,313 other IDs uncovered; Phase 2 remains incomplete. See the
+[codec receipt](../verification/core-codecs.md) for exact supported configurations,
+remaining IDs, provenance, and tests.
 
 ## Phase 3: messages, transactions, and signing
 

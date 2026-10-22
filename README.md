@@ -8,11 +8,12 @@ on-chain programs; use Pina or official Solana program libraries instead.
 `no_std + alloc` enables portable clients and does not imply on-chain support.
 
 The first implemented slice is `solana_kit_core` 0.1.0: portable addresses,
-hashes, signatures, ordered instructions, account roles, and optional deterministic
-cryptography. Its shared 25-case suite has [native execution evidence](docs/verification/core-native.md).
+hashes, signatures, ordered instructions, account roles, bounded binary codecs,
+and optional deterministic cryptography. Its shared 31-case suite has
+[runtime execution evidence](docs/verification/runtimes.md).
 The core component is unreleased; the published `solana_kit` 0.0.0 umbrella remains
-a dependency-free name reservation with no SDK APIs. Future runtime support will
-be claimed only after the corresponding execution tests pass.
+a dependency-free name reservation with no SDK APIs. This bounded codec slice
+leaves Phase 2 incomplete; see its [capability receipt](docs/verification/core-codecs.md).
 
 - [Delivery plan](docs/planning/plan.md)
 - [Architecture and API proposal](docs/architecture/design.md)
