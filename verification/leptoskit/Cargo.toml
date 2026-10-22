@@ -1,0 +1,13 @@
+[package]
+name = "solana_kit_leptoskit_verification"
+version = "0.1.0"
+edition = "2024"
+publish = false
+
+[workspace]
+
+[dependencies]
+anyhow = "1.0"
+leptoskit_wasm = { git = "https://github.com/ifiokjr/leptoskit", rev = "fecf8628d326ff7b03f295523e6bb584c3fdf88d" }
+serde_json = "1.0"
+solana_kit_conformance = { path = "../conformance" }

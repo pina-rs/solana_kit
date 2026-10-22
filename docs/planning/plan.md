@@ -72,6 +72,14 @@ not broad capability completion:
    assuming browser globals or OS APIs.
 5. Compile a downstream crate without repository-specific rustflags or patches.
 
+The initial 25-case portable-core suite now executes natively, in real Chrome,
+in Wasmtime 50.0.0 Preview 1/2 commands, and in the pinned actual LeptosKit
+headless WasmHost. Each host observes the corrupt-hash negative control.
+`cargo xtask all` reproduces those runs, binary import/dependency gates, and a
+clean external consumer. See the [runtime receipt](../verification/runtimes.md)
+for exact versions, artifact hashes, commands and limits. Async contracts,
+System Program reuse, host capabilities and device journeys remain open.
+
 Start WASI core checks with Preview 1 and Preview 2; implement the named Preview 2
 HTTP host contract first. Pin the host and WASI interface versions. Execute its
 clock, entropy, cancellation, and outbound HTTP operations. Choose and prove a

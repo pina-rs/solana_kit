@@ -1,0 +1,3 @@
+solana_kit_core v0.1.0
+bs58 v0.5.1
+tokio v1.48.0
