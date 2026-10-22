@@ -5,6 +5,9 @@
 
 extern crate alloc;
 
+/// Owned account snapshots and decoding.
+pub mod accounts;
+
 mod encoding;
 mod instruction;
 pub mod transaction;
