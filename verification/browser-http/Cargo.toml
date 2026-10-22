@@ -1,0 +1,16 @@
+[package]
+name = "solana_kit_browser_http_verification"
+version = "0.1.0"
+edition.workspace = true
+publish = false
+
+[target.'cfg(target_arch = "wasm32")'.dev-dependencies]
+futures = "=0.3.31"
+js-sys = "=0.3.105"
+solana_kit_browser = { path = "../../crates/solana_kit_browser" }
+solana_kit_client.workspace = true
+solana_kit_core.workspace = true
+wasm-bindgen = "=0.2.128"
+wasm-bindgen-futures = "=0.4.78"
+wasm-bindgen-test = "=0.3.78"
+web-sys = { version = "=0.3.105", features = ["Window"] }

@@ -1,0 +1,18 @@
+[package]
+name = "solana_kit_browser"
+version = "0.1.0"
+authors.workspace = true
+edition.workspace = true
+include = ["src/**", "README.md", "LICENSE"]
+license.workspace = true
+readme = "README.md"
+repository = "https://github.com/pina-rs/solana_kit/tree/main/crates/solana_kit_browser"
+rust-version.workspace = true
+description = "Owned browser Fetch transport for off-chain Solana applications"
+
+[target.'cfg(all(target_arch = "wasm32", target_os = "unknown"))'.dependencies]
+js-sys = "=0.3.105"
+solana_kit_client.workspace = true
+wasm-bindgen = "=0.2.128"
+wasm-bindgen-futures = "=0.4.78"
+web-sys = { version = "=0.3.105", features = ["AbortController", "AbortSignal", "Headers", "ReadableStream", "ReadableStreamDefaultReader", "ReferrerPolicy", "Request", "RequestCredentials", "RequestInit", "RequestMode", "RequestRedirect", "Response", "ResponseType", "Url", "Window"] }
