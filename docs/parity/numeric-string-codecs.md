@@ -46,6 +46,8 @@ nulls. All eight option combinations match the executed Dart fixtures, including
 its repeated-BOM restoration quirk. Rust `str` is always well formed; lone
 surrogate input is excluded by the type. Lossy decoding inserts U+FFFD for
 malformed sequences. Existing unit `Utf8` remains strict and BOM preserving.
+The standalone `remove_null_characters` helper removes only NUL and preserves
+every BOM. Its byte budget is checked before output allocation.
 Null padding counts UTF-16 units, including two units for non-BMP characters.
 All output allocation is claimed before reservation; BaseX also claims temporary
 digit slots against the shared element budget. Limits count elements and UTF-8
@@ -63,8 +65,12 @@ Tokio under all eight policies and Base64 leakage under the four old policies.
 Evidence executes 1,536 actual Dart text fixtures, 88 UTF-8 configurations,
 512 signed/unsigned 256-bit decimal fixtures, malformed literals, wide alphabets,
 and 17,920 additional BigInt radix comparisons. The clean external consumer also
-executes on MSRV 1.89. Three isolated portable cases are supplied for later shared
-runtime integration. This unit executes native Rust and target compilation;
-it does not claim browser, WASI or LeptosKit execution of these new operations.
+executes on MSRV 1.89. An unchanged independent consumer replays 19,158 actual
+Dart oracle rows against the integrated public package with zero mismatches.
+Three portable groups now execute in the shared 59-case suite natively, in
+Chrome, in Wasmtime Preview 1 and Preview 2, and in the pinned actual LeptosKit
+host. The [runtime receipt](../verification/runtimes.md) records the executed
+source and artifact hashes. This bounded evidence does not complete Phase 2,
+installed-app journeys, or the seven partial capabilities.
 The original MIT license is retained beside the generated fixtures. Component
 publication remains disabled.
