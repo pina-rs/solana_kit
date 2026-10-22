@@ -1,0 +1,132 @@
+wasmtime 50.0.0 (ebe5e8df1 2026-10-20)
+flags: -S http=y (no network inheritance)
+CASE entropy-clock
+exit=exit status: 0
+PASS entropy-filled=32 monotonic-sleep>=20ms wake-ready
+
+CASE success
+exit=exit status: 0
+PASS success status=201 bounded-body
+
+fixture verified exact POST body and application headers
+
+CASE status
+exit=exit status: 0
+PASS status status=503 bounded-body
+
+fixture verified exact POST body and application headers
+
+CASE oversize
+exit=exit status: 0
+PASS oversize status=201 bounded-body
+
+fixture verified exact POST body and application headers
+
+CASE malformed
+exit=exit status: 0
+PASS malformed error=ErrorCode::HttpProtocolError
+
+fixture verified exact POST body and application headers
+
+CASE timeout
+exit=exit status: 0
+PASS timeout error=ErrorCode::ConnectionReadTimeout
+
+fixture withheld response headers for 200ms
+
+CASE cancel
+exit=exit status: 0
+cancel-dropped-pending-response
+PASS cancel guest-alive-after-drop
+
+fixture observed TCP EOF after 58ms
+
+CASE retain
+exit=exit status: 0
+PASS retain request-pending-for-300ms
+
+fixture observed no EOF during 250ms with response retained
+
+CASE upgrade
+exit=exit status: 0
+upgrade-header=Err(HeaderError::Forbidden)
+connection-header=Err(HeaderError::Forbidden)
+PASS upgrade forbidden-headers; unsolicited-101-is-HTTP-response-only
+
+fixture verified exact POST body and application headers
+
+CASE tls
+exit=exit status: 0
+PASS tls error=ErrorCode::TlsProtocolError
+
+fixture observed TLS record; sent invalid TLS reply
+
+CASE wrong-body
+exit=exit status: 134
+
+thread 'main' (1) panicked at guest/src/main.rs:155:9:
+assertion `left == right` failed
+  left: [114, 101, 112, 108, 121, 58, 56]
+ right: [114, 101, 112, 108, 121, 58, 55]
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+Error: failed to run main module `solana_kit_wasi_contract_guest.wasm`
+
+Caused by:
+    0: failed to invoke `run` function
+    1: error while executing at wasm backtrace:
+    0:  0x236ff - solana_kit_wasi_contract_guest-90a272fb45216fa0.wasm!abort
+    1:  0x20e49 - solana_kit_wasi_contract_guest-90a272fb45216fa0.wasm!std[44e17ad3ce915a2a]::sys::pal::wasi::abort_internal
+    2:  0x1fda8 - solana_kit_wasi_contract_guest-90a272fb45216fa0.wasm!std[44e17ad3ce915a2a]::process::abort
+    3:  0x20317 - solana_kit_wasi_contract_guest-90a272fb45216fa0.wasm!__rustc[3d2f79520d6fa809]::__rust_abort
+    4:  0x1e9a5 - solana_kit_wasi_contract_guest-90a272fb45216fa0.wasm!__rustc[3d2f79520d6fa809]::__rust_start_panic
+    5:  0x20194 - solana_kit_wasi_contract_guest-90a272fb45216fa0.wasm!__rustc[3d2f79520d6fa809]::rust_panic
+    6:  0x1f73c - solana_kit_wasi_contract_guest-90a272fb45216fa0.wasm!std[44e17ad3ce915a2a]::panicking::panic_with_hook
+    7:  0x1f1ff - solana_kit_wasi_contract_guest-90a272fb45216fa0.wasm!std[44e17ad3ce915a2a]::panicking::panic_handler::{closure#0}
+    8:  0x1f155 - solana_kit_wasi_contract_guest-90a272fb45216fa0.wasm!std[44e17ad3ce915a2a]::sys::backtrace::__rust_end_short_backtrace::<std[44e17ad3ce915a2a]::panicking::panic_handler::{closure#0}, !>
+    9:  0x203fa - solana_kit_wasi_contract_guest-90a272fb45216fa0.wasm!__rustc[3d2f79520d6fa809]::rust_begin_unwind
+   10:  0x28d9f - solana_kit_wasi_contract_guest-90a272fb45216fa0.wasm!core[cff34068e63f4426]::panicking::panic_fmt
+   11:  0x288ff - solana_kit_wasi_contract_guest-90a272fb45216fa0.wasm!core[cff34068e63f4426]::panicking::assert_failed_inner
+   12:   0x528d - solana_kit_wasi_contract_guest-90a272fb45216fa0.wasm!core[cff34068e63f4426]::panicking::assert_failed::<alloc[d6b3b67424bc669f]::vec::Vec<u8>, &[u8; 7usize]>
+   13:   0x6419 - solana_kit_wasi_contract_guest-90a272fb45216fa0.wasm!solana_kit_wasi_contract_guest[187f57b6bbacd5b5]::check_response
+   14:   0x7812 - solana_kit_wasi_contract_guest-90a272fb45216fa0.wasm!solana_kit_wasi_contract_guest[187f57b6bbacd5b5]::main
+   15:   0x9254 - solana_kit_wasi_contract_guest-90a272fb45216fa0.wasm!<fn() as core[cff34068e63f4426]::ops::function::FnOnce<()>>::call_once
+   16:   0x4add - solana_kit_wasi_contract_guest-90a272fb45216fa0.wasm!std[44e17ad3ce915a2a]::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()>
+   17:   0x4254 - solana_kit_wasi_contract_guest-90a272fb45216fa0.wasm!std[44e17ad3ce915a2a]::rt::lang_start::<()>::{closure#0}
+   18:  0x20aeb - solana_kit_wasi_contract_guest-90a272fb45216fa0.wasm!std[44e17ad3ce915a2a]::rt::lang_start_internal
+   19:   0x421a - solana_kit_wasi_contract_guest-90a272fb45216fa0.wasm!std[44e17ad3ce915a2a]::rt::lang_start::<()>
+note: using the `WASMTIME_BACKTRACE_DETAILS=1` environment variable may show more debugging information
+    2: wasm trap: wasm `unreachable` instruction executed
+
+
+fixture verified exact POST body and application headers
+
+CASE http-unavailable
+exit=exit status: 1
+Error: failed to run main module `solana_kit_wasi_contract_guest.wasm`
+
+Caused by:
+    0: component imports instance `wasi:http/types@0.2.12`, but a matching implementation was not found in the linker
+    1: instance export `incoming-response` has the wrong type
+    2: resource implementation is missing
+
+
+CASE random-limit
+exit=exit status: 1
+Error: failed to run main module `solana_kit_wasi_contract_guest.wasm`
+
+Caused by:
+    0: failed to invoke `run` function
+    1: error while executing at wasm backtrace:
+    0: 0x417c19 - <unknown>!<wasm function 15>
+    1:  0x17339 - solana_kit_wasi_contract_guest-90a272fb45216fa0.wasm!wasip2[cba164d83b835e8d]::imports::wasi::random::random::get_random_bytes
+    2:   0x5c37 - solana_kit_wasi_contract_guest-90a272fb45216fa0.wasm!solana_kit_wasi_contract_guest[187f57b6bbacd5b5]::entropy_clock
+    3:   0x73c7 - solana_kit_wasi_contract_guest-90a272fb45216fa0.wasm!solana_kit_wasi_contract_guest[187f57b6bbacd5b5]::main
+    4:   0x9254 - solana_kit_wasi_contract_guest-90a272fb45216fa0.wasm!<fn() as core[cff34068e63f4426]::ops::function::FnOnce<()>>::call_once
+    5:   0x4add - solana_kit_wasi_contract_guest-90a272fb45216fa0.wasm!std[44e17ad3ce915a2a]::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()>
+    6:   0x4254 - solana_kit_wasi_contract_guest-90a272fb45216fa0.wasm!std[44e17ad3ce915a2a]::rt::lang_start::<()>::{closure#0}
+    7:  0x20aeb - solana_kit_wasi_contract_guest-90a272fb45216fa0.wasm!std[44e17ad3ce915a2a]::rt::lang_start_internal
+    8:   0x421a - solana_kit_wasi_contract_guest-90a272fb45216fa0.wasm!std[44e17ad3ce915a2a]::rt::lang_start::<()>
+    9:   0x80d1 - solana_kit_wasi_contract_guest-90a272fb45216fa0.wasm!__main_void
+   10:   0x27dd - solana_kit_wasi_contract_guest-90a272fb45216fa0.wasm!_start
+note: using the `WASMTIME_BACKTRACE_DETAILS=1` environment variable may show more debugging information
+    2: requested len 32 exceeds limit 16

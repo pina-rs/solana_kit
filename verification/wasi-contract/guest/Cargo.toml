@@ -1,0 +1,8 @@
+[package]
+name = "solana_kit_wasi_contract_guest"
+version = "0.0.0"
+edition = "2024"
+publish = false
+
+[dependencies]
+wasip2 = "=1.0.4"
