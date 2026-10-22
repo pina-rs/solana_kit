@@ -8,9 +8,10 @@ exact version, obtains tracked and nonignored new files from Git, and executes a
 
 Files are passed explicitly: monostyle 0.3.26's directory discovery silently
 omits `src/bin` and other built-in directory names even with `--no-ignore`.
-Git inventory retains tracked files that match ignore rules. Build `target`
-directories and `.monochange/local` execution evidence stay outside the source
-inventory. Every authored Rust path must appear exactly once in the scored
+Git inventory retains every tracked file even when its path matches ignore
+rules, including Rust source under `src/target` or `.monochange/local`.
+Untracked ignored build caches and local execution evidence stay outside the
+inventory through Git's ignore rules. Every inventoried Rust path must appear exactly once in the scored
 report. Missing, unreadable, unknown, or aliased scored paths fail the gate.
 No ignore rules or score thresholds are relaxed. To analyze another checkout,
 use `cargo xtask style <absolute-repository-directory>`.
@@ -39,5 +40,6 @@ There is no deliberately poor Rust source in this fixture. The public-command
 test exercises this rejection, and unit tests cover each category, exact floors,
 malformed/truncated/empty JSON, missing cells/files, and invalid scores.
 The style CI job also executes the real pinned analyzer in an isolated Git
-repository containing binary targets, generated files, ignored tracked files,
+repository containing binary targets, generated files, ignored tracked files
+(including cache-like path names),
 new authored files, unreadable Rust source, and a missing tracked input.

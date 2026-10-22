@@ -23,10 +23,6 @@ pub(super) fn inventory() -> Result<BTreeSet<String>> {
     for path in paths.split_terminator('\0') {
         let path = normalize(path)?;
 
-        if is_cache(&path) {
-            continue;
-        }
-
         ensure!(inventory.insert(path.clone()), "duplicate Git path: {path}");
         let metadata = std::fs::symlink_metadata(&path)
             .with_context(|| format!("inspect authored file: {path}"))?;
@@ -74,9 +70,4 @@ fn normalize(path: &str) -> Result<String> {
 
     ensure!(!parts.is_empty(), "style path is empty");
     Ok(parts.join("/"))
-}
-
-/// Build artifacts and local execution receipts are outside the authored source inventory.
-fn is_cache(path: &str) -> bool {
-    path.split('/').any(|part| part == "target") || path.starts_with(".monochange/local/")
 }

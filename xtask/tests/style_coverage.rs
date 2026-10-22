@@ -15,7 +15,7 @@ impl Repository {
         fs::create_dir_all(path.join("src/bin")).expect("fixture directory");
         let repository = Self(path);
         repository.git(&["init", "--quiet"]);
-        repository.write(".gitignore", b"target/\nignored.rs\n");
+        repository.write(".gitignore", b"target/\n.monochange/local/\nignored.rs\n");
         repository.write("monostyle.toml", include_bytes!("../../monostyle.toml"));
         repository.write("src/lib.rs", b"pub fn library() {}\n");
         repository.write("src/bin/catalog.rs", b"fn main() {}\n");
@@ -29,8 +29,18 @@ impl Repository {
             b"A filename must never become an analyzer option.\n",
         );
         repository.write("ignored.rs", b"pub fn tracked_ignored() {}\n");
+        fs::create_dir_all(repository.0.join("src/target")).expect("authored target directory");
+        repository.write("src/target/platform.rs", b"fn main() {}\n");
+        fs::create_dir_all(repository.0.join(".monochange/local")).expect("local directory");
+        repository.write(".monochange/local/tracked.rs", b"fn main() {}\n");
         repository.git(&["add", "."]);
-        repository.git(&["add", "--force", "ignored.rs"]);
+        repository.git(&[
+            "add",
+            "--force",
+            "ignored.rs",
+            "src/target/platform.rs",
+            ".monochange/local/tracked.rs",
+        ]);
         repository.add_global_ignore();
         repository
     }
@@ -78,8 +88,8 @@ impl Repository {
         }
     }
 
-    /// A tiny deeply nested binary must fail even when a larger library hides its aggregate.
-    fn check_file_floor(&self) {
+    /// A tiny deeply nested source must fail even when a larger library hides its aggregate.
+    fn check_file_floor(&self, path: &str) {
         self.write(
             "src/lib.rs",
             "pub fn library() {}\n".repeat(1_000).as_bytes(),
@@ -90,13 +100,13 @@ impl Repository {
             "                        println!(\"test\");\n                    }\n",
             "                }\n            }\n        }\n    }\n}\n"
         );
-        self.write("src/bin/catalog.rs", deficient.as_bytes());
-        self.check(Some("src/bin/catalog.rs: readability"));
+        self.write(path, deficient.as_bytes());
+        self.check(Some(&format!("{path}: readability")));
         let report = self.report();
         assert!(report["readability"]["value"].as_f64().expect("score") >= 90.0);
         assert!(report["complexity"]["value"].as_f64().expect("score") >= 90.0);
         self.write("src/lib.rs", b"pub fn library() {}\n");
-        self.write("src/bin/catalog.rs", b"fn main() {}\n");
+        self.write(path, b"fn main() {}\n");
     }
 
     fn report(&self) -> serde_json::Value {
@@ -119,6 +129,9 @@ fn authored_files_cannot_escape_the_actual_analyzer() {
     let repository = Repository::new();
     fs::create_dir(repository.0.join("target")).expect("ignored cache directory");
     repository.write("target/bad.rs", b"\xff");
+    repository.write(".monochange/local/bad.rs", b"\xff");
+    repository.check_file_floor("src/target/platform.rs");
+    repository.check_file_floor(".monochange/local/tracked.rs");
     repository.check(None);
     let report = repository.report();
     let paths: Vec<_> = report["files"]
@@ -133,13 +146,15 @@ fn authored_files_cannot_escape_the_actual_analyzer() {
         "src/generated.rs",
         "ignored.rs",
         "global.rs",
+        "src/target/platform.rs",
+        ".monochange/local/tracked.rs",
     ] {
         assert!(paths.contains(&path), "missing {path}");
     }
 
     repository.write("src/new.rs", b"pub fn new_file() {}\n");
     repository.check(None);
-    repository.check_file_floor();
+    repository.check_file_floor("src/bin/catalog.rs");
     repository.write("src/new.rs", b"\xff");
     repository.check(Some("authored Rust file was not scored: src/new.rs"));
     repository.write("src/new.rs", b"pub fn new_file() {}\n");
