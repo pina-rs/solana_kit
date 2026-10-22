@@ -29,6 +29,7 @@ mod rpc_history;
 mod rpc_node;
 mod rpc_results;
 mod rpc_submission;
+mod subscriptions;
 mod text_numbers;
 mod transactions;
 /// Version-one client wire fixtures shared by every host.
@@ -41,9 +42,9 @@ pub mod system_client;
 use alloc::vec::Vec;
 
 /// Immutable suite identity. Changes to fixtures or assertions require a new ID.
-pub const SUITE_ID: &str = "solana-kit-core-v17";
+pub const SUITE_ID: &str = "solana-kit-core-v18";
 /// Required number of cases; a truncated report cannot pass conformance.
-pub const EXPECTED_CASE_COUNT: usize = 77;
+pub const EXPECTED_CASE_COUNT: usize = 81;
 
 /// Selects authentic fixtures or the intentionally incorrect hash oracle.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -145,6 +146,7 @@ pub fn run(mode: FixtureMode) -> Report {
     ));
     cases.extend(registry::offchain());
     cases.extend(compute_budget::cases());
+    cases.extend(subscriptions::cases());
 
     Report {
         suite_id: SUITE_ID,

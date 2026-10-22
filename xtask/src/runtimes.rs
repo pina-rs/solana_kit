@@ -134,6 +134,7 @@ pub(crate) fn leptoskit() -> Result<()> {
         cargo().args([
             "run",
             "--locked",
+            "--release",
             "--manifest-path",
             "verification/leptoskit/Cargo.toml",
             "--",
