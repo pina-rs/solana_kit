@@ -45,9 +45,10 @@ Choose candidate A. The executed generic spawn helper requires `T: Send + Sync`,
 `for<'a> T::Exchange<'a>: Send`, `R: Method + Send`, and `R::Response: Send`.
 It invokes the same `Client<T>::call` that the local Rc test invokes. The
 alternative loses Send at the erased exchange, as its E0277 doctest demonstrates.
-No unsafe Send assertion or duplicated request algorithm is needed. This is a
-native proof; JSON behavior in browser/WASI/interpreted guests remains to execute
-when real public adapters exist.
+No unsafe Send assertion or duplicated request algorithm is needed. The public
+`Client` also executes shared JSON protocol fixtures through memory transports in
+Chrome, WASI Preview 1 and 2, and the actual LeptosKit interpreted host. Production
+network adapters and installed-device journeys still require separate evidence.
 
 Keep one `solana_kit_client` crate for typed RPC, HTTP contracts, pubsub,
 confirmation and account fetching. It owns request identity allocation, framing,
@@ -59,8 +60,9 @@ core domain types remain Kit-owned. Opaque remote data retains exact RawValue
 text, including whitespace, after duplicate-key and budget validation. IDs reserve 1 through u32::MAX - 1, remain exactly representable
 in JavaScript, and fail with IdExhausted before transport access at the limit.
 The native concurrency test observes 32 distinct replies from one shared client;
-the exhaustion control never calls the transport. Cross-target compilation proves
-the selected atomic is available; runtime execution on Wasm remains pending.
+the exhaustion control never calls the transport. Shared public `Client` fixtures
+execute request ID allocation, abandonment and response correlation on those Wasm
+hosts through memory transports. See the [runtime receipt](../verification/runtimes.md).
 
 Adapters remain separate `solana_kit_native`, `solana_kit_browser`,
 `solana_kit_wasi` and `solana_kit_leptoskit` crates. Each adapter owns an explicitly
