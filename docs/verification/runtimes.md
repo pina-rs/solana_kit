@@ -36,7 +36,53 @@ dispatches a `Press` event and requires the corrupted report and second commit.
 The guest's small unsafe FFI wrappers implement that pinned synchronous copy ABI;
 core and the host harness forbid unsafe code.
 
-## Current v5 executed receipt
+## Current v6 executed receipt
+
+The integrated `solana-kit-core-v6` suite preserves all preceding 42 cases and
+appends three generated System data cases. Local macOS ARM64 execution on
+2026-10-22 at signed checkpoint `14700c4d3358a92d70199b6f22bf1f84dde46b54`
+used Rust 1.99.1, Chrome 155.0.8059.85, ChromeDriver 155.0.8059.84,
+Wasmtime 50.0.0 and the pinned actual LeptosKit host. Clean source and native
+goldens were used for `cargo xtask all`, which exited 0.
+
+| Execution                 | Canonical                      | Corruption control                                     |
+| ------------------------- | ------------------------------ | ------------------------------------------------------ |
+| Native command            | 45/45, exit 0                  | 44/45, exit 1                                          |
+| Real headless Chrome      | Full 45/45 report checked      | Full 44/45 report checked; both browser tests passed   |
+| Wasmtime Preview 1        | 45/45, exit 0                  | 44/45, exit 1                                          |
+| Wasmtime Preview 2        | 45/45, exit 0                  | 44/45, exit 1                                          |
+| Actual LeptosKit WasmHost | Full 45/45 JSON and one commit | Press event produced full 44/45 JSON and second commit |
+
+Only `sha256-fips-abc` fails in corruption mode, with `SHA-256 digest mismatch`.
+The System cases execute independent 52/94-byte literals, UTF-8 byte framing,
+unknown tags, trailing bytes, insufficient budgets, oversized u64 string lengths
+and truncated strings. These negative cases execute inside the 32-bit guests.
+
+All 16 core normal/build selections and eight numeric normal-only queries remain
+passing. Four additional System default normal/build queries independently
+require exactly `solana_kit_system`, `solana_kit_core` and `bs58`, across native
+and all three Wasm targets. Its separate production checker rejects the Tokio
+fixture; no core allowlist was widened. The compiled guest imports exactly the
+three pinned LeptosKit functions, and the existing forbidden-import and four
+core dependency controls pass. All five packaged-core consumer tests pass.
+
+Executed v6 artifact SHA-256 values (local debug WASI artifacts, release guest):
+
+```text
+7b9d2c6e7cd0f3eff4c9749bfc10a7c530826f6c692e776c3c81fba132585155  wasm32-wasip1
+fb574c677217ea7d06273ce765674c9973707d5aa1f29d31c127ddce46c8b0e1  wasm32-wasip2
+9d24ab5620f010a2b7042be8318262d7c6dda21fe47c759346269a4fa4e8620e  leptoskit-guest
+```
+
+Core production and the reviewed generated System source/schema/emitter are
+unchanged by integration. The [System receipt](system-data.md) retains all
+241 canonical IDs: 83 implemented data mappings, 28 partial and 130 pending.
+This proves bounded synchronous off-chain data behavior; it does not complete
+System builders, validator execution, the full program client or device journeys.
+System source-consumer checks use no patches; clean-registry packaging remains
+unproved while its core dependency is unpublished. Earlier receipts stay historical.
+
+## Historical v5 executed receipt
 
 The integrated `solana-kit-core-v5` suite preserves all preceding 39 cases and
 adds three exact fixed-point cases. Fresh local macOS ARM64 execution on

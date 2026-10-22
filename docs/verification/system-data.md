@@ -62,9 +62,12 @@ through actual atomic replacement. CI regenerates public output twice and reject
 drift; it also runs the private tests and all three Wasm compile targets.
 
 Three shared functions in `verification/conformance/src/system.rs` execute the
-literal52/94 proofs and malformed-input rejection natively. They await registration
-in the combined runtime suite; this unit does not claim their browser, WASI or
-LeptosKit execution. MSRV1.89, warning-denied documentation, Clippy, formatting,
+literal52/94 proofs and malformed-input rejection in the combined v6 suite.
+The [runtime receipt](runtimes.md) records actual native, Chrome, WASI Preview1/2
+and pinned LeptosKit execution, including oversized u64 string-prefix and
+truncated-string rejection in 32-bit guests. Four separate default normal/build
+target queries require exactly System, core and base58; core policies stay separate.
+MSRV1.89, warning-denied documentation, Clippy, formatting,
 Monochange preview and generated-inclusive per-file monostyle floors are checked.
 
 `docs/parity/system-data.tsv` preserves every canonical System declaration ID and
@@ -78,3 +81,6 @@ cargo test --locked --manifest-path verification/codegen-design/Cargo.toml
 ```
 
 Publication is disabled. The changeset records only the implemented data slice.
+The source consumer uses no Cargo patches. Archive assembly with an unpublished
+core dependency does not prove clean-registry readiness; dependency publication
+order and a clean packaged System consumer remain release work.

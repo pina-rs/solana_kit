@@ -1,8 +1,8 @@
 [package]
 name = "solana_kit_system_guest_boundary"
 version = "0.1.0"
-publish = false
 edition.workspace = true
+publish = false
 
 [lib]
 crate-type = ["cdylib"]
