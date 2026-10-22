@@ -7,6 +7,28 @@ dependency closures, forbidden fixtures, and an external packaged-core consumer.
 Each journey is also available as `native`, `browser`, `wasi`, `leptoskit`,
 `gates`, or `consumer`. Run from this checkout; no secrets are needed.
 
+All arguments are validated before a journey starts or writes evidence. Commands
+accept only these positional arguments; no Cargo flags are forwarded:
+
+| Command                                                                                   | Arguments                                           |
+| ----------------------------------------------------------------------------------------- | --------------------------------------------------- |
+| `native`, `browser`, `wasi`, `leptoskit`, `gates`, `dependency-graphs`, `consumer`, `all` | None                                                |
+| `style`                                                                                   | Optional repository root; defaults to this checkout |
+| `style-report`                                                                            | Required report JSON path                           |
+| `imports`                                                                                 | Required Wasm artifact path                         |
+| `dependency-fixture`                                                                      | Required dependency tree text path                  |
+
+Paths resolve from this checkout. Prefix a path beginning with `-` with `./`.
+Unsupported options and trailing arguments fail with usage before child execution.
+To keep nested Cargo commands offline, set the inherited environment explicitly:
+
+```sh
+CARGO_NET_OFFLINE=true cargo xtask consumer
+```
+
+`cargo xtask consumer --offline` is rejected; xtask does not implement Cargo flag
+propagation. Offline execution requires the dependencies to be cached already.
+
 ## Reproduce
 
 The checked-in toolchain selects Rust 1.99.1, rustfmt, Clippy and all three Wasm

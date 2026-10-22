@@ -55,10 +55,7 @@ pub(crate) fn guest() -> Result<()> {
 }
 
 /// Exposes the production import gate for externally generated negative artifacts.
-pub(crate) fn check_import_file() -> Result<()> {
-    let path = std::env::args_os()
-        .nth(2)
-        .context("usage: cargo xtask imports <guest.wasm>")?;
+pub(crate) fn check_import_file(path: &Path) -> Result<()> {
     imports(&std::fs::read(path)?)
 }
 
@@ -88,10 +85,7 @@ fn dependencies(tree: &str, allowed: &str) -> Result<()> {
 }
 
 /// Allows the same dependency gate to be exercised with a forbidden tree fixture.
-pub(crate) fn check_dependency_fixture() -> Result<()> {
-    let path = std::env::args_os()
-        .nth(2)
-        .context("usage: cargo xtask dependency-fixture <tree.txt>")?;
+pub(crate) fn check_dependency_fixture(path: &Path) -> Result<()> {
     let tree = std::fs::read_to_string(path)?;
     dependencies(&tree, include_str!("../policy/crypto.txt"))
 }
