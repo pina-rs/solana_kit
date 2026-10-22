@@ -20,12 +20,13 @@ pub(super) const MAX_INSTRUCTIONS: usize = 64;
 pub(super) fn validate(message: &Message) -> Result<(), Error> {
     let unique: BTreeSet<_> = message.static_accounts.iter().collect();
 
-    if message.header.required_signatures > MAX_SIGNERS
-        || message.static_accounts.len() > MAX_ADDRESSES
-        || message.instructions.len() > MAX_INSTRUCTIONS
-        || unique.len() != message.static_accounts.len()
-        || !message.lookups.is_empty()
-    {
+    validate_counts(
+        message.header.required_signatures,
+        message.static_accounts.len(),
+        message.instructions.len(),
+    )?;
+
+    if unique.len() != message.static_accounts.len() || !message.lookups.is_empty() {
         return Err(Error::InvalidV1Limits);
     }
 
@@ -103,12 +104,7 @@ pub(super) fn decode_prefix(bytes: &[u8]) -> Result<(Message, usize), Error> {
     let instruction_count = usize::from(reader.byte()?);
     let address_count = usize::from(reader.byte()?);
 
-    if header.required_signatures > 12
-        || instruction_count > MAX_INSTRUCTIONS
-        || address_count > MAX_ADDRESSES
-    {
-        return Err(Error::InvalidV1Limits);
-    }
+    validate_counts(header.required_signatures, address_count, instruction_count)?;
 
     let mut static_accounts = Vec::new();
 
@@ -217,4 +213,12 @@ impl<'a> Reader<'a> {
 
         Ok(instructions)
     }
+}
+
+fn validate_counts(signers: u8, addresses: usize, instructions: usize) -> Result<(), Error> {
+    if signers > MAX_SIGNERS || addresses > MAX_ADDRESSES || instructions > MAX_INSTRUCTIONS {
+        return Err(Error::InvalidV1Limits);
+    }
+
+    Ok(())
 }

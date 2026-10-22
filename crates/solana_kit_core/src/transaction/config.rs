@@ -23,7 +23,7 @@ impl HeapSize {
     /// # Errors
     /// Returns [`Error::InvalidConfig`] for an out-of-range or unaligned value.
     pub fn new(bytes: u32) -> Result<Self, Error> {
-        if !(MIN_HEAP..=MAX_HEAP).contains(&bytes) || bytes % HEAP_ALIGNMENT != 0 {
+        if !(MIN_HEAP..=MAX_HEAP).contains(&bytes) || !bytes.is_multiple_of(HEAP_ALIGNMENT) {
             return Err(Error::InvalidConfig);
         }
 
@@ -105,10 +105,10 @@ impl V1Config {
     /// Canonical supported mask; the two priority bits are always atomic.
     #[must_use]
     pub fn mask(self) -> u32 {
-        u32::from(self.priority_fee.is_some()) * PRIORITY_MASK
-            | u32::from(self.compute_unit_limit.is_some()) * COMPUTE_BIT
-            | u32::from(self.loaded_accounts_data_limit.is_some()) * LOADED_BIT
-            | u32::from(self.heap_size.is_some()) * HEAP_BIT
+        (u32::from(self.priority_fee.is_some()) * PRIORITY_MASK)
+            | (u32::from(self.compute_unit_limit.is_some()) * COMPUTE_BIT)
+            | (u32::from(self.loaded_accounts_data_limit.is_some()) * LOADED_BIT)
+            | (u32::from(self.heap_size.is_some()) * HEAP_BIT)
     }
 
     pub(super) fn encode(self, bytes: &mut Vec<u8>) {

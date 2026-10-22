@@ -50,3 +50,36 @@ overflow counts remain `Error::InvalidLength`. Received wire acceptance and
 packet/trailing-byte policy are unchanged. The four transaction cases execute
 with all 31 primitive/codec cases as `solana-kit-core-v3` on every host in the
 [runtime receipt](../verification/runtimes.md).
+
+## Version-one client wire
+
+`Message::compile_v1` uses the same immutable message and ordered signature owners.
+`V1Config` derives its mask from optional typed fields, keeping the two priority
+fee bits atomic. `HeapSize::new` validates the inclusive 32..256 KiB range and
+one-KiB alignment before a configuration can contain a heap request. Priority fees
+are whole lamports in a full-width u64. Absent compute and loaded-data requests
+mean zero; absent heap means 32 KiB. Explicit zero remains distinguishable from
+absence in received bytes. Unknown mask bits and partial priority pairs reject.
+
+Version one has no lookup tables. The complete envelope is the signed message
+prefix followed by exactly one 64-byte signature per required signer, with no
+signature count prefix or padding. Its inclusive limit is 4096 bytes, including
+reserved signature slots; legacy/v0 retain 1232. Version one also bounds required
+signatures to 12, distinct addresses to 64, instructions to 64, and account
+positions per instruction to 255. Received addresses cannot repeat. Compiler
+privilege ordering and received protocol checks retain their separate contracts.
+
+Three pinned Dart signed vectors and an independent literal envelope match the
+public decode/encode API, strict crypto and official solana-message 4.4.1. The
+[local validator proof](../verification/v1-wire.md) now constructs v1 messages and
+signatures through the public SDK. It checks successful simulation, submission,
+confirmation and version-one readback, signature rejection, exact 4096 success,
+and the specific -32602/4097/max4096 error. A disabled-feature genesis accepts the
+legacy control and explicitly rejects v1 as UnsupportedVersion. `getVersion`
+alone does not advertise feature support. These are local fixture-node results.
+
+The three candidate portable cases are isolated from the established host suite
+until integration executes them on each host. No browser/WASI/LeptosKit execution
+for these new cases is claimed here. A 32-byte lifetime wire token does not prove
+durable nonce creation, advance, expiry or rollback. All 746 canonical source IDs
+remain present; bounded mappings stay partial and Phase 3 remains incomplete.

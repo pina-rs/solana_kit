@@ -16,6 +16,8 @@ mod fixed_points;
 mod instructions;
 mod registry;
 mod transactions;
+/// Candidate version-one cases, separate from the established host registry.
+pub mod v1;
 
 /// Generated System instruction-data conformance fixtures.
 pub mod system;
