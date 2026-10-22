@@ -102,11 +102,25 @@ fn accept(listener: &TcpListener) -> Result<TcpStream> {
 }
 
 /// Observe cancellation while the component remains alive after dropping its future.
-fn observe_close(stream: &mut TcpStream) -> Result<String> {
+fn observe_close(stream: &mut TcpStream, retained: bool) -> Result<String> {
     let start = Instant::now();
     let mut byte = [0_u8; 1];
     stream.set_read_timeout(Some(CLOSE_TIMEOUT))?;
     let result = stream.read(&mut byte);
+
+    if retained {
+        let error = result.expect_err("retained request must keep connection pending");
+        ensure!(
+            matches!(
+                error.kind(),
+                std::io::ErrorKind::TimedOut | std::io::ErrorKind::WouldBlock
+            ),
+            "unexpected retained-request failure: {error}"
+        );
+
+        return Ok("fixture observed no EOF during 250ms with response retained".into());
+    }
+
     ensure!(
         matches!(result, Ok(0)),
         "no early TCP EOF after guest drop: {result:?}"
@@ -145,7 +159,7 @@ fn serve(listener: TcpListener, mode: &str) -> Result<String> {
     );
 
     match mode {
-        "cancel" => return observe_close(&mut stream),
+        "cancel" | "retain" => return observe_close(&mut stream, mode == "retain"),
         "timeout" => {
             thread::sleep(STALL_DURATION);
             return Ok("fixture withheld response headers for 200ms".into());
@@ -193,7 +207,8 @@ fn execute(host: &Path, component: &Path, flags: &[&str], args: &[&str]) -> Resu
     }
 
     let mut child = command
-        .arg(component)
+        .current_dir(component.parent().context("component directory")?)
+        .arg(component.file_name().context("component filename")?)
         .args(args)
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
@@ -220,20 +235,29 @@ fn execute(host: &Path, component: &Path, flags: &[&str], args: &[&str]) -> Resu
 fn imports(component: &Path) -> Result<String> {
     let bytes = std::fs::read(component)?;
     let mut lines = Vec::new();
-    let mut first = true;
+    let mut depth = 0_u32;
+    let mut payloads = Parser::new(0).parse_all(&bytes);
+    ensure!(
+        matches!(
+            payloads.next().transpose()?,
+            Some(Payload::Version {
+                encoding: Encoding::Component,
+                ..
+            })
+        ),
+        "expected a real component"
+    );
 
-    for payload in Parser::new(0).parse_all(&bytes) {
+    for payload in payloads {
         match payload? {
-            Payload::Version { encoding, .. } if first => {
-                ensure!(encoding == Encoding::Component, "expected a real component");
-                first = false;
-            }
-
-            Payload::ComponentImportSection(section) => {
-                for import in section {
-                    lines.push(import?.name.0.to_owned());
-                }
-            }
+            Payload::ModuleSection { .. } | Payload::ComponentSection { .. } => depth += 1,
+            Payload::End(_) if depth > 0 => depth -= 1,
+            Payload::ComponentImportSection(section) if depth == 0 => lines.extend(
+                section
+                    .into_iter()
+                    .map(|import| import.map(|entry| entry.name.0.to_owned()))
+                    .collect::<std::result::Result<Vec<_>, _>>()?,
+            ),
             _ => {}
         }
     }
@@ -266,6 +290,64 @@ fn record(label: &str, output: Output, success: bool, marker: &str) -> Result<St
     Ok(transcript)
 }
 
+/// Bound each fixture and require both guest and server observations.
+fn network_probes(host: &Path, component: &Path, transcript: &mut String) -> Result<()> {
+    for mode in [
+        "success",
+        "status",
+        "oversize",
+        "malformed",
+        "timeout",
+        "cancel",
+        "retain",
+        "upgrade",
+        "tls",
+        "wrong-body",
+    ] {
+        let listener = TcpListener::bind("127.0.0.1:0")?;
+        let authority = listener.local_addr()?.to_string();
+        let fixture = thread::spawn(move || serve(listener, mode));
+        let output = execute(host, component, &["http=y"], &[mode, &authority]);
+        let observation = fixture
+            .join()
+            .map_err(|_| anyhow::anyhow!("fixture panicked"))??;
+        let success = mode != "wrong-body";
+        let marker = if success {
+            format!("PASS {mode}")
+        } else {
+            "assertion".into()
+        };
+
+        *transcript += &record(mode, output?, success, &marker)?;
+        *transcript += &format!("{observation}\n\n");
+    }
+
+    Ok(())
+}
+
+/// Missing host imports and denied entropy must terminate instead of returning success.
+fn capability_probes(host: &Path, component: &Path, transcript: &mut String) -> Result<()> {
+    *transcript += &record(
+        "http-unavailable",
+        execute(host, component, &["http=n"], &["success", "127.0.0.1:1"])?,
+        false,
+        "wasi:http",
+    )?;
+    *transcript += &record(
+        "random-limit",
+        execute(
+            host,
+            component,
+            &["http=y", "max-random-size=16"],
+            &["entropy-clock"],
+        )?,
+        false,
+        "random",
+    )?;
+
+    Ok(())
+}
+
 /// Run every required case against the pinned external Wasmtime executable.
 fn main() -> Result<()> {
     let args: Vec<String> = std::env::args().collect();
@@ -278,7 +360,7 @@ fn main() -> Result<()> {
     ensure!(version.status.success(), "host version command failed");
     let version = String::from_utf8(version.stdout)?;
     ensure!(
-        version.starts_with("wasmtime 50.0.0 "),
+        version == "wasmtime 50.0.0 (ebe5e8df1 2026-10-20)\n",
         "incorrect host pin: {version}"
     );
 
@@ -290,53 +372,10 @@ fn main() -> Result<()> {
         true,
         "PASS entropy-filled=32",
     )?;
-
-    for mode in [
-        "success",
-        "status",
-        "oversize",
-        "malformed",
-        "timeout",
-        "cancel",
-        "upgrade",
-        "tls",
-        "wrong-body",
-    ] {
-        let listener = TcpListener::bind("127.0.0.1:0")?;
-        let authority = listener.local_addr()?.to_string();
-        let fixture = thread::spawn(move || serve(listener, mode));
-        let output = execute(&host, &component, &["http=y"], &[mode, &authority]);
-        let observation = fixture
-            .join()
-            .map_err(|_| anyhow::anyhow!("fixture panicked"))??;
-        let success = mode != "wrong-body";
-        let marker = if success {
-            format!("PASS {mode}")
-        } else {
-            "assertion".into()
-        };
-
-        transcript += &record(mode, output?, success, &marker)?;
-        transcript += &format!("{observation}\n\n");
-    }
-
-    transcript += &record(
-        "http-unavailable",
-        execute(&host, &component, &["http=n"], &["success", "127.0.0.1:1"])?,
-        false,
-        "wasi:http",
-    )?;
-    transcript += &record(
-        "random-limit",
-        execute(
-            &host,
-            &component,
-            &["http=y", "max-random-size=16"],
-            &["entropy-clock"],
-        )?,
-        false,
-        "random",
-    )?;
+    network_probes(&host, &component, &mut transcript)?;
+    capability_probes(&host, &component, &mut transcript)?;
+    transcript.truncate(transcript.trim_end().len());
+    transcript.push('\n');
     std::fs::write(root.join("evidence/execution.txt"), &transcript)?;
     print!("{transcript}");
 

@@ -1,4 +1,3 @@
-import-func-run
 wasi:cli/environment@0.2.12
 wasi:cli/exit@0.2.12
 wasi:cli/stderr@0.2.12
