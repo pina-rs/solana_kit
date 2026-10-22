@@ -61,13 +61,13 @@ core and the host harness forbid unsafe code.
 
 ## Current v25 Token integration
 
-The105-case suite preserves all103 previous assertion groups and appends the
+The 105-case suite preserves all 103 previous assertion groups and appends the
 93-row Token literal matrix and six strict Token groups. Actual native Rust,
-Chrome, both Wasmtime previews and the pinned LeptosKit host execute105/105 and
+Chrome, both Wasmtime previews and the pinned LeptosKit host execute 105/105 and
 104/105 under sole hash corruption. The one-fuel zero-commit control, closed
 import/dependency checks and all five freshly packaged-core consumer groups pass.
 The [Token runtime receipt](token-runtime.md) records the frozen executable and
-source-owned6,675,000,000-fuel allowance. Existing256 distinct message and256
+source-owned 6,675,000,000-fuel allowance. Existing 256 distinct message and 256
 cached transaction cases remain intact. The source authority-role, BOM and Batch
 account differences remain explicit. This is off-chain fixture execution.
 
