@@ -1,0 +1,14 @@
+[package]
+name = "solana_kit_wallet"
+version = "0.1.0"
+authors.workspace = true
+edition.workspace = true
+include = ["src/**", "assets/**", "README.md", "LICENSE", "DART-LICENSE", "THIRD_PARTY_NOTICES.md"]
+license.workspace = true
+readme = "README.md"
+repository = "https://github.com/pina-rs/solana_kit/tree/main/crates/solana_kit_wallet"
+rust-version.workspace = true
+description = "Portable off-chain Wallet Standard application contracts"
+
+[dependencies]
+base64 = { version = "0.22.1", default-features = false, features = ["alloc"] }

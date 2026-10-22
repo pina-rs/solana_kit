@@ -90,6 +90,11 @@ path = "crates/solana_kit_compute_budget"
 type = "cargo"
 publish = { enabled = false }
 
+[package.solana_kit_wallet]
+path = "crates/solana_kit_wallet"
+type = "cargo"
+publish = { enabled = false }
+
 [package.solana_kit_wasi]
 path = "crates/solana_kit_wasi"
 type = "cargo"

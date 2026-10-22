@@ -59,7 +59,32 @@ dispatches a `Press` event and requires the corrupted report and second commit.
 The guest's small unsafe FFI wrappers implement that pinned synchronous copy ABI;
 core and the host harness forbid unsafe code.
 
-## Current v20 codec framing receipt
+## Current v21 wallet receipt
+
+The wallet assertions are also integrated onto the current native WebSocket
+frontier `5ce9e806906af2bdb1e3f16a7d2e8c78b525f3fd`. Every existing SDK, host,
+guest and strict verification algorithm remains byte-identical to that frontier;
+the wallet assertion sources and all 90 expected fixture rows remain identical
+to the accepted wallet receipt below. Fresh native execution checks the combined
+source. The earlier five-host result carries by exact executable source identity;
+it is not a new combined five-host execution or installed-device proof.
+
+Signed executable `e0cd5c16a2f011fe7db6f94c4e39afff2f7f3290` integrates frozen
+wallet contracts ending at `2a7b7dc277d6062a7bc202bb83d70912f16efa88` into exact
+parent `6bd0b0df9cc848c106d680f1980fc7b7f7494a0b`. All 85 previous case IDs,
+order, outcomes and function sources remain unchanged. Five public assertion
+groups from the isolated wallet verification crate append to the registry.
+
+The full offline five-host run passes 90/90 canonical cases and 89/90 under sole
+`sha256-fips-abc` corruption. Exact imports, graph negatives, five extracted
+packaged-core consumer groups and the one-fuel zero-commit trap pass. The pooled
+formula remains 15,000,000 times the case count, now 1,350,000,000 per entry.
+The [wallet runtime receipt](wallet-runtime.md) records actual artifacts and
+bounded contracts. All 203 wallet declarations remain partial. Per-asset upstream
+license provenance remains pending. No real wallet, device or cryptographic
+backend is inferred from deterministic fixtures.
+
+## Historical v20 codec framing receipt
 
 Signed executable `b7a449cfa84ad9379c568f6613abc71c1e618153` integrates exact
 accepted final Memo/ATA parent `a976ca97eed9ff2b3a94d3d20313c8a50d0b05ef`
