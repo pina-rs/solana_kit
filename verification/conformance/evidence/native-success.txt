@@ -75,4 +75,8 @@ offchain-malformed-bounds: Ok(())
 offchain-signature-tamper: Ok(())
 compute-budget-full-width-price: Ok(())
 compute-budget-ordering-historical: Ok(())
-solana-kit-core-v17: 77/77 cases passed
+subscriptions-nine-families: Ok(())
+subscriptions-typed-variants: Ok(())
+subscriptions-lifecycle: Ok(())
+subscriptions-malformed-bounds: Ok(())
+solana-kit-core-v18: 81/81 cases passed
