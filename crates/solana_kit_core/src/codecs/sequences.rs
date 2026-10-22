@@ -77,7 +77,7 @@ impl Decoder<Vec<u8>> for Bytes {
 }
 
 /// Strict UTF-8 consuming the enclosing reader's remainder, without a prefix.
-/// [`super::SizePrefix(Utf8)`] is a Borsh `u32` byte-length string.
+/// [`SizePrefix(Utf8)`](super::SizePrefix) is a Borsh `u32` byte-length string.
 #[derive(Clone, Copy, Debug, Default)]
 pub struct Utf8;
 
