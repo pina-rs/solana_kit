@@ -244,10 +244,11 @@ gates. Component publication remains disabled.
 ## Implemented RPC client
 
 The public `solana_kit_client` provides `Client<T>`, concrete-future `Transport`,
-and 22 of the 54 catalog operations. The
+and 30 of the 54 catalog operations. The
 [original foundation receipt](../parity/rpc-foundation.md) covers three operations;
-the [node receipt](../verification/rpc-node.md) adds 19. The 398 canonical
-declaration IDs remain a separate coverage measure, and 32 catalog operations
+the [node receipt](../verification/rpc-node.md) adds 19, and the
+[economics receipt](../verification/rpc-economics.md) adds eight. The 398 canonical
+declaration IDs remain a separate coverage measure, and 24 catalog operations
 remain pending. The client uses `std` without a runtime or network dependency.
 Account results reuse core-owned types. The open `Method` trait permits typed
 provider extensions while the client owns envelopes, correlation, bounds, and

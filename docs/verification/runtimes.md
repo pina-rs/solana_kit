@@ -36,7 +36,27 @@ dispatches a `Press` event and requires the corrupted report and second commit.
 The guest's small unsafe FFI wrappers implement that pinned synchronous copy ABI;
 core and the host harness forbid unsafe code.
 
-## Current v12 composite codec receipt
+## Current v13 economics RPC receipt
+
+The `solana-kit-core-v13` suite preserves the first 62 case lines and appends
+three economics groups. Clean signed source
+`42d89dedcd5bed621fecf9dba440d499b1c1e95a` executed
+`cargo +1.99.1 xtask all` on 2026-10-22. All eight economics methods execute
+literal requests and typed responses through the public client and the existing
+memory transport fixture. The client now implements 30 of the 54 catalog methods.
+
+Native Rust, Chrome, Wasmtime Preview 1 and Preview 2, and the pinned actual
+LeptosKit host each check all 65 canonical passes and the 64/65 corruption result.
+Only `sha256-fips-abc` fails. Graph and compiled-import controls remain unchanged
+and pass, as do all five packaged-core consumer tests. The unchanged independent
+economics consumer also passes all five groups on Rust 1.89 without repository
+flags or patches. The [economics receipt](rpc-economics.md) records exact
+requests, malformed/config boundaries, versions, artifact hashes and limits.
+All 42 economics declaration IDs retain their 39 implemented, two partial and
+one pending statuses. This protocol execution adds no networking, device,
+validator, registry or complete-phase claim.
+
+## Historical v12 composite codec receipt
 
 The `solana-kit-core-v12` suite preserves the first 59 case lines and appends
 three existing composite groups. Clean signed source
