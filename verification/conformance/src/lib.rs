@@ -144,14 +144,7 @@ pub fn run(mode: FixtureMode) -> Report {
         rpc_address_simulation::operations(),
     ));
     cases.extend(registry::offchain());
-    cases.push(case(
-        "compute-budget-full-width-price",
-        compute_budget::full_width_price(),
-    ));
-    cases.push(case(
-        "compute-budget-ordering-historical",
-        compute_budget::ordering_and_historical_layout(),
-    ));
+    cases.extend(compute_budget::cases());
 
     Report {
         suite_id: SUITE_ID,
