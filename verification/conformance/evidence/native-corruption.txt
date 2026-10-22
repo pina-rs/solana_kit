@@ -51,4 +51,7 @@ rpc-bounded-opaque-json: Ok(())
 rpc-local-pending-correlation: Ok(())
 system-client-builder-parser: Ok(())
 system-client-nonce-snapshot: Ok(())
-solana-kit-core-v9: 52/53 cases passed
+rpc-node-scalar-metadata: Ok(())
+rpc-node-structured-metadata: Ok(())
+rpc-node-certificate-failures: Ok(())
+solana-kit-core-v10: 55/56 cases passed

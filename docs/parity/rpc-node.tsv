@@ -1,0 +1,111 @@
+canonical_id	method	status	rust_equivalent	evidence
+dart:solana_kit_rpc_api:lib/src/get_ag_genesis_cert.dart#getAgGenesisCertParams	getAgGenesisCert	implemented	AgGenesisCert	tests/node_rpc.rs; owned typed request/result contract
+dart:solana_kit_rpc_api:lib/src/get_block_height.dart#GetBlockHeightConfig	getBlockHeight	implemented	ReadConfig (struct construction)	tests/node_rpc.rs; owned typed request/result contract
+dart:solana_kit_rpc_api:lib/src/get_block_height.dart#GetBlockHeightConfig.commitment	getBlockHeight	implemented	ReadConfig::commitment	tests/node_rpc.rs; owned typed request/result contract
+dart:solana_kit_rpc_api:lib/src/get_block_height.dart#GetBlockHeightConfig.minContextSlot	getBlockHeight	implemented	ReadConfig::min_context_slot	tests/node_rpc.rs; owned typed request/result contract
+dart:solana_kit_rpc_api:lib/src/get_block_height.dart#GetBlockHeightConfig.new	getBlockHeight	implemented	ReadConfig (struct construction)	tests/node_rpc.rs; owned typed request/result contract
+dart:solana_kit_rpc_api:lib/src/get_block_height.dart#GetBlockHeightConfig.toJson	getBlockHeight	implemented	ReadConfig: Serialize	tests/node_rpc.rs; owned typed request/result contract
+dart:solana_kit_rpc_api:lib/src/get_block_height.dart#getBlockHeightParams	getBlockHeight	implemented	BlockHeight	tests/node_rpc.rs; owned typed request/result contract
+dart:solana_kit_rpc_api:lib/src/get_block_production.dart#GetBlockProductionConfig	getBlockProduction	implemented	BlockProductionConfig (struct construction)	tests/node_rpc.rs; owned typed request/result contract
+dart:solana_kit_rpc_api:lib/src/get_block_production.dart#GetBlockProductionConfig.commitment	getBlockProduction	implemented	BlockProductionConfig::commitment	tests/node_rpc.rs; owned typed request/result contract
+dart:solana_kit_rpc_api:lib/src/get_block_production.dart#GetBlockProductionConfig.hashCode	getBlockProduction	pending	unmapped Dart hash/display semantics	Dart-specific hash/display contract not claimed
+dart:solana_kit_rpc_api:lib/src/get_block_production.dart#GetBlockProductionConfig.identity	getBlockProduction	implemented	BlockProductionConfig::identity	tests/node_rpc.rs; owned typed request/result contract
+dart:solana_kit_rpc_api:lib/src/get_block_production.dart#GetBlockProductionConfig.new	getBlockProduction	implemented	BlockProductionConfig (struct construction)	tests/node_rpc.rs; owned typed request/result contract
+dart:solana_kit_rpc_api:lib/src/get_block_production.dart#GetBlockProductionConfig.operator==	getBlockProduction	implemented	BlockProductionConfig: PartialEq + Eq	tests/node_rpc.rs; owned typed request/result contract
+dart:solana_kit_rpc_api:lib/src/get_block_production.dart#GetBlockProductionConfig.range	getBlockProduction	implemented	BlockProductionConfig::range	tests/node_rpc.rs; owned typed request/result contract
+dart:solana_kit_rpc_api:lib/src/get_block_production.dart#GetBlockProductionConfig.toJson	getBlockProduction	implemented	BlockProductionConfig: Serialize	tests/node_rpc.rs; owned typed request/result contract
+dart:solana_kit_rpc_api:lib/src/get_block_production.dart#GetBlockProductionConfig.toString	getBlockProduction	pending	unmapped Dart hash/display semantics	Dart-specific hash/display contract not claimed
+dart:solana_kit_rpc_api:lib/src/get_block_production.dart#SlotRange	getBlockProduction	implemented	SlotRange (struct construction)	tests/node_rpc.rs; owned typed request/result contract
+dart:solana_kit_rpc_api:lib/src/get_block_production.dart#SlotRange.firstSlot	getBlockProduction	implemented	SlotRange::first_slot	tests/node_rpc.rs; owned typed request/result contract
+dart:solana_kit_rpc_api:lib/src/get_block_production.dart#SlotRange.hashCode	getBlockProduction	pending	unmapped Dart hash/display semantics	Dart-specific hash/display contract not claimed
+dart:solana_kit_rpc_api:lib/src/get_block_production.dart#SlotRange.lastSlot	getBlockProduction	implemented	SlotRange::last_slot	tests/node_rpc.rs; owned typed request/result contract
+dart:solana_kit_rpc_api:lib/src/get_block_production.dart#SlotRange.new	getBlockProduction	implemented	SlotRange (struct construction)	tests/node_rpc.rs; owned typed request/result contract
+dart:solana_kit_rpc_api:lib/src/get_block_production.dart#SlotRange.operator==	getBlockProduction	implemented	SlotRange: PartialEq + Eq	tests/node_rpc.rs; owned typed request/result contract
+dart:solana_kit_rpc_api:lib/src/get_block_production.dart#SlotRange.toJson	getBlockProduction	implemented	SlotRange: Serialize	tests/node_rpc.rs; owned typed request/result contract
+dart:solana_kit_rpc_api:lib/src/get_block_production.dart#SlotRange.toString	getBlockProduction	pending	unmapped Dart hash/display semantics	Dart-specific hash/display contract not claimed
+dart:solana_kit_rpc_api:lib/src/get_block_production.dart#getBlockProductionParams	getBlockProduction	implemented	BlockProduction	tests/node_rpc.rs; owned typed request/result contract
+dart:solana_kit_rpc_api:lib/src/get_cluster_nodes.dart#ClusterNode	getClusterNodes	implemented	ClusterNode (struct construction)	tests/node_rpc.rs; owned typed request/result contract
+dart:solana_kit_rpc_api:lib/src/get_cluster_nodes.dart#ClusterNode.clientId	getClusterNodes	implemented	ClusterNode::client_id	tests/node_rpc.rs; owned typed request/result contract
+dart:solana_kit_rpc_api:lib/src/get_cluster_nodes.dart#ClusterNode.featureSet	getClusterNodes	implemented	ClusterNode::feature_set	tests/node_rpc.rs; owned typed request/result contract
+dart:solana_kit_rpc_api:lib/src/get_cluster_nodes.dart#ClusterNode.gossip	getClusterNodes	implemented	ClusterNode::gossip	tests/node_rpc.rs; owned typed request/result contract
+dart:solana_kit_rpc_api:lib/src/get_cluster_nodes.dart#ClusterNode.hashCode	getClusterNodes	pending	unmapped Dart hash/display semantics	Dart-specific hash/display contract not claimed
+dart:solana_kit_rpc_api:lib/src/get_cluster_nodes.dart#ClusterNode.new	getClusterNodes	implemented	ClusterNode (struct construction)	tests/node_rpc.rs; owned typed request/result contract
+dart:solana_kit_rpc_api:lib/src/get_cluster_nodes.dart#ClusterNode.operator==	getClusterNodes	implemented	ClusterNode: PartialEq + Eq	tests/node_rpc.rs; owned typed request/result contract
+dart:solana_kit_rpc_api:lib/src/get_cluster_nodes.dart#ClusterNode.pubkey	getClusterNodes	implemented	ClusterNode::pubkey	tests/node_rpc.rs; owned typed request/result contract
+dart:solana_kit_rpc_api:lib/src/get_cluster_nodes.dart#ClusterNode.pubsub	getClusterNodes	implemented	ClusterNode::pubsub	tests/node_rpc.rs; owned typed request/result contract
+dart:solana_kit_rpc_api:lib/src/get_cluster_nodes.dart#ClusterNode.rpc	getClusterNodes	implemented	ClusterNode::rpc	tests/node_rpc.rs; owned typed request/result contract
+dart:solana_kit_rpc_api:lib/src/get_cluster_nodes.dart#ClusterNode.serveRepair	getClusterNodes	implemented	ClusterNode::serve_repair	tests/node_rpc.rs; owned typed request/result contract
+dart:solana_kit_rpc_api:lib/src/get_cluster_nodes.dart#ClusterNode.shredVersion	getClusterNodes	implemented	ClusterNode::shred_version	tests/node_rpc.rs; owned typed request/result contract
+dart:solana_kit_rpc_api:lib/src/get_cluster_nodes.dart#ClusterNode.toString	getClusterNodes	pending	unmapped Dart hash/display semantics	Dart-specific hash/display contract not claimed
+dart:solana_kit_rpc_api:lib/src/get_cluster_nodes.dart#ClusterNode.tpu	getClusterNodes	implemented	ClusterNode::tpu	tests/node_rpc.rs; owned typed request/result contract
+dart:solana_kit_rpc_api:lib/src/get_cluster_nodes.dart#ClusterNode.tpuForwards	getClusterNodes	implemented	ClusterNode::tpu_forwards	tests/node_rpc.rs; owned typed request/result contract
+dart:solana_kit_rpc_api:lib/src/get_cluster_nodes.dart#ClusterNode.tpuForwardsQuic	getClusterNodes	implemented	ClusterNode::tpu_forwards_quic	tests/node_rpc.rs; owned typed request/result contract
+dart:solana_kit_rpc_api:lib/src/get_cluster_nodes.dart#ClusterNode.tpuQuic	getClusterNodes	implemented	ClusterNode::tpu_quic	tests/node_rpc.rs; owned typed request/result contract
+dart:solana_kit_rpc_api:lib/src/get_cluster_nodes.dart#ClusterNode.tpuVote	getClusterNodes	implemented	ClusterNode::tpu_vote	tests/node_rpc.rs; owned typed request/result contract
+dart:solana_kit_rpc_api:lib/src/get_cluster_nodes.dart#ClusterNode.tvu	getClusterNodes	implemented	ClusterNode::tvu	tests/node_rpc.rs; owned typed request/result contract
+dart:solana_kit_rpc_api:lib/src/get_cluster_nodes.dart#ClusterNode.version	getClusterNodes	implemented	ClusterNode::version	tests/node_rpc.rs; owned typed request/result contract
+dart:solana_kit_rpc_api:lib/src/get_cluster_nodes.dart#getClusterNodesParams	getClusterNodes	implemented	ClusterNodes	tests/node_rpc.rs; owned typed request/result contract
+dart:solana_kit_rpc_api:lib/src/get_epoch_info.dart#EpochInfo	getEpochInfo	implemented	EpochInfo (struct construction)	tests/node_rpc.rs; owned typed request/result contract
+dart:solana_kit_rpc_api:lib/src/get_epoch_info.dart#EpochInfo.absoluteSlot	getEpochInfo	implemented	EpochInfo::absolute_slot	tests/node_rpc.rs; owned typed request/result contract
+dart:solana_kit_rpc_api:lib/src/get_epoch_info.dart#EpochInfo.blockHeight	getEpochInfo	implemented	EpochInfo::block_height	tests/node_rpc.rs; owned typed request/result contract
+dart:solana_kit_rpc_api:lib/src/get_epoch_info.dart#EpochInfo.epoch	getEpochInfo	implemented	EpochInfo::epoch	tests/node_rpc.rs; owned typed request/result contract
+dart:solana_kit_rpc_api:lib/src/get_epoch_info.dart#EpochInfo.hashCode	getEpochInfo	pending	unmapped Dart hash/display semantics	Dart-specific hash/display contract not claimed
+dart:solana_kit_rpc_api:lib/src/get_epoch_info.dart#EpochInfo.new	getEpochInfo	implemented	EpochInfo (struct construction)	tests/node_rpc.rs; owned typed request/result contract
+dart:solana_kit_rpc_api:lib/src/get_epoch_info.dart#EpochInfo.operator==	getEpochInfo	implemented	EpochInfo: PartialEq + Eq	tests/node_rpc.rs; owned typed request/result contract
+dart:solana_kit_rpc_api:lib/src/get_epoch_info.dart#EpochInfo.slotIndex	getEpochInfo	implemented	EpochInfo::slot_index	tests/node_rpc.rs; owned typed request/result contract
+dart:solana_kit_rpc_api:lib/src/get_epoch_info.dart#EpochInfo.slotsInEpoch	getEpochInfo	implemented	EpochInfo::slots_in_epoch	tests/node_rpc.rs; owned typed request/result contract
+dart:solana_kit_rpc_api:lib/src/get_epoch_info.dart#EpochInfo.toString	getEpochInfo	pending	unmapped Dart hash/display semantics	Dart-specific hash/display contract not claimed
+dart:solana_kit_rpc_api:lib/src/get_epoch_info.dart#EpochInfo.transactionCount	getEpochInfo	implemented	EpochInfo::transaction_count	tests/node_rpc.rs; owned typed request/result contract
+dart:solana_kit_rpc_api:lib/src/get_epoch_info.dart#GetEpochInfoConfig	getEpochInfo	implemented	ReadConfig (struct construction)	tests/node_rpc.rs; owned typed request/result contract
+dart:solana_kit_rpc_api:lib/src/get_epoch_info.dart#GetEpochInfoConfig.commitment	getEpochInfo	implemented	ReadConfig::commitment	tests/node_rpc.rs; owned typed request/result contract
+dart:solana_kit_rpc_api:lib/src/get_epoch_info.dart#GetEpochInfoConfig.hashCode	getEpochInfo	pending	unmapped Dart hash/display semantics	Dart-specific hash/display contract not claimed
+dart:solana_kit_rpc_api:lib/src/get_epoch_info.dart#GetEpochInfoConfig.minContextSlot	getEpochInfo	implemented	ReadConfig::min_context_slot	tests/node_rpc.rs; owned typed request/result contract
+dart:solana_kit_rpc_api:lib/src/get_epoch_info.dart#GetEpochInfoConfig.new	getEpochInfo	implemented	ReadConfig (struct construction)	tests/node_rpc.rs; owned typed request/result contract
+dart:solana_kit_rpc_api:lib/src/get_epoch_info.dart#GetEpochInfoConfig.operator==	getEpochInfo	implemented	ReadConfig: PartialEq + Eq	tests/node_rpc.rs; owned typed request/result contract
+dart:solana_kit_rpc_api:lib/src/get_epoch_info.dart#GetEpochInfoConfig.toJson	getEpochInfo	implemented	ReadConfig: Serialize	tests/node_rpc.rs; owned typed request/result contract
+dart:solana_kit_rpc_api:lib/src/get_epoch_info.dart#GetEpochInfoConfig.toString	getEpochInfo	pending	unmapped Dart hash/display semantics	Dart-specific hash/display contract not claimed
+dart:solana_kit_rpc_api:lib/src/get_epoch_info.dart#getEpochInfoParams	getEpochInfo	implemented	GetEpochInfo	tests/node_rpc.rs; owned typed request/result contract
+dart:solana_kit_rpc_api:lib/src/get_epoch_schedule.dart#EpochSchedule	getEpochSchedule	implemented	EpochSchedule (struct construction)	tests/node_rpc.rs; owned typed request/result contract
+dart:solana_kit_rpc_api:lib/src/get_epoch_schedule.dart#EpochSchedule.firstNormalEpoch	getEpochSchedule	implemented	EpochSchedule::first_normal_epoch	tests/node_rpc.rs; owned typed request/result contract
+dart:solana_kit_rpc_api:lib/src/get_epoch_schedule.dart#EpochSchedule.firstNormalSlot	getEpochSchedule	implemented	EpochSchedule::first_normal_slot	tests/node_rpc.rs; owned typed request/result contract
+dart:solana_kit_rpc_api:lib/src/get_epoch_schedule.dart#EpochSchedule.hashCode	getEpochSchedule	pending	unmapped Dart hash/display semantics	Dart-specific hash/display contract not claimed
+dart:solana_kit_rpc_api:lib/src/get_epoch_schedule.dart#EpochSchedule.leaderScheduleSlotOffset	getEpochSchedule	implemented	EpochSchedule::leader_schedule_slot_offset	tests/node_rpc.rs; owned typed request/result contract
+dart:solana_kit_rpc_api:lib/src/get_epoch_schedule.dart#EpochSchedule.new	getEpochSchedule	implemented	EpochSchedule (struct construction)	tests/node_rpc.rs; owned typed request/result contract
+dart:solana_kit_rpc_api:lib/src/get_epoch_schedule.dart#EpochSchedule.operator==	getEpochSchedule	implemented	EpochSchedule: PartialEq + Eq	tests/node_rpc.rs; owned typed request/result contract
+dart:solana_kit_rpc_api:lib/src/get_epoch_schedule.dart#EpochSchedule.slotsPerEpoch	getEpochSchedule	implemented	EpochSchedule::slots_per_epoch	tests/node_rpc.rs; owned typed request/result contract
+dart:solana_kit_rpc_api:lib/src/get_epoch_schedule.dart#EpochSchedule.toString	getEpochSchedule	pending	unmapped Dart hash/display semantics	Dart-specific hash/display contract not claimed
+dart:solana_kit_rpc_api:lib/src/get_epoch_schedule.dart#EpochSchedule.warmup	getEpochSchedule	implemented	EpochSchedule::warmup	tests/node_rpc.rs; owned typed request/result contract
+dart:solana_kit_rpc_api:lib/src/get_epoch_schedule.dart#getEpochScheduleParams	getEpochSchedule	implemented	GetEpochSchedule	tests/node_rpc.rs; owned typed request/result contract
+dart:solana_kit_rpc_api:lib/src/get_genesis_hash.dart#getGenesisHashParams	getGenesisHash	implemented	GenesisHash	tests/node_rpc.rs; owned typed request/result contract
+dart:solana_kit_rpc_api:lib/src/get_health.dart#getHealthParams	getHealth	implemented	GetHealth	tests/node_rpc.rs; owned typed request/result contract
+dart:solana_kit_rpc_api:lib/src/get_highest_snapshot_slot.dart#getHighestSnapshotSlotParams	getHighestSnapshotSlot	implemented	HighestSnapshotSlot	tests/node_rpc.rs; owned typed request/result contract
+dart:solana_kit_rpc_api:lib/src/get_identity.dart#getIdentityParams	getIdentity	implemented	Identity	tests/node_rpc.rs; owned typed request/result contract
+dart:solana_kit_rpc_api:lib/src/get_leader_schedule.dart#GetLeaderScheduleConfig	getLeaderSchedule	implemented	LeaderScheduleConfig (struct construction)	tests/node_rpc.rs; owned typed request/result contract
+dart:solana_kit_rpc_api:lib/src/get_leader_schedule.dart#GetLeaderScheduleConfig.commitment	getLeaderSchedule	implemented	LeaderScheduleConfig::commitment	tests/node_rpc.rs; owned typed request/result contract
+dart:solana_kit_rpc_api:lib/src/get_leader_schedule.dart#GetLeaderScheduleConfig.identity	getLeaderSchedule	implemented	LeaderScheduleConfig::identity	tests/node_rpc.rs; owned typed request/result contract
+dart:solana_kit_rpc_api:lib/src/get_leader_schedule.dart#GetLeaderScheduleConfig.new	getLeaderSchedule	implemented	LeaderScheduleConfig (struct construction)	tests/node_rpc.rs; owned typed request/result contract
+dart:solana_kit_rpc_api:lib/src/get_leader_schedule.dart#GetLeaderScheduleConfig.toJson	getLeaderSchedule	implemented	LeaderScheduleConfig: Serialize	tests/node_rpc.rs; owned typed request/result contract
+dart:solana_kit_rpc_api:lib/src/get_leader_schedule.dart#getLeaderScheduleParams	getLeaderSchedule	implemented	LeaderSchedule	tests/node_rpc.rs; owned typed request/result contract
+dart:solana_kit_rpc_api:lib/src/get_max_retransmit_slot.dart#getMaxRetransmitSlotParams	getMaxRetransmitSlot	implemented	MaxRetransmitSlot	tests/node_rpc.rs; owned typed request/result contract
+dart:solana_kit_rpc_api:lib/src/get_max_shred_insert_slot.dart#getMaxShredInsertSlotParams	getMaxShredInsertSlot	implemented	MaxShredInsertSlot	tests/node_rpc.rs; owned typed request/result contract
+dart:solana_kit_rpc_api:lib/src/get_recent_performance_samples.dart#getRecentPerformanceSamplesParams	getRecentPerformanceSamples	implemented	RecentPerformanceSamples	tests/node_rpc.rs; owned typed request/result contract
+dart:solana_kit_rpc_api:lib/src/get_slot.dart#GetSlotConfig	getSlot	implemented	ReadConfig (struct construction)	tests/node_rpc.rs; owned typed request/result contract
+dart:solana_kit_rpc_api:lib/src/get_slot.dart#GetSlotConfig.commitment	getSlot	implemented	ReadConfig::commitment	tests/node_rpc.rs; owned typed request/result contract
+dart:solana_kit_rpc_api:lib/src/get_slot.dart#GetSlotConfig.minContextSlot	getSlot	implemented	ReadConfig::min_context_slot	tests/node_rpc.rs; owned typed request/result contract
+dart:solana_kit_rpc_api:lib/src/get_slot.dart#GetSlotConfig.new	getSlot	implemented	ReadConfig (struct construction)	tests/node_rpc.rs; owned typed request/result contract
+dart:solana_kit_rpc_api:lib/src/get_slot.dart#GetSlotConfig.toJson	getSlot	implemented	ReadConfig: Serialize	tests/node_rpc.rs; owned typed request/result contract
+dart:solana_kit_rpc_api:lib/src/get_slot.dart#getSlotParams	getSlot	implemented	Slot	tests/node_rpc.rs; owned typed request/result contract
+dart:solana_kit_rpc_api:lib/src/get_slot_leader.dart#GetSlotLeaderConfig	getSlotLeader	implemented	ReadConfig (struct construction)	tests/node_rpc.rs; owned typed request/result contract
+dart:solana_kit_rpc_api:lib/src/get_slot_leader.dart#GetSlotLeaderConfig.commitment	getSlotLeader	implemented	ReadConfig::commitment	tests/node_rpc.rs; owned typed request/result contract
+dart:solana_kit_rpc_api:lib/src/get_slot_leader.dart#GetSlotLeaderConfig.minContextSlot	getSlotLeader	implemented	ReadConfig::min_context_slot	tests/node_rpc.rs; owned typed request/result contract
+dart:solana_kit_rpc_api:lib/src/get_slot_leader.dart#GetSlotLeaderConfig.new	getSlotLeader	implemented	ReadConfig (struct construction)	tests/node_rpc.rs; owned typed request/result contract
+dart:solana_kit_rpc_api:lib/src/get_slot_leader.dart#GetSlotLeaderConfig.toJson	getSlotLeader	implemented	ReadConfig: Serialize	tests/node_rpc.rs; owned typed request/result contract
+dart:solana_kit_rpc_api:lib/src/get_slot_leader.dart#getSlotLeaderParams	getSlotLeader	implemented	SlotLeader	tests/node_rpc.rs; owned typed request/result contract
+dart:solana_kit_rpc_api:lib/src/get_slot_leaders.dart#getSlotLeadersParams	getSlotLeaders	implemented	SlotLeaders	tests/node_rpc.rs; owned typed request/result contract
+dart:solana_kit_rpc_api:lib/src/get_transaction_count.dart#GetTransactionCountConfig	getTransactionCount	implemented	ReadConfig (struct construction)	tests/node_rpc.rs; owned typed request/result contract
+dart:solana_kit_rpc_api:lib/src/get_transaction_count.dart#GetTransactionCountConfig.commitment	getTransactionCount	implemented	ReadConfig::commitment	tests/node_rpc.rs; owned typed request/result contract
+dart:solana_kit_rpc_api:lib/src/get_transaction_count.dart#GetTransactionCountConfig.minContextSlot	getTransactionCount	implemented	ReadConfig::min_context_slot	tests/node_rpc.rs; owned typed request/result contract
+dart:solana_kit_rpc_api:lib/src/get_transaction_count.dart#GetTransactionCountConfig.new	getTransactionCount	implemented	ReadConfig (struct construction)	tests/node_rpc.rs; owned typed request/result contract
+dart:solana_kit_rpc_api:lib/src/get_transaction_count.dart#GetTransactionCountConfig.toJson	getTransactionCount	implemented	ReadConfig: Serialize	tests/node_rpc.rs; owned typed request/result contract
+dart:solana_kit_rpc_api:lib/src/get_transaction_count.dart#getTransactionCountParams	getTransactionCount	implemented	TransactionCount	tests/node_rpc.rs; owned typed request/result contract
+dart:solana_kit_rpc_api:lib/src/get_version.dart#getVersionParams	getVersion	implemented	Version	tests/node_rpc.rs; owned typed request/result contract

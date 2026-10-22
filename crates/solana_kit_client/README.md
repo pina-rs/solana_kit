@@ -6,7 +6,8 @@ It uses std and owned Kit values without a runtime, network, JavaScript or ambie
 randomness dependency. Native and local futures share one Client protocol owner.
 
 The initial typed operations are getBalance, getLatestBlockhash and full-base64
-getAccountInfo. All 54 catalog methods remain the delivery target. Account reads
+getAccountInfo, together with all nineteen node metadata operations in `methods::node`.
+These 22 operations leave 32 of the 54 catalog methods for later slices. Account reads
 validate base64 and allocation size, preserving metadata and the requested
 address in core present/missing types. Other account encodings and data slices
 remain pending. Exact u64 values never pass through floating-point numbers.
@@ -47,5 +48,7 @@ floating-point range. Decoded duplicate object keys remain invalid at every
 depth; typed integer and domain schemas remain strict. Client IDs are monotonic, exactly browser-representable and fail
 before wrapping; a fresh client needs its own adapter correlation namespace.
 
-The portable crate compiles for browser Wasm and WASI. These checks do not prove
-production network adapters or installed browser/mobile host journeys.
+The portable protocol executes with memory transports in native Rust, a real
+browser, WASI Preview 1 and 2, and the actual pinned LeptosKit interpreted host.
+Those fixtures include every node method with typed results and literal requests.
+They do not prove production network adapters or installed browser/mobile journeys.
