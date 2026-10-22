@@ -41,7 +41,7 @@ core and the host harness forbid unsafe code.
 The integrated `solana-kit-core-v3` suite has 35 cases: the preceding 31
 primitive/codec cases and four immutable legacy/v0 transaction cases. Fresh
 local macOS ARM64 execution on 2026-10-22 at signed integration checkpoint
-`43f2e6334bf03f6b9654c8e5ddeef80765be9efc` used Rust 1.99.1, Chrome
+`31a4eb8c1fcc118eee467e99cb414859394e3e72` used Rust 1.99.1, Chrome
 155.0.8059.85, ChromeDriver 155.0.8059.84, Wasmtime 50.0.0, and the pinned actual
 LeptosKit host. The committed source and native goldens were clean for this
 `cargo xtask all` run, which exited 0.
@@ -65,8 +65,8 @@ signing, received unresolved lifetime metadata, and packet re-encoding.
 Executed v3 artifact SHA-256 values (local debug WASI artifacts, release guest):
 
 ```text
-9b74163217de9f1b4b05743b1f48b643737ab19663e05649270f01d162e3801d  wasm32-wasip1
-dd8a8f1243003cbe12a3be789a4f8e1937eb76074e179c7797af148147de2710  wasm32-wasip2
+4a03db4577a99f778358391c1240e4707eac03b473350de427819e8e0131da94  wasm32-wasip1
+ee3e18f8317eb432f306c0c8794b5106722b0ae6b63dc07cb77eec092229e754  wasm32-wasip2
 b4f477790d5ad1fc24d915cf95c6f2b8180ce4442fddcf4076537ca48023358f  leptoskit-guest
 ```
 
