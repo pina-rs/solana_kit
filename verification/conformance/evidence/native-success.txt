@@ -57,4 +57,7 @@ rpc-node-certificate-failures: Ok(())
 numeric-text-codecs: Ok(())
 numeric-wide-text: Ok(())
 numeric-text-malformed: Ok(())
-solana-kit-core-v11: 59/59 cases passed
+composite-typed-composition: Ok(())
+composite-backward-bits: Ok(())
+composite-malformed-bounds: Ok(())
+solana-kit-core-v12: 62/62 cases passed

@@ -1,8 +1,12 @@
-# Architecture proposal
+# Architecture and proposed contracts
 
-Status: preimplementation design. The examples and signatures below are proposed
-contracts, not available SDK APIs. The first portability experiments may refine
-them before they become public. Source grounding is in
+The portable core, [generated System client](../verification/system-client.md),
+and 22-operation typed RPC client are implemented. Accepted native and Window Fetch HTTP adapters have actual network
+evidence. The
+[Phase 1 evidence matrix](../verification/phase-one.md) records the executed
+portability and async experiments. Full catalog, remaining adapters, wallets,
+and application support remain work in progress. The examples and signatures below are proposed
+contracts, not available SDK APIs. Source grounding is in
 [reference findings](../planning/reference-findings.md).
 
 Solana Kit is exclusively an off-chain client SDK for application code. None of
@@ -73,8 +77,8 @@ serde features. It has no HTTP, Tokio, JavaScript, filesystem, or ambient RNG
 dependency. Internal compiler/wire modules remain private. JSON representation
 belongs to the client; serde does not define transaction wire format.
 
-The initial client may use `std` collections while remaining executor independent;
-do not promise no_std RPC until proved. Program client codecs and builders depend
+The implemented client uses `std` while remaining executor independent;
+it does not promise no_std RPC. Program client codecs and builders depend
 on core; the on-chain programs themselves are outside this SDK. Expensive
 algorithms remain optional. Measure actual address-only, transaction-only, and
 full-client consumers before splitting the core further.
@@ -123,15 +127,21 @@ pub trait Entropy {
 These are extension contracts for adapter authors. Ordinary callers see typed
 domain values, not JSON, reqwest, web-sys, WIT, or official Solana types. Request
 budgets, bounded response bodies, cancellation-on-drop, status handling, and
-capability failure are part of the implemented adapter contract.
+capability failure are explicit in the accepted
+[native HTTP](../verification/native-http.md) and
+[Window Fetch HTTP](../verification/browser-http-integration.md) contracts.
+Private experiments prove only the behavior described in their receipts.
 
 Use ordinary inherent async methods over concrete associated futures where that
 is sufficient. If a named state-machine future becomes necessary, it borrows
 external transports/clocks and owns its request state; it must not contain a
 future borrowing a movable sibling field. Pin projection alone does not make
-self-referential construction valid. Phase 1 must compile/run both native
-multi-thread `tokio::spawn` and local `Rc`-across-await callers before this API
-is accepted. No unsafe Send assertions or universal Send bound.
+self-referential construction valid. The private boundary experiment executes
+native multi-thread `tokio::spawn` and local `Rc`-across-await callers through one
+generic algorithm. The public RPC foundation preserves those guarantees through
+concrete associated futures and `Client::call`. The
+[RPC receipt](../parity/rpc-foundation.md) records the additional public-client
+proof. No unsafe Send assertions or universal Send bound are needed.
 
 Minimal signer and entropy contracts live beside the transaction/key types in
 core. This lets those types implement signing without a dependency on the client
@@ -170,9 +180,16 @@ uses nonce state. Retry policy must account for transaction submission uncertain
 
 ## Reuse and version ownership
 
-Prefer audited small official implementations such as standalone System Program
-constructors when their selected graph passes native, browser, WASI, and plain
-guest proofs. Keep conversions private and public Kit types stable. If a graph
+The official standalone CreateAccount constructor passes native, browser, WASI,
+and plain guest execution, but its selected 22-package closure enables `std`.
+It therefore remains a private byte/account-meta oracle. Public System instruction
+data codecs use the pinned IDL and Kit-owned types, with a core-plus-bs58 normal
+dependency graph. See the [boundary receipt](../verification/boundaries.md) and
+[System data receipt](../verification/system-data.md).
+
+Prefer audited small official implementations when their selected graph meets
+the supported targets and dependency policy. Keep conversions private and public
+Kit types stable. If a graph
 cannot satisfy a target, evaluate a pinned small source reuse or generation from
 the same IDL with its license and byte-level oracle. Broad client/validator/decoder
 stacks remain outside normal/build application dependencies.
@@ -207,23 +224,32 @@ Both candidates used the available inherited GPT model; the configured Claude/Gr
 families were unavailable. An independent GPT-6 Astra review checks the designs,
 but this is not cross-family consensus or runtime verification.
 
-## Remaining risks and first implementation
+## Remaining host and application work
 
-Resolve the exact WASI host/socket/TLS contract and LeptosKit installed-host bridge
-in early experiments. Publishing the LeptosKit adapter may need to wait for its
-dependencies to become registry-available. Avoid publishing an unusable adapter
-with missing host behavior. Keep platform-specific wallet availability explicit.
+Private experiments establish a named WASI HTTP/socket/TLS path and async fixture
+capabilities through the actual pinned LeptosKit bridge. Accepted native and
+Window Fetch HTTP adapters have separate network and cancellation evidence.
+WASI adapter correction and LeptosKit HTTP review/integration remain outside
+this accepted snapshot. In particular, WASI denial and early-response handling
+during an upload need corrected error precedence and independent verification.
+LeptosKit fixture entropy and injected time do not prove platform entropy or
+timers. Installed desktop, Android, and iOS journeys remain required.
 
-First implement the workspace/release/fixture foundation and a real four-host
-primitive and constructor experiment. The [delivery plan](../planning/plan.md)
-defines the evidence required before expanding the SDK.
+Publishing the LeptosKit adapter may need to wait for its dependencies to become
+registry-available. Avoid publishing an unusable adapter with missing host
+behavior. Keep platform-specific wallet availability explicit. The
+[delivery plan](../planning/plan.md) defines the remaining capability and runtime
+gates. Component publication remains disabled.
 
-## Implemented RPC foundation
+## Implemented RPC client
 
-The public solana_kit_client now provides Client<T>, concrete-future Transport,
-typed Balance, LatestBlockhash and full-base64 AccountInfo operations. It uses std
-without a runtime or network dependency. Account results reuse core owned types.
-The open Method trait permits typed provider extensions while the client owns
-all envelopes, correlation, bounds and remote errors. See the
-[RPC foundation receipt](../parity/rpc-foundation.md) for exact coverage and the
-remaining 51 catalog operations. Proposed platform adapters above remain pending.
+The public `solana_kit_client` provides `Client<T>`, concrete-future `Transport`,
+and 22 of the 54 catalog operations. The
+[original foundation receipt](../parity/rpc-foundation.md) covers three operations;
+the [node receipt](../verification/rpc-node.md) adds 19. The 398 canonical
+declaration IDs remain a separate coverage measure, and 32 catalog operations
+remain pending. The client uses `std` without a runtime or network dependency.
+Account results reuse core-owned types. The open `Method` trait permits typed
+provider extensions while the client owns envelopes, correlation, bounds, and
+remote errors. The proposed API sketches above do not describe the implemented
+native and browser constructors.
