@@ -94,42 +94,50 @@ pub fn request<R: Method>(id: u64, method: &R, limits: Limits) -> Result<Request
     })
 }
 
-/// Strings are skipped lexically; serde independently validates the complete JSON.
+/// This lexical guard bounds nested containers before allocating parsed values.
 fn check_limits(body: &[u8], limits: Limits) -> Result<(), Error> {
     if body.len() > limits.bytes {
         return Err(Error::BodyLimit);
     }
 
     let mut depth = 0_usize;
-    let mut quoted = false;
-    let mut escaped = false;
+    let mut state = ScanState::Outside;
 
     for byte in body {
-        if quoted {
-            if escaped {
-                escaped = false;
-            } else if *byte == b'\\' {
-                escaped = true;
-            } else if *byte == b'"' {
-                quoted = false;
-            }
-            continue;
-        }
+        depth = match state.container_delta(*byte) {
+            1 => depth + 1,
+            -1 => depth.saturating_sub(1),
+            _ => depth,
+        };
 
-        match byte {
-            b'"' => quoted = true,
-            b'{' | b'[' => {
-                depth += 1;
-                if depth > limits.depth {
-                    return Err(Error::DepthLimit);
-                }
-            }
-            b'}' | b']' => depth = depth.saturating_sub(1),
-            _ => {}
+        if depth > limits.depth {
+            return Err(Error::DepthLimit);
         }
     }
 
     Ok(())
+}
+
+#[derive(Clone, Copy)]
+enum ScanState {
+    Outside,
+    String,
+    Escape,
+}
+
+impl ScanState {
+    fn container_delta(&mut self, byte: u8) -> i8 {
+        match (*self, byte) {
+            (Self::Outside, b'{' | b'[') => return 1,
+            (Self::Outside, b'}' | b']') => return -1,
+            (Self::Outside, b'"') | (Self::Escape, _) => *self = Self::String,
+            (Self::String, b'\\') => *self = Self::Escape,
+            (Self::String, b'"') => *self = Self::Outside,
+            _ => {}
+        }
+
+        0
+    }
 }
 
 #[derive(Deserialize)]
@@ -147,12 +155,14 @@ pub fn response<R: DeserializeOwned>(id: u64, reply: Reply, limits: Limits) -> R
     if !(200..300).contains(&reply.status) {
         return Err(Error::Status(reply.status));
     }
+
     check_limits(&reply.body, limits)?;
     let envelope: Envelope = serde_json::from_slice(&reply.body)?;
 
     if envelope.jsonrpc != "2.0" {
         return Err(Error::Envelope);
     }
+
     if envelope.id != id {
         return Err(Error::Correlation);
     }

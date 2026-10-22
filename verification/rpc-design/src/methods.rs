@@ -47,9 +47,11 @@ impl Serialize for Balance {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let mut seq = serializer.serialize_seq(Some(1 + usize::from(self.1.is_some())))?;
         seq.serialize_element(&self.0.to_string())?;
+
         if let Some(config) = &self.1 {
             seq.serialize_element(config)?;
         }
+
         seq.end()
     }
 }
@@ -134,7 +136,6 @@ impl Method for AccountInfo {
 
 #[derive(Debug, Deserialize, PartialEq, Eq)]
 #[serde(bound(deserialize = "T: Deserialize<'de>"))]
-
 pub struct NullableContext<T> {
     pub context: Context,
     #[serde(deserialize_with = "crate::json::required_nullable")]
@@ -144,9 +145,11 @@ pub struct NullableContext<T> {
 impl Serialize for LatestBlockhash {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let mut seq = serializer.serialize_seq(Some(usize::from(self.0.is_some())))?;
+
         if let Some(config) = &self.0 {
             seq.serialize_element(config)?;
         }
+
         seq.end()
     }
 }

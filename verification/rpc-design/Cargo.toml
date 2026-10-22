@@ -11,6 +11,8 @@ rust-version = "1.89"
 [dependencies]
 serde = { version = "=1.0.229", features = ["derive"] }
 serde_json = { version = "=1.0.154", features = ["raw_value"] }
+sha2 = { version = "=0.10.9", default-features = false }
+
 solana_kit_core = { path = "../../crates/solana_kit_core" }
 
 [dev-dependencies]
