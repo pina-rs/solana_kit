@@ -80,6 +80,11 @@ path = "crates/solana_kit_system"
 type = "cargo"
 publish = { enabled = false }
 
+[package.solana_kit_token_2022]
+path = "crates/solana_kit_token_2022"
+type = "cargo"
+publish = { enabled = false }
+
 [package.solana_kit_browser]
 path = "crates/solana_kit_browser"
 type = "cargo"
