@@ -157,6 +157,8 @@ fn run_cargo(
         .env("RUSTDOC", &manifest.producers[2].file.path)
         .env_remove("RUSTC_WRAPPER")
         .env_remove("RUSTC_WORKSPACE_WRAPPER")
+        .env_remove("CARGO_BUILD_RUSTC_WRAPPER")
+        .env_remove("CARGO_BUILD_RUSTC_WORKSPACE_WRAPPER")
         .stdout(Stdio::piped())
         .stderr(fs::File::create(destination.join("cargo.stderr"))?);
     fs::write(destination.join("command.txt"), format!("{command:?}\n"))?;

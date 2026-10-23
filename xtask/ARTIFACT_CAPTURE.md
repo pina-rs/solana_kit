@@ -27,9 +27,13 @@ Unrelated Cargo processes must never write the owned target.
 
 The command selects concrete Cargo, rustc and rustdoc binaries, records their
 versions and SHA256 hashes, hashes the explicitly inventoried source files, and
-passes offline/locked/jobs2/JSON/verbose flags. Include every relevant source and
-configuration file in `source_files`; this is an explicit inventory, not automatic
-source discovery. Paths and argument values are JSON strings and never shell text.
+passes offline/locked/jobs2/JSON/verbose flags.
+Both `RUSTC_WRAPPER` and `RUSTC_WORKSPACE_WRAPPER` are removed from Cargo's
+environment, together with their `CARGO_BUILD_RUSTC_WRAPPER` and
+`CARGO_BUILD_RUSTC_WORKSPACE_WRAPPER` aliases.
+Include every relevant source and configuration file in `source_files`; this is an
+explicit inventory, not automatic source discovery. Paths and argument values are
+JSON strings and never shell text.
 Source hashes snapshot those files; they do not prove that a Cargo `Fresh`
 executable was built from those bytes. Review source-linked mutation evidence
 separately. Direct producer identities do not establish a nested launcher's compiler.
