@@ -662,6 +662,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "solana_kit_anchor"
+version = "0.1.0"
+dependencies = [
+ "base64",
+ "serde_json",
+ "sha2",
+ "solana_kit_core",
+]
+
+[[package]]
 name = "solana_kit_associated_token_account"
 version = "0.1.0"
 dependencies = [
@@ -695,6 +705,7 @@ dependencies = [
  "hex-literal",
  "serde_json",
  "signer_capability_consumer",
+ "solana_kit_anchor",
  "solana_kit_associated_token_account",
  "solana_kit_client",
  "solana_kit_compute_budget",

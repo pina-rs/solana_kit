@@ -15,6 +15,7 @@ text-codecs = ["solana_kit_core/text-codecs"]
 [dependencies]
 base64 = { version = "0.22.1", default-features = false, features = ["alloc"] }
 bs58 = { version = "0.5.1", default-features = false, features = ["alloc"] }
+solana_kit_anchor = { path = "../../crates/solana_kit_anchor" }
 
 serde_json = { version = "1.0.154", features = ["arbitrary_precision", "raw_value"] }
 
