@@ -21,18 +21,20 @@ abort on a mismatch; registration cannot turn an assertion failure into success.
 
 | Executed host                        | Canonical | Deliberate corruption |
 | ------------------------------------ | --------- | --------------------- |
-| Native Rust 1.99.1                   | 215/215   | 214/215, only SHA-256 |
-| Chrome 155                           | 215/215   | 214/215, only SHA-256 |
-| Wasmtime 50 Preview 1                | 215/215   | 214/215, only SHA-256 |
-| Wasmtime 50 Preview 2                | 215/215   | 214/215, only SHA-256 |
-| Pinned LeptosKit WasmHost with wasmi | 215/215   | 214/215, only SHA-256 |
+| Native Rust 1.99.1                   | 259/259   | 258/259, only SHA-256 |
+| Chrome 155                           | 259/259   | 258/259, only SHA-256 |
+| Wasmtime 50 Preview 1                | 259/259   | 258/259, only SHA-256 |
+| Wasmtime 50 Preview 2                | 259/259   | 258/259, only SHA-256 |
+| Pinned LeptosKit WasmHost with wasmi | 259/259   | 258/259, only SHA-256 |
 
-The first 161 case names, assertions and expected outcomes remain unchanged. All
-54 collection bodies append to that prefix. The actual interpreter also rejects
-a one-fuel allowance before committing a report. Ordinary consumer captures run
-all 54 bodies with both Rust 1.99.1 and 1.89.0. MSRV Wasm execution is not claimed.
+The first 205 case names, assertions and expected outcomes remain unchanged.
+These include the completed-packer correction and all 43 Anchor groups. All
+54 collection bodies append to that prefix in suite `solana-kit-core-v31`. The actual interpreter also rejects
+a one-fuel allowance before committing a report. Fresh ordinary consumer captures run
+all 54 bodies with both Rust 1.99.1 and 1.89.0 from Cargo cwd `/`, using an absolute
+manifest path and no repository flags or patches. MSRV Wasm execution is not claimed.
 
-A separate copied-source build changes the item-boundary marker comparison. The
+An authenticated carried copied-source build changes the item-boundary marker comparison. The
 independent multi-byte-marker assertion then fails with `Truncated`; its unchanged
 positive control passes. The negative build owns a separate compiler target and
 retains its actual executable, core dependency bytes and producer records.
@@ -50,3 +52,31 @@ imports only the three declared LeptosKit rendering operations. Valid forbidden
 import and dependency controls reject. These deterministic host tests establish
 neither installed desktop/mobile journeys, validator integration nor Phase 2
 completion.
+
+The pooled host allowance is 11,850,000,000 fuel units. The 54 new ordinary
+cases add 810,000,000 units. Existing crypto categories, rates, and work counts
+remain unchanged. All three host fuel-accounting tests execute successfully.
+This fixed allowance does not measure performance.
+
+Fresh full core captures on each compiler report 151 passes. These are 145
+ordinary native bodies, five executed doctests, and one expected compile-failure
+doctest. The separate ordinary consumer executes all 54 contract bodies.
+Full workspace, consumer, and private host Clippy and documentation checks deny
+warnings. Every authored SDK file meets both unchanged Monostyle 0.3.26 floors
+of 90. The formatter uses authenticated cached plugins under a network-denied
+boundary.
+
+The following digests identify the preserved executed artifacts. The browser
+input is transformed by wasm-bindgen before execution. The transformed Wasm,
+generated JavaScript, and runner are retained separately.
+
+| Artifact                   | SHA-256                                                            |
+| -------------------------- | ------------------------------------------------------------------ |
+| `browser.wasm`             | `d3ddcd8b062acb62184b409fc04fb3fd3701905327d97538fa505268c8b3a8a0` |
+| `guest.wasm`               | `066f9e30c77aee0bcbf925780ccb98d7c67a5bddf8c017e10657b73eb4c0f85c` |
+| `leptoskit-host`           | `d0c0ab3a0dc02008aa53b903171ec2ed57b396d64c867df7bfaefffa5937410e` |
+| `native`                   | `944d17385e4431a9a0af8bbc6d2ffddff37df0cabc1f9d3061c13b78356b32e8` |
+| `wasip1.wasm`              | `8cbe0f6e431bd8f9ca94c96c7e8854000a60abdf3064a25cd1efcabf3e06527d` |
+| `wasip2.wasm`              | `68b2d4c1b13d6f24b17f84c49df91d2086303b5295c121b9de8bc9e1e53ff261` |
+| `xtask`                    | `6462c266f0eb4a117f15fa7d7124045299c61af73d9a929d43c9a4a199c1384c` |
+| `browser-transformed.wasm` | `7b4555ba6a8fbf64649d7e0449ea24e06b5d94791bf5013c370ae3c6dfc322b0` |
