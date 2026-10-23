@@ -64,7 +64,7 @@ pub mod system_client;
 use alloc::vec::Vec;
 
 /// Immutable suite identity. Changes to fixtures or assertions require a new ID.
-pub const SUITE_ID: &str = "solana-kit-core-v31";
+pub const SUITE_ID: &str = "solana-kit-core-v32";
 /// Required number of cases; a truncated report cannot pass conformance.
 pub const EXPECTED_CASE_COUNT: usize = 307;
 

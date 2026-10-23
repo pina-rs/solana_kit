@@ -147,7 +147,7 @@ fn literal_absence_rejects_missing_and_invalid_bytes() {
     assert_eq!(constant.decode(&[1], LIMITS), Err(Error::Truncated));
     assert_eq!(
         constant.decode(&[2, 170], LIMITS),
-        Err(Error::InvalidDiscriminator)
+        Err(Error::InvalidBoolean { value: 2 })
     );
     assert_eq!(constant.decode(&[], LIMITS), Err(Error::Truncated));
     assert_eq!(
