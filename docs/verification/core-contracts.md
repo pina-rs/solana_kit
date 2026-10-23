@@ -13,11 +13,18 @@ survive without truncation. Debug and Display redact payloads; public message
 rendering is explicit and bounded.
 
 The maintained suite appends 31 account and 17 error contract bodies to its exact
-205-case prefix. Native Rust, Chrome, Wasmtime Preview 1 and Preview 2, and the
-pinned LeptosKit interpreter execute all 253 cases. Each observes the sole corrupt
-hash failure as 252 of 253. The interpreter also traps a one-fuel allowance before
+259-case prefix, including the accepted collection bodies. Native Rust, Chrome,
+Wasmtime Preview 1 and Preview 2, and the pinned LeptosKit interpreter execute all
+307 cases. Each observes the sole corrupt hash failure as 306 of 307.
+The interpreter also traps a one-fuel allowance before
 any commit. Separate ordinary consumers execute the same 48 bodies with Rust
 1.99.1 and the 1.89 MSRV, outside repository Cargo configuration.
+
+The original collection boolean-prefix control retains its invalid byte `2` and
+exact rejection assertion. It now expects `InvalidBoolean { value: 2 }`, matching
+the diagnostic API's precise error rather than the former discriminator category.
+All 54 collection bodies and 281 ordered predicates remain present. The original
+259 ordered report names and outcomes are unchanged. Suite identity is now `v32`.
 
 The private interpreter harness explicitly enables Wasmi 2.0's `portable-dispatch`
 backend. Its ordinary main thread passes with debug assertions and overflow checks.
