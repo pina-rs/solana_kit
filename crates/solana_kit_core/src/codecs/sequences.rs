@@ -23,7 +23,7 @@ impl Decoder<bool> for Bool {
         match Number::<u8>::LE.read(reader)? {
             0 => Ok(false),
             1 => Ok(true),
-            _ => Err(Error::InvalidDiscriminator),
+            value => Err(Error::InvalidBoolean { value }),
         }
     }
 }

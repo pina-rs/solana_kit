@@ -10,7 +10,7 @@ use super::{Decoder, Encoder, Error, Reader, Writer};
 /// when a caller's floating-point contract requires them.
 pub fn ensure_number_range<T: PartialOrd>(value: &T, min: &T, max: &T) -> Result<(), Error> {
     if value < min || value > max {
-        return Err(Error::InvalidValue);
+        return Err(Error::NumberOutOfRange);
     }
 
     Ok(())

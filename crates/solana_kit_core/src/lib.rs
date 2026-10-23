@@ -5,6 +5,9 @@
 
 extern crate alloc;
 
+/// Stable code, domain, public context and retained diagnostic causes.
+pub mod errors;
+
 /// Owned account snapshots and decoding.
 pub mod accounts;
 /// Typed program-error matching and log extraction.
@@ -29,7 +32,7 @@ pub mod codecs;
 #[cfg(feature = "crypto")]
 pub mod crypto;
 
-pub use encoding::ParseError;
+pub use encoding::{ParseError, ValueKind};
 pub use instruction::{AccountMeta, AccountRole, Instruction};
 pub use values::{Address, Hash, Signature};
 

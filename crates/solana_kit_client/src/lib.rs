@@ -4,6 +4,11 @@
 
 extern crate alloc;
 
+/// Standalone account parsing, decoding and fetch helpers.
+pub mod accounts;
+/// Shared stable facts and strict RPC/execution diagnostic conversion.
+pub mod diagnostics;
+
 /// Explicit portable transaction confirmation strategies.
 pub mod confirmation;
 mod errors;

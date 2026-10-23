@@ -285,15 +285,21 @@ fn tuple_constants_and_fixed_byte_layouts() {
 
     assert_eq!(
         codec.decode(&[1, 2, 4, 42, 1, 4, 5], LIMITS),
-        Err(Error::InvalidDiscriminator)
+        Err(Error::InvalidConstant {
+            offset: 0,
+            length: 3
+        })
     );
     assert_eq!(
         codec.decode(&[1, 2, 3, 42, 1, 4, 6], LIMITS),
-        Err(Error::InvalidDiscriminator)
+        Err(Error::InvalidConstant {
+            offset: 5,
+            length: 2
+        })
     );
     assert_eq!(
         Bool.decode(&[255], LIMITS),
-        Err(Error::InvalidDiscriminator)
+        Err(Error::InvalidBoolean { value: 255 })
     );
     assert_eq!(FixedBytes::<3>.decode(&[1, 2, 3], LIMITS), Ok([1, 2, 3]));
 

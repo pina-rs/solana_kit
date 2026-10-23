@@ -16,7 +16,7 @@
 //! by the Rust input type. [`Error::LimitExceeded`](crate::codecs::Error::LimitExceeded) rejects
 //! oversized input or element claims before allocation; allocation failures
 //! return [`Error::AllocationFailed`](crate::codecs::Error::AllocationFailed).
-//! Boolean, option, and constant validation returns
+//! Option and choice validation returns
 //! [`Error::InvalidDiscriminator`](crate::codecs::Error::InvalidDiscriminator),
 //! and UTF-8 validation returns [`Error::InvalidUtf8`](crate::codecs::Error::InvalidUtf8).
 //! Compact integers reject redundant bytes as
@@ -87,6 +87,20 @@ pub enum Error {
     NonCanonical,
     /// A tag or constant did not match the expected layout.
     InvalidDiscriminator,
+    /// A boolean byte was neither zero nor one.
+    InvalidBoolean {
+        /// Invalid byte, retained without accepting it as a boolean.
+        value: u8,
+    },
+    /// A fixed constant differed at the original cursor offset.
+    InvalidConstant {
+        /// Absolute cursor position before reading the constant.
+        offset: usize,
+        /// Expected constant length; the bytes themselves are not retained.
+        length: usize,
+    },
+    /// A value was outside its explicitly supplied numeric interval.
+    NumberOutOfRange,
     /// Text was not valid UTF-8.
     InvalidUtf8,
     /// The value did not satisfy the codec's contract.

@@ -25,6 +25,7 @@ members = [
   "xtask",
 ]
 exclude = [
+  "verification/core-contracts-portable",
   "verification/durable-nonce",
   "verification/leptoskit",
   "verification/wallet-consumer",

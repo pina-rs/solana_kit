@@ -249,17 +249,57 @@ fn known(name: &str) -> bool {
 }
 
 /// A typed known execution failure or a preserved future variant.
-#[derive(Debug)]
 pub enum TransactionFailure {
     /// A fully validated known variant.
     Known(KnownTransactionFailure),
+    /// A known execution reason with additional original node context.
+    WithContext(KnownTransactionFailure, Box<RawValue>),
     /// Future string or single-key object variant, retained exactly.
     Unknown(Box<RawValue>),
+}
+
+impl std::fmt::Debug for TransactionFailure {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Known(reason) | Self::WithContext(reason, _) => formatter
+                .debug_struct("TransactionFailure")
+                .field("reason", reason)
+                .finish_non_exhaustive(),
+            Self::Unknown(_) => formatter.write_str("TransactionFailure::Unknown(<redacted>)"),
+        }
+    }
 }
 impl<'de> Deserialize<'de> for TransactionFailure {
     fn deserialize<D: Deserializer<'de>>(d: D) -> Result<Self, D::Error> {
         let raw = Box::<RawValue>::deserialize(d)?;
         let name = variant_name(raw.get()).map_err(serde::de::Error::custom)?;
+
+        if name == "InstructionError" {
+            let fields: std::collections::BTreeMap<String, Box<RawValue>> =
+                serde_json::from_str(raw.get()).map_err(serde::de::Error::custom)?;
+            let (index, instruction): (u8, Box<RawValue>) =
+                serde_json::from_str(fields["InstructionError"].get())
+                    .map_err(serde::de::Error::custom)?;
+            let name = variant_name(instruction.get()).map_err(serde::de::Error::custom)?;
+
+            if name == "BorshIoError" && instruction.get().starts_with('{') {
+                return Ok(Self::WithContext(
+                    KnownTransactionFailure::InstructionError(
+                        index,
+                        InstructionFailure::BorshIoError,
+                    ),
+                    raw,
+                ));
+            }
+
+            let known = name == "Custom"
+                || serde_json::from_value::<InstructionFailure>(serde_json::Value::String(name))
+                    .is_ok();
+
+            if !known {
+                return Ok(Self::Unknown(raw));
+            }
+        }
 
         if known(&name) {
             return serde_json::from_str(raw.get())

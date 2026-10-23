@@ -1,0 +1,16 @@
+[package]
+name = "account_independent_consumer"
+version = "0.0.0"
+edition = "2024"
+publish = false
+rust-version = "1.89"
+[workspace]
+[dependencies]
+serde_json = { version = "=1.0.154", features = ["raw_value"] }
+solana_kit_client = { path = "../../crates/solana_kit_client" }
+solana_kit_core = { path = "../../crates/solana_kit_core" }
+[dev-dependencies]
+futures = "=0.3.31"
+[[example]]
+name = "base_gap"
+path = "base_gap.rs"

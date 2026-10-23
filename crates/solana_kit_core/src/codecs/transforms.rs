@@ -18,8 +18,13 @@ impl Encoder<()> for Constant<'_> {
 
 impl Decoder<()> for Constant<'_> {
     fn read(&self, reader: &mut Reader<'_>) -> Result<(), Error> {
+        let offset = reader.position();
+
         if reader.take(self.0.len())? != self.0 {
-            return Err(Error::InvalidDiscriminator);
+            return Err(Error::InvalidConstant {
+                offset,
+                length: self.0.len(),
+            });
         }
 
         Ok(())

@@ -160,7 +160,7 @@ fn slices_and_opaque() -> Result<(), &'static str> {
     };
     require(
         data.program == "future"
-            && data.space == 3
+            && data.space == Some(3)
             && data.parsed.get() == r#"{ "number":1e400,"text":"\u0061" }"#,
         "parsed payload changed",
     )?;

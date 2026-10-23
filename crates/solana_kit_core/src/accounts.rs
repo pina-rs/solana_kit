@@ -12,7 +12,7 @@ use crate::{
 pub const BASE_ACCOUNT_SIZE: usize = 128;
 
 /// An account snapshot whose data may be encoded bytes or a decoded value.
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct Account<T> {
     /// Address requested by the client.
     pub address: Address,
@@ -37,7 +37,7 @@ pub type EncodedAccount = Account<Vec<u8>>;
 pub type MaybeEncodedAccount = MaybeAccount<Vec<u8>>;
 
 /// Missing accounts retain only their address and cannot contain account data.
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub enum MaybeAccount<T> {
     /// An existing snapshot.
     Present(Account<T>),
@@ -86,6 +86,12 @@ impl core::error::Error for AccountError {
 }
 
 impl<T> MaybeAccount<T> {
+    /// Reports whether the requested account exists without consuming it.
+    #[must_use]
+    pub const fn exists(&self) -> bool {
+        matches!(self, Self::Present(_))
+    }
+
     /// Returns the requested address in either state.
     #[must_use]
     pub const fn address(&self) -> Address {

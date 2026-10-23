@@ -66,7 +66,7 @@ impl StdError for TransportError {
 }
 
 /// A JSON-RPC failure with bounded unknown data retained as exact JSON.
-#[derive(Debug, Deserialize)]
+#[derive(Deserialize)]
 pub struct RemoteError {
     /// Node-reported code; unknown codes remain intact.
     pub code: i64,
@@ -75,6 +75,15 @@ pub struct RemoteError {
     /// Absent data differs from a present JSON null.
     #[serde(default)]
     pub data: Presence<Box<RawValue>>,
+}
+
+impl fmt::Debug for RemoteError {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        formatter
+            .debug_struct("RemoteError")
+            .field("code", &self.code)
+            .finish_non_exhaustive()
+    }
 }
 
 /// Failure at the client, transport, protocol or typed-domain boundary.
@@ -102,6 +111,10 @@ pub enum Error {
     Remote(RemoteError),
     /// Account base64 bytes or reported full allocation size are invalid.
     AccountData,
+    /// A snapshot still has encoded or compressed data at this address.
+    AccountNotDecoded(solana_kit_core::Address),
+    /// Public diagnostic context exceeded its explicit representation contract.
+    DiagnosticContext(solana_kit_core::errors::ContextError),
 }
 
 impl From<TransportError> for Error {
@@ -124,6 +137,7 @@ impl StdError for Error {
         match self {
             Self::Transport(error) => Some(error),
             Self::Json(error) | Self::Schema(error) => Some(error),
+            Self::DiagnosticContext(error) => Some(error),
             _ => None,
         }
     }

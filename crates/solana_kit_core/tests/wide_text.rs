@@ -136,8 +136,14 @@ fn explicit_inclusive_range_checks_do_not_coerce_values() {
     use solana_kit_core::codecs::ensure_number_range;
     assert_eq!(ensure_number_range(&1, &1, &3), Ok(()));
     assert_eq!(ensure_number_range(&3, &1, &3), Ok(()));
-    assert_eq!(ensure_number_range(&0, &1, &3), Err(Error::InvalidValue));
-    assert_eq!(ensure_number_range(&4, &1, &3), Err(Error::InvalidValue));
+    assert_eq!(
+        ensure_number_range(&0, &1, &3),
+        Err(Error::NumberOutOfRange)
+    );
+    assert_eq!(
+        ensure_number_range(&4, &1, &3),
+        Err(Error::NumberOutOfRange)
+    );
     assert_eq!(ensure_number_range(&f64::NAN, &1.0, &3.0), Ok(()));
     assert_eq!(
         "115792089237316195423570985008687907853269984665640564039457584007913129639936"
