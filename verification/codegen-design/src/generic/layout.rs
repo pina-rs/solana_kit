@@ -3,6 +3,7 @@ use super::{Program, Shape, extent};
 use crate::schema::Error;
 use std::collections::BTreeSet;
 const MAX_DEFINITIONS: usize = 64;
+const MAX_DATA_DECLARATIONS: usize = 256;
 
 const RESERVED: &[&str] = &[
     "Address",
@@ -41,7 +42,15 @@ const RESERVED: &[&str] = &[
     "Count",
     "ByteSizePrefix",
     "FrameConsumption",
+    "Counted",
+    "CheckedCounted",
+    "ShortU16",
+    "Tuple",
+    "FixedSize",
     "role_matches",
+    "Affix",
+    "OwnedString",
+    "TlvSequence",
 ];
 
 fn names(program: &Program) -> Result<(), Error> {
@@ -65,6 +74,25 @@ fn names(program: &Program) -> Result<(), Error> {
         insert(&mut names, name)?;
     }
 
+    tagged_constants(program, &mut names)?;
+
+    Ok(())
+}
+
+/// Tag constants share Rust's value namespace with record constructors and codecs.
+fn tagged_constants(program: &Program, names: &mut BTreeSet<String>) -> Result<(), Error> {
+    for definition in &program.definitions {
+        let Shape::Tagged { variants, .. } = &definition.shape else {
+            continue;
+        };
+
+        for index in 0..variants.len() {
+            if !names.insert(format!("{}_TAG_{index}", definition.name.to_uppercase())) {
+                return Err("generated enum tag namespace collision".into());
+            }
+        }
+    }
+
     Ok(())
 }
 fn insert(names: &mut BTreeSet<String>, name: &str) -> Result<(), Error> {
@@ -76,7 +104,15 @@ fn insert(names: &mut BTreeSet<String>, name: &str) -> Result<(), Error> {
 }
 
 pub(super) fn validate(program: &Program) -> Result<(), Error> {
-    if program.definitions.len() > MAX_DEFINITIONS {
+    validate_with_budget(program, MAX_DEFINITIONS)
+}
+
+pub(super) fn validate_data(program: &Program) -> Result<(), Error> {
+    validate_with_budget(program, MAX_DATA_DECLARATIONS)
+}
+
+fn validate_with_budget(program: &Program, maximum: usize) -> Result<(), Error> {
+    if program.definitions.len() > maximum {
         return Err("linked definition budget exceeded".into());
     }
 
@@ -127,9 +163,11 @@ fn errors(program: &Program) -> Result<(), Error> {
 }
 fn definitions(program: &Program) -> Result<(), Error> {
     for item in &program.definitions {
-        if let Shape::Struct(fields) = &item.shape {
-            extent::fields(program, fields, &mut Vec::new())?;
-        }
+        extent::wire(
+            program,
+            &super::Wire::Link(item.name.clone()),
+            &mut Vec::new(),
+        )?;
     }
 
     for account in &program.accounts {

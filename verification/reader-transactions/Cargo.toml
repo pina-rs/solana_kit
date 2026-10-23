@@ -1,0 +1,15 @@
+[package]
+name = "solana_kit_reader_transactions"
+version = "0.0.0"
+edition = "2024"
+publish = false
+
+[workspace]
+members = ["guest", "host"]
+
+[dependencies]
+solana_kit_core = { path = "../../crates/solana_kit_core", default-features = false }
+
+[target.'cfg(target_arch = "wasm32")'.dev-dependencies]
+wasm-bindgen = "=0.2.128"
+wasm-bindgen-test = "=0.3.78"

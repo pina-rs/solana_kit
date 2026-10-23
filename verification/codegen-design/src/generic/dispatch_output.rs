@@ -1,5 +1,45 @@
 //! Large dispatches retain concrete codecs in bounded groups of match arms.
 use super::Program;
+use crate::schema::Error;
+
+pub(super) fn data(program: &Program, records: &[super::data::Record]) -> Result<String, Error> {
+    let mut owner = program.name.clone();
+    owner[0..1].make_ascii_uppercase();
+    let name = format!("{owner}InstructionData");
+    let derives = super::equality::derives(program);
+    let mut declarations = String::new();
+    let mut lengths = String::new();
+    let mut writes = String::new();
+    let mut reads = String::new();
+
+    for record in records.iter().filter(|record| record.tag.is_some()) {
+        let variant = &record.name;
+        let tag = record
+            .tag
+            .as_ref()
+            .ok_or("missing data dispatch tag")?
+            .iter()
+            .map(u8::to_string)
+            .collect::<Vec<_>>()
+            .join(",");
+        declarations.push_str(&format!(
+            "/// Data for `{variant}`.\n{variant}({variant}),\n"
+        ));
+        lengths.push_str(&format!(
+            "{name}::{variant}(value)=>{variant}Codec.encoded_len(value),\n"
+        ));
+        writes.push_str(&format!(
+            "{name}::{variant}(value)=>{variant}Codec.write(value,writer),\n"
+        ));
+        reads.push_str(&format!(
+            "[{tag},..]=>Ok({name}::{variant}({variant}Codec.read(reader)?)),\n"
+        ));
+    }
+
+    Ok(format!(
+        "/// Every pinned instruction data variant.\n#[derive({derives})]\npub enum {name} {{\n{declarations}}}\n/// Prefix-safe multi-byte instruction dispatch.\n#[derive(Clone,Copy,Debug)]\npub struct {name}Codec;\nimpl Encoder<{name}> for {name}Codec {{\nfn encoded_len(&self,value:&{name})->Result<usize,Error>{{\nmatch value {{\n{lengths}}}\n}}\nfn write(&self,value:&{name},writer:&mut Writer<'_>)->Result<(),Error>{{\nmatch value {{\n{writes}}}\n}}\n}}\nimpl Decoder<{name}> for {name}Codec {{\nfn read(&self,reader:&mut Reader<'_>)->Result<{name},Error>{{\nreader.transaction(|reader|{{\nmatch reader.remaining() {{\n{reads}[]=>Err(Error::Truncated),\n_=>Err(Error::InvalidDiscriminator),\n}}\n}})\n}}\n}}\n"
+    ))
+}
 
 pub(super) const INLINE_LIMIT: usize = 32;
 const GROUP_SIZE: usize = 16;
@@ -101,9 +141,10 @@ fn helpers(program: &Program, name: &str, operation: Operation) -> String {
 }
 
 pub(super) fn emit(program: &Program) -> String {
+    let derives = super::equality::derives(program);
     let name = format!("{}InstructionData", program.name);
     let mut out = format!(
-        "/// All selected instruction data variants.\n#[derive(Clone, Debug, Eq, PartialEq)]\npub enum {name} {{\n"
+        "/// All selected instruction data variants.\n#[derive({derives})]\npub enum {name} {{\n"
     );
 
     for item in &program.instructions {

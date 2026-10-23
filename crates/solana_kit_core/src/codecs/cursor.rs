@@ -88,6 +88,24 @@ impl<'a> Reader<'a> {
         Ok(())
     }
 
+    /// Opts into cursor and allocation-budget rollback when `read` fails.
+    /// A successful read commits both values. External closure effects are not
+    /// rolled back. Ordinary reads and frames retain their existing semantics.
+    pub fn transaction<T>(
+        &mut self,
+        read: impl FnOnce(&mut Reader<'a>) -> Result<T, Error>,
+    ) -> Result<T, Error> {
+        let mut snapshot = Reader {
+            bytes: self.bytes,
+            position: self.position,
+            items_left: self.items_left,
+        };
+        let value = read(&mut snapshot)?;
+        self.position = snapshot.position;
+        self.items_left = snapshot.items_left;
+        Ok(value)
+    }
+
     /// Reads an exact frame with the same allocation budget; unread frame bytes
     /// are an error. The outer position advances even if the inner read fails.
     pub fn frame<T>(

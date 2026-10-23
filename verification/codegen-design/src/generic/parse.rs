@@ -273,7 +273,7 @@ fn account(node: &Value) -> Result<Account, Error> {
     })
 }
 
-fn program_error(node: &Value) -> Result<ProgramError, Error> {
+pub(super) fn program_error(node: &Value) -> Result<ProgramError, Error> {
     keys(node, &["kind", "name", "code", "message", "docs"])?;
 
     if node["kind"] != "errorNode" {

@@ -3,10 +3,20 @@ mod account_output;
 #[cfg(test)]
 mod boundary;
 mod constants;
+mod counted_output;
+pub(crate) mod data;
+mod data_nodes;
+mod data_shapes;
 mod dispatch_output;
+
 mod emit;
+
 mod enum_output;
+mod equality;
+
 mod errors;
+#[cfg(test)]
+mod expanded_tests;
 mod expressions;
 mod extent;
 mod imports;
@@ -22,6 +32,10 @@ mod parse;
 mod provided;
 mod receipt;
 mod roles;
+mod tags;
+
+mod tlv_output;
+
 mod wire;
 
 #[cfg(test)]
@@ -64,13 +78,24 @@ pub(crate) struct Definition {
 pub(crate) enum Shape {
     Struct(Vec<Field>),
     Enum(Vec<String>),
+    Tagged {
+        prefix: &'static str,
+        variants: Vec<Variant>,
+    },
 }
 
+pub(crate) struct Variant {
+    pub(crate) name: String,
+    pub(crate) payload: Option<Wire>,
+}
+
+#[derive(Clone)]
 pub(crate) struct Field {
     pub(crate) name: String,
     pub(crate) wire: Wire,
 }
 
+#[derive(Clone)]
 pub(crate) enum Wire {
     Number(&'static str),
     Link(String),
@@ -78,6 +103,14 @@ pub(crate) enum Wire {
     Bool,
     Text,
     Bytes,
+    FixedBytes(usize),
+    ZeroableAddress,
+    TlvSequence(Box<Wire>),
+    RemainderOption(Box<Wire>),
+    HiddenPrefix {
+        item: Box<Wire>,
+        bytes: Vec<u8>,
+    },
     Option {
         item: Box<Wire>,
         prefix: &'static str,
@@ -91,6 +124,11 @@ pub(crate) enum Wire {
         item: Box<Wire>,
         prefix: &'static str,
     },
+    Counted {
+        item: Box<Wire>,
+        prefix: &'static str,
+    },
+    Tuple(Box<Wire>, Box<Wire>),
 }
 
 pub(crate) enum Signer {
