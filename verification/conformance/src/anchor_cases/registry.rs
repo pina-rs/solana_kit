@@ -1,0 +1,218 @@
+use super::review::recursive_optional_definition_encodes_finite_instruction_but_codec_validation_is_bounded as recursive;
+use alloc::vec::Vec;
+
+pub(crate) fn cases() -> Vec<crate::CaseResult> {
+    let mut cases = Vec::new();
+    cases.extend(review());
+    cases.extend(wire());
+    cases.extend(idl());
+    cases.extend(events());
+    cases.extend(errors_hash());
+    cases.extend(composition());
+    cases
+}
+
+fn review() -> [crate::CaseResult; 5] {
+    [
+        crate::case(
+            "anchor-unicode_strings_use_utf8_byte_lengths_and_reject_each_truncation",
+            super::review::unicode_strings_use_utf8_byte_lengths_and_reject_each_truncation(),
+        ),
+        crate::case(
+            "anchor-floating_signed_zero_and_infinity_preserve_exact_bits",
+            super::review::floating_signed_zero_and_infinity_preserve_exact_bits(),
+        ),
+        crate::case(
+            concat!(
+                "anchor-",
+                "recursive_optional_definition_encodes_finite_instruction_but_codec_validation_is_bounded"
+            ),
+            recursive(),
+        ),
+        crate::case(
+            "anchor-empty_vector_depth_admission_matches_decode_and_nonempty_values",
+            super::review::empty_vector_depth_admission_matches_decode_and_nonempty_values(),
+        ),
+        crate::case(
+            "anchor-zero_length_fixed_array_respects_account_depth_boundary",
+            super::review::zero_length_fixed_array_respects_account_depth_boundary(),
+        ),
+    ]
+}
+
+fn wire() -> [crate::CaseResult; 11] {
+    [
+        crate::case(
+            "anchor-instruction_matches_original_literal_and_fresh_dart",
+            super::wire::instruction_matches_original_literal_and_fresh_dart(),
+        ),
+        crate::case(
+            "anchor-instructions_keep_explicit_zero_prefix_and_report_consumption",
+            super::wire::instructions_keep_explicit_zero_prefix_and_report_consumption(),
+        ),
+        crate::case(
+            "anchor-missing_names_fields_and_ranges_keep_error_attribution",
+            super::wire::missing_names_fields_and_ranges_keep_error_attribution(),
+        ),
+        crate::case(
+            "anchor-all_fifteen_scalars_and_containers_match_original_and_fresh_vectors",
+            super::wire::all_fifteen_scalars_and_containers_match_original_and_fresh_vectors(),
+        ),
+        crate::case(
+            "anchor-accounts_and_all_enum_shapes_match_fresh_source_bytes",
+            super::wire::accounts_and_all_enum_shapes_match_fresh_source_bytes(),
+        ),
+        crate::case(
+            "anchor-account_corruption_and_definition_failures_are_visible",
+            super::wire::account_corruption_and_definition_failures_are_visible(),
+        ),
+        crate::case(
+            "anchor-codec_for_composes_exact_and_prefix_reads",
+            super::wire::codec_for_composes_exact_and_prefix_reads(),
+        ),
+        crate::case(
+            "anchor-scalar_and_container_malformed_inputs_never_succeed",
+            super::wire::scalar_and_container_malformed_inputs_never_succeed(),
+        ),
+        crate::case(
+            "anchor-caller_budgets_reject_nested_zero_width_and_oversized_inputs",
+            super::wire::caller_budgets_reject_nested_zero_width_and_oversized_inputs(),
+        ),
+        crate::case(
+            "anchor-kit_instruction_composition_preserves_duplicate_positions_and_bytes",
+            super::wire::kit_instruction_composition_preserves_duplicate_positions_and_bytes(),
+        ),
+        crate::case(
+            "anchor-full_width_signed_and_unsigned_extremes_match_literal_bytes",
+            super::wire::full_width_signed_and_unsigned_extremes_match_literal_bytes(),
+        ),
+    ]
+}
+
+fn idl() -> [crate::CaseResult; 9] {
+    [
+        crate::case(
+            "anchor-entire_original_idl_parses_with_deferred_generics",
+            super::idl::entire_original_idl_parses_with_deferred_generics(),
+        ),
+        crate::case(
+            "anchor-scalar_compound_and_module_names_retain_source_contract",
+            super::idl::scalar_compound_and_module_names_retain_source_contract(),
+        ),
+        crate::case(
+            "anchor-every_unsupported_type_shape_is_an_error",
+            super::idl::every_unsupported_type_shape_is_an_error(),
+        ),
+        crate::case(
+            "anchor-malformed_documents_entries_and_definition_bodies_are_rejected",
+            super::idl::malformed_documents_entries_and_definition_bodies_are_rejected(),
+        ),
+        crate::case(
+            "anchor-unsupported_field_nodes_fail_at_access_rather_than_document_parse",
+            super::idl::unsupported_field_nodes_fail_at_access_rather_than_document_parse(),
+        ),
+        crate::case(
+            "anchor-bare_variant_field_shapes_and_empty_definitions_are_preserved",
+            super::idl::bare_variant_field_shapes_and_empty_definitions_are_preserved(),
+        ),
+        crate::case(
+            "anchor-missing_prefixes_and_duplicate_names_match_last_write_semantics",
+            super::idl::missing_prefixes_and_duplicate_names_match_last_write_semantics(),
+        ),
+        crate::case(
+            "anchor-idl_json_bytes_nodes_and_depth_are_caller_bounded",
+            super::idl::idl_json_bytes_nodes_and_depth_are_caller_bounded(),
+        ),
+        crate::case(
+            "anchor-wrong_string_field_types_are_rejected_without_empty_fallbacks",
+            super::idl::wrong_string_field_types_are_rejected_without_empty_fallbacks(),
+        ),
+    ]
+}
+
+fn events() -> [crate::CaseResult; 11] {
+    [
+        crate::case(
+            "anchor-foreign_data_and_user_messages_cannot_forge_events",
+            super::events::foreign_data_and_user_messages_cannot_forge_events(),
+        ),
+        crate::case(
+            "anchor-valid_event_keeps_name_and_decoded_fields",
+            super::events::valid_event_keeps_name_and_decoded_fields(),
+        ),
+        crate::case(
+            "anchor-foreign_cpi_is_ignored_and_the_caller_is_restored",
+            super::events::foreign_cpi_is_ignored_and_the_caller_is_restored(),
+        ),
+        crate::case(
+            "anchor-target_cpi_is_recognized_inside_a_foreign_root",
+            super::events::target_cpi_is_recognized_inside_a_foreign_root(),
+        ),
+        crate::case(
+            "anchor-failed_nested_invocations_restore_the_caller",
+            super::events::failed_nested_invocations_restore_the_caller(),
+        ),
+        crate::case(
+            "anchor-incomplete_and_inconsistent_log_context_fails_closed",
+            super::events::incomplete_and_inconsistent_log_context_fails_closed(),
+        ),
+        crate::case(
+            "anchor-eligible_invalid_payloads_error_but_foreign_ones_are_never_decoded",
+            super::events::eligible_invalid_payloads_error_but_foreign_ones_are_never_decoded(),
+        ),
+        crate::case(
+            "anchor-roots_reset_state_and_unknown_discriminators_are_ignored",
+            super::events::roots_reset_state_and_unknown_discriminators_are_ignored(),
+        ),
+        crate::case(
+            "anchor-event_budgets_cover_total_input_invocation_depth_and_entry_counts",
+            super::events::event_budgets_cover_total_input_invocation_depth_and_entry_counts(),
+        ),
+        crate::case(
+            "anchor-decoded_event_allocations_share_one_aggregate_budget",
+            super::events::decoded_event_allocations_share_one_aggregate_budget(),
+        ),
+        crate::case(
+            "anchor-url_safe_base64_matches_dart_without_relaxing_padding_or_unused_bits",
+            super::events::url_safe_base64_matches_dart_without_relaxing_padding_or_unused_bits(),
+        ),
+    ]
+}
+
+fn errors_hash() -> [crate::CaseResult; 4] {
+    [
+        crate::case(
+            "anchor-all_77_standard_codes_names_and_messages_match_fresh_pinned_source",
+            super::errors_hash::all_77_standard_codes_names_and_messages_match_fresh_pinned_source(),
+        ),
+        crate::case(
+            "anchor-custom_codes_override_standards_and_preserve_empty_messages",
+            super::errors_hash::custom_codes_override_standards_and_preserve_empty_messages(),
+        ),
+        crate::case(
+            "anchor-sha256_matches_nist_and_original_padding_boundary_literals",
+            super::errors_hash::sha256_matches_nist_and_original_padding_boundary_literals(),
+        ),
+        crate::case(
+            "anchor-every_namespace_and_arbitrary_explicit_prefix_matches_original_literals",
+            super::errors_hash::every_namespace_and_arbitrary_explicit_prefix_matches_original_literals(),
+        ),
+    ]
+}
+
+fn composition() -> [crate::CaseResult; 3] {
+    [
+        crate::case(
+            "anchor-ordinary_consumer_builds_an_instruction_with_exact_duplicate_metadata",
+            super::composition::ordinary_consumer_builds_an_instruction_with_exact_duplicate_metadata(),
+        ),
+        crate::case(
+            "anchor-public_type_spelling_and_deferred_field_parsing_are_usable",
+            super::composition::public_type_spelling_and_deferred_field_parsing_are_usable(),
+        ),
+        crate::case(
+            "anchor-empty_explicit_prefix_and_nested_options_have_unambiguous_values",
+            super::composition::empty_explicit_prefix_and_nested_options_have_unambiguous_values(),
+        ),
+    ]
+}

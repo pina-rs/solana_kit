@@ -1,0 +1,11 @@
+[package]
+name = "anchor_import_auditor"
+version = "0.0.0"
+edition = "2024"
+publish = false
+
+[workspace]
+
+[dependencies]
+wasmparser = "=0.228.0"
+wat = "=1.262.0"
