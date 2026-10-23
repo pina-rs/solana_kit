@@ -66,6 +66,96 @@ pub(super) fn execute_source(directory: &Path, source: &str) {
 }
 
 #[test]
+fn counted_prefix_families_compile_and_execute_without_warnings() {
+    for (prefix, width) in [
+        ("u32", 4),
+        ("u8", 1),
+        ("u16", 2),
+        ("u64", 8),
+        ("shortU16", 1),
+    ] {
+        let root = counted_root(
+            prefix,
+            json!({"kind":"numberTypeNode","format":"u64","endian":"le"}),
+        );
+        let body = format!(
+            "let value=RequestUnits {{values:vec![7u64,9]}}; let mut expected=vec![0u8,2]; expected.resize(1+{width},0); expected.extend_from_slice(&7u64.to_le_bytes()); expected.extend_from_slice(&9u64.to_le_bytes()); assert_eq!(RequestUnitsCodec.encode(&value,expected.len()).unwrap(),expected); let limits=Limits::new(expected.len(),2); assert_eq!(RequestUnitsCodec.decode(&expected,limits).unwrap(),value); assert!(RequestUnitsCodec.decode(&expected,Limits::new(expected.len(),1)).is_err()); assert!(RequestUnitsCodec.decode(&expected[..expected.len()-1],limits).is_err()); assert!(RequestUnitsCodec.encode(&value,expected.len()-1).is_err());"
+        );
+        execute(&root, &format!("counted-{prefix}"), &body);
+    }
+}
+
+#[test]
+fn counted_u32_address_items_compile_and_execute_without_warnings() {
+    let root = counted_root("u32", json!({"kind":"publicKeyTypeNode"}));
+    execute(
+        &root,
+        "counted-address",
+        "let value=RequestUnits {values:vec![Address::from_bytes([7;32])]}; let mut expected=vec![0,1,0,0,0]; expected.extend_from_slice(&[7;32]); let limits=Limits::new(expected.len(),1); assert_eq!(RequestUnitsCodec.encode(&value,expected.len()).unwrap(),expected); assert_eq!(RequestUnitsCodec.decode(&expected,limits).unwrap(),value); assert!(RequestUnitsCodec.decode(&expected[..expected.len()-1],limits).is_err());",
+    );
+}
+
+#[test]
+fn data_only_counted_numeric_and_address_items_execute_without_warnings() {
+    let cases = [
+        (
+            "number",
+            json!({"kind":"numberTypeNode","format":"u64","endian":"le"}),
+            "let value=RequestUnits {values:vec![7u64]}; let mut expected=vec![1,0,0,0]; expected.extend_from_slice(&7u64.to_le_bytes());",
+        ),
+        (
+            "address",
+            json!({"kind":"publicKeyTypeNode"}),
+            "let value=RequestUnits {values:vec![Address::from_bytes([7;32])]}; let mut expected=vec![1,0,0,0]; expected.extend_from_slice(&[7;32]);",
+        ),
+    ];
+
+    for (name, item, setup) in cases {
+        let mut root = counted_root("u32", item);
+        root["program"]["instructions"][0]["arguments"]
+            .as_array_mut()
+            .unwrap()
+            .remove(0);
+        root["program"]["instructions"][0]
+            .as_object_mut()
+            .unwrap()
+            .remove("discriminators");
+        let policy = Policy {
+            name: "computeBudget",
+            address: "ComputeBudget111111111111111111111111111111"
+                .parse()
+                .unwrap(),
+        };
+        let directory =
+            std::env::temp_dir().join(format!("kit-counted-data-{name}-{}", std::process::id()));
+        fs::create_dir_all(&directory).unwrap();
+        data::replace(&root, &policy, &directory.join("generated.rs")).unwrap();
+        let body = format!(
+            "{setup} let limits=solana_kit_core::codecs::Limits::new(expected.len(),1); assert_eq!(RequestUnitsCodec.encode(&value,expected.len()).unwrap(),expected); assert_eq!(RequestUnitsCodec.decode(&expected,limits).unwrap(),value); assert!(RequestUnitsCodec.decode(&expected[..expected.len()-1],limits).is_err()); assert!(RequestUnitsCodec.encode(&value,expected.len()-1).is_err());"
+        );
+        execute_source(
+            &directory,
+            &format!("extern crate alloc; include!(\"generated.rs\"); fn main() {{ {body} }}"),
+        );
+    }
+}
+
+fn counted_root(prefix: &str, item: Value) -> Value {
+    let mut root: Value =
+        serde_json::from_str(include_str!("../../fixtures/compute-budget.json")).unwrap();
+    root["program"]["definedTypes"] = json!([]);
+    let instructions = root["program"]["instructions"].as_array_mut().unwrap();
+    instructions.truncate(1);
+    let arguments = instructions[0]["arguments"].as_array_mut().unwrap();
+    arguments.truncate(1);
+    arguments.push(json!({"kind":"instructionArgumentNode","name":"values","type":{
+        "kind":"arrayTypeNode","item":item,
+        "count":{"kind":"prefixedCountNode","prefix":{"kind":"numberTypeNode","format":prefix,"endian":"le"}}
+    }}));
+    root
+}
+
+#[test]
 fn all_256_enum_variants_compile_and_execute_without_warnings() {
     let mut root: Value =
         serde_json::from_str(include_str!("../../fixtures/compute-budget.json")).unwrap();

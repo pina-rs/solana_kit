@@ -302,8 +302,9 @@ fn preamble(records: &[Record], required: &super::imports::Imports) -> String {
     } else {
         ""
     };
+    let address = address_import(required);
     let mut out = format!(
-        "// Generated from the exact pinned Codama input; see upstream notices.\n{vector}use solana_kit_core::{{Address, codecs::{{Decoder, Encoder, Error, Reader, Writer}}}};\n"
+        "// Generated from the exact pinned Codama input; see upstream notices.\n{vector}use solana_kit_core::{{{address}codecs::{{Decoder, Encoder, Error, Reader, Writer}}}};\n"
     );
 
     if records.iter().any(|record| record.tag.is_some()) {
@@ -315,4 +316,12 @@ fn preamble(records: &[Record], required: &super::imports::Imports) -> String {
     }
 
     out
+}
+
+fn address_import(required: &super::imports::Imports) -> &'static str {
+    if required.contains("Address") {
+        return "Address, ";
+    }
+
+    ""
 }

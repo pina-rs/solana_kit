@@ -1,7 +1,7 @@
 //! Executed ordinary consumers for newly admitted closed wire and tag shapes.
 use super::*;
 use serde_json::json;
-use std::{fs, process::Command};
+use std::fs;
 const CONFIDENTIAL_TRANSFER_TAG: u8 = 27;
 const METADATA_TAG_BYTES: usize = 8;
 const ELGAMAL_BYTES: usize = 64;
@@ -44,45 +44,8 @@ fn execute(emitted: &str, body: &str) {
     let directory = std::env::temp_dir().join(format!("kit217-expanded-{}", std::process::id()));
     fs::create_dir_all(&directory).unwrap();
     crate::generate::replace_source(emitted, &directory.join("generated.rs")).unwrap();
-    crate::generate::replace_source(
+    super::boundary::execute_source(
+        &directory,
         &format!("extern crate alloc; include!(\"generated.rs\"); fn main() {{ {body} }}"),
-        &directory.join("main.rs"),
-    )
-    .unwrap();
-    let core = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../crates/solana_kit_core");
-    fs::write(directory.join("Cargo.toml"),format!("[package]\nname=\"expanded_consumer\"\nversion=\"0.0.0\"\nedition=\"2024\"\n[workspace]\n[[bin]]\nname=\"consumer\"\npath=\"main.rs\"\n[dependencies]\nsolana_kit_core={{path={core:?},default-features=false}}\n")).unwrap();
-    let output = Command::new(env!("CARGO"))
-        .args([
-            "build",
-            "--offline",
-            "--message-format=json",
-            "--verbose",
-            "-j2",
-            "--manifest-path",
-        ])
-        .arg(directory.join("Cargo.toml"))
-        .arg("--target-dir")
-        .arg(directory.join("target"))
-        .env_remove("CARGO_ENCODED_RUSTFLAGS")
-        .env("RUSTFLAGS", "-Dwarnings")
-        .output()
-        .unwrap();
-
-    fs::write(directory.join("build.jsonl"), &output.stdout).unwrap();
-
-    fs::write(directory.join("build.stderr"), &output.stderr).unwrap();
-    assert!(
-        output.status.success(),
-        "{}",
-        String::from_utf8_lossy(&output.stderr)
     );
-    let executable = String::from_utf8(output.stdout)
-        .unwrap()
-        .lines()
-        .filter_map(|line| serde_json::from_str::<Value>(line).ok())
-        .find_map(|item| item["executable"].as_str().map(str::to_owned))
-        .unwrap();
-    let preserved = directory.join("executed-consumer");
-    fs::copy(executable, &preserved).unwrap();
-    assert!(Command::new(preserved).status().unwrap().success());
 }

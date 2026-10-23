@@ -5,7 +5,7 @@ generator. Generate that output with `token-2022-data` or `token-2022-proof`, th
 select its absolute `generated.rs` path through `TOKEN_LAYOUTS_GENERATED`.
 
 ```sh
-TOKEN_LAYOUTS_GENERATED=/absolute/generated.rs cargo test --offline --locked --manifest-path verification/token-layouts-independent/Cargo.toml --lib
+TOKEN_LAYOUTS_GENERATED=/absolute/generated.rs cargo test --offline --locked --manifest-path verification/token-layouts-independent/Cargo.toml
 ```
 
 The terminator controls accept either an encoder error or an exact value round

@@ -67,7 +67,9 @@ fn wire(value: &Wire, required: &mut Imports) {
             required.insert("Affix");
             wire(item, required);
         }
-        Wire::Address | Wire::ZeroableAddress => required.extend(["Mapped", "FixedBytes"]),
+        Wire::Address | Wire::ZeroableAddress => {
+            required.extend(["Address", "Mapped", "FixedBytes"])
+        }
         Wire::FixedBytes(_) => {
             required.insert("FixedBytes");
         }
@@ -132,7 +134,11 @@ fn tuple(a: &Wire, b: &Wire, required: &mut Imports) {
 }
 
 fn counted(prefix: &str, required: &mut Imports) {
-    required.extend(["Counted", "Mapped"]);
+    required.insert("Counted");
+
+    if prefix != "u32" {
+        required.insert("Mapped");
+    }
 
     let number = match prefix {
         "shortU16" => "ShortU16",
