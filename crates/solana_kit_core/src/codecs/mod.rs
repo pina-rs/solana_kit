@@ -34,10 +34,13 @@
 //! by the caller's concrete codec types. Remainder codecs belong at the end of
 //! their enclosing frame. UTF-8 preserves both nulls and a leading BOM.
 
+mod count_prefix;
 mod cursor;
 mod delimiters;
 mod framing;
+mod item_sentinel;
 mod mapping;
+mod nullable;
 mod numbers;
 mod offsets;
 mod options;
@@ -48,10 +51,13 @@ mod text;
 mod transforms;
 mod wide_text;
 
+pub use count_prefix::OptionalCount;
 pub use cursor::{Limits, Reader, Writer};
 pub use delimiters::{Padded, Sentinel};
 pub use framing::{ByteSizePrefix, FixedSize, FrameConsumption, Resized, Reverse};
+pub use item_sentinel::{ItemSentinel, Termination};
 pub use mapping::{Checked, Mapped, Paired};
+pub use nullable::{Absence, Boolean, Nullable};
 pub use numbers::{Endian, Int256, Number, ShortU16, Uint256, ensure_number_range};
 pub use offsets::{Offset, OffsetScope};
 pub use options::OptionCodec;
