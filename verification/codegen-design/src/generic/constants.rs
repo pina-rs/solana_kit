@@ -71,6 +71,15 @@ fn fixed_counts(program: &Program) -> String {
     output
 }
 fn shape(shape: &Shape, counts: &mut BTreeSet<usize>) {
+    if let Shape::Tagged { variants, .. } = shape {
+        for payload in variants
+            .iter()
+            .filter_map(|variant| variant.payload.as_ref())
+        {
+            wire(payload, counts);
+        }
+    }
+
     if let Shape::Struct(items) = shape {
         fields(items, counts);
     }
@@ -87,6 +96,14 @@ fn wire(value: &Wire, counts: &mut BTreeSet<usize>) {
             wire(item, counts);
         }
         Wire::Option { item, .. } | Wire::Prefix { item, .. } => wire(item, counts),
+        Wire::Counted { item, .. } => wire(item, counts),
+        Wire::RemainderOption(item) | Wire::HiddenPrefix { item, .. } | Wire::TlvSequence(item) => {
+            wire(item, counts)
+        }
+        Wire::Tuple(a, b) => {
+            wire(a, counts);
+            wire(b, counts);
+        }
         _ => {}
     }
 }

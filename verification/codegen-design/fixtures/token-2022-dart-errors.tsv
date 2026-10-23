@@ -1,0 +1,23 @@
+0	Lamport balance below rent-exempt threshold
+1	Insufficient funds
+2	Invalid Mint
+3	Account not associated with this Mint
+4	Owner does not match
+5	Fixed supply
+6	Already in use
+7	Invalid number of provided signers
+8	Invalid number of required signers
+9	State is unititialized
+10	Instruction does not support native tokens
+11	Non-native account can only be closed if its balance is zero
+12	Invalid instruction
+13	State is invalid for requested operation
+14	Operation overflowed
+15	Account does not support specified authority type
+16	This token mint cannot freeze accounts
+17	Account is frozen
+18	The provided decimals value different from the Mint decimals
+19	Instruction does not support non-native tokens
+20	null
+255	null
+4294967295	null

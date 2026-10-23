@@ -244,6 +244,7 @@ fn owned_address_collections_and_bytes_use_only_required_imports() {
         .unwrap()
         .push(payload);
     root["program"]["errors"] = json!([{"kind":"errorNode","name":"syntaxWords","code":0,"message":"Utf8. ByteSizePrefix { Number::< : String"}]);
+
     let directory = std::env::temp_dir().join(format!("kit-typed-imports-{}", std::process::id()));
     fs::create_dir_all(&directory).unwrap();
 

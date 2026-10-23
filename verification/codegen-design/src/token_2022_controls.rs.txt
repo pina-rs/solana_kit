@@ -1,0 +1,105 @@
+const CONTROL_BOUND: usize = 65536;
+const WITHHELD_AMOUNT: u64 = 7;
+const MINT_BASE_BYTES: usize = 82;
+const TOKEN_TYPE_OFFSET: usize = 165;
+const HOSTILE_METADATA_BYTES: usize = 84;
+
+fn controls(rows: &std::collections::BTreeMap<&str, Vec<u8>>) {
+    let limits = solana_kit_core::codecs::Limits::new(CONTROL_BOUND, CONTROL_BOUND);
+    let extension = Extension::TransferFeeAmount(ExtensionTransferFeeAmountPayload {
+        withheld_amount: WITHHELD_AMOUNT,
+    });
+    let literal = [2, 0, 8, 0, 7, 0, 0, 0, 0, 0, 0, 0];
+    assert_eq!(ExtensionCodec.encode(&extension, 12).unwrap(), literal);
+    assert_eq!(ExtensionCodec.decode(&literal, limits).unwrap(), extension);
+    account_controls(rows, &extension, &literal, limits);
+    malformed_controls(&literal, limits);
+
+    let metadata = Extension::TokenMetadata(ExtensionTokenMetadataPayload {
+        update_authority: None,
+        mint: Address::from_bytes([7; 32]),
+        name: String::from("name"),
+        symbol: String::from("symbol"),
+        uri: String::from("uri"),
+        additional_metadata: vec![(String::from("key"), String::from("value"))],
+    });
+    let encoded = ExtensionCodec.encode(&metadata, 1024).unwrap();
+    assert_eq!(ExtensionCodec.decode(&encoded, limits).unwrap(), metadata);
+    assert!(
+        ExtensionCodec
+            .decode(&encoded, solana_kit_core::codecs::Limits::new(1024, 0))
+            .is_err()
+    );
+    println!(
+        "canonical TLV literal, extension-bearing Mint/Token, termination, hidden prefix, malformed sizes, hostile map, transactional budget, nonempty map and trailing controls pass"
+    );
+}
+
+fn account_controls(
+    rows: &std::collections::BTreeMap<&str, Vec<u8>>,
+    extension: &Extension,
+    literal: &[u8],
+    limits: solana_kit_core::codecs::Limits,
+) {
+    let mut mint = MintCodec.decode(&rows["account-mint-1"], limits).unwrap();
+    mint.extensions = Some(vec![extension.clone()]);
+    let mut expected = rows["account-mint-1"].clone();
+    expected.extend_from_slice(&[0; 83]);
+    expected.push(1);
+    expected.extend_from_slice(literal);
+    assert_eq!(MintCodec.encode(&mint, 1024).unwrap(), expected);
+    assert_eq!(MintCodec.decode(&expected, limits).unwrap(), mint);
+
+    for padding in [vec![255], vec![0, 0], vec![0, 0, 255, 255, 255]] {
+        let mut padded = expected.clone();
+        padded.extend_from_slice(&padding);
+        assert_eq!(MintCodec.decode(&padded, limits).unwrap(), mint);
+    }
+
+    let mut token = TokenCodec.decode(&rows["account-token-1"], limits).unwrap();
+    token.extensions = Some(vec![extension.clone()]);
+    let mut token_bytes = rows["account-token-1"].clone();
+    token_bytes.push(2);
+    token_bytes.extend_from_slice(literal);
+    assert_eq!(TokenCodec.encode(&token, 1024).unwrap(), token_bytes);
+    assert_eq!(TokenCodec.decode(&token_bytes, limits).unwrap(), token);
+
+    for (position, value) in [(MINT_BASE_BYTES, 1), (TOKEN_TYPE_OFFSET, 2)] {
+        let mut bad = expected.clone();
+        bad[position] = value;
+        assert!(MintCodec.decode(&bad, limits).is_err());
+    }
+
+    let mut wrong_type = token_bytes;
+    wrong_type[165] = 1;
+    assert!(TokenCodec.decode(&wrong_type, limits).is_err());
+}
+
+fn malformed_controls(literal: &[u8], limits: solana_kit_core::codecs::Limits) {
+    for bad in [
+        vec![255, 255],
+        vec![2, 0],
+        vec![2, 0, 7, 0, 7, 0, 0, 0, 0, 0, 0],
+        vec![2, 0, 9, 0, 7, 0, 0, 0, 0, 0, 0, 0, 0],
+        vec![2, 0, 255, 255],
+    ] {
+        assert!(ExtensionCodec.decode(&bad, limits).is_err());
+    }
+
+    let mut hostile_map = vec![0; 84];
+    hostile_map[..4].copy_from_slice(&[19, 0, 80, 0]);
+    hostile_map[80..].copy_from_slice(&u32::MAX.to_le_bytes());
+    assert!(ExtensionCodec.decode(&hostile_map, limits).is_err());
+    let mut reader = Reader::new(
+        &hostile_map,
+        solana_kit_core::codecs::Limits::new(HOSTILE_METADATA_BYTES, 2),
+    )
+    .unwrap();
+    assert!(ExtensionCodec.read(&mut reader).is_err());
+    assert_eq!(reader.position(), 0);
+
+    reader.claim(2).unwrap();
+    let mut trailing = literal.to_vec();
+    trailing.push(0);
+    assert!(ExtensionCodec.decode(&trailing, limits).is_err());
+}

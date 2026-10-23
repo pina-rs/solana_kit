@@ -7,15 +7,25 @@ use crate::schema::Error;
 
 const U8_TAG_COUNT: usize = 256;
 
-fn structure(
+pub(super) fn structure(
     name: &str,
     fields: &[Field],
     tag: Option<u8>,
     program: &Program,
 ) -> Result<String, Error> {
-    let mut out = format!(
-        "/// Validated data for `{name}`.\n#[derive(Clone, Debug, Eq, PartialEq)]\npub struct {name} {{\n"
-    );
+    let tag = tag.map(|tag| vec![super::constants::tag(program, tag)]);
+    data_structure(name, fields, tag.as_deref(), program)
+}
+
+pub(super) fn data_structure(
+    name: &str,
+    fields: &[Field],
+    tag: Option<&[String]>,
+    program: &Program,
+) -> Result<String, Error> {
+    let derives = super::equality::derives(program);
+    let mut out =
+        format!("/// Validated data for `{name}`.\n#[derive({derives})]\npub struct {name} {{\n");
 
     for field in fields {
         out.push_str(&format!(
@@ -26,7 +36,7 @@ fn structure(
         ));
     }
 
-    out.push_str(&format!("}}\n/// Bounded codec for [`{name}`].\n#[derive(Clone, Copy, Debug)]\npub struct {name}Codec;\nimpl Encoder<{name}> for {name}Codec {{\nfn encoded_len(&self, value: &{name}) -> Result<usize, Error> {{\nlet size = {}usize;\n", usize::from(tag.is_some())));
+    out.push_str(&format!("}}\n/// Bounded codec for [`{name}`].\n#[derive(Clone, Copy, Debug)]\npub struct {name}Codec;\nimpl Encoder<{name}> for {name}Codec {{\nfn encoded_len(&self, value: &{name}) -> Result<usize, Error> {{\nlet size = {}usize;\n", tag.map_or(0, <[String]>::len)));
 
     for field in fields {
         out.push_str(&format!(
@@ -48,7 +58,7 @@ fn structure(
 fn write_and_read(
     name: &str,
     fields: &[Field],
-    tag: Option<u8>,
+    tag: Option<&[String]>,
     program: &Program,
 ) -> Result<String, Error> {
     let mut out = format!(
@@ -56,7 +66,7 @@ fn write_and_read(
     );
 
     if let Some(tag) = tag {
-        let tag = super::constants::tag(program, tag);
+        let tag = tag.join(",");
         out.push_str(&format!("Constant(&[{tag}]).write(&(), writer)?;\n"));
     }
 
@@ -75,7 +85,7 @@ fn write_and_read(
     out.push_str(&format!("Ok(())\n}}\n}}\nimpl Decoder<{name}> for {name}Codec {{\nfn read(&self, reader: &mut Reader<'_>) -> Result<{name}, Error> {{\n"));
 
     if let Some(tag) = tag {
-        let tag = super::constants::tag(program, tag);
+        let tag = tag.join(",");
         out.push_str(&format!("Constant(&[{tag}]).read(reader)?;\n"));
     }
 
@@ -116,8 +126,9 @@ fn dispatch(program: &Program) -> String {
         "_ => Err(Error::InvalidDiscriminator),\n"
     };
 
+    let derives = super::equality::derives(program);
     let mut out = format!(
-        "/// All selected instruction data variants.\n#[derive(Clone, Debug, Eq, PartialEq)]\npub enum {name} {{\n"
+        "/// All selected instruction data variants.\n#[derive({derives})]\npub enum {name} {{\n"
     );
 
     for item in &program.instructions {
@@ -208,6 +219,10 @@ pub(super) fn program(program: &Program) -> Result<String, Error> {
 
     out.push_str(&super::constants::emit(program));
 
+    if required.contains("Counted") {
+        out.push_str(super::counted_output::SOURCE);
+    }
+
     if super::constants::extended(program) {
         out.push_str(&super::invocations::helpers());
     }
@@ -228,6 +243,9 @@ fn declarations(program: &Program) -> Result<String, Error> {
         out.push_str(&match &item.shape {
             Shape::Struct(fields) => structure(&item.name, fields, None, program)?,
             Shape::Enum(variants) => super::enum_output::emit(&item.name, variants),
+            Shape::Tagged { prefix, variants } => {
+                super::enum_output::tagged(&item.name, prefix, variants, program)?
+            }
         });
     }
 
@@ -258,7 +276,8 @@ fn instruction(program: &Program, item: &super::Instruction) -> Result<String, E
 }
 
 /// Render only requirements collected from validated typed layouts.
-fn imports(out: &mut String, required: &super::imports::Imports) {
+pub(super) fn imports(out: &mut String, required: &super::imports::Imports) {
+    owned_string(out, required);
     for (name, import) in [
         ("Mapped", "Mapped"),
         ("FixedBytes", "FixedBytes"),
@@ -268,6 +287,11 @@ fn imports(out: &mut String, required: &super::imports::Imports) {
         ("OptionCodec", "OptionCodec"),
         ("OwnedSequence", "OwnedSequence, Sequence, Count"),
         ("ByteSizePrefix", "ByteSizePrefix, FrameConsumption"),
+        ("Counted", "Counted"),
+        ("ShortU16", "ShortU16"),
+        ("Tuple", "Tuple"),
+        ("FixedSize", "FixedSize"),
+        ("Affix", "Affix"),
     ] {
         if required.contains(name) {
             out.push_str(&format!("use solana_kit_core::codecs::{{{import}}};\n"));
@@ -284,5 +308,11 @@ fn imports(out: &mut String, required: &super::imports::Imports) {
 
     if required.contains("AccountRole") {
         out.push_str("use solana_kit_core::AccountRole;\n");
+    }
+}
+
+fn owned_string(out: &mut String, required: &super::imports::Imports) {
+    if required.contains("OwnedString") {
+        out.push_str("struct OwnedString<C>(C);\nimpl<C:Encoder<str>> Encoder<String> for OwnedString<C> {\nfn encoded_len(&self,value:&String)->Result<usize,Error>{self.0.encoded_len(value.as_str())}\nfn write(&self,value:&String,writer:&mut Writer<'_>)->Result<(),Error>{self.0.write(value.as_str(),writer)}\n}\nimpl<C:Decoder<String>> Decoder<String> for OwnedString<C>{\nfn read(&self,reader:&mut Reader<'_>)->Result<String,Error>{self.0.read(reader)}\n}\n");
     }
 }
