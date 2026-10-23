@@ -28,8 +28,8 @@ Public canonical wrappers apply those contracts. They do not prove every
 cross-account program invariant or validator transition.
 
 The original package and IDL define no PDA recipes. Confidential proof generation,
-host execution, validator integration and installed application journeys remain
-outside this deterministic client. Optional fetching uses the existing typed Kit
+validator integration and installed application journeys remain outside this
+deterministic client. Optional fetching uses the existing typed Kit
 client with caller-owned transport, executor and read configuration.
 
 The fifteen mint pre-initialization branches preserve caller extension order.
@@ -42,6 +42,15 @@ The invocation projector validates and renders every contract before replacing
 output. Malformed IDL and unsupported account policy preserve existing output.
 Each final file replacement is atomic; replacing the complete generated file set
 is not transactional if a later filesystem rename fails.
+
+The private [portable verification workspace](../../verification/token-2022-public/README.md)
+executes all 116 original client test bodies and three independent boundary
+groups on native Rust, Chrome, Wasmtime Preview 1 and Preview 2, and the pinned
+actual LeptosKit interpreter. All 274 original assertions and literal expectations
+remain. The interpreter rejects one fuel before committing. A separate compiled
+owner-check mutation triggers the original owner assertion. This deterministic
+119-body proof leaves the maintained shared suite unchanged. It does not
+establish validator transitions or installed application support.
 
 This SDK is exclusively for off-chain application clients. On-chain programs use
 Pina or official Solana program libraries. Component publishing remains disabled.
