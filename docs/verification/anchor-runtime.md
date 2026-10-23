@@ -55,6 +55,27 @@ suite. Real compiler commands, actual test bodies, executable bytes, Wasm bytes,
 source identities, and the guard mutation are retained in ignored verification
 evidence. Current and Rust 1.89.0 producers are identified separately.
 
+The public aggregate source is `f9be1648741e497eda98cd2331d71834d82b0ac0`,
+based on `77dbbd3cfaf94745a1a1666bc65eeff230275a8c`. Its Anchor files and complete
+body adapters match the independently accepted source. Current core, client,
+planning and completed-packer assertions retain their exact base bytes. The
+following SHA-256 digests identify retained aggregate runtime artifacts.
+
+| Artifact              | SHA-256                                                            |
+| --------------------- | ------------------------------------------------------------------ |
+| Native executable     | `975232ce3e58ed9e822b1a3d0c959ae484d62e462bd296735be42bde351090cb` |
+| Browser input Wasm    | `4792cdc6a1cd96a6317f7d5c041cb006e06a3ee1280f570d1cd5f0d484779424` |
+| Browser executed Wasm | `e4e6e52307bd0971d6312688f02c9d4011bc5e8812d30ef52fccda0b7252719e` |
+| WASI Preview 1        | `bfe9d3f29b63554edb622d7bbd2712965051441d19a8c18eb943c7eed6f49d9b` |
+| WASI Preview 2        | `1cfe752c1d01881d1306918d2b0e58c04c0849704c541f6911e1ec4ffc66d50f` |
+| Plain guest           | `1da198fc75f1f538e7f39849ce51c89df4ac0af7047834019fe0e82572e458da` |
+| LeptosKit host        | `169f56b889dbfd21f48965f1c0cec7d8a6a7df27f3bc310e78948098daa42870` |
+
+The browser runner transforms the input Wasm before execution. A second real
+Chrome run retains that transformed Wasm and its generated JavaScript. The
+native, WASI and interpreter logs retain both complete ordered reports. Every
+host observes the sole SHA corruption; insufficient fuel prevents a guest commit.
+
 The isolated Anchor consumer links on all three Wasm targets. Its normal and
 build dependency graph contains exactly 17 allowed packages. Actual root imports
 are checked separately from component-internal wiring. Injected Tokio and
