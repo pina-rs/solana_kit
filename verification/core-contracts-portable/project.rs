@@ -45,6 +45,11 @@ fn accounts(root: &Path, output: &Path, entries: &mut Vec<(String, String)>) -> 
 }
 
 fn errors(root: &Path, output: &Path, entries: &mut Vec<(String, String)>) -> io::Result<()> {
+    fs::copy(
+        root.join("verification/shared-errors-independent/allocation.rs"),
+        output.join("errors/allocation.rs"),
+    )?;
+
     for name in ["consumer", "bounds", "more"] {
         error_file(root, output, entries, name)?;
     }
