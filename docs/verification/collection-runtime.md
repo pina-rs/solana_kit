@@ -59,9 +59,12 @@ cases add 810,000,000 units. Existing crypto categories, rates, and work counts
 remain unchanged. All three host fuel-accounting tests execute successfully.
 This fixed allowance does not measure performance.
 
-Fresh full core captures on each compiler report 151 passes. These are 145
-ordinary native bodies, five executed doctests, and one expected compile-failure
-doctest. The separate ordinary consumer executes all 54 contract bodies.
+The current-main integration retains the Reader transaction and generator import
+repairs. Fresh full core captures on each compiler report 154 passes. These are
+148 ordinary native bodies, five executed doctests, and one expected
+compile-failure doctest. Thus 153 bodies execute at runtime. The earlier
+151-pass collection receipt remains historical evidence. The separate ordinary
+consumer executes all 54 contract bodies.
 Full workspace, consumer, and private host Clippy and documentation checks deny
 warnings. Every authored SDK file meets both unchanged Monostyle 0.3.26 floors
 of 90. The formatter uses authenticated cached plugins under a network-denied
@@ -73,11 +76,11 @@ generated JavaScript, and runner are retained separately.
 
 | Artifact                   | SHA-256                                                            |
 | -------------------------- | ------------------------------------------------------------------ |
-| `browser.wasm`             | `d3ddcd8b062acb62184b409fc04fb3fd3701905327d97538fa505268c8b3a8a0` |
-| `guest.wasm`               | `066f9e30c77aee0bcbf925780ccb98d7c67a5bddf8c017e10657b73eb4c0f85c` |
-| `leptoskit-host`           | `d0c0ab3a0dc02008aa53b903171ec2ed57b396d64c867df7bfaefffa5937410e` |
-| `native`                   | `944d17385e4431a9a0af8bbc6d2ffddff37df0cabc1f9d3061c13b78356b32e8` |
-| `wasip1.wasm`              | `8cbe0f6e431bd8f9ca94c96c7e8854000a60abdf3064a25cd1efcabf3e06527d` |
-| `wasip2.wasm`              | `68b2d4c1b13d6f24b17f84c49df91d2086303b5295c121b9de8bc9e1e53ff261` |
-| `xtask`                    | `6462c266f0eb4a117f15fa7d7124045299c61af73d9a929d43c9a4a199c1384c` |
-| `browser-transformed.wasm` | `7b4555ba6a8fbf64649d7e0449ea24e06b5d94791bf5013c370ae3c6dfc322b0` |
+| `browser.wasm`             | `ae9e12079035eff9a75e9363f3b0038ea69ce8f7a09f9caa91edcd7deeafc1c9` |
+| `guest.wasm`               | `bedbce8bc088b8aacad660fa02b02041b45f958635823bbda5399c44042246ce` |
+| `leptoskit-host`           | `5296a625fb029037c3df83a00eb29d211673eb6ec0daa2f45bd4c8c6c1b265ab` |
+| `native`                   | `e956a7bad8a009294aa51f93dbbd863d92e069ca509588806ac91d7e295f60f2` |
+| `wasip1.wasm`              | `cf11be3c53599e51fd969d651ed8f4d1fcdbedb26a8bd30415cdf31227ad071e` |
+| `wasip2.wasm`              | `640ce31731dc873287b13d9d52a166db267f97378ccf2017824d33eb68f0f812` |
+| `xtask`                    | `966715845eef2080b9f58d9a0414b78e8932b48158264e4b421a87fbfb13b2eb` |
+| `browser-transformed.wasm` | `96c3cf6fb4c9a8d974a77fa67dc901f6dd7c0de54e0a01dd9be154a65d78c002` |
