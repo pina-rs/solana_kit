@@ -159,4 +159,5 @@ plans-consumed-update-drop: Ok(())
 plans-later-nested-create-error: Ok(())
 plans-depth-width-512: Ok(())
 plans-invalid-consumed-output: Ok(())
-solana-kit-core-v28: 160/161 cases passed
+plans-completion-progress: Ok(())
+solana-kit-core-v29: 161/162 cases passed

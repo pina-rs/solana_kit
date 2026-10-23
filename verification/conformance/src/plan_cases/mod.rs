@@ -23,6 +23,7 @@ mod independent_async;
 mod packing;
 
 mod polling;
+mod progress;
 mod registry;
 mod resources;
 

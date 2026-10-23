@@ -1,7 +1,7 @@
 use super::{asynchronous, client, core, diagnostics, packing, resources};
 use alloc::vec::Vec;
 
-const HOST_NEUTRAL_CONTRACTS: usize = 43;
+const HOST_NEUTRAL_CONTRACTS: usize = 44;
 
 pub(crate) fn cases() -> Vec<crate::CaseResult> {
     let mut cases = Vec::with_capacity(HOST_NEUTRAL_CONTRACTS);
@@ -14,6 +14,10 @@ pub(crate) fn cases() -> Vec<crate::CaseResult> {
 
     cases.extend(independent_async());
     cases.extend(resources());
+    cases.push(crate::case(
+        "plans-completion-progress",
+        super::progress::completing_packers_must_append_work_in_every_entrypoint(),
+    ));
     cases
 }
 

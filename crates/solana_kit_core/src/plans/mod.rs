@@ -289,7 +289,7 @@ pub enum Error {
     Rejected(alloc::string::String),
     /// A packer was invoked after completion.
     PackerComplete,
-    /// A packer returned unchanged work without completing.
+    /// A successful packer appended no instructions, even if it completed.
     NoProgress,
     /// A packer changed existing instructions or construction metadata.
     InvalidPackerOutput,

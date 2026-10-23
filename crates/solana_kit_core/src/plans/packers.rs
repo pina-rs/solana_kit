@@ -15,7 +15,8 @@ pub trait PackerFactory {
 /// Caller-defined transactional message packing policy.
 ///
 /// An error must leave the cursor unchanged. A successful pack must consume
-/// input, preserve existing instructions and metadata, and pass exact compilation.
+/// input by appending at least one instruction, even when it becomes done. It must
+/// preserve existing instructions and metadata, and pass exact compilation.
 /// The planner validates the returned message before committing candidate output.
 pub trait MessagePacker {
     /// Whether all input has been consumed.

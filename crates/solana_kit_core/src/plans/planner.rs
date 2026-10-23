@@ -414,7 +414,7 @@ fn pack_checked(
         return Err(Error::InvalidPackerOutput);
     }
 
-    if output.instructions == draft.instructions && !packer.done() {
+    if output.instructions == draft.instructions {
         return Err(Error::NoProgress);
     }
 
