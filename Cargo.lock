@@ -1521,6 +1521,25 @@ dependencies = [
 ]
 
 [[package]]
+name = "solana_kit_token_2022"
+version = "0.1.0"
+dependencies = [
+ "base64 0.22.1",
+ "solana_kit_client",
+ "solana_kit_core",
+]
+
+[[package]]
+name = "solana_kit_token_2022_contracts"
+version = "0.1.0"
+dependencies = [
+ "base64 0.22.1",
+ "solana_kit_client",
+ "solana_kit_core",
+ "solana_kit_token_2022",
+]
+
+[[package]]
 name = "solana_kit_wallet"
 version = "0.1.0"
 dependencies = [

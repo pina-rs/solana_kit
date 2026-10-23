@@ -1,0 +1,21 @@
+[package]
+name = "solana_kit_token_2022"
+version = "0.1.0"
+authors.workspace = true
+edition.workspace = true
+license = "Unlicense AND Apache-2.0 AND MIT"
+publish = false
+repository = "https://github.com/pina-rs/solana_kit/tree/main/crates/solana_kit_token_2022"
+rust-version.workspace = true
+description = "Source-grounded Token-2022 codecs and explicit off-chain instruction clients"
+
+[dependencies]
+solana_kit_client = { workspace = true, optional = true }
+solana_kit_core.workspace = true
+
+[features]
+default = []
+client = ["dep:solana_kit_client"]
+
+[dev-dependencies]
+base64 = "=0.22.1"

@@ -1,0 +1,11 @@
+[package]
+name = "solana_kit_token_2022_contracts"
+version = "0.1.0"
+edition.workspace = true
+publish = false
+
+[dependencies]
+base64 = "=0.22.1"
+solana_kit_client.workspace = true
+solana_kit_core.workspace = true
+solana_kit_token_2022 = { path = "../../crates/solana_kit_token_2022", features = ["client"] }
