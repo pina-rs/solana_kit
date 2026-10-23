@@ -34,7 +34,8 @@ a one-fuel allowance before committing a report. Fresh ordinary consumer capture
 all 54 bodies with both Rust 1.99.1 and 1.89.0 from Cargo cwd `/`, using an absolute
 manifest path and no repository flags or patches. MSRV Wasm execution is not claimed.
 
-An authenticated carried copied-source build changes the item-boundary marker comparison. The
+A fresh copied-source build of this aggregate changes the item-boundary marker
+comparison. The
 independent multi-byte-marker assertion then fails with `Truncated`; its unchanged
 positive control passes. The negative build owns a separate compiler target and
 retains its actual executable, core dependency bytes and producer records.
