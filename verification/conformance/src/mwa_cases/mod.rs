@@ -75,5 +75,6 @@ fn rpc_models() -> Check {
 fn siws_contracts() -> Check {
     public::siws_matches_dart_and_verifies_exact_signer_message_and_algorithm()?;
     public::siws_rejects_injection_in_every_field_and_resource()?;
-    independent::siws_checks_expected_signer_claim_context_and_strict_signature()
+    independent::siws_checks_expected_signer_claim_context_and_strict_signature()?;
+    public::siws_wire_keys_preserve_full_payload_message_and_authorize_envelope()
 }

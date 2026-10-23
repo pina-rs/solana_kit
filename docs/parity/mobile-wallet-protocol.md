@@ -53,6 +53,20 @@ pinned legacy behavior, including retaining `chain` while adding `cluster`.
 Response parsing additionally requires the expected ID and a valid JSON-RPC 2.0
 envelope. Compact JWS verification accepts only the pinned ES256 header.
 
+`SignInPayload` uses the MWA SIWS camelCase wire keys `chainId`, `issuedAt`,
+`expirationTime`, `notBefore`, and `requestId`, while Rust fields retain idiomatic
+snake_case names. The surrounding MWA keys, including `sign_in_payload` and
+`auth_token`, retain snake_case. This intentionally corrects the pinned Dart
+`types.dart` lines 240–245, which emit snake_case for those five SIWS fields.
+The primary Java [contract](https://github.com/solana-mobile/mobile-wallet-adapter/blob/main/android/common/src/main/java/com/solana/mobilewalletadapter/common/signin/SignInWithSolanaContract.java),
+Java [JSON parser and serializer](https://github.com/solana-mobile/mobile-wallet-adapter/blob/main/android/common/src/main/java/com/solana/mobilewalletadapter/common/signin/SignInWithSolana.java),
+and JS [types](https://github.com/solana-mobile/mobile-wallet-adapter/blob/main/js/packages/mobile-wallet-adapter-protocol/src/types.ts)
+use camelCase (verified content blobs `f1ac0168b668cb2bf59a6a2ee03bf0984151cd98`,
+`0dd8adba1836972462821c9d4c2c418e681f2e00`, and
+`744c4728ed145180283a662fa8709326410c2392`, respectively).
+Literal incoming/outgoing JSON, exact SIWS text, omission/null decoding and a
+nested authorization envelope cover this interoperability contract.
+
 ## Source and declaration accounting
 
 The [declaration table](mobile-wallet-protocol.tsv) retains all 179 unique
@@ -109,6 +123,8 @@ journeys remain pending. This unit does not claim full MWA platform parity.
 The subsequent [runtime receipt](../verification/mwa-runtime.md) executes all
 15 public MWA tests, both URI groups and nine independent protocol groups across
 native Rust, Chrome, WASI Preview 1/2 and the actual pinned LeptosKit interpreter.
+The existing SIWS group additionally checks the complete camelCase wire payload,
+exact incoming message text, omission/null behavior and nested authorization JSON.
 The earlier compiler-only milestone above remains historical evidence. The raw
 private crypto unit remains native evidence; public exact vectors exercise the
 same derivation through authenticated ciphertext in every portable host.

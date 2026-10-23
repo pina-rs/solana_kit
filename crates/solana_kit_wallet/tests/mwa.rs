@@ -411,12 +411,12 @@ fn siws_rejects_injection_in_every_field_and_resource() {
         "statement",
         "uri",
         "version",
-        "chain_id",
+        "chainId",
         "nonce",
-        "issued_at",
-        "expiration_time",
-        "not_before",
-        "request_id",
+        "issuedAt",
+        "expirationTime",
+        "notBefore",
+        "requestId",
     ] {
         for newline in ["\n", "\r", "\r\n"] {
             let mut value = json!({});

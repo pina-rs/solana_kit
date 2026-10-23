@@ -103,6 +103,7 @@ pub struct AuthorizationResult {
 
 /// SIWS signing fields. Text validation occurs before message serialization.
 #[derive(Clone, Default, Serialize, Deserialize, Eq, PartialEq)]
+#[serde(rename_all = "camelCase")]
 pub struct SignInPayload {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub domain: Option<String>,
