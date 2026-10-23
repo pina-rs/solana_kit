@@ -13,12 +13,7 @@ pub(super) fn collect(program: &Program) -> Imports {
         .iter()
         .chain(program.accounts.iter().map(|account| &account.definition))
     {
-        match &definition.shape {
-            Shape::Struct(items) => fields(items, &mut required),
-            Shape::Enum(_) => {
-                required.insert("Number");
-            }
-        }
+        shape(&definition.shape, &mut required);
     }
 
     for instruction in &program.instructions {
@@ -30,6 +25,25 @@ pub(super) fn collect(program: &Program) -> Imports {
     }
 
     required
+}
+
+fn shape(shape: &Shape, required: &mut Imports) {
+    match shape {
+        Shape::Struct(items) => fields(items, required),
+        Shape::Enum(_) => {
+            required.insert("Number");
+        }
+        Shape::Tagged { variants, .. } => {
+            required.insert("Number");
+
+            for payload in variants
+                .iter()
+                .filter_map(|variant| variant.payload.as_ref())
+            {
+                wire(payload, required);
+            }
+        }
+    }
 }
 fn fields(fields: &[Field], required: &mut Imports) {
     for field in fields {
@@ -44,7 +58,19 @@ fn wire(value: &Wire, required: &mut Imports) {
             required.insert("Number");
         }
         Wire::Link(_) => {}
-        Wire::Address => required.extend(["Mapped", "FixedBytes"]),
+        Wire::TlvSequence(item) => sequence(item, true, required),
+        Wire::RemainderOption(item) => {
+            required.insert("OptionCodec");
+            wire(item, required);
+        }
+        Wire::HiddenPrefix { item, .. } => {
+            required.insert("Affix");
+            wire(item, required);
+        }
+        Wire::Address | Wire::ZeroableAddress => required.extend(["Mapped", "FixedBytes"]),
+        Wire::FixedBytes(_) => {
+            required.insert("FixedBytes");
+        }
         Wire::Bool => {
             required.insert("Bool");
         }
@@ -52,21 +78,74 @@ fn wire(value: &Wire, required: &mut Imports) {
         Wire::Bytes => {
             required.insert("Bytes");
         }
-        Wire::Option { item, .. } => {
-            required.insert("OptionCodec");
+        Wire::Option {
+            item,
+            prefix,
+            fixed,
+        } => {
+            option(*fixed && *prefix == "u8", required);
             wire(item, required);
         }
-        Wire::Array { item, .. } => {
-            required.extend(["OwnedSequence", "Sequence", "Count"]);
-            wire(item, required);
-        }
+        Wire::Array { item, .. } => sequence(item, false, required),
         Wire::Prefix { item, prefix } => {
-            required.extend(["ByteSizePrefix", "FrameConsumption", "Number"]);
-            if *prefix != "u64" {
-                required.insert("Mapped");
-            }
-
+            prefix_imports(prefix, required);
             wire(item, required);
         }
+        Wire::Counted { item, prefix } => {
+            counted(prefix, required);
+            wire(item, required);
+        }
+        Wire::Tuple(a, b) => tuple(a, b, required),
+    }
+}
+
+fn sequence(item: &Wire, terminated: bool, required: &mut Imports) {
+    required.extend(["OwnedSequence", "Sequence", "Count"]);
+
+    if terminated {
+        required.insert("TlvSequence");
+    }
+
+    wire(item, required);
+}
+
+fn prefix_imports(prefix: &str, required: &mut Imports) {
+    required.extend(["ByteSizePrefix", "FrameConsumption", "Number"]);
+
+    if prefix != "u64" {
+        required.insert("Mapped");
+    }
+}
+
+fn tuple(a: &Wire, b: &Wire, required: &mut Imports) {
+    required.insert("Tuple");
+
+    if [a, b]
+        .iter()
+        .any(|wire| super::expressions::rust_type(wire) == "String")
+    {
+        required.insert("OwnedString");
+    }
+
+    wire(a, required);
+    wire(b, required);
+}
+
+fn counted(prefix: &str, required: &mut Imports) {
+    required.extend(["Counted", "Mapped"]);
+
+    let number = match prefix {
+        "shortU16" => "ShortU16",
+        _ => "Number",
+    };
+
+    required.insert(number);
+}
+
+fn option(fixed_byte: bool, required: &mut Imports) {
+    required.insert("OptionCodec");
+
+    if fixed_byte {
+        required.insert("FixedSize");
     }
 }

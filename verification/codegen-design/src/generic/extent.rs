@@ -84,6 +84,21 @@ fn wire_extent(program: &Program, value: &Wire, active: &mut Vec<String>) -> Res
         Wire::Number(name) => Ok(Extent::fixed(width(name)?)),
         Wire::Bool => Ok(Extent::fixed(1)),
         Wire::Address => Ok(Extent::fixed(ADDRESS_BYTES)),
+        Wire::FixedBytes(size) => Ok(Extent::fixed(*size)),
+        Wire::ZeroableAddress => Ok(Extent::fixed(ADDRESS_BYTES)),
+        Wire::TlvSequence(item) => array(program, item, None, active),
+        Wire::RemainderOption(item) => {
+            let inner = wire(program, item, active)?;
+
+            if inner.minimum == 0 {
+                return Err("remainder option payload must make progress".into());
+            }
+
+            Ok(Extent::variable(0, true))
+        }
+        Wire::HiddenPrefix { item, bytes } => {
+            Extent::fixed(bytes.len()).followed_by(wire(program, item, active)?)
+        }
         Wire::Text | Wire::Bytes => Ok(Extent::variable(0, true)),
         Wire::Link(name) => linked(program, name, active),
         Wire::Option {
@@ -96,13 +111,27 @@ fn wire_extent(program: &Program, value: &Wire, active: &mut Vec<String>) -> Res
             wire(program, item, active)?;
             Ok(Extent::variable(width(prefix)?, false))
         }
+        Wire::Counted { item, prefix } => {
+            array(program, item, None, active)?;
+            Ok(Extent::variable(count_width(prefix)?, false))
+        }
+
+        Wire::Tuple(a, b) => wire(program, a, active)?.followed_by(wire(program, b, active)?),
     }
 }
+fn count_width(prefix: &str) -> Result<usize, Error> {
+    match prefix {
+        "shortU16" => Ok(1),
+        _ => width(prefix),
+    }
+}
+
 fn width(name: &str) -> Result<usize, Error> {
     match name {
-        "u8" => Ok(1),
+        "u8" | "i8" => Ok(1),
+        "u16" | "i16" => Ok(2),
         "u32" => Ok(U32_BYTES),
-        "u64" => Ok(U64_BYTES),
+        "u64" | "i64" | "f64" => Ok(U64_BYTES),
         _ => Err("unsupported integer width".into()),
     }
 }
@@ -120,11 +149,49 @@ fn linked(program: &Program, name: &str, active: &mut Vec<String>) -> Result<Ext
 
     let result = match &definition.shape {
         Shape::Enum(_) => Extent::fixed(1),
+        Shape::Tagged { prefix, variants } => tagged(program, prefix, variants, active)?,
         Shape::Struct(items) => fields(program, items, active)?,
     };
 
     active.pop();
     Ok(result)
+}
+
+fn tagged(
+    program: &Program,
+    prefix: &str,
+    variants: &[super::Variant],
+    active: &mut Vec<String>,
+) -> Result<Extent, Error> {
+    let extents = variants
+        .iter()
+        .map(|variant| {
+            variant
+                .payload
+                .as_ref()
+                .map(|value| wire(program, value, active))
+                .transpose()
+                .map(|extent| extent.unwrap_or(Extent::fixed(0)))
+        })
+        .collect::<Result<Vec<_>, _>>()?;
+    let minimum = extents
+        .iter()
+        .map(|extent| extent.minimum)
+        .min()
+        .ok_or("empty enum")?;
+    let fixed = extents
+        .first()
+        .and_then(|extent| extent.fixed)
+        .filter(|fixed| extents.iter().all(|extent| extent.fixed == Some(*fixed)));
+    let prefix = width(prefix)?;
+
+    Ok(Extent {
+        minimum: prefix.checked_add(minimum).ok_or("enum extent overflow")?,
+        fixed: fixed
+            .map(|size| prefix.checked_add(size).ok_or("enum extent overflow"))
+            .transpose()?,
+        tail: extents.iter().any(|extent| extent.tail),
+    })
 }
 fn option(
     program: &Program,

@@ -30,16 +30,39 @@ pub(super) fn execute_source(directory: &Path, source: &str) {
         ),
     )
     .unwrap();
-    let status = Command::new(env!("CARGO"))
-        .args(["run", "--offline", "--quiet", "--manifest-path"])
+    let output = Command::new(env!("CARGO"))
+        .args([
+            "build",
+            "--offline",
+            "--message-format=json",
+            "--verbose",
+            "-j2",
+            "--manifest-path",
+        ])
         .arg(directory.join("Cargo.toml"))
         .arg("--target-dir")
         .arg(directory.join("target"))
         .env_remove("CARGO_ENCODED_RUSTFLAGS")
         .env("RUSTFLAGS", "-Dwarnings")
-        .status()
+        .output()
         .unwrap();
-    assert!(status.success());
+    fs::write(directory.join("build.jsonl"), &output.stdout).unwrap();
+    fs::write(directory.join("build.stderr"), &output.stderr).unwrap();
+    assert!(
+        output.status.success(),
+        "{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    let executable = String::from_utf8(output.stdout)
+        .unwrap()
+        .lines()
+        .filter_map(|line| serde_json::from_str::<Value>(line).ok())
+        .find_map(|item| item["executable"].as_str().map(str::to_owned))
+        .unwrap();
+
+    let preserved = directory.join("executed-consumer");
+    fs::copy(executable, &preserved).unwrap();
+    assert!(Command::new(preserved).status().unwrap().success());
 }
 
 #[test]

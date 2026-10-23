@@ -1,0 +1,10 @@
+[package]
+name = "solana_kit_token_layouts_independent"
+version = "0.0.0"
+edition = "2024"
+publish = false
+
+[workspace]
+
+[dependencies]
+solana_kit_core = { path = "../../crates/solana_kit_core", default-features = false }
