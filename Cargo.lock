@@ -1550,6 +1550,7 @@ dependencies = [
  "anyhow",
  "serde",
  "serde_json",
+ "sha2 0.10.9",
  "solana_kit_conformance",
  "wasmparser 0.240.0",
  "wat",

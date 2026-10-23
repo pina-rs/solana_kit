@@ -7,6 +7,7 @@ const USAGE: &str = "usage: cargo xtask <command> [path]";
 const OFFLINE: &str = "xtask does not forward Cargo flags; use CARGO_NET_OFFLINE=true cargo xtask <command> for offline child Cargo commands";
 
 pub(crate) enum Command {
+    ArtifactCapture(PathBuf),
     Style(Option<PathBuf>),
     StyleReport(PathBuf),
     Native,
@@ -28,6 +29,7 @@ pub(crate) fn parse(arguments: &[OsString]) -> Result<Command> {
     let paths = &arguments[1..];
 
     match command {
+        "artifact-capture" => Ok(Command::ArtifactCapture(required_path(paths, command)?)),
         "style" => Ok(Command::Style(path(paths, command, false)?)),
         "style-report" => Ok(Command::StyleReport(required_path(paths, command)?)),
         "imports" => Ok(Command::Imports(required_path(paths, command)?)),
