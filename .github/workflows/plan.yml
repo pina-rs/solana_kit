@@ -93,13 +93,13 @@ jobs:
       - name: Validate ownership and preview release files
         shell: bash
         run: |
-          monochange_dir="$RUNNER_TEMP/monochange-0.16.0"
+          monochange_dir="$RUNNER_TEMP/monochange-0.21.0"
           mkdir "$monochange_dir"
-          curl --fail --location --silent --show-error https://github.com/monochange/monochange/releases/download/v0.16.0/monochange-x86_64-unknown-linux-gnu-v0.16.0.tar.gz --output "$monochange_dir/monochange.tar.gz"
-          printf '%s  %s\n' 26ff7caf1ce4951c0309ff8227d59ea218d01b189545b0aa30360d54a2ff237a "$monochange_dir/monochange.tar.gz" | sha256sum --check --strict
+          curl --fail --location --silent --show-error https://github.com/monochange/monochange/releases/download/v0.21.0/monochange-x86_64-unknown-linux-gnu-v0.21.0.tar.gz --output "$monochange_dir/monochange.tar.gz"
+          printf '%s  %s\n' 3d79ea6d683b48ad6760f5ed60101022b8383b48e15eba49bd400fb53fed4afb "$monochange_dir/monochange.tar.gz" | sha256sum --check --strict
           tar -xzf "$monochange_dir/monochange.tar.gz" -C "$monochange_dir"
           export PATH="$monochange_dir:$PATH"
-          test "$(monochange --version)" = 'monochange 0.16.0'
+          test "$(monochange --version)" = 'monochange 0.21.0'
           monochange check
           monochange step validate
           monochange discover --format json
