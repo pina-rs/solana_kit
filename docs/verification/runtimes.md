@@ -971,3 +971,16 @@ TLS, entropy, clocks, async wake/cancellation, wallets, validator, generated app
 Android, or iOS behavior. The new Linux CI workflow is checked locally with
 actionlint; its remote execution must pass before merge. Browser and headless
 LeptosKit execution do not complete the broader transport or device plans.
+
+## Mobile Wallet Adapter frontier
+
+The maintained suite now contains 118 cases. The
+[MWA runtime receipt](mwa-runtime.md) appends seven groups that mechanically retain
+all 26 public MWA/URI and independent protocol contracts. The prior 111 case
+bodies and both ordered report prefixes are unchanged. Native Rust, actual
+Chrome, both Wasmtime previews and the pinned LeptosKit host pass the canonical
+suite and observe the sole corrupt hash. One fuel still traps before any report
+commit. The fixed host allowance is 9,735,000,000, with unchanged rates and
+explicit accounting for 573 measured backend call-site entries. This is fixture
+fuel, not a production or minimum budget. All 179 MWA IDs remain partial and no
+installed wallet or generated desktop/mobile journey is inferred.

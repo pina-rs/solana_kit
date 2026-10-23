@@ -276,6 +276,15 @@ generated LeptosKit desktop app, Android emulator, and iOS simulator through
 balance fetch, signing, send/confirm, subscribe/unsubscribe, and pending-I/O unload.
 Record wallet/platform availability instead of assuming Android MWA exists on iOS.
 
+The optional [Mobile Wallet Adapter protocol](../parity/mobile-wallet-protocol.md)
+adds caller-supplied P-256 keys and IVs, HELLO negotiation, ordered authenticated
+framing, JSON-RPC contracts, legacy compatibility mapping, and SIWS validation.
+Independent Dart crypto vectors execute in both directions. Ordinary native
+consumers run on current Rust and Rust 1.89; all three Wasm targets compile on
+current Rust. Platform handover, wallet transports, UI, and actual wallet or
+device runtime journeys remain pending. All 179 canonical protocol declarations
+remain partial.
+
 ## Phase 8: integrations, tooling, and release readiness
 
 Deliver Anchor, Helius, Jupiter, Pyth, SNS, Surfpool, the dApp publishing CLI,
@@ -330,3 +339,12 @@ of services and jobs. Its upstream identity and scoped-access prerequisite is
 pinned to public commit `706334eaa3e011d1ef986159911b0d80c80d3e9f`.
 Platform scheduling and awaited-close hooks and generated desktop, Android and
 iOS HTTP journeys remain unimplemented and unaccepted.
+
+The bounded [Mobile Wallet Adapter runtime receipt](../verification/mwa-runtime.md)
+adds seven groups to the unchanged 111-case frontier. All 26 public MWA/URI and
+independent protocol contracts execute in the maintained 118-case suite on native
+Rust, Chrome, both WASI previews and the actual LeptosKit interpreter. Existing
+37 default-wallet tests and their portable groups remain unchanged. All 179 MWA
+canonical rows remain partial. Entropy, globally unique IVs, time, persistence,
+platform handover and installed desktop/mobile wallet journeys remain caller or
+future application work. This does not complete Phase 7.

@@ -1,0 +1,14 @@
+[package]
+name = "mwa_consumer"
+version = "0.0.0"
+edition = "2024"
+publish = false
+rust-version = "1.89"
+
+[workspace]
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+solana_kit_wallet = { path = "../../../..", features = ["mwa"] }
