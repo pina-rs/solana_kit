@@ -17,6 +17,8 @@ mod encoding;
 mod instruction;
 /// Immutable off-chain application messages and signing envelopes.
 pub mod offchain;
+/// Pure instruction trees and exact transaction planning.
+pub mod plans;
 pub mod transaction;
 
 mod values;

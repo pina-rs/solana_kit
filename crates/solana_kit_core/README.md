@@ -139,3 +139,8 @@ let received = Envelope::decode(&wire, Limits::new(2048, 4096))?;
 assert!(!received.is_complete());
 # Ok::<(), solana_kit_core::offchain::Error>(())
 ```
+
+`plans` provides owned instruction trees, transactional packers, exact message
+planning and typed execution result models. Applications supply fee payers,
+lifetimes and builders. See the
+[instruction plan contracts](../../verification/instruction-plans/README.md).

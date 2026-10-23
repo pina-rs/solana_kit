@@ -10,6 +10,10 @@ mod errors;
 /// Validated transaction accounts and ordered outer/inner instruction traces.
 pub mod introspection;
 mod json;
+
+/// Caller-owned instruction plan execution.
+pub mod plans;
+
 pub mod methods;
 /// Caller-owned bounded subscription protocol.
 pub mod subscriptions;
