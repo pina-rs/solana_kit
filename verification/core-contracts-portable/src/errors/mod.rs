@@ -1,19 +1,14 @@
-use std::alloc::GlobalAlloc;
-use std::alloc::Layout;
-use std::alloc::System;
 use std::collections::BTreeMap;
-use std::sync::atomic::AtomicBool;
-use std::sync::atomic::AtomicUsize;
-use std::sync::atomic::Ordering;
 
 use solana_kit_core::errors::Context;
 use solana_kit_core::errors::ContextError;
 use solana_kit_core::errors::ContextValue;
 
+mod allocation;
 pub mod bounds;
-pub mod more;
 
-struct CountingAllocator;
+use allocation::count_allocations;
+pub mod more;
 
 const MAX_NESTED_OBJECT_DEPTH: usize = 7;
 const MAX_KEY_BYTES: usize = 64;
@@ -26,35 +21,6 @@ const GENERIC_CODE: i64 = 4615001;
 const EXISTING_VALUE: u128 = 7;
 const SMALL_OBJECT: usize = 257;
 const LARGE_OBJECT: usize = 4096;
-
-static ACTIVE: AtomicBool = AtomicBool::new(false);
-static ALLOCATIONS: AtomicUsize = AtomicUsize::new(0);
-
-// The counter does not alter allocation ownership or layout.
-unsafe impl GlobalAlloc for CountingAllocator {
-    unsafe fn alloc(&self, layout: Layout) -> *mut u8 {
-        if ACTIVE.load(Ordering::Relaxed) {
-            ALLOCATIONS.fetch_add(1, Ordering::Relaxed);
-        }
-
-        unsafe { System.alloc(layout) }
-    }
-
-    unsafe fn dealloc(&self, pointer: *mut u8, layout: Layout) {
-        unsafe { System.dealloc(pointer, layout) }
-    }
-
-    unsafe fn realloc(&self, pointer: *mut u8, layout: Layout, size: usize) -> *mut u8 {
-        if ACTIVE.load(Ordering::Relaxed) {
-            ALLOCATIONS.fetch_add(1, Ordering::Relaxed);
-        }
-
-        unsafe { System.realloc(pointer, layout, size) }
-    }
-}
-
-#[global_allocator]
-static ALLOCATOR: CountingAllocator = CountingAllocator;
 
 fn nested(mut value: ContextValue, depth: usize) -> ContextValue {
     for _ in 0..depth {
@@ -259,11 +225,8 @@ fn rejected_object_allocations(count: usize) -> usize {
         .unwrap();
     let prior = context.clone();
 
-    ALLOCATIONS.store(0, Ordering::Relaxed);
-    ACTIVE.store(true, Ordering::Relaxed);
-    let result = context.insert("incoming", ContextValue::Object(entries));
-    ACTIVE.store(false, Ordering::Relaxed);
-    let allocations = ALLOCATIONS.load(Ordering::Relaxed);
+    let (result, allocations) =
+        count_allocations(|| context.insert("incoming", ContextValue::Object(entries)));
 
     assert_eq!(result, Err(ContextError::Limit));
     assert_eq!(context, prior);

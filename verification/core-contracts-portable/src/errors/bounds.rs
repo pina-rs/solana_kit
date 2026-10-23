@@ -1,6 +1,5 @@
 use super::{
-    ACTIVE, ALLOCATIONS, BTreeMap, Context, ContextError, ContextValue, LARGE_OBJECT, Ordering,
-    SMALL_OBJECT,
+    BTreeMap, Context, ContextError, ContextValue, LARGE_OBJECT, SMALL_OBJECT, count_allocations,
 };
 
 const TOKEN_BALANCE: u128 = 42;
@@ -17,11 +16,7 @@ fn object(count: usize) -> ContextValue {
 
 fn rejection_allocations(mut context: Context, value: ContextValue) -> usize {
     let prior = context.clone();
-    ALLOCATIONS.store(0, Ordering::Relaxed);
-    ACTIVE.store(true, Ordering::Relaxed);
-    let result = context.insert("incoming", value);
-    ACTIVE.store(false, Ordering::Relaxed);
-    let allocations = ALLOCATIONS.load(Ordering::Relaxed);
+    let (result, allocations) = count_allocations(|| context.insert("incoming", value));
 
     assert_eq!(result, Err(ContextError::Limit));
     assert_eq!(context, prior);

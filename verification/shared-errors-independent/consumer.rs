@@ -233,7 +233,8 @@ fn rejected_object_allocations(count: usize) -> usize {
         .unwrap();
     let prior = context.clone();
 
-    let (result, allocations) = count_allocations(|| context.insert("incoming", ContextValue::Object(entries)));
+    let (result, allocations) =
+        count_allocations(|| context.insert("incoming", ContextValue::Object(entries)));
 
     assert_eq!(result, Err(ContextError::Limit));
     assert_eq!(context, prior);
