@@ -219,6 +219,14 @@ and iOS application wiring, other capabilities and full Phase 4 coverage open.
 
 ## Phase 5: subscriptions and orchestration
 
+The bounded [instruction planning runtime receipt](../verification/instruction-plans-runtime.md)
+adds 43 complete host-neutral bodies to the unchanged 118-case frontier. The
+161-case suite executes on native Rust, Chrome, both WASI previews and the actual
+LeptosKit interpreter; five real Tokio-only bodies remain separately native.
+All 212 planning declaration rows retain partial status. Caller-owned resource
+factories, timers, cancellation policy, complete source-contract adjudication and
+installed application journeys remain separate work.
+
 The bounded [confirmation frontier](../verification/transaction-confirmation.md)
 implements typed event policy, explicit observer ownership and exact submission
 guards. Three groups append to the unchanged Token105 suite and execute on all

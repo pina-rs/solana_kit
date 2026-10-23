@@ -84,3 +84,9 @@ Call `tick()` to enforce acknowledgement deadlines and remote cancellation clean
 Six families are stable. Block, vote, and slot-update methods are explicitly
 unstable. This transport-neutral protocol does not establish networking support
 for any host. Replacement returns an explicit event gap and never promises replay.
+
+`plans` executes core-owned transaction trees through caller-owned concrete
+futures. Parallel branches overlap while results retain plan order. Ordered
+failures preserve partial context and cancel unstarted leaves. Signing and
+sending capabilities remain explicit. See the
+[instruction plan contracts](../../verification/instruction-plans/README.md).

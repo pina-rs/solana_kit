@@ -28,3 +28,7 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
+The instruction planning contracts and retained fixtures are based on the same
+pinned Dart repository's complete `solana_kit_instruction_plans` package. Its MIT
+notice is also retained in `verification/instruction-plans/DART-LICENSE`.
