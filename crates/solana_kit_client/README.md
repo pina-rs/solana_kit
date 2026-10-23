@@ -24,6 +24,14 @@ accepts opaque bytes without a global legacy packet cap, automatic retry or
 confirmation. Full result graphs keep exact quantities and preserve opaque JSON
 only for program-defined data and unknown future transaction failures.
 
+`introspection::decode_rpc_transaction` resolves those typed transaction results
+into ordered account roles and raw or server-parsed instructions. Walk outer calls
+with their inner calls while preserving depth and unavailable metadata. Binary
+responses retain exact core transactions. JSON responses retain their original
+typed messages without invented wire bytes. Direct core-message helpers share the
+same lookup resolution rules. See the [introspection receipt](../../docs/parity/transaction-introspection.md)
+for native proof and the remaining runtime limits.
+
 Applications implement Transport or select an explicit platform adapter. The adapter
 owns its endpoint, caller authentication, response-header budget, deadline and
 cancellation. Enforce Request's body limit while receiving; the client checks it

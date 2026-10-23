@@ -23,6 +23,8 @@ mod fixed_points;
 
 mod framing_cases;
 mod instructions;
+mod introspection_cases;
+
 /// Fixed public-message assertions and host-owned crypto work counts.
 pub mod message_cases;
 mod nonce_cases;
@@ -58,9 +60,9 @@ pub mod system_client;
 use alloc::vec::Vec;
 
 /// Immutable suite identity. Changes to fixtures or assertions require a new ID.
-pub const SUITE_ID: &str = "solana-kit-core-v26";
+pub const SUITE_ID: &str = "solana-kit-core-v27";
 /// Required number of cases; a truncated report cannot pass conformance.
-pub const EXPECTED_CASE_COUNT: usize = 108;
+pub const EXPECTED_CASE_COUNT: usize = 111;
 
 /// Selects authentic fixtures or the intentionally incorrect hash oracle.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -152,6 +154,7 @@ pub fn run(mode: FixtureMode) -> Report {
     cases.extend(message_cases::cases());
     cases.extend(token_cases::cases());
     cases.extend(confirmation_cases::cases());
+    cases.extend(introspection_cases::cases());
 
     Report {
         suite_id: SUITE_ID,

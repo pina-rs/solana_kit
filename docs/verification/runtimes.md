@@ -59,7 +59,18 @@ dispatches a `Press` event and requires the corrupted report and second commit.
 The guest's small unsafe FFI wrappers implement that pinned synchronous copy ABI;
 core and the host harness forbid unsafe code.
 
-## Current v26 confirmation integration
+## Current v27 introspection integration
+
+The [introspection runtime receipt](introspection-runtime.md) records three
+appended groups preserving all 30 public contracts. Every named host executes
+111/111 canonical and 110/111 with sole hash corruption. Existing 108 bodies and
+ordered report prefixes remain exact. The checked allowance is 6,765,000,000 per
+entry, preserving the prior ordinary and crypto rates with zero added crypto
+calls. The one-fuel zero-commit control, exact imports, graph negatives and five
+packaged-core groups pass at signed executable
+`051dd3a8ea739abe1fa00e2ea6a836520ba24709`.
+
+## Historical v26 confirmation integration
 
 The 108-case suite preserves every previous 105 assertion body and ordered row.
 Three groups exercise public confirmation policy and event ordering, local Rc

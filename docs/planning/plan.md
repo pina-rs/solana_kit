@@ -164,8 +164,15 @@ boundaries and signature tampering. Legacy/v0 retain their 1232-byte packet cap.
 IDs: 46 partial and 700 pending, none complete. Bounded durable nonce construction
 and structural inspection have [portable runtime evidence](../verification/nonce-runtime.md).
 Authenticated nonce account state, expiry, full
-introspection, remaining signer capabilities, confirmation,
+portable introspection, remaining signer capabilities, confirmation,
 and instruction plans remain outstanding; Phase 3 is incomplete.
+
+The [transaction introspection receipt](../parity/transaction-introspection.md)
+adds all 30 public contracts to the maintained 111-case portable suite through
+existing typed RPC models and core wire decoding. Native Rust, Chrome, both WASI
+previews and the actual LeptosKit host execute those contracts. All 42 canonical
+IDs remain partial; exact Dart value spellings, validator and installed-device
+journeys remain outside the [bounded proof](../verification/introspection-runtime.md).
 The bounded [offchain message receipt](../parity/offchain-messages.md) retains
 all 83 IDs as partial, with none complete. Its three groups now execute through
 the shared suite on every named portable host.

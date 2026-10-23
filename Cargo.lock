@@ -1139,7 +1139,10 @@ dependencies = [
 name = "solana_kit_conformance"
 version = "0.1.0"
 dependencies = [
+ "base64 0.22.1",
+ "bs58",
  "hex-literal",
+ "serde_json",
  "signer_capability_consumer",
  "solana_kit_associated_token_account",
  "solana_kit_client",

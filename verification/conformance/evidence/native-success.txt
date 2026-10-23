@@ -106,4 +106,7 @@ token-strict-errors: Ok(())
 confirmation-policy-ordering: Ok(())
 confirmation-pending-cleanup: Ok(())
 confirmation-exact-submission: Ok(())
-solana-kit-core-v26: 108/108 cases passed
+introspection-wire-metadata: Ok(())
+introspection-accounts-traces: Ok(())
+introspection-boundary-validation: Ok(())
+solana-kit-core-v27: 111/111 cases passed
