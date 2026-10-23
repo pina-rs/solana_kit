@@ -2,6 +2,7 @@
 #![forbid(unsafe_code)]
 
 mod arguments;
+mod artifact_capture;
 mod client_gate;
 mod consumer;
 mod gates;
@@ -20,6 +21,7 @@ fn main() -> Result<()> {
     std::env::set_current_dir(concat!(env!("CARGO_MANIFEST_DIR"), "/.."))?;
 
     match command {
+        Command::ArtifactCapture(path) => artifact_capture::run(&path),
         Command::Style(root) => style::run(root.as_deref()),
         Command::StyleReport(path) => style::check_report(&path),
         Command::Native => runtimes::native(),
