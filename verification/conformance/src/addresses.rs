@@ -38,7 +38,10 @@ pub(crate) fn golden() -> Result<(), &'static str> {
 pub(crate) fn invalid_alphabet() -> Result<(), &'static str> {
     for text in ["0", "O", "I", "l", " ", "🚀"] {
         require(
-            text.parse::<Address>() == Err(ParseError::InvalidBase58),
+            text.parse::<Address>()
+                == Err(ParseError::InvalidBase58 {
+                    kind: solana_kit_core::ValueKind::Address,
+                }),
             "invalid base58 character was accepted",
         )?;
     }
@@ -53,6 +56,7 @@ pub(crate) fn invalid_length() -> Result<(), &'static str> {
         require(
             text.parse::<Address>()
                 == Err(ParseError::WrongLength {
+                    kind: solana_kit_core::ValueKind::Address,
                     expected: 32,
                     actual: count,
                 }),
@@ -68,6 +72,7 @@ pub(crate) fn bounded_input() -> Result<(), &'static str> {
     require(
         "1".repeat(45).parse::<Address>()
             == Err(ParseError::EncodedLengthExceeded {
+                kind: solana_kit_core::ValueKind::Address,
                 maximum: 44,
                 actual: 45,
             }),
@@ -76,6 +81,7 @@ pub(crate) fn bounded_input() -> Result<(), &'static str> {
     require(
         "1".repeat(89).parse::<Signature>()
             == Err(ParseError::EncodedLengthExceeded {
+                kind: solana_kit_core::ValueKind::Signature,
                 maximum: 88,
                 actual: 89,
             }),
@@ -110,7 +116,10 @@ pub(crate) fn signature_value() -> Result<(), &'static str> {
         "zero signature display mismatch",
     )?;
     require(
-        "0".parse::<Signature>() == Err(ParseError::InvalidBase58),
+        "0".parse::<Signature>()
+            == Err(ParseError::InvalidBase58 {
+                kind: solana_kit_core::ValueKind::Signature,
+            }),
         "invalid signature alphabet was accepted",
     )
 }

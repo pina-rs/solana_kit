@@ -101,13 +101,13 @@ fn reward_points_and_strict_boolean_tags() {
     rewards[80] = 2;
     assert_eq!(
         SysvarCodec::<EpochRewards>::NEW.decode(&rewards, LIMITS),
-        Err(Error::InvalidDiscriminator)
+        Err(Error::InvalidBoolean { value: 2 })
     );
     let mut schedule = [0; 33];
     schedule[16] = 2;
     assert_eq!(
         SysvarCodec::<EpochSchedule>::NEW.decode(&schedule, LIMITS),
-        Err(Error::InvalidDiscriminator)
+        Err(Error::InvalidBoolean { value: 2 })
     );
 }
 

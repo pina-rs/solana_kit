@@ -32,3 +32,8 @@ SOFTWARE.
 The instruction planning contracts and retained fixtures are based on the same
 pinned Dart repository's complete `solana_kit_instruction_plans` package. Its MIT
 notice is also retained in `verification/instruction-plans/DART-LICENSE`.
+
+The shared error numeric registry, domain rules, message templates and oracle
+fixtures are derived from `packages/solana_kit_errors` at the same pinned Dart
+commit. They retain the MIT license above. Generated definitions belong to
+`src/errors/catalog`; bounded Rust context and cause ownership are Kit's adaptation.

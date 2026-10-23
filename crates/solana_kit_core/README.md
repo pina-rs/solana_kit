@@ -140,6 +140,10 @@ assert!(!received.is_complete());
 # Ok::<(), solana_kit_core::offchain::Error>(())
 ```
 
+Shared error facts use `errors::{ErrorCode, ErrorDomain, ErrorFacts, Diagnostic,
+Context}`. The [account and diagnostic receipt](../../docs/verification/core-contracts.md)
+describes their bounded representation and executed client contracts.
+
 `plans` provides owned instruction trees, transactional packers, exact message
 planning and typed execution result models. Applications supply fee payers,
 lifetimes and builders. See the

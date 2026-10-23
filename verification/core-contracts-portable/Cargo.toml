@@ -1,0 +1,14 @@
+[package]
+name = "solana_kit_core_contracts_verification"
+version = "0.0.0"
+edition = "2024"
+publish = false
+rust-version = "1.89"
+
+[workspace]
+
+[dependencies]
+futures = { version = "=0.3.31", default-features = false, features = ["executor"] }
+serde_json = { version = "=1.0.154", features = ["raw_value"] }
+solana_kit_client = { path = "../../crates/solana_kit_client" }
+solana_kit_core = { path = "../../crates/solana_kit_core", features = ["crypto"] }

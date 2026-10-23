@@ -126,7 +126,11 @@ pub(super) fn framing() -> Result<(), &'static str> {
         "constant frame fixture mismatch",
     )?;
     require(
-        codec.decode(&[1, 2, 3, 1, 4, 6], LIMITS) == Err(Error::InvalidDiscriminator),
+        codec.decode(&[1, 2, 3, 1, 4, 6], LIMITS)
+            == Err(Error::InvalidConstant {
+                offset: 4,
+                length: 2,
+            }),
         "forged suffix accepted",
     )?;
     require(

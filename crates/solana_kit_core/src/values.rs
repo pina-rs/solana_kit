@@ -41,7 +41,7 @@ macro_rules! fixed_value {
             type Error = ParseError;
 
             fn try_from(bytes: &[u8]) -> Result<Self, Self::Error> {
-                encoding::from_slice(bytes).map(Self)
+                encoding::from_slice(bytes, encoding::ValueKind::$name).map(Self)
             }
         }
 
@@ -55,7 +55,7 @@ macro_rules! fixed_value {
             type Err = ParseError;
 
             fn from_str(text: &str) -> Result<Self, Self::Err> {
-                encoding::decode(text, $maximum).map(Self)
+                encoding::decode(text, $maximum, encoding::ValueKind::$name).map(Self)
             }
         }
 
