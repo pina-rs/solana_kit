@@ -13,6 +13,7 @@ members = [
   "crates/solana_kit_signers",
   "crates/solana_kit_system",
   "crates/solana_kit_token",
+  "crates/solana_kit_token_2022",
   "crates/solana_kit_wallet",
   "crates/solana_kit_wasi",
   "verification/browser",
@@ -20,6 +21,7 @@ members = [
   "verification/browser-websocket",
   "verification/conformance",
   "verification/guest",
+  "verification/token-2022-contracts",
   "xtask",
 ]
 exclude = [
