@@ -289,3 +289,18 @@ prevents independent application access while waiting. The caller-borrowed shape
 keeps interpreter ownership with the application. Native waiting uses no hidden
 runtime or platform pump. Swift and Kotlin scheduling and awaited close hooks,
 and generated desktop and mobile HTTP journeys, remain future work.
+
+## Portable wallet protocol
+
+The optional wallet `mwa` feature implements the bounded Mobile Wallet Adapter
+protocol with caller-owned scalars, IVs and transport. Default wallet dependencies
+remain wallet plus base64. The [runtime receipt](../verification/mwa-runtime.md)
+executes its public contracts on native Rust, Chrome, both WASI previews and the
+actual LeptosKit interpreter. The plain guest adds no ambient host capability.
+
+One session owns its key and directional counters. Sequence checks enforce order
+but do not bind sender direction. The caller supplies unpredictable IVs unique
+across both directions, entropy, clocks, nonce policy, persistence and platform
+handover. Secret trait and consuming ownership checks remain native compilation
+proofs. All 179 canonical declaration rows remain partial. Installed wallet and
+generated desktop/mobile application journeys remain separate requirements.

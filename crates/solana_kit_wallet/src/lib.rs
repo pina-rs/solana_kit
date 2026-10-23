@@ -8,6 +8,10 @@
 
 extern crate alloc;
 
+/// Portable Mobile Wallet Adapter cryptography and application protocol.
+#[cfg(feature = "mwa")]
+pub mod mwa;
+
 mod capabilities;
 mod logo_assets;
 mod logos;

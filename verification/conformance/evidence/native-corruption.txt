@@ -109,4 +109,11 @@ confirmation-exact-submission: Ok(())
 introspection-wire-metadata: Ok(())
 introspection-accounts-traces: Ok(())
 introspection-boundary-validation: Ok(())
-solana-kit-core-v27: 110/111 cases passed
+mwa-crypto-vectors: Ok(())
+mwa-hello-session: Ok(())
+mwa-authenticated-frames: Ok(())
+mwa-association-uris: Ok(())
+mwa-rpc-models: Ok(())
+mwa-siws-contracts: Ok(())
+mwa-jws-boundaries: Ok(())
+solana-kit-core-v27: 117/118 cases passed

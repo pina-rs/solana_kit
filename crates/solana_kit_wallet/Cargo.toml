@@ -3,12 +3,41 @@ name = "solana_kit_wallet"
 version = "0.1.0"
 authors.workspace = true
 edition.workspace = true
-include = ["src/**", "assets/**", "README.md", "LICENSE", "DART-LICENSE", "THIRD_PARTY_NOTICES.md"]
+include = ["src/**", "assets/**", "README.md", "LICENSE", "DART-LICENSE", "MWA-LICENSE", "THIRD_PARTY_NOTICES.md"]
 license.workspace = true
 readme = "README.md"
 repository = "https://github.com/pina-rs/solana_kit/tree/main/crates/solana_kit_wallet"
 rust-version.workspace = true
 description = "Portable off-chain Wallet Standard application contracts"
 
+[features]
+default = []
+mwa = [
+  "dep:aes",
+  "dep:aes-gcm",
+  "dep:ghash",
+  "dep:hkdf",
+  "dep:iri-string",
+  "dep:p256",
+  "dep:polyval",
+  "dep:serde",
+  "dep:serde_json",
+  "dep:sha2",
+  "dep:solana_kit_core",
+  "dep:zeroize",
+]
+
 [dependencies]
+aes = { version = "0.8.4", default-features = false, features = ["zeroize"], optional = true }
+aes-gcm = { version = "0.10.3", default-features = false, features = ["aes", "alloc", "zeroize"], optional = true }
 base64 = { version = "0.22.1", default-features = false, features = ["alloc"] }
+ghash = { version = "0.5.1", default-features = false, features = ["zeroize"], optional = true }
+hkdf = { version = "0.12.4", default-features = false, optional = true }
+iri-string = { version = "0.7.10", default-features = false, optional = true }
+p256 = { version = "0.13.2", default-features = false, features = ["ecdh", "ecdsa"], optional = true }
+polyval = { version = "0.6.2", default-features = false, features = ["zeroize"], optional = true }
+serde = { version = "1.0.228", default-features = false, features = ["alloc", "derive"], optional = true }
+serde_json = { version = "1.0.145", default-features = false, features = ["alloc"], optional = true }
+sha2 = { version = "0.10.9", default-features = false, optional = true }
+solana_kit_core = { workspace = true, features = ["crypto"], optional = true }
+zeroize = { version = "1.8.2", default-features = false, features = ["alloc"], optional = true }
