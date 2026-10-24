@@ -101,6 +101,31 @@ jobs:
           cargo +1.89.0 check -p solana_kit_core --no-default-features --features \
             crypto,fixed-points --locked
 
+      - name: Verify sender address observations in both signer feature modes
+        shell: bash
+        env:
+          RUSTUP_TOOLCHAIN: 1.89.0
+          RUSTUP_AUTO_INSTALL: "0"
+        run: |
+          set -euo pipefail
+          rustc_path="$(rustup which --toolchain 1.89.0 rustc)"
+          toolchain_bin="$(dirname "$rustc_path")"
+          export PATH="$toolchain_bin:$PATH"
+          export CARGO="$toolchain_bin/cargo"
+          export RUSTC="$rustc_path"
+
+          rustc_version="$("$RUSTC" --version)"
+          [[ "$rustc_version" == "rustc 1.89.0 "* ]]
+
+          "$RUSTC" --version --verbose
+          "$CARGO" --version
+
+          "$CARGO" test -p solana_kit_signers --no-default-features --locked \
+            --test sender_address
+
+          "$CARGO" test -p solana_kit_signers --no-default-features --features crypto --locked \
+            --test sender_address
+
   package-ledger:
     runs-on: "ubuntu-24.04"
 

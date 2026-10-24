@@ -14,7 +14,7 @@ pub(crate) fn run(output: &Path) -> Result<(), Error> {
     let mut calls = data_calls(program)?;
     calls.push_str(&extension_calls(program)?);
     let main = format!(
-        "extern crate alloc;\ninclude!(\"generated.rs\");\n{}\n{}\nfn main() {{ let rows=rows();\n{calls}\ncontrols(&rows);\nassert_eq!(rows.len(),528); println!(\"412 full byte matches; 116 extension payload comparisons preserve the IDL u16 length omitted by Dart\"); }}\n",
+        "extern crate alloc;\ninclude!(\"generated.rs\");\n{}\n{}\nfn main() {{ let rows=rows();\n{calls}\ncontrols(&rows);\nassert_eq!(rows.len(),528); let payloads=rows.keys().filter(|key| key.starts_with(\"extension-\") && !key.starts_with(\"extension-uninitialized-\")).count(); println!(\"{{}} full byte matches; {{payloads}} extension payload comparisons preserve the IDL u16 length omitted by Dart\", rows.len()-payloads); }}\n",
         include_str!("token_2022_proof_body.rs.txt"),
         include_str!("token_2022_controls.rs.txt")
     );

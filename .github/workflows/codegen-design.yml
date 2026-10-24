@@ -45,6 +45,53 @@ jobs:
         shell: bash
         run: cargo +1.99.1 test --locked --manifest-path verification/codegen-design/Cargo.toml
 
+      - name: "Execute all Token-2022 oracle rows"
+        shell: bash
+        env:
+          RUSTUP_TOOLCHAIN: 1.99.1
+          RUSTUP_AUTO_INSTALL: "0"
+          CARGO_NET_OFFLINE: "true"
+          CARGO_TARGET_DIR: ${{ github.workspace }}/verification/codegen-design/target
+
+        run: |
+          set -euo pipefail
+          rustc_path="$(rustup which --toolchain 1.99.1 rustc)"
+          toolchain_bin="$(dirname "$rustc_path")"
+          export PATH="$toolchain_bin:$PATH"
+          export CARGO="$toolchain_bin/cargo"
+          export RUSTC="$rustc_path"
+          export RUSTDOC="$toolchain_bin/rustdoc"
+
+          test "$(command -v rustfmt)" = "$toolchain_bin/rustfmt"
+          rustc_version="$("$RUSTC" --version)"
+          [[ "$rustc_version" == "rustc 1.99.1 "* ]]
+
+          "$RUSTC" --version --verbose
+          "$CARGO" --version
+          "$toolchain_bin/rustfmt" --version
+
+          proof="$RUNNER_TEMP/token-2022-proof"
+          "$CARGO" run --offline --locked \
+            --manifest-path verification/codegen-design/Cargo.toml -- "token-2022-proof" "$proof"
+
+          "$CARGO" generate-lockfile --offline --manifest-path "$proof/Cargo.toml"
+          "$CARGO" run --offline --locked --manifest-path "$proof/Cargo.toml"
+          "$CARGO" clippy --offline --locked --manifest-path "$proof/Cargo.toml" -- -D warnings
+
+      - name: "Retain generated Token-2022 proof sources"
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: "token-2022-proof-sources"
+          if-no-files-found: error
+          retention-days: 1
+
+          path: |
+            ${{ runner.temp }}/token-2022-proof/Cargo.toml
+            ${{ runner.temp }}/token-2022-proof/main.rs
+            ${{ runner.temp }}/token-2022-proof/generated.rs
+            ${{ runner.temp }}/token-2022-proof/oracle.tsv
+
       - name: Regenerate twice and reject committed output drift
         shell: bash
         run: |
