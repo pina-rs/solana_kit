@@ -12,19 +12,25 @@ jobs:
   actual-websocket-tls:
     strategy:
       matrix:
-        os: [ubuntu-24.04, macos-15, windows-2025]
+        os: ["ubuntu-24.04", "macos-15", "windows-2025"]
         rust: [1.99.1, 1.89.0]
+
     runs-on: ${{ matrix.os }}
+
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+
       - name: Install selected Rust
         run: rustup toolchain install ${{ matrix.rust }} --profile minimal
+
       - name: Execute bounded WS, WSS, cancellation and all nine subscription families
         shell: bash
         run: |
-          cargo +${{ matrix.rust }} test -p solana_kit_native --locked --test websocket --test websocket_subscriptions --test websocket_trace
+          cargo +${{ matrix.rust }} test -p solana_kit_native --locked --test websocket --test \
+            websocket_subscriptions --test websocket_trace
+
       - name: Execute ordinary public API consumer outside repository configuration
         shell: bash
         run: |
@@ -35,9 +41,14 @@ jobs:
           fi
 
           consumer="$(mktemp -d)"
+
           mkdir -p "$consumer/tests"
+
           cp crates/solana_kit_native/tests/websocket*.rs "$consumer/tests/"
-          cp -R crates/solana_kit_native/tests/websocket_support crates/solana_kit_native/tests/fixtures "$consumer/tests/"
+
+          cp -R crates/solana_kit_native/tests/websocket_support \
+            crates/solana_kit_native/tests/fixtures "$consumer/tests/"
+
           cp Cargo.lock "$consumer/Cargo.lock"
           cat > "$consumer/Cargo.toml" <<TOML
           [package]
@@ -46,14 +57,21 @@ jobs:
           edition = "2024"
           rust-version = "1.89"
           [dev-dependencies]
-          futures-util = { version = "=0.3.34", default-features = false, features = ["sink", "std"] }
+          futures-util = { version = "=0.3.34", default-features = false, features = ["sink", \
+          "std"] }
           log = "=0.4.34"
           solana_kit_client = { path = "$checkout/crates/solana_kit_client" }
           solana_kit_core = { path = "$checkout/crates/solana_kit_core" }
           solana_kit_native = { path = "$checkout/crates/solana_kit_native" }
-          tokio = { version = "=1.54.1", features = ["rt-multi-thread", "macros", "net", "time", "io-util"] }
-          tokio-rustls = { version = "=0.26.6", default-features = false, features = ["ring", "tls12"] }
-          tokio-tungstenite = { version = "=0.29.0", default-features = false, features = ["handshake"] }
+          tokio = { version = "=1.54.1", features = ["rt-multi-thread", "macros", "net", "time", \
+          "io-util"] }
+          tokio-rustls = { version = "=0.26.6", default-features = false, features = ["ring", \
+          "tls12"] }
+          tokio-tungstenite = { version = "=0.29.0", default-features = false, features = \
+          ["handshake"] }
           TOML
+
           cd "$consumer"
-          env -u RUSTFLAGS -u RUSTDOCFLAGS -u CARGO_ENCODED_RUSTFLAGS -u CARGO_BUILD_TARGET -u RUSTC_WRAPPER -u RUSTC_WORKSPACE_WRAPPER cargo +${{ matrix.rust }} test
+
+          env -u RUSTFLAGS -u RUSTDOCFLAGS -u CARGO_ENCODED_RUSTFLAGS -u CARGO_BUILD_TARGET -u \
+            RUSTC_WRAPPER -u RUSTC_WORKSPACE_WRAPPER cargo +${{ matrix.rust }} test

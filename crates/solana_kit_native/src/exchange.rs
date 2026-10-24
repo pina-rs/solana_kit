@@ -80,10 +80,32 @@ where
         .map_err(http_error)?;
 
     let limit = request.max_reply_bytes;
+    let outgoing = outgoing(adapter, request.body)?;
+    let receive = async move {
+        let response = sender.send_request(outgoing).await.map_err(http_error)?;
+        collect(response, limit).await
+    };
+    tokio::pin!(connection, receive);
+
+    // The driver is borrowed here, never spawned; cancellation closes the socket.
+    tokio::select! {
+        result = &mut receive => result,
+        result = &mut connection => {
+            result.map_err(http_error)?;
+            receive.await
+        }
+    }
+}
+
+/// Builds the fixed POST envelope after the connection handshake succeeds.
+fn outgoing(
+    adapter: &NativeHttp,
+    body: Vec<u8>,
+) -> Result<hyper::Request<Full<Bytes>>, TransportError> {
     let mut outgoing = hyper::Request::builder()
         .method("POST")
         .uri(&adapter.endpoint.path)
-        .body(Full::new(Bytes::from(request.body)))
+        .body(Full::new(Bytes::from(body)))
         .map_err(|error| TransportError::with_source(Kind::Denied, error))?;
 
     *outgoing.headers_mut() = adapter.config.headers.clone();
@@ -104,20 +126,7 @@ where
         header::HeaderValue::from_static("close"),
     );
 
-    let receive = async move {
-        let response = sender.send_request(outgoing).await.map_err(http_error)?;
-        collect(response, limit).await
-    };
-    tokio::pin!(connection, receive);
-
-    // The driver is borrowed here, never spawned; cancellation closes the socket.
-    tokio::select! {
-        result = &mut receive => result,
-        result = &mut connection => {
-            result.map_err(http_error)?;
-            receive.await
-        }
-    }
+    Ok(outgoing)
 }
 
 async fn collect(

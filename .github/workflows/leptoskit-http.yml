@@ -10,29 +10,52 @@ permissions:
 
 jobs:
   actual-http-host:
-    runs-on: ubuntu-24.04
+    runs-on: "ubuntu-24.04"
+
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+
       - name: Install pinned toolchains
         run: |
-          rustup toolchain install 1.99.1 --profile minimal --component rustfmt --component clippy --target wasm32-unknown-unknown
+          rustup toolchain install 1.99.1 --profile minimal --component rustfmt --component clippy \
+            --target wasm32-unknown-unknown
+
           rustup toolchain install 1.89.0 --profile minimal
+
       - name: Build actual guest and execute real HTTP TLS lifecycle
         run: |
-          cargo +1.99.1 build --locked --manifest-path verification/leptoskit-http/Cargo.toml -p solana_kit_leptoskit_http_guest --target wasm32-unknown-unknown
-          cargo +1.99.1 run --locked --manifest-path verification/leptoskit-http/Cargo.toml -p solana_kit_leptoskit_http_host -- verification/leptoskit-http/target/wasm32-unknown-unknown/debug/solana_kit_leptoskit_http_guest.wasm
+          cargo +1.99.1 build --locked --manifest-path verification/leptoskit-http/Cargo.toml -p \
+            solana_kit_leptoskit_http_guest --target wasm32-unknown-unknown
+
+          cargo +1.99.1 run --locked --manifest-path verification/leptoskit-http/Cargo.toml -p \
+            solana_kit_leptoskit_http_host -- \
+            verification/leptoskit-http/target/wasm32-unknown-unknown/debug/\
+          solana_kit_leptoskit_http_guest.wasm
+
       - name: Check explicit guest and host source
         env:
           RUSTDOCFLAGS: -D warnings
         run: |
           cargo +1.99.1 test --locked -p solana_kit_leptoskit --all-features
-          cargo +1.99.1 test --locked --manifest-path verification/leptoskit-http/Cargo.toml --workspace
+
+          cargo +1.99.1 test --locked --manifest-path verification/leptoskit-http/Cargo.toml \
+            --workspace
+
           cargo +1.89.0 check --locked -p solana_kit_leptoskit --features host
+
           cargo +1.99.1 fmt --all --check
+
           cargo +1.99.1 fmt --manifest-path verification/leptoskit-http/Cargo.toml --all --check
-          cargo +1.99.1 clippy --locked -p solana_kit_leptoskit --all-features --all-targets -- -D warnings
-          cargo +1.99.1 clippy --locked --manifest-path verification/leptoskit-http/Cargo.toml --workspace --all-targets -- -D warnings
-          cargo +1.99.1 clippy --locked --manifest-path verification/leptoskit-http/Cargo.toml -p solana_kit_leptoskit_http_guest --target wasm32-unknown-unknown -- -D warnings
+
+          cargo +1.99.1 clippy --locked -p solana_kit_leptoskit --all-features --all-targets -- -D \
+            warnings
+
+          cargo +1.99.1 clippy --locked --manifest-path verification/leptoskit-http/Cargo.toml \
+            --workspace --all-targets -- -D warnings
+
+          cargo +1.99.1 clippy --locked --manifest-path verification/leptoskit-http/Cargo.toml -p \
+            solana_kit_leptoskit_http_guest --target wasm32-unknown-unknown -- -D warnings
+
           cargo +1.99.1 doc --locked -p solana_kit_leptoskit --all-features --no-deps

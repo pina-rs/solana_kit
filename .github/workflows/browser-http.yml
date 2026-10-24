@@ -10,40 +10,75 @@ permissions:
 
 jobs:
   browser-http:
-    runs-on: ubuntu-24.04
+    runs-on: "ubuntu-24.04"
+
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+
       - name: Install Rust and browser runner
         shell: bash
         run: |
-          rustup toolchain install 1.99.1 --profile minimal --component rustfmt --component clippy --target wasm32-unknown-unknown
+          rustup toolchain install 1.99.1 --profile minimal --component rustfmt --component clippy \
+            --target wasm32-unknown-unknown
+
           rustup toolchain install 1.89.0 --profile minimal --target wasm32-unknown-unknown
+
           cargo +1.99.1 install wasm-bindgen-cli --version 0.2.128 --locked
+
       - name: Download checksum-pinned browser
         shell: bash
         run: |
           host_dir="$RUNNER_TEMP/browser-hosts"
+
           mkdir "$host_dir"
-          curl --fail --location --silent --show-error https://storage.googleapis.com/chrome-for-testing-public/155.0.8059.84/linux64/chrome-linux64.zip --output "$host_dir/chrome.zip"
-          curl --fail --location --silent --show-error https://storage.googleapis.com/chrome-for-testing-public/155.0.8059.84/linux64/chromedriver-linux64.zip --output "$host_dir/driver.zip"
-          printf '%s  %s\n' cf0f049892dea22e6a6db26d47ed0d7776b7158edcbec4634086633df8bafcbc "$host_dir/chrome.zip" | sha256sum --check --strict
-          printf '%s  %s\n' 4fe2433044363e5233d642e70fa50278b471bda08032d922402c8bd7c6d743fd "$host_dir/driver.zip" | sha256sum --check --strict
+
+          curl --fail --location --silent --show-error \
+            https://storage.googleapis.com/chrome-for-testing-public/155.0.8059.84/linux64/\
+          chrome-linux64.zip \
+            --output "$host_dir/chrome.zip"
+
+          curl --fail --location --silent --show-error \
+            https://storage.googleapis.com/chrome-for-testing-public/155.0.8059.84/linux64/\
+          chromedriver-linux64.zip \
+            --output "$host_dir/driver.zip"
+
+          printf '%s  %s\n' cf0f049892dea22e6a6db26d47ed0d7776b7158edcbec4634086633df8bafcbc \
+            "$host_dir/chrome.zip" | sha256sum --check --strict
+
+          printf '%s  %s\n' 4fe2433044363e5233d642e70fa50278b471bda08032d922402c8bd7c6d743fd \
+            "$host_dir/driver.zip" | sha256sum --check --strict
+
           unzip -q "$host_dir/chrome.zip" -d "$host_dir"
+
           unzip -q "$host_dir/driver.zip" -d "$host_dir"
+
           capabilities="$host_dir/webdriver.json"
-          jq -n --arg binary "$host_dir/chrome-linux64/chrome" '{"goog:chromeOptions": {binary: $binary}}' > "$capabilities"
-          printf 'WASM_BINDGEN_TEST_WEBDRIVER_JSON=%s\nCHROMEDRIVER=%s/chromedriver-linux64/chromedriver\n' "$capabilities" "$host_dir" >> "$GITHUB_ENV"
+
+          jq -n --arg binary "$host_dir/chrome-linux64/chrome" \
+            '{"goog:chromeOptions": {binary: $binary}}' > "$capabilities"
+
+          printf \
+            'WASM_BINDGEN_TEST_WEBDRIVER_JSON=%s\nCHROMEDRIVER=%s/chromedriver-linux64/chromedriver\n' \
+            "$capabilities" "$host_dir" >> "$GITHUB_ENV"
+
       - name: Check browser API and run real HTTP journeys
         shell: bash
         env:
           RUSTDOCFLAGS: -D warnings
         run: |
           cargo +1.99.1 check -p solana_kit_browser --target wasm32-unknown-unknown --locked
+
           cargo +1.89.0 check -p solana_kit_browser --target wasm32-unknown-unknown --locked
-          cargo +1.99.1 clippy -p solana_kit_browser --target wasm32-unknown-unknown --locked -- -D warnings
+
+          cargo +1.99.1 clippy -p solana_kit_browser --target wasm32-unknown-unknown --locked -- \
+            -D warnings
+
           cargo +1.99.1 doc -p solana_kit_browser --target wasm32-unknown-unknown --no-deps --locked
+
           cargo +1.99.1 test -p solana_kit_browser_http_verification --bins --locked
+
           cargo +1.99.1 run -p solana_kit_browser_http_verification --locked
+
           cargo +1.99.1 run -p solana_kit_browser_http_verification --locked -- --graphs

@@ -102,32 +102,8 @@ async fn serve<S: AsyncRead + AsyncWrite + Unpin>(
     accepted: &mpsc::Sender<()>,
     closed: &mpsc::Sender<()>,
 ) -> Result<()> {
-    let mut bytes = Vec::new();
+    read_request(stream).await?;
     let mut byte = [0];
-
-    while !bytes.ends_with(b"\r\n\r\n") {
-        ensure!(bytes.len() < HEADER_LIMIT, "request header bound");
-        stream.read_exact(&mut byte).await?;
-        bytes.push(byte[0]);
-    }
-
-    let header = std::str::from_utf8(&bytes)?;
-    ensure!(
-        header.starts_with("POST /rpc HTTP/1.1\r\n"),
-        "exact HTTP destination"
-    );
-    ensure!(
-        header.contains("authorization: Bearer synthetic-local-fixture\r\n"),
-        "host-only auth"
-    );
-    let length: usize = header
-        .lines()
-        .find_map(|line| line.strip_prefix("content-length: "))
-        .ok_or_else(|| anyhow::anyhow!("missing length"))?
-        .parse()?;
-    let mut body = vec![0; length];
-    stream.read_exact(&mut body).await?;
-    ensure!(body == REQUEST, "exact public Client balance request");
     accepted.send(()).await?;
 
     if mode == "quiet" || mode == "deadline" {
@@ -157,6 +133,38 @@ async fn serve<S: AsyncRead + AsyncWrite + Unpin>(
     stream.write_all(head.as_bytes()).await?;
     stream.write_all(&body).await?;
     closed.send(()).await?;
+
+    Ok(())
+}
+
+/// Verifies the complete authenticated request before exposing fixture acceptance.
+async fn read_request<S: AsyncRead + Unpin>(stream: &mut S) -> Result<()> {
+    let mut bytes = Vec::new();
+    let mut byte = [0];
+
+    while !bytes.ends_with(b"\r\n\r\n") {
+        ensure!(bytes.len() < HEADER_LIMIT, "request header bound");
+        stream.read_exact(&mut byte).await?;
+        bytes.push(byte[0]);
+    }
+
+    let header = std::str::from_utf8(&bytes)?;
+    ensure!(
+        header.starts_with("POST /rpc HTTP/1.1\r\n"),
+        "exact HTTP destination"
+    );
+    ensure!(
+        header.contains("authorization: Bearer synthetic-local-fixture\r\n"),
+        "host-only auth"
+    );
+    let length: usize = header
+        .lines()
+        .find_map(|line| line.strip_prefix("content-length: "))
+        .ok_or_else(|| anyhow::anyhow!("missing length"))?
+        .parse()?;
+    let mut body = vec![0; length];
+    stream.read_exact(&mut body).await?;
+    ensure!(body == REQUEST, "exact public Client balance request");
 
     Ok(())
 }
