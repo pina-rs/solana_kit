@@ -6,7 +6,9 @@ mod artifact_capture;
 mod client_gate;
 mod consumer;
 mod gates;
+mod package_review;
 mod process;
+mod registry_fixture;
 mod runtimes;
 mod style;
 mod system_gate;
@@ -33,6 +35,9 @@ fn main() -> Result<()> {
         Command::Consumer => consumer::run(),
         Command::Imports(path) => gates::check_import_file(&path),
         Command::DependencyFixture(path) => gates::check_dependency_fixture(&path),
+        Command::PackageReview(path) => package_review::run(&path),
+        Command::PackageReport(path) => package_review::check_report(&path),
+        Command::RegistryFixture(path) => registry_fixture::run(&path),
         Command::All => {
             runtimes::native()?;
             runtimes::browser()?;

@@ -44,8 +44,10 @@ mod nullable;
 mod numbers;
 mod offsets;
 mod options;
+mod pair_error;
 mod radix;
 mod sequences;
+mod size;
 mod structured;
 mod text;
 mod transforms;
@@ -61,8 +63,10 @@ pub use nullable::{Absence, Boolean, Nullable};
 pub use numbers::{Endian, Int256, Number, ShortU16, Uint256, ensure_number_range};
 pub use offsets::{Offset, OffsetScope};
 pub use options::OptionCodec;
+pub use pair_error::PairError;
 pub use radix::{BaseX, BaseXReslice};
 pub use sequences::{Bool, Bytes, Count, FixedBytes, Sequence, Tuple, Utf8};
+pub use size::Size;
 pub use structured::{BitArray, Choice, Counted, Dependent, Either, Literal, OwnedSequence, Unit};
 #[cfg(feature = "text-codecs")]
 pub use text::Base64;
@@ -119,6 +123,20 @@ impl core::error::Error for Error {}
 
 /// An encoder writes into a caller-owned, bounded buffer.
 pub trait Encoder<T: ?Sized> {
+    /// Declares this input type's format without inspecting a value.
+    ///
+    /// The declaration must stay stable for unchanged configuration, including
+    /// through clones and shared callback state. It is not an allocation or
+    /// cursor bound. Exact value sizing and operation limits remain authoritative.
+    /// The default preserves ordinary operations without claiming a format class.
+    ///
+    /// # Errors
+    /// Implementations return failures deriving their declaration, including
+    /// [`Error::Overflow`] for checked composition outside the usize domain.
+    fn encode_size(&self) -> Result<Size, Error> {
+        Ok(Size::Unknown)
+    }
+
     /// Returns the exact encoded size, rejecting overflow or invalid values.
     fn encoded_len(&self, value: &T) -> Result<usize, Error>;
 
@@ -151,6 +169,20 @@ pub trait Encoder<T: ?Sized> {
 
 /// A decoder shares a single allocation budget with all nested decoders.
 pub trait Decoder<T> {
+    /// Declares this output type's format without reading bytes.
+    ///
+    /// The declaration must stay stable for unchanged configuration, including
+    /// through clones and shared callback state. It does not impose a universal
+    /// consumption check or replace byte limits and shared allocation claims.
+    /// The default preserves ordinary operations without claiming a format class.
+    ///
+    /// # Errors
+    /// Implementations return failures deriving their declaration, including
+    /// [`Error::Overflow`] for checked composition outside the usize domain.
+    fn decode_size(&self) -> Result<Size, Error> {
+        Ok(Size::Unknown)
+    }
+
     /// Reads at the cursor and advances it; errors may leave a partial read.
     fn read(&self, reader: &mut Reader<'_>) -> Result<T, Error>;
 

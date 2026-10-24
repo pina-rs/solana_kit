@@ -1,6 +1,42 @@
 //! Lossless facts from existing deterministic error owners.
-use super::{Context, ErrorCode, ErrorFacts};
+use super::{Context, ContextValue, ErrorCode, ErrorFacts};
 use crate::{ParseError, ValueKind, accounts::AccountError, codecs};
+
+impl ErrorFacts for codecs::PairError {
+    fn error_code(&self) -> Option<ErrorCode> {
+        match self {
+            Self::Metadata(error) => error.error_code(),
+            Self::UnknownSize => None,
+            Self::KindMismatch => {
+                Some(ErrorCode::CODECS_ENCODER_DECODER_SIZE_COMPATIBILITY_MISMATCH)
+            }
+            Self::FixedSizeMismatch { .. } => {
+                Some(ErrorCode::CODECS_ENCODER_DECODER_FIXED_SIZE_MISMATCH)
+            }
+            Self::MaxSizeMismatch { .. } => {
+                Some(ErrorCode::CODECS_ENCODER_DECODER_MAX_SIZE_MISMATCH)
+            }
+        }
+    }
+
+    fn error_context(&self) -> Context {
+        match self {
+            Self::Metadata(error) => error.error_context(),
+            Self::FixedSizeMismatch { encoder, decoder } => Context::default()
+                .number("encoderFixedSize", *encoder)
+                .number("decoderFixedSize", *decoder),
+            Self::MaxSizeMismatch { encoder, decoder } => Context::default()
+                .number("encoderMaxSize", optional_size(*encoder))
+                .number("decoderMaxSize", optional_size(*decoder)),
+            _ => Context::default(),
+        }
+    }
+}
+
+/// Retains null at the facts boundary instead of omitting an unknown maximum.
+fn optional_size(size: Option<usize>) -> ContextValue {
+    size.map_or(ContextValue::Null, ContextValue::from)
+}
 
 impl ErrorFacts for codecs::Error {
     fn error_code(&self) -> Option<ErrorCode> {

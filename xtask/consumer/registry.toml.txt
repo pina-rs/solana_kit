@@ -1,0 +1,11 @@
+[package]
+name = "clean_solana_kit_consumer"
+version = "0.0.0"
+edition = "2024"
+rust-version = "1.89"
+publish = false
+
+[workspace]
+
+[dependencies]
+solana_kit_core = { version = "=0.1.0", default-features = false, features = ["crypto", "fixed-points", "text-codecs"] }

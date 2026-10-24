@@ -68,8 +68,10 @@ The prior core-codec receipt and canonical inventory are unchanged.
 
 Explicit differences keep unsupported behavior visible:
 
-- Paired does not infer fixed/maximum-size metadata or validate compatibility at
-  construction. Each operation retains its exact existing wire contract.
+- This receipt predates checked Paired construction. The later
+  [metadata source checkpoint](codec-size-metadata.md) adds declarations and
+  compatibility checks for its explicitly listed owners. Its verification is
+  pending and does not promote this receipt's historical parity rows.
 - Mapped exposes typed value conversion without Dart's entire-buffer and original
   offset callback context. Arbitrary callback allocations need their own bound.
 - Padded zeroes caller-owned padding. Dart leaves existing destination bytes there.

@@ -8,6 +8,11 @@ solana_kit_codecs_core and solana_kit_codecs_data_structures. The Rust API uses
 concrete types and shared bounded cursors. The scoped receipt records deliberate
 contract differences. Fixtures are produced by the original pinned code.
 
+Size declarations, their composition and checked independent pairing also adapt
+`codec.dart`, `combine_codec.dart` and data-structure `utils.dart` from this pin.
+Rust adds an explicit Unknown class and checked usize arithmetic. Declarations
+remain distinct from cursor movement and operation limits.
+
 The upstream MIT notice follows. Project-owned implementation remains Unlicense.
 MIT License
 

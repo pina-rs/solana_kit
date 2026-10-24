@@ -17,6 +17,12 @@ network, or random-number source. Callers supply signing seeds and own the
 security and erasure of their seed storage. Signing keys erase their owned
 secret material on drop through `ed25519-dalek`'s `zeroize` feature.
 
+With `crypto`, `crypto::Keypair::from_bytes` imports exactly 64 bytes containing
+a 32-byte seed followed by its matching public key. It rejects other lengths
+and invalid or mismatched public halves with `crypto::KeypairImportError`.
+Import leaves the caller's buffer unchanged. The signer exposes no secret export
+or `Debug`; callers remain responsible for protecting and erasing their input.
+
 The `transaction` module compiles and strictly decodes immutable legacy/v0/v1
 messages and retains ordered signature slots. Complete legacy/v0 packets are
 bounded to 1232 bytes; complete V1 envelopes are bounded to 4096 bytes, inclusive.

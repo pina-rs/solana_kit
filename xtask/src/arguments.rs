@@ -19,6 +19,9 @@ pub(crate) enum Command {
     Consumer,
     Imports(PathBuf),
     DependencyFixture(PathBuf),
+    PackageReview(PathBuf),
+    PackageReport(PathBuf),
+    RegistryFixture(PathBuf),
     All,
 }
 
@@ -34,6 +37,9 @@ pub(crate) fn parse(arguments: &[OsString]) -> Result<Command> {
         "style-report" => Ok(Command::StyleReport(required_path(paths, command)?)),
         "imports" => Ok(Command::Imports(required_path(paths, command)?)),
         "dependency-fixture" => Ok(Command::DependencyFixture(required_path(paths, command)?)),
+        "package-review" => Ok(Command::PackageReview(required_path(paths, command)?)),
+        "package-report" => Ok(Command::PackageReport(required_path(paths, command)?)),
+        "registry-fixture" => Ok(Command::RegistryFixture(required_path(paths, command)?)),
         "native" => no_arguments(paths, command, Command::Native),
         "browser" => no_arguments(paths, command, Command::Browser),
         "wasi" => no_arguments(paths, command, Command::Wasi),

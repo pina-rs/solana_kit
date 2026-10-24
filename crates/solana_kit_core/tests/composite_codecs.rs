@@ -1,7 +1,7 @@
 use solana_kit_core::codecs::{
     BitArray, Bytes, Checked, Choice, Count, Counted, Decoder, Dependent, Either, Encoder, Error,
-    Limits, Literal, Mapped, Number, OwnedSequence, Padded, Paired, Reader, Sentinel, Sequence,
-    Tuple, Unit, Writer,
+    Limits, Literal, Mapped, Number, OwnedSequence, Padded, PairError, Paired, Reader, Sentinel,
+    Sequence, Tuple, Unit, Writer,
 };
 
 const MAX_WIRE: usize = 4096;
@@ -131,9 +131,22 @@ fn mappings_and_pairing_preserve_failures() {
     let mapped = Mapped::new(Number::<u8>::LE, narrow, widen);
     assert_eq!(mapped.encode(&256, 10), Err(Error::Overflow));
     assert_eq!(mapped.decode(&[255], LIMITS), Ok(255));
-    let paired = Paired(mapped, Number::<u32>::LE);
-    assert_eq!(paired.encode(&7, 4), Ok(vec![7]));
-    assert_eq!(paired.decode(&[1], LIMITS), Err(Error::Truncated));
+    assert_eq!(mapped.encode(&7, 4), Ok(vec![7]));
+    assert_eq!(
+        Number::<u32>::LE.decode(&[1], LIMITS),
+        Err(Error::Truncated)
+    );
+    assert!(matches!(
+        Paired::try_new(mapped, Number::<u32>::LE),
+        Err(PairError::FixedSizeMismatch {
+            encoder: 1,
+            decoder: 4
+        })
+    ));
+    let paired = Paired::try_new(mapped, Number::<u8>::LE).unwrap();
+    assert_eq!(paired.encode(&7u32, 4), Ok(vec![7]));
+    assert_eq!(paired.decode_prefix(&[99, 7, 88], 1, LIMITS), Ok((7u8, 2)));
+    assert_eq!(paired.decode(&[7, 88], LIMITS), Err(Error::TrailingBytes));
 }
 
 fn reject_nine(value: &u8) -> Result<(), Error> {

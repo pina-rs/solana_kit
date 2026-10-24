@@ -2,7 +2,7 @@
 
 use core::marker::PhantomData;
 
-use super::{Decoder, Encoder, Error, Reader, Writer};
+use super::{Decoder, Encoder, Error, Reader, Size, Writer};
 
 /// Checks an inclusive caller-selected range without converting the number.
 /// Like the reference assertions, unordered values such as NaN are not outside
@@ -90,6 +90,10 @@ impl<T> Default for Number<T> {
 macro_rules! number {
     ($($ty:ty),+ $(,)?) => {$(
         impl Encoder<$ty> for Number<$ty> {
+            fn encode_size(&self) -> Result<Size, Error> {
+                Ok(Size::Fixed(core::mem::size_of::<$ty>()))
+            }
+
             fn encoded_len(&self, _: &$ty) -> Result<usize, Error> {
                 Ok(core::mem::size_of::<$ty>())
             }
@@ -101,6 +105,10 @@ macro_rules! number {
         }
 
         impl Decoder<$ty> for Number<$ty> {
+            fn decode_size(&self) -> Result<Size, Error> {
+                Ok(Size::Fixed(core::mem::size_of::<$ty>()))
+            }
+
             fn read(&self, reader: &mut Reader<'_>) -> Result<$ty, Error> {
                 let bytes = reader.take(core::mem::size_of::<$ty>())?;
                 let array = bytes.try_into().map_err(|_| Error::Truncated)?;
@@ -135,6 +143,10 @@ macro_rules! wide {
         }
 
         impl Encoder<$name> for Number<$name> {
+            fn encode_size(&self) -> Result<Size, Error> {
+                Ok(Size::Fixed(32))
+            }
+
             fn encoded_len(&self, _: &$name) -> Result<usize, Error> {
                 Ok(32)
             }
@@ -146,6 +158,10 @@ macro_rules! wide {
         }
 
         impl Decoder<$name> for Number<$name> {
+            fn decode_size(&self) -> Result<Size, Error> {
+                Ok(Size::Fixed(32))
+            }
+
             fn read(&self, reader: &mut Reader<'_>) -> Result<$name, Error> {
                 let bytes: [u8; 32] = reader.take(32)?.try_into().map_err(|_| Error::Truncated)?;
 
@@ -175,6 +191,10 @@ const CONTINUATION: u8 = 0x80;
 const PAYLOAD_MASK: u8 = 0x7f;
 
 impl Encoder<u16> for ShortU16 {
+    fn encode_size(&self) -> Result<Size, Error> {
+        Ok(Size::Variable { max: Some(3) })
+    }
+
     fn encoded_len(&self, value: &u16) -> Result<usize, Error> {
         Ok(if *value < u16::from(CONTINUATION) {
             1
@@ -201,6 +221,10 @@ impl Encoder<u16> for ShortU16 {
 }
 
 impl Decoder<u16> for ShortU16 {
+    fn decode_size(&self) -> Result<Size, Error> {
+        Ok(Size::Variable { max: Some(3) })
+    }
+
     fn read(&self, reader: &mut Reader<'_>) -> Result<u16, Error> {
         let mut value = 0u16;
 
