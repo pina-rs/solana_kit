@@ -27,6 +27,22 @@ fn check<T: core::fmt::Debug + PartialEq, C: Encoder<T> + Decoder<T>>(
     let encoded = codec.encode(&value, limits.max_bytes).unwrap();
     let dart = &rows[key];
 
+    check_oracle(&encoded, dart, key);
+    assert_eq!(
+        codec.decode(&encoded, limits).unwrap(),
+        value,
+        "{key} decode"
+    );
+    check_dispatch(dart, limits, key);
+    assert!(
+        codec.encode(&value, encoded.len() - 1).is_err(),
+        "{key} byte budget"
+    );
+    check_truncation(&codec, &encoded, limits, key);
+}
+
+/// Compares complete wire bytes or the independently encoded extension payload.
+fn check_oracle(encoded: &[u8], dart: &[u8], key: &str) {
     if key.starts_with("extension-") && !key.starts_with("extension-uninitialized-") {
         assert_eq!(&encoded[..2], &dart[..2], "{key} tag");
         assert_eq!(
@@ -36,31 +52,31 @@ fn check<T: core::fmt::Debug + PartialEq, C: Encoder<T> + Decoder<T>>(
         );
         assert_eq!(&encoded[4..], &dart[2..], "{key} independent payload");
     } else {
-        assert_eq!(&encoded, dart, "{key}");
+        assert_eq!(encoded, dart, "{key}");
     }
+}
 
-    assert_eq!(
-        codec.decode(&encoded, limits).unwrap(),
-        value,
-        "{key} decode"
-    );
-
+/// Requires public instruction dispatch to preserve the full independent encoding.
+fn check_dispatch(dart: &[u8], limits: solana_kit_core::codecs::Limits, key: &str) {
     if !key.starts_with("account-") && !key.starts_with("extension-") {
         let data = Token2022InstructionDataCodec.decode(dart, limits).unwrap();
         assert_eq!(
             Token2022InstructionDataCodec
                 .encode(&data, limits.max_bytes)
                 .unwrap(),
-            *dart,
+            dart,
             "{key} complete dispatch"
         );
     }
+}
 
-    assert!(
-        codec.encode(&value, encoded.len() - 1).is_err(),
-        "{key} byte budget"
-    );
-
+/// Checks every truncated extension and the required instruction header boundary.
+fn check_truncation<T, C: Decoder<T>>(
+    codec: &C,
+    encoded: &[u8],
+    limits: solana_kit_core::codecs::Limits,
+    key: &str,
+) {
     if key.starts_with("extension-") {
         for end in 0..encoded.len() {
             assert!(

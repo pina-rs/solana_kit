@@ -123,18 +123,7 @@ impl<'a, P: TransactionPartialSigner> TransactionSigners<'a, P> {
         }
 
         let signed = self.partially_sign(transaction).await?;
-
-        for (address, slot) in signed.message().signers().iter().zip(signed.signatures()) {
-            if *address != sender.address() && slot.is_none() {
-                return Err(solana_kit_core::transaction::Error::MissingSignature.into());
-            }
-
-            if let Some(signature) = slot {
-                SignatureOutput::new(*address, signed.message().bytes(), *signature)
-                    .validate(*address, signed.message().bytes())?;
-            }
-        }
-
+        validate_sending_slots(&signed, sender)?;
         let identifier = sender.signer.send_transaction(&signed).await?;
 
         if identifier.as_bytes() == &[0; 64] {
@@ -143,6 +132,30 @@ impl<'a, P: TransactionPartialSigner> TransactionSigners<'a, P> {
 
         Ok(identifier)
     }
+}
+
+/// Requires every non-sender slot and validates each signature before submission.
+fn validate_sending_slots<S: Signer>(
+    transaction: &Transaction,
+    sender: &SignerCapability<'_, S>,
+) -> Result<(), Error> {
+    for (address, slot) in transaction
+        .message()
+        .signers()
+        .iter()
+        .zip(transaction.signatures())
+    {
+        if *address != sender.address() && slot.is_none() {
+            return Err(solana_kit_core::transaction::Error::MissingSignature.into());
+        }
+
+        if let Some(signature) = slot {
+            SignatureOutput::new(*address, transaction.message().bytes(), *signature)
+                .validate(*address, transaction.message().bytes())?;
+        }
+    }
+
+    Ok(())
 }
 
 fn deduplicate<'a, S: Signer>(

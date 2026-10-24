@@ -12,29 +12,39 @@ jobs:
   actual-http-tls:
     strategy:
       matrix:
-        os: [ubuntu-24.04, macos-15, windows-2025]
+        os: ["ubuntu-24.04", "macos-15", "windows-2025"]
+
     runs-on: ${{ matrix.os }}
+
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+
       - name: Install pinned Rust
         run: rustup toolchain install 1.99.1 --profile minimal --component clippy
+
       - name: Execute local HTTP, TLS, budgets, deadlines and cancellation
         shell: bash
         env:
           RUSTDOCFLAGS: -D warnings
         run: |
           cargo +1.99.1 test -p solana_kit_native --all-features --locked
-          cargo +1.99.1 clippy -p solana_kit_native --all-targets --all-features --locked -- -D warnings
+
+          cargo +1.99.1 clippy -p solana_kit_native --all-targets --all-features --locked -- -D \
+            warnings
+
           cargo +1.99.1 doc -p solana_kit_native --no-deps --locked
   native-msrv:
-    runs-on: ubuntu-24.04
+    runs-on: "ubuntu-24.04"
+
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+
       - name: Compile native transport with minimum supported Rust
         run: |
           rustup toolchain install 1.89.0 --profile minimal
+
           cargo +1.89.0 check -p solana_kit_native --locked

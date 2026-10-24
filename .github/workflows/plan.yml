@@ -13,94 +13,185 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-24.04, macos-15, windows-2025]
+        os: ["ubuntu-24.04", "macos-15", "windows-2025"]
+
     runs-on: ${{ matrix.os }}
+
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+
       - name: Install pinned Rust tools
         shell: bash
-        run: rustup toolchain install 1.99.1 --profile minimal --component rustfmt --component clippy
+        run: |
+          rustup toolchain install 1.99.1 --profile minimal --component rustfmt --component clippy
+
       - name: Test portable core and conformance
         shell: bash
         run: |
           cargo +1.99.1 fmt --all --check
+
           cargo +1.99.1 test --workspace --all-features --locked
+
           cargo +1.99.1 clippy --workspace --all-targets --all-features --locked -- -D warnings
+
           RUSTDOCFLAGS="-D warnings" cargo +1.99.1 doc --workspace --all-features --no-deps --locked
+
           cargo +1.99.1 check -p solana_kit_core --no-default-features --locked
+
           cargo +1.99.1 check -p solana_kit_core --no-default-features --features crypto --locked
-          cargo +1.99.1 check -p solana_kit_core --no-default-features --features fixed-points --locked
-          cargo +1.99.1 check -p solana_kit_core --no-default-features --features crypto,fixed-points --locked
+
+          cargo +1.99.1 check -p solana_kit_core --no-default-features --features fixed-points \
+            --locked
+
+          cargo +1.99.1 check -p solana_kit_core --no-default-features --features \
+            crypto,fixed-points --locked
+
       - name: Execute canonical suite and corrupt-fixture exit control
         shell: bash
         run: |
-          cargo +1.99.1 run --quiet -p solana_kit_conformance --locked > "$RUNNER_TEMP/native-success.txt"
-          diff --strip-trailing-cr -u verification/conformance/evidence/native-success.txt "$RUNNER_TEMP/native-success.txt"
-          if cargo +1.99.1 run --quiet -p solana_kit_conformance --locked -- --corrupt-fixture > "$RUNNER_TEMP/native-corruption.txt"; then
+          cargo +1.99.1 run --quiet -p solana_kit_conformance --locked > \
+            "$RUNNER_TEMP/native-success.txt"
+
+          diff --strip-trailing-cr -u verification/conformance/evidence/native-success.txt \
+            "$RUNNER_TEMP/native-success.txt"
+
+          if cargo +1.99.1 run --quiet -p solana_kit_conformance --locked -- --corrupt-fixture > \
+            "$RUNNER_TEMP/native-corruption.txt"; then
             echo "Corrupt fixture unexpectedly succeeded"
+
             exit 1
           else
             corrupt_status=$?
           fi
+
           test "$corrupt_status" -eq 1
-          diff --strip-trailing-cr -u verification/conformance/evidence/native-corruption.txt "$RUNNER_TEMP/native-corruption.txt"
+
+          diff --strip-trailing-cr -u verification/conformance/evidence/native-corruption.txt \
+            "$RUNNER_TEMP/native-corruption.txt"
+
       - name: Verify both public crate archives
         shell: bash
         run: |
           cargo +1.99.1 package -p solana_kit_core --all-features --locked
+
           cargo +1.99.1 package -p solana_kit --locked
 
   core-msrv:
-    runs-on: ubuntu-24.04
+    runs-on: "ubuntu-24.04"
+
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+
       - name: Check promised core MSRV
         shell: bash
         run: |
           rustup toolchain install 1.89.0 --profile minimal
+
           cargo +1.89.0 check -p solana_kit_core --no-default-features --locked
+
           cargo +1.89.0 check -p solana_kit_core --no-default-features --features crypto --locked
-          cargo +1.89.0 check -p solana_kit_core --no-default-features --features fixed-points --locked
-          cargo +1.89.0 check -p solana_kit_core --no-default-features --features crypto,fixed-points --locked
+
+          cargo +1.89.0 check -p solana_kit_core --no-default-features --features fixed-points \
+            --locked
+
+          cargo +1.89.0 check -p solana_kit_core --no-default-features --features \
+            crypto,fixed-points --locked
+
+      - name: Verify sender address observations in both signer feature modes
+        shell: bash
+        env:
+          RUSTUP_TOOLCHAIN: 1.89.0
+          RUSTUP_AUTO_INSTALL: "0"
+        run: |
+          set -euo pipefail
+          rustc_path="$(rustup which --toolchain 1.89.0 rustc)"
+          toolchain_bin="$(dirname "$rustc_path")"
+          export PATH="$toolchain_bin:$PATH"
+          export CARGO="$toolchain_bin/cargo"
+          export RUSTC="$rustc_path"
+
+          rustc_version="$("$RUSTC" --version)"
+          [[ "$rustc_version" == "rustc 1.89.0 "* ]]
+
+          "$RUSTC" --version --verbose
+          "$CARGO" --version
+
+          "$CARGO" test -p solana_kit_signers --no-default-features --locked \
+            --test sender_address
+
+          "$CARGO" test -p solana_kit_signers --no-default-features --features crypto --locked \
+            --test sender_address
 
   package-ledger:
-    runs-on: ubuntu-24.04
+    runs-on: "ubuntu-24.04"
+
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+
       - name: Check ledger and Rust formatting
         shell: bash
         run: |
           rustup toolchain install 1.99.1 --profile minimal --component rustfmt
-          rustfmt +1.99.1 --edition 2024 --check tools/check_plan.rs
-          rustc +1.99.1 --edition=2024 -D warnings tools/check_plan.rs -o "$RUNNER_TEMP/check-plan"
+
+          rustfmt +1.99.1 --edition "2024" --check tools/check_plan.rs
+
+          rustc +1.99.1 --edition="2024" -D warnings tools/check_plan.rs -o \
+            "$RUNNER_TEMP/check-plan"
+
           "$RUNNER_TEMP/check-plan"
-          curl --fail --location https://codeload.github.com/openbudgetfun/solana_kit/tar.gz/0138bb956d2d81ccc0c56edc602401c0df2f2b46 --output "$RUNNER_TEMP/dart-reference.tar.gz"
+
+          curl --fail --location \
+            https://codeload.github.com/openbudgetfun/solana_kit/tar.gz/\
+          0138bb956d2d81ccc0c56edc602401c0df2f2b46 \
+            --output "$RUNNER_TEMP/dart-reference.tar.gz"
+
           mkdir "$RUNNER_TEMP/dart-reference"
-          tar -xzf "$RUNNER_TEMP/dart-reference.tar.gz" --strip-components=1 -C "$RUNNER_TEMP/dart-reference"
+
+          tar -xzf "$RUNNER_TEMP/dart-reference.tar.gz" --strip-components=1 -C \
+            "$RUNNER_TEMP/dart-reference"
+
           "$RUNNER_TEMP/check-plan" "$RUNNER_TEMP/dart-reference"
+
       - name: Enforce monostyle 90 in both categories
         shell: bash
         run: |
           cargo +1.99.1 install monostyle --version 0.3.26 --locked
+
           cargo +1.99.1 xtask style
+
           cargo +1.99.1 test -p solana_kit_xtask --test style_coverage --locked -- --ignored
+
       - name: Validate ownership and preview release files
         shell: bash
         run: |
           monochange_dir="$RUNNER_TEMP/monochange-0.21.0"
+
           mkdir "$monochange_dir"
-          curl --fail --location --silent --show-error https://github.com/monochange/monochange/releases/download/v0.21.0/monochange-x86_64-unknown-linux-gnu-v0.21.0.tar.gz --output "$monochange_dir/monochange.tar.gz"
-          printf '%s  %s\n' 3d79ea6d683b48ad6760f5ed60101022b8383b48e15eba49bd400fb53fed4afb "$monochange_dir/monochange.tar.gz" | sha256sum --check --strict
+
+          curl --fail --location --silent --show-error \
+            https://github.com/monochange/monochange/releases/download/v0.21.0/\
+          monochange-x86_64-unknown-linux-gnu-v0.21.0.tar.gz \
+            --output "$monochange_dir/monochange.tar.gz"
+
+          printf '%s  %s\n' 3d79ea6d683b48ad6760f5ed60101022b8383b48e15eba49bd400fb53fed4afb \
+            "$monochange_dir/monochange.tar.gz" | sha256sum --check --strict
+
           tar -xzf "$monochange_dir/monochange.tar.gz" -C "$monochange_dir"
+
           export PATH="$monochange_dir:$PATH"
+
           test "$(monochange --version)" = 'monochange 0.21.0'
+
           monochange check
+
           monochange step validate
+
           monochange discover --format json
+
           monochange preview --format json

@@ -4,7 +4,7 @@ use crate::{
     Client, Transport,
     methods::submission::{SendConfig, SendTransaction, WireEncoding},
 };
-use alloc::boxed::Box;
+use alloc::{boxed::Box, vec::Vec};
 use core::{
     future::{Future, poll_fn},
     task::Poll,
@@ -33,18 +33,10 @@ where
     F: FnOnce(Signature) -> O,
     C: Future<Output = ()>,
 {
-    let wire = transaction
-        .encode(true)
-        .map_err(|error| WaitError::Outcome(Failure::Encoding(error)))?;
-    let expected = transaction
-        .signatures()
-        .first()
-        .and_then(|signature| *signature)
-        .ok_or(WaitError::Outcome(Failure::MissingSignature))?;
-    let confirmation = Confirmation::new(expected, transaction.message().lifetime(), policy)
-        .map_err(WaitError::Outcome)?;
+    let (wire, expected, confirmation) = prepare_confirmation(transaction, policy)?;
     config.preflight_commitment.get_or_insert(policy.commitment);
     let mut cancellation = core::pin::pin!(cancellation);
+
     let actual = {
         let mut send = core::pin::pin!(client.call(SendTransaction {
             wire: &wire,
@@ -71,4 +63,23 @@ where
 
     wait(confirmation, observe(actual), cancellation).await?;
     Ok(actual)
+}
+
+/// Validates the frozen wire and lifetime before any submission future is polled.
+fn prepare_confirmation(
+    transaction: &Transaction,
+    policy: Policy,
+) -> Result<(Vec<u8>, Signature, Confirmation), WaitError> {
+    let wire = transaction
+        .encode(true)
+        .map_err(|error| WaitError::Outcome(Failure::Encoding(error)))?;
+    let expected = transaction
+        .signatures()
+        .first()
+        .and_then(|signature| *signature)
+        .ok_or(WaitError::Outcome(Failure::MissingSignature))?;
+    let confirmation = Confirmation::new(expected, transaction.message().lifetime(), policy)
+        .map_err(WaitError::Outcome)?;
+
+    Ok((wire, expected, confirmation))
 }
