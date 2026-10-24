@@ -1,9 +1,8 @@
 [package]
 name = "solana_kit_core"
 version = "0.1.0"
-authors.workspace = true
 edition.workspace = true
-include = ["src/**", "README.md", "LICENSE", "THIRD_PARTY_NOTICES.md"]
+include = ["src/**", "README.md", "CHANGELOG.md", "LICENSE", "THIRD_PARTY_NOTICES.md"]
 license.workspace = true
 readme = "README.md"
 repository = "https://github.com/pina-rs/solana_kit/tree/main/crates/solana_kit_core"

@@ -40,7 +40,14 @@ fn style_preserves_its_optional_root() {
 
 #[test]
 fn file_commands_require_one_path() {
-    for name in ["style-report", "imports", "dependency-fixture"] {
+    for name in [
+        "style-report",
+        "imports",
+        "dependency-fixture",
+        "package-review",
+        "package-report",
+        "registry-fixture",
+    ] {
         assert!(parse_command(&[name]).is_err(), "{name}");
         assert!(parse_command(&[name, "fixture"]).is_ok(), "{name}");
         assert!(parse_command(&[name, "--offline"]).is_err(), "{name}");

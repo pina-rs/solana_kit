@@ -1,9 +1,21 @@
 //! Independent external tests of the packaged public API.
 #![forbid(unsafe_code)]
 
+extern crate alloc;
+
+#[cfg(test)]
+#[path = "codec_overrides.rs"]
+mod override_contract;
+
 #[cfg(test)]
 mod tests {
     use solana_kit_core::{Address, Hash};
+
+    /// The registry dependency preserves owned and borrowed complete-operation policies.
+    #[test]
+    fn borrowed_codec_operation_policies() {
+        crate::override_contract::complete_operations();
+    }
 
     /// Uses a fixed external base58 vector rather than only round-tripping output.
     #[test]
@@ -44,6 +56,40 @@ mod tests {
         assert!(verify(&key.address(), b"changed message", &signature).is_err());
     }
 
+    /// The registry consumer receives checked pairing and public size arithmetic.
+    #[test]
+    fn codec_metadata_and_pair_validation() {
+        use solana_kit_core::codecs::{Decoder, Encoder, Error, Limits, Number, Paired, Size};
+
+        let pair = Paired::<_, _, u16, u16>::try_new(Number::<u16>::LE, Number::<u16>::LE)
+            .expect("matching metadata");
+        assert_eq!(pair.encode_size(), Ok(Size::Fixed(2)));
+        assert_eq!(pair.decode_size(), Ok(Size::Fixed(2)));
+        assert_eq!(pair.encode(&513, 2), Ok(vec![1, 2]));
+        assert_eq!(pair.decode(&[1, 2], Limits::new(2, 0)), Ok(513));
+        assert!(Paired::<_, _, u8, u32>::try_new(Number::<u8>::LE, Number::<u32>::LE).is_err());
+        assert_eq!(
+            Size::checked_sum(&[Size::Fixed(usize::MAX), Size::Fixed(1)]),
+            Err(Error::Overflow)
+        );
+    }
+
+    /// The packaged key import rejects a forged public half before signing.
+    #[test]
+    fn imported_keypair_checks_both_halves() {
+        use solana_kit_core::crypto::Keypair;
+
+        let original = Keypair::from_seed(&[7; 32]);
+        let mut bytes = [7; 64];
+        bytes[32..].copy_from_slice(original.address().as_bytes());
+        let imported = Keypair::from_bytes(&bytes).expect("matching key halves");
+        assert_eq!(imported.address(), original.address());
+        assert_eq!(imported.sign(b"registry"), original.sign(b"registry"));
+        bytes[63] ^= 1;
+        assert!(Keypair::from_bytes(&bytes).is_err());
+        assert!(Keypair::from_bytes(&bytes[..63]).is_err());
+    }
+
     /// The archive retains optional exact arithmetic and its independent wire layout.
     #[test]
     fn fixed_points_preserve_exact_rounding_and_bytes() {
@@ -54,7 +100,9 @@ mod tests {
 
         let shape = DecimalShape::new(Signedness::Signed, 16, 2).expect("bounded shape");
         let value = shape.parse("-1", Rounding::Strict).expect("exact decimal");
-        let rounded = value.checked_div_scalar(3, Rounding::Floor).expect("floor quotient");
+        let rounded = value
+            .checked_div_scalar(3, Rounding::Floor)
+            .expect("floor quotient");
         let codec = shape.codec(Endian::Little).expect("byte-aligned shape");
 
         assert_eq!(rounded.to_string(), "-0.34");

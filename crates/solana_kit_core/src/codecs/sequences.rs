@@ -2,13 +2,17 @@
 
 use alloc::{string::String, vec::Vec};
 
-use super::{Decoder, Encoder, Error, Number, Reader, Writer};
+use super::{Decoder, Encoder, Error, Number, Reader, Size, Writer};
 
 /// A strict one-byte boolean: only zero and one are accepted.
 #[derive(Clone, Copy, Debug, Default)]
 pub struct Bool;
 
 impl Encoder<bool> for Bool {
+    fn encode_size(&self) -> Result<Size, Error> {
+        Ok(Size::Fixed(1))
+    }
+
     fn encoded_len(&self, _: &bool) -> Result<usize, Error> {
         Ok(1)
     }
@@ -19,6 +23,10 @@ impl Encoder<bool> for Bool {
 }
 
 impl Decoder<bool> for Bool {
+    fn decode_size(&self) -> Result<Size, Error> {
+        Ok(Size::Fixed(1))
+    }
+
     fn read(&self, reader: &mut Reader<'_>) -> Result<bool, Error> {
         match Number::<u8>::LE.read(reader)? {
             0 => Ok(false),
@@ -33,6 +41,10 @@ impl Decoder<bool> for Bool {
 pub struct FixedBytes<const N: usize>;
 
 impl<const N: usize> Encoder<[u8; N]> for FixedBytes<N> {
+    fn encode_size(&self) -> Result<Size, Error> {
+        Ok(Size::Fixed(N))
+    }
+
     fn encoded_len(&self, _: &[u8; N]) -> Result<usize, Error> {
         Ok(N)
     }
@@ -43,6 +55,10 @@ impl<const N: usize> Encoder<[u8; N]> for FixedBytes<N> {
 }
 
 impl<const N: usize> Decoder<[u8; N]> for FixedBytes<N> {
+    fn decode_size(&self) -> Result<Size, Error> {
+        Ok(Size::Fixed(N))
+    }
+
     fn read(&self, reader: &mut Reader<'_>) -> Result<[u8; N], Error> {
         reader.take(N)?.try_into().map_err(|_| Error::Truncated)
     }
@@ -54,6 +70,10 @@ impl<const N: usize> Decoder<[u8; N]> for FixedBytes<N> {
 pub struct Bytes;
 
 impl Encoder<[u8]> for Bytes {
+    fn encode_size(&self) -> Result<Size, Error> {
+        Ok(Size::Variable { max: None })
+    }
+
     fn encoded_len(&self, value: &[u8]) -> Result<usize, Error> {
         Ok(value.len())
     }
@@ -64,6 +84,10 @@ impl Encoder<[u8]> for Bytes {
 }
 
 impl Decoder<Vec<u8>> for Bytes {
+    fn decode_size(&self) -> Result<Size, Error> {
+        Ok(Size::Variable { max: None })
+    }
+
     fn read(&self, reader: &mut Reader<'_>) -> Result<Vec<u8>, Error> {
         let length = reader.remaining().len();
         reader.claim(length)?;

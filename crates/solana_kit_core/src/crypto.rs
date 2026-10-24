@@ -40,6 +40,29 @@ impl Keypair {
         Self(ed25519_dalek::SigningKey::from_bytes(seed))
     }
 
+    /// Imports a caller-owned 64-byte keypair: seed followed by Ed25519 public key.
+    ///
+    /// The public half must exactly match the key derived from the first 32 bytes.
+    /// The input is unchanged; protecting and erasing it remains the caller's
+    /// responsibility. The owned signer has the same zeroizing, non-exporting
+    /// contract as [`Self::from_seed`].
+    ///
+    /// # Errors
+    /// Returns [`KeypairImportError::InvalidLength`] unless the input is exactly
+    /// 64 bytes, or [`KeypairImportError::PublicKeyMismatch`] if the public half
+    /// is invalid or differs from the seed-derived public key.
+    pub fn from_bytes(bytes: &[u8]) -> Result<Self, KeypairImportError> {
+        let bytes: &[u8; 64] = bytes
+            .try_into()
+            .map_err(|_| KeypairImportError::InvalidLength {
+                actual: bytes.len(),
+            })?;
+
+        ed25519_dalek::SigningKey::from_keypair_bytes(bytes)
+            .map(Self)
+            .map_err(|_| KeypairImportError::PublicKeyMismatch)
+    }
+
     /// Returns the public verification key as a Kit address.
     #[must_use]
     pub fn address(&self) -> Address {
@@ -52,6 +75,36 @@ impl Keypair {
         Signature::from_bytes(self.0.sign(message).to_bytes())
     }
 }
+
+/// A rejected 64-byte keypair import, without any input key material.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum KeypairImportError {
+    /// The input was not exactly 64 bytes, including the 32-byte seed and public key.
+    InvalidLength {
+        /// The supplied byte count, without any input bytes.
+        actual: usize,
+    },
+    /// The public half is invalid or differs from the seed-derived public key.
+    PublicKeyMismatch,
+}
+
+impl fmt::Display for KeypairImportError {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::InvalidLength { actual } => {
+                write!(
+                    formatter,
+                    "expected 64 Ed25519 keypair bytes, received {actual}"
+                )
+            }
+            Self::PublicKeyMismatch => {
+                formatter.write_str("Ed25519 public key does not match the seed")
+            }
+        }
+    }
+}
+
+impl core::error::Error for KeypairImportError {}
 
 /// The address is not a valid key, or strict Ed25519 verification failed.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]

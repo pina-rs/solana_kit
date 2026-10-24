@@ -36,6 +36,10 @@ pub(crate) fn run() -> Result<()> {
         directory.join("src/lib.rs"),
         include_str!("../consumer/lib.rs"),
     )?;
+    std::fs::write(
+        directory.join("src/codec_overrides.rs"),
+        include_str!("../../crates/solana_kit_core/tests/codec_size/overrides.rs"),
+    )?;
     success(
         cargo()
             .args(["test", "--manifest-path", "Cargo.toml"])

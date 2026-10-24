@@ -2,7 +2,7 @@
 
 use alloc::vec::Vec;
 
-use super::{Count, Decoder, Encoder, Error, Number, Reader, Sequence, Writer};
+use super::{Count, Decoder, Encoder, Error, Limits, Number, Reader, Sequence, Size, Writer};
 
 const BITS_PER_BYTE: usize = 8;
 
@@ -11,6 +11,10 @@ const BITS_PER_BYTE: usize = 8;
 pub struct Unit;
 
 impl Encoder<()> for Unit {
+    fn encode_size(&self) -> Result<Size, Error> {
+        Ok(Size::Fixed(0))
+    }
+
     fn encoded_len(&self, _: &()) -> Result<usize, Error> {
         Ok(0)
     }
@@ -20,6 +24,10 @@ impl Encoder<()> for Unit {
 }
 
 impl Decoder<()> for Unit {
+    fn decode_size(&self) -> Result<Size, Error> {
+        Ok(Size::Fixed(0))
+    }
+
     fn read(&self, _: &mut Reader<'_>) -> Result<(), Error> {
         Ok(())
     }
@@ -278,17 +286,42 @@ where
 }
 
 impl<Codec: Encoder<T>, T: ?Sized> Encoder<T> for &Codec {
+    fn encode_size(&self) -> Result<Size, Error> {
+        (*self).encode_size()
+    }
+
     fn encoded_len(&self, value: &T) -> Result<usize, Error> {
         (*self).encoded_len(value)
     }
     fn write(&self, value: &T, writer: &mut Writer<'_>) -> Result<(), Error> {
         (*self).write(value, writer)
     }
+
+    fn encode(&self, value: &T, max_bytes: usize) -> Result<Vec<u8>, Error> {
+        Codec::encode(*self, value, max_bytes)
+    }
 }
 
 impl<Codec: Decoder<T>, T> Decoder<T> for &Codec {
+    fn decode_size(&self) -> Result<Size, Error> {
+        (*self).decode_size()
+    }
+
     fn read(&self, reader: &mut Reader<'_>) -> Result<T, Error> {
         (*self).read(reader)
+    }
+
+    fn decode(&self, bytes: &[u8], limits: Limits) -> Result<T, Error> {
+        Codec::decode(*self, bytes, limits)
+    }
+
+    fn decode_prefix(
+        &self,
+        bytes: &[u8],
+        offset: usize,
+        limits: Limits,
+    ) -> Result<(T, usize), Error> {
+        Codec::decode_prefix(*self, bytes, offset, limits)
     }
 }
 
