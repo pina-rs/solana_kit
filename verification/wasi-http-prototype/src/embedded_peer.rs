@@ -43,6 +43,7 @@ fn serve(listener: TcpListener, mode: &str) {
             | "denied-response"
             | "repeated-denied"
             | "dns-deadline"
+            | "rest-denied"
     ) {
         observe_no_connection(&listener);
 
@@ -168,6 +169,10 @@ fn tls(mut socket: TcpStream, mode: &str) {
 }
 
 fn respond(stream: &mut (impl Read + Write), mode: &str) {
+    if mode.starts_with("rest") {
+        super::rest_peer::respond(stream, mode);
+        return;
+    }
     let identifier = request(stream);
     let body = REPLY.replace("\"id\":1", &format!("\"id\":{identifier}"));
     let status = if mode == "redirect" { REDIRECT } else { OK };

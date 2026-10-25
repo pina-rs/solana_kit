@@ -3,7 +3,7 @@ use leptoskit_bridge::PluginId;
 use leptoskit_native::HeadlessBackend;
 use leptoskit_wasm::WasmHost;
 use solana_kit_leptoskit::{HostError, HostLimits, HttpDriver, HttpHost, Routed};
-use solana_kit_native::NativeHttp;
+use solana_kit_native::{NativeHttp, NativeRest};
 
 type Host = WasmHost<HeadlessBackend>;
 
@@ -58,6 +58,18 @@ impl Application {
                 granted,
             ),
             Self::Owned(owner) => owner.install(name, service, granted),
+        }
+    }
+
+    pub(super) fn install_rest(&mut self, service: NativeRest<()>) -> Result<PluginId, HostError> {
+        match self {
+            Self::Borrowed { host, driver } => driver.install_rest(
+                host.as_mut().ok_or(HostError::Unloaded)?,
+                "rest",
+                service,
+                true,
+            ),
+            Self::Owned(owner) => owner.install_rest("rest", service, true),
         }
     }
 

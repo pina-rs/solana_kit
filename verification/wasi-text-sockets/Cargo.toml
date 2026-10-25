@@ -8,6 +8,7 @@ publish = false
 
 [dependencies]
 anyhow = "=1.0.104"
+solana_kit_client = { path = "../../crates/solana_kit_client" }
 solana_kit_wasi = { path = "../../crates/solana_kit_wasi", features = ["websocket"] }
 wasip2 = "=1.0.4"
 

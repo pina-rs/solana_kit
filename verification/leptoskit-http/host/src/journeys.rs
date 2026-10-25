@@ -84,6 +84,12 @@ async fn setup(wasm: &[u8], borrowed: bool) -> Result<(HttpHost, Vec<Fixture>)> 
     )?;
     app.host_mut()?.plugins().register("application", [])?;
     app.host_mut()?.plugins().register("unrelated", [])?;
+    let mut rest = fixture::create("rest").await?;
+    app.install_rest(solana_kit_native::NativeRest::new(
+        vec![((), rest.service.take().context("REST service")?)],
+        1024,
+    )?)?;
+    fixtures.push(rest);
     Ok((app, fixtures))
 }
 
@@ -113,6 +119,8 @@ async fn instances(wasm: &[u8], borrowed: bool) -> Result<()> {
             "status-rejected",
             "body-bounded",
             "quiet-deadline",
+            "rest-wire",
+            "rest-bounded",
         ] {
             progress(&mut app).await?;
             let actual = trace(&mut app)?;
@@ -121,6 +129,10 @@ async fn instances(wasm: &[u8], borrowed: bool) -> Result<()> {
                 "missing {marker}: {actual:?}"
             );
         }
+        ensure!(
+            trace(&mut app)?.contains(&"rest-denied".to_owned()),
+            "REST grant denial"
+        );
         cancel_and_unload(&mut app, &mut fixtures[4]).await?;
 
         for fixture in fixtures {

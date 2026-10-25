@@ -9,6 +9,10 @@ on:
 permissions:
   contents: read
 
+env:
+  CARGO_HTTP_USER_AGENT: solana-kit-verification
+  GIT_HTTP_USER_AGENT: solana-kit-verification
+
 jobs:
   preview2-http:
     runs-on: "ubuntu-24.04"
@@ -43,7 +47,10 @@ jobs:
 
       - name: Verify production transport and actual component
         shell: bash
+        env:
+          RUSTDOCFLAGS: -D warnings
         run: |
+          set -euo pipefail
           cargo +1.99.1 fmt --all --check
 
           cargo +1.99.1 fmt --manifest-path verification/wasi-http-prototype/Cargo.toml --all \
@@ -53,6 +60,8 @@ jobs:
 
           cargo +1.99.1 clippy -p solana_kit_wasi --locked --target wasm32-wasip2 -- -D warnings
 
+          cargo +1.99.1 doc -p solana_kit_wasi --locked --target wasm32-wasip2 --no-deps
+
           cargo +1.99.1 clippy --manifest-path verification/wasi-http-prototype/Cargo.toml --bin \
             runner --locked -- -D warnings
 
@@ -60,14 +69,25 @@ jobs:
             solana_kit_wasi_http_prototype --target wasm32-wasip2 --locked -- -D warnings
 
           cargo +1.99.1 build --manifest-path verification/wasi-http-prototype/Cargo.toml --bin \
-            solana_kit_wasi_http_prototype --target wasm32-wasip2 --locked
+            solana_kit_wasi_http_prototype --target wasm32-wasip2 --locked \
+            --message-format=json > "$RUNNER_TEMP/http-component.json"
+          component="$(jq -se '
+            [.[] | select(.reason == "compiler-artifact" and
+              .target.name == "solana_kit_wasi_http_prototype" and
+              (.manifest_path | endswith("/wasi-http-prototype/Cargo.toml")) and
+              (.target.kind | index("bin")) != null) | .filenames[] |
+              select(endswith(".wasm"))] |
+            if length == 1 then .[0] else error("expected one HTTP component") end
+          ' "$RUNNER_TEMP/http-component.json")"
+          test -f "$component"
 
           cargo +1.99.1 run --manifest-path verification/wasi-http-prototype/Cargo.toml --bin \
-            runner --locked -- "$RUNNER_TEMP/kit-wasi-host/wasmtime"
+            runner --locked -- "$RUNNER_TEMP/kit-wasi-host/wasmtime" "$component"
 
       - name: Verify embedded host and MSRV component execution
         shell: bash
         run: |
+          set -euo pipefail
           cargo +1.99.1 clippy --manifest-path verification/wasi-http-prototype/Cargo.toml --bin \
             embedded --locked -- -D warnings
 
@@ -77,17 +97,23 @@ jobs:
           cargo +1.99.1 clippy --manifest-path verification/wasi-http-prototype/Cargo.toml --bin \
             embedded_guest --target wasm32-wasip2 --locked -- -D warnings
 
-          cargo +1.99.1 build --manifest-path verification/wasi-http-prototype/Cargo.toml --bin \
-            embedded_guest --bin cli_guest --target wasm32-wasip2 --locked
-
-          cargo +1.99.1 run --manifest-path verification/wasi-http-prototype/Cargo.toml --bin \
-            embedded --locked
-
-          verification/wasi-http-prototype/target/debug/embedded --cli-only
-
-          cargo +1.89.0 build --manifest-path verification/wasi-http-prototype/Cargo.toml --bin \
-            embedded_guest --bin cli_guest --target wasm32-wasip2 --locked
-
-          verification/wasi-http-prototype/target/debug/embedded
-
-          verification/wasi-http-prototype/target/debug/embedded --cli-only
+          for compiler in 1.99.1 1.89.0; do
+            cargo +"$compiler" build --manifest-path verification/wasi-http-prototype/Cargo.toml \
+              --bin embedded_guest --bin cli_guest --target wasm32-wasip2 --locked \
+              --message-format=json > "$RUNNER_TEMP/embedded-components.json"
+            for guest in embedded_guest cli_guest; do
+              component="$(jq -se --arg name "$guest" '
+                [.[] | select(.reason == "compiler-artifact" and .target.name == $name and
+                  (.manifest_path | endswith("/wasi-http-prototype/Cargo.toml")) and
+                  (.target.kind | index("bin")) != null) | .filenames[] |
+                  select(endswith(".wasm"))] |
+                if length == 1 then .[0] else error("expected one embedded component") end
+              ' "$RUNNER_TEMP/embedded-components.json")"
+              test -f "$component"
+              export SOLANA_KIT_WASI_HTTP_GUEST="$component"
+              arguments=()
+              if [ "$guest" = cli_guest ]; then arguments+=(--cli-only); fi
+              cargo +1.99.1 run --manifest-path verification/wasi-http-prototype/Cargo.toml \
+                --bin embedded --locked -- "${arguments[@]}"
+            done
+          done

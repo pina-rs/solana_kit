@@ -1235,6 +1235,7 @@ version = "0.0.0"
 dependencies = [
  "anyhow",
  "rustls",
+ "solana_kit_client",
  "solana_kit_wasi",
  "solana_kit_wasi_sockets_proof",
  "tokio",

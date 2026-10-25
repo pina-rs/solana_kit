@@ -1,3 +1,5 @@
+#[path = "support/rest.rs"]
+mod rest;
 mod support;
 use solana_kit_client::{
     Client, Limits, Transport, TransportFailureKind as Kind, methods::Balance,

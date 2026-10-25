@@ -4,6 +4,7 @@ mod embedded_outgoing;
 mod embedded_peer;
 mod embedded_policy;
 mod embedded_resources;
+mod rest_peer;
 
 use embedded_policy::{Counts, Policy};
 use std::path::Path;
@@ -120,6 +121,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     for mode in [
+        "rest",
+        "rest-limit",
+        "rest-malformed",
+        "rest-denied",
         "denied",
         "denied-upload",
         "denied-response",

@@ -30,8 +30,11 @@ fn main() -> Result<()> {
         "wrong host version"
     );
     println!("{}", version.trim());
-    let component =
-        Path::new(env!("CARGO_MANIFEST_DIR")).join("target/wasm32-wasip2/debug/guest.wasm");
+    let component = PathBuf::from(
+        std::env::args_os()
+            .nth(2)
+            .context("missing actual Cargo-selected component")?,
+    );
     println!("IMPORTS\n{}", imports::inspect(&component)?);
 
     for mode in [
@@ -48,20 +51,20 @@ fn main() -> Result<()> {
         "denied",
         "unavailable",
     ] {
-        run(&host, mode)?;
+        run(&host, &component, mode)?;
     }
 
     Ok(())
 }
 
 /// Keeps peer and guest lifetimes bounded; a process launch alone cannot pass.
-fn run(host: &Path, mode: &str) -> Result<()> {
+fn run(host: &Path, component: &Path, mode: &str) -> Result<()> {
     let listener = TcpListener::bind("127.0.0.1:0")?;
     let port = listener.local_addr()?.port();
     listener.set_nonblocking(true)?;
     let peer_mode = mode.to_owned();
     let peer = thread::spawn(move || peer::fixture(listener, &peer_mode));
-    let mut child = command(host, mode, port)
+    let mut child = command(host, component, mode, port)
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
         .spawn()?;
@@ -146,9 +149,7 @@ fn capture(
 }
 
 /// Grants only named interfaces; inherited-network remains an explicit CLI limit.
-fn command(host: &Path, mode: &str, port: u16) -> Command {
-    let component =
-        Path::new(env!("CARGO_MANIFEST_DIR")).join("target/wasm32-wasip2/debug/guest.wasm");
+fn command(host: &Path, component: &Path, mode: &str, port: u16) -> Command {
     let mut command = Command::new(host);
     command.args(["run", "-S", "allow-ip-name-lookup=n", "-S", "udp=n"]);
 

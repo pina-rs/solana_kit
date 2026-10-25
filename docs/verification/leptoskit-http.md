@@ -39,17 +39,26 @@ and cannot establish awaited cleanup.
 
 ## Execute the actual guest
 
-Execute from the repository root. An explicit `CARGO_TARGET_DIR` must be absolute;
-the compiled-artifact test reads its required guest from that directory.
+Execute from the repository root. Select the actual guest from Cargo's JSON
+output so the host also works with an absolute external `CARGO_TARGET_DIR`.
 
 ```sh
 cargo +1.99.1 build --locked --offline \
   --manifest-path verification/leptoskit-http/Cargo.toml \
-  -p solana_kit_leptoskit_http_guest --target wasm32-unknown-unknown
+  -p solana_kit_leptoskit_http_guest --target wasm32-unknown-unknown \
+  --message-format=json > /tmp/solana-kit-http-guest.json
+component="$(jq -se '
+  [.[] | select(.reason == "compiler-artifact" and
+    .target.name == "solana_kit_leptoskit_http_guest" and
+    (.manifest_path | endswith("/leptoskit-http/guest/Cargo.toml")) and
+    (.target.kind | index("cdylib")) != null) | .filenames[] |
+    select(endswith(".wasm"))] |
+  if length == 1 then .[0] else error("expected one interpreted guest") end
+' /tmp/solana-kit-http-guest.json)"
 cargo +1.99.1 run --locked --offline \
   --manifest-path verification/leptoskit-http/Cargo.toml \
   -p solana_kit_leptoskit_http_host -- \
-  verification/leptoskit-http/target/wasm32-unknown-unknown/debug/solana_kit_leptoskit_http_guest.wasm
+  "$component"
 cargo +1.99.1 test --locked --offline -p solana_kit_leptoskit --all-features
 cargo +1.99.1 test --locked --offline \
   --manifest-path verification/leptoskit-http/Cargo.toml --workspace
@@ -61,6 +70,12 @@ HTTPS balance and u64::MAX, status rejection, body ceilings, quiet deadlines,
 local Rc across observed Pending and wake, retained-call no-EOF control, guest Drop
 cancellation, capacity retained until abort termination joins, unrelated Events,
 and awaited unload with peer EOF. Successful peers and tasks are awaited.
+
+The maintained REST extension adds actual host grant denial, encoded relative
+paths and duplicate query keys, authenticated JSON body delivery and reply limits
+through the same `HttpDriver` and `HttpHost` owners. This extension is pending
+runtime and CI execution. The historical receipts below do not cover these new
+REST bodies or the current public transport checkpoint.
 
 ## Historical execution receipts
 

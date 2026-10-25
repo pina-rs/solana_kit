@@ -19,6 +19,10 @@ on:
 permissions:
   contents: read
 
+env:
+  CARGO_HTTP_USER_AGENT: solana-kit-verification
+  GIT_HTTP_USER_AGENT: solana-kit-verification
+
 jobs:
   preview2-sockets:
     runs-on: "ubuntu-24.04"
@@ -52,19 +56,28 @@ jobs:
       - name: Check and execute real component sockets
         shell: bash
         run: |
+          set -euo pipefail
           cargo +1.99.1 fmt --manifest-path verification/wasi-sockets/Cargo.toml --all --check
 
           cargo +1.99.1 clippy --locked --manifest-path verification/wasi-sockets/Cargo.toml \
             --all-targets -- -D warnings
 
           cargo +1.99.1 build --locked --manifest-path verification/wasi-sockets/Cargo.toml --bin \
-            guest --target wasm32-wasip2
+            guest --target wasm32-wasip2 --message-format=json > "$RUNNER_TEMP/sockets.json"
+          component="$(jq -se '
+            [.[] | select(.reason == "compiler-artifact" and .target.name == "guest" and
+              (.target.kind | index("bin")) != null and
+              (.manifest_path | endswith("/wasi-sockets/Cargo.toml"))) | .filenames[] |
+              select(endswith(".wasm"))] |
+            if length == 1 then .[0] else error("expected one socket component") end
+          ' "$RUNNER_TEMP/sockets.json")"
+          test -f "$component"
 
           cargo +1.99.1 clippy --locked --manifest-path verification/wasi-sockets/Cargo.toml --bin \
             guest --target wasm32-wasip2 -- -D warnings
 
           cargo +1.99.1 run --locked --manifest-path verification/wasi-sockets/Cargo.toml --bin \
-            runner -- "$RUNNER_TEMP/wasi-sockets-host/wasmtime"
+            runner -- "$RUNNER_TEMP/wasi-sockets-host/wasmtime" "$component"
 
           cargo install monostyle --locked \
             --git https://github.com/ifiokjr/monostyle \

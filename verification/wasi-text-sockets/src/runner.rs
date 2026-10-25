@@ -38,6 +38,7 @@ fn main() -> Result<()> {
     ensure!(String::from_utf8_lossy(&version.stdout).starts_with("wasmtime 50.0.0 "));
     for mode in [
         "plain",
+        "session",
         "exchange",
         "duplex",
         "fragment",
@@ -256,10 +257,40 @@ fn upgrade_rejected(stream: &mut Box<dyn Io>) -> Result<String> {
 
 fn peer_messages(socket: &mut Peer, mode: &str) -> Result<()> {
     match mode {
+        "session" => session_peer(socket),
         "plain" | "exchange" | "duplex" | "fragment" | "corrupt" => exchange(socket, mode),
         "cancel" | "retain" | "unload" => quiet(socket, mode),
         _ => malformed(socket, mode),
     }
+}
+
+fn session_peer(socket: &mut Peer) -> Result<()> {
+    ensure!(
+        socket.read()?
+            == Message::Text(
+                r#"{"jsonrpc":"2.0","id":1,"method":"rootSubscribe","params":[]}"#.into()
+            )
+    );
+    socket.send(Message::Text(
+        r#"{"jsonrpc":"2.0","method":"rootNotification","params":{"subscription":17,"result":18446744073709551615}}"#.into()))?;
+    socket.send(Message::Text(
+        r#"{"jsonrpc":"2.0","id":1,"result":17}"#.into(),
+    ))?;
+    ensure!(
+        socket.read()?
+            == Message::Text(
+                r#"{"jsonrpc":"2.0","id":2,"method":"rootUnsubscribe","params":[17]}"#.into()
+            )
+    );
+    socket.send(Message::Text(
+        r#"{"jsonrpc":"2.0","id":2,"result":true}"#.into(),
+    ))?;
+    ensure!(
+        matches!(socket.read()?, Message::Close(_)),
+        "Session close handshake"
+    );
+    socket.flush()?;
+    Ok(())
 }
 
 /// Fragmented and corrupt peers preserve the independent expected request.

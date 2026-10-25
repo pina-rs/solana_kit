@@ -48,3 +48,5 @@ jobs:
           rustup toolchain install 1.89.0 --profile minimal
 
           cargo +1.89.0 check -p solana_kit_native --locked
+
+          cargo +1.89.0 test -p solana_kit_native --all-features --locked

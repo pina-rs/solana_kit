@@ -42,6 +42,7 @@ pub async fn run(guest: &Path) -> Result<()> {
     for mode in [
         "plain",
         "exchange",
+        "session",
         "duplex",
         "fragment",
         "wrong-ca",

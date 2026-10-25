@@ -1,4 +1,5 @@
 //! Ordinary downstream consumer of the public Preview2 socket API.
+mod session;
 use anyhow::{Result, ensure};
 use solana_kit_wasi::{Reactor, SocketConfig, SocketError, WasiWebSocket};
 use std::{
@@ -13,6 +14,8 @@ const OPERATION_SECONDS: u64 = 2;
 const FRAME_BYTES: usize = 64;
 const MESSAGE_BYTES: usize = 96;
 const WRITE_BYTES: usize = 128;
+const SESSION_FRAME_BYTES: usize = 256;
+const SESSION_WRITE_BYTES: usize = 512;
 const QUIET_NANOS: u64 = 350_000_000;
 const HOLD_NANOS: u64 = 1_000_000_000;
 
@@ -44,14 +47,22 @@ fn config(mode: &str) -> SocketConfig {
         include_bytes!("../../wasi-sockets/fixtures/ca.der").as_slice()
     };
 
-    SocketConfig {
+    let mut config = SocketConfig {
         connect_timeout: Duration::from_secs(OPERATION_SECONDS),
         operation_timeout: Duration::from_secs(OPERATION_SECONDS),
         max_frame_bytes: FRAME_BYTES,
         max_message_bytes: MESSAGE_BYTES,
         max_write_buffer_bytes: WRITE_BYTES,
         root_certificates: vec![certificate.to_vec()],
+    };
+
+    if mode == "session" {
+        config.max_frame_bytes = SESSION_FRAME_BYTES;
+        config.max_message_bytes = SESSION_FRAME_BYTES;
+        config.max_write_buffer_bytes = SESSION_WRITE_BYTES;
     }
+
+    config
 }
 
 fn connection_failure(
@@ -71,6 +82,7 @@ fn connection_failure(
 
 fn journey(mode: &str, reactor: &Reactor, socket: WasiWebSocket) -> Result<()> {
     match mode {
+        "session" => session::run(reactor, socket),
         "exchange" | "plain" | "corrupt" | "duplex" | "fragment" => exchange(mode, reactor, socket),
         "cancel" | "unload" | "retain" => quiet(mode, reactor, socket),
         _ => rejected_message(mode, reactor, socket),
