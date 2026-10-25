@@ -5,7 +5,7 @@ async fn signing_request(
     listener: TcpListener,
     public: mwa::PublicPoint,
 ) -> (PeerSocket, Session, Value) {
-    let (mut socket, session) = handshake(listener, public).await;
+    let (mut socket, mut session) = handshake(listener, public).await;
     let Message::Binary(request) = socket.next().await.unwrap().unwrap() else {
         panic!("expected encrypted signing request");
     };
