@@ -10,17 +10,26 @@ repository = "https://github.com/pina-rs/solana_kit/tree/main/crates/solana_kit_
 rust-version.workspace = true
 description = "Bounded Tokio HTTP and WebSocket transports for off-chain Solana applications"
 
+[features]
+default = []
+keys = ["dep:solana_kit_core"]
+mwa = ["keys", "dep:solana_kit_wallet", "dep:serde_json", "dep:zeroize"]
+
 [dependencies]
 bytes = "=1.11.1"
 futures-util = { version = "=0.3.34", default-features = false, features = ["sink", "std"] }
 http-body-util = "=0.1.3"
 hyper = { version = "=1.12.0", default-features = false, features = ["client", "http1", "server"] }
 hyper-util = { version = "=0.1.21", default-features = false, features = ["tokio"] }
+serde_json = { version = "1.0.154", default-features = false, features = ["alloc"], optional = true }
 solana_kit_client.workspace = true
+solana_kit_core = { workspace = true, features = ["crypto"], optional = true }
+solana_kit_wallet = { workspace = true, features = ["mwa"], optional = true }
 tokio = { version = "=1.54.1", features = ["net", "time", "io-util", "macros"] }
 tokio-rustls = { version = "=0.26.6", default-features = false, features = ["ring", "tls12"] }
 tokio-tungstenite = { version = "=0.29.0", default-features = false, features = ["handshake"] }
 webpki-roots = "=1.0.10"
+zeroize = { version = "1.8.2", default-features = false, features = ["alloc"], optional = true }
 
 [dev-dependencies]
 base64 = "=0.22.1"

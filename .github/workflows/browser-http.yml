@@ -82,3 +82,44 @@ jobs:
           cargo +1.99.1 run -p solana_kit_browser_http_verification --locked
 
           cargo +1.99.1 run -p solana_kit_browser_http_verification --locked -- --graphs
+
+      - name: Check and run Wallet Standard application contracts
+        shell: bash
+        env:
+          CARGO_TARGET_WASM32_UNKNOWN_UNKNOWN_RUNNER: wasm-bindgen-test-runner
+          WASM_BINDGEN_USE_BROWSER: "1"
+          WASM_BINDGEN_TEST_DRIVER_TIMEOUT: "30"
+          RUSTDOCFLAGS: -D warnings
+        run: |
+          cargo +1.99.1 test -p solana_kit_core --features crypto --test keypair_backup --locked
+
+          cargo +1.89.0 test -p solana_kit_core --features crypto --test keypair_backup --locked
+
+          cargo +1.99.1 test -p solana_kit_native --features keys --test key_backup --locked
+
+          cargo +1.89.0 test -p solana_kit_native --features keys --test key_backup --locked
+
+          cargo +1.99.1 test -p solana_kit_wallet --locked
+
+          cargo +1.89.0 test -p solana_kit_wallet --locked
+
+          cargo +1.99.1 test -p solana_kit_signers --features crypto --all-targets --locked
+
+          cargo +1.89.0 test -p solana_kit_signers --features crypto --all-targets --locked
+
+          cargo +1.99.1 check -p solana_kit_browser --features wallet \
+            --target wasm32-unknown-unknown --locked
+
+          cargo +1.89.0 check -p solana_kit_browser --features wallet \
+            --target wasm32-unknown-unknown --locked
+
+          cargo +1.99.1 clippy -p solana_kit_browser --features wallet --all-targets \
+            --target wasm32-unknown-unknown --locked -- -D warnings
+
+          cargo +1.99.1 test -p solana_kit_browser --features keys,wallet \
+            --test wallet --test key_entropy \
+            --target wasm32-unknown-unknown --locked
+
+          cargo +1.89.0 test -p solana_kit_browser --features keys,wallet \
+            --test wallet --test key_entropy \
+            --target wasm32-unknown-unknown --no-run --locked

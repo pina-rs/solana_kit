@@ -39,6 +39,27 @@ mod guest;
 #[cfg(all(feature = "guest", target_arch = "wasm32"))]
 pub use guest::{GuestExchange, GuestHttp};
 
+#[cfg(all(feature = "wallet-platform", target_arch = "wasm32"))]
+mod wallet_platform;
+#[cfg(all(feature = "wallet-platform", target_arch = "wasm32"))]
+pub use wallet_platform::{GuestWalletPlatform, WalletPlatformError};
+
+#[cfg(any(feature = "wallet-session", feature = "wallet-host"))]
+mod wallet_wire;
+
+/// Native session service with one joined worker and one wallet authority.
+#[cfg(feature = "wallet-host")]
+pub mod wallet_service;
+
+#[cfg(all(feature = "wallet-session", target_arch = "wasm32"))]
+mod wallet_guest;
+#[cfg(all(feature = "wallet-session", target_arch = "wasm32"))]
+pub use wallet_guest::{GuestLocalWallet, GuestMobileWallet, WalletSessionError};
+
+/// Optional accessible native wallet view and bounded local action channel.
+#[cfg(feature = "wallet-ui")]
+pub mod wallet_ui;
+
 #[cfg(feature = "host")]
 mod driver;
 #[cfg(feature = "host")]

@@ -162,13 +162,13 @@ impl Wallet for ReentrantName {
     fn icon(&self) -> &WalletIcon {
         self.inner.icon()
     }
-    fn chains(&self) -> &[String] {
+    fn chains(&self) -> Vec<String> {
         self.inner.chains()
     }
-    fn features(&self) -> &WalletFeatures {
+    fn features(&self) -> WalletFeatures {
         self.inner.features()
     }
-    fn accounts(&self) -> &[WalletAccount] {
+    fn accounts(&self) -> Vec<WalletAccount> {
         self.inner.accounts()
     }
 }

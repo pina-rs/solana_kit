@@ -232,11 +232,11 @@ fn validate_slot(
     Ok(())
 }
 
-pub(crate) fn poll_all<F: Future<Output = Result<SignatureOutput, Error>> + ?Sized>(
+pub(crate) fn poll_all<Failure, F: Future<Output = Result<SignatureOutput, Failure>> + ?Sized>(
     pending: &mut [Option<Pin<Box<F>>>],
     outputs: &mut [Option<SignatureOutput>],
     context: &mut Context<'_>,
-) -> Poll<Result<(), Error>> {
+) -> Poll<Result<(), Failure>> {
     for (operation, output) in pending.iter_mut().zip(outputs) {
         poll_one(operation, output, context)?;
     }
@@ -248,11 +248,11 @@ pub(crate) fn poll_all<F: Future<Output = Result<SignatureOutput, Error>> + ?Siz
     Poll::Pending
 }
 
-fn poll_one<F: Future<Output = Result<SignatureOutput, Error>> + ?Sized>(
+fn poll_one<Failure, F: Future<Output = Result<SignatureOutput, Failure>> + ?Sized>(
     operation: &mut Option<Pin<Box<F>>>,
     output: &mut Option<SignatureOutput>,
     context: &mut Context<'_>,
-) -> Result<(), Error> {
+) -> Result<(), Failure> {
     let Some(future) = operation else {
         return Ok(());
     };

@@ -215,13 +215,13 @@ impl Wallet for TestWallet {
     fn icon(&self) -> &WalletIcon {
         &self.icon
     }
-    fn chains(&self) -> &[String] {
+    fn chains(&self) -> Vec<String> {
         self.accounts[0].chains()
     }
-    fn features(&self) -> &WalletFeatures {
-        &self.features
+    fn features(&self) -> WalletFeatures {
+        self.features.clone()
     }
-    fn accounts(&self) -> &[WalletAccount] {
-        &self.accounts
+    fn accounts(&self) -> Vec<WalletAccount> {
+        self.accounts.clone()
     }
 }

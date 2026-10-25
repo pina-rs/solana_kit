@@ -29,6 +29,7 @@ mod ordered_collections;
 mod framing_cases;
 mod instructions;
 mod introspection_cases;
+mod keypair_backup;
 mod keypair_import;
 mod lookup_origin;
 
@@ -70,9 +71,9 @@ pub mod system_client;
 use alloc::vec::Vec;
 
 /// Integrated core contract suite; execution receipts identify actual hosts.
-pub const SUITE_ID: &str = "solana-kit-core-v37";
+pub const SUITE_ID: &str = "solana-kit-core-v38";
 /// Exact current registrants, including all preserved and appended contract groups.
-pub const EXPECTED_CASE_COUNT: usize = 354;
+pub const EXPECTED_CASE_COUNT: usize = 356;
 
 /// Selects authentic fixtures or the intentionally incorrect hash oracle.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -194,6 +195,7 @@ fn append_core_contracts(cases: &mut Vec<CaseResult>) {
     cases.extend(core_parity::cases());
     cases.extend(lookup_origin::cases());
     cases.extend(sysvar_composition::cases());
+    cases.extend(keypair_backup::cases());
 }
 
 fn foundational_cases(mode: FixtureMode) -> Vec<CaseResult> {

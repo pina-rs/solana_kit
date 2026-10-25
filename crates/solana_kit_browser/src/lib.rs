@@ -19,3 +19,9 @@ mod websocket;
 
 #[cfg(all(target_arch = "wasm32", target_os = "unknown"))]
 pub use websocket::{BrowserSubscriptionSocket, BrowserWebSocket, WsConfig, WsError};
+
+#[cfg(all(feature = "keys", target_arch = "wasm32", target_os = "unknown"))]
+pub mod keys;
+
+#[cfg(all(feature = "wallet", target_arch = "wasm32", target_os = "unknown"))]
+pub mod wallet;

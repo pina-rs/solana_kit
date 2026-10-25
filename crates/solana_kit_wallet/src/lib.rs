@@ -8,6 +8,9 @@
 
 extern crate alloc;
 
+/// Host-independent wallet view snapshots and user actions.
+pub mod ui;
+
 /// Portable Mobile Wallet Adapter cryptography and application protocol.
 #[cfg(feature = "mwa")]
 pub mod mwa;

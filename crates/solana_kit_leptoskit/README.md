@@ -74,3 +74,82 @@ upgrade before replay; the future framework target is public commit
 `3c6383a17f786172d696e1e83d8026cba2085fa4`, tree
 `be2aa83a1d9412dbf9f20896282a5ceb21327e1e`. These are continuation requirements,
 not an execution or dependency compatibility claim.
+
+## Optional wallet controls and Android platform
+
+Enable `wallet-ui` for an accessible wallet picker/status view and bounded action
+channel. Native buttons provide the platform's keyboard semantics. The view uses
+opaque choice identities, actual account metadata and a 44 pixel minimum control
+height. Applications own focus restoration and must verify it on each platform.
+
+Browser bundles can enable `wallet-browser-ui` and construct `BrowserWalletView`
+from real `WalletDiscovery`. Poll its short-borrow `poll_update` on the existing
+local executor and render each returned element. The owner observes registry and
+controller changes while wallet prompts remain pending; cancel invalidates local
+authority and disposal releases subscriptions. This browser feature requires a
+Window. It is not a wasmi wallet backend.
+
+For Android interpreter bundles, enable `wallet-platform` in the guest.
+`GuestWalletPlatform` exposes
+actual availability, validated local-v1 association Intent launch and bounded
+host entropy. An already launched external Activity cannot be undone by local
+cancellation. The native plugin and immutable bridge reply own temporary entropy
+buffers; erasing the guest's copy does not promise bridge allocator erasure.
+
+The Android platform plugin is unavailable on desktop and iOS. Select the local
+wallet explicitly there; no MWA capability is advertised.
+
+Enable `wallet-host` in the native host and `wallet-session` in the interpreted
+guest. Runtime selection `solana-wallet` installs
+`wallet_service::from_app_dirs` and Android's `MwaPlatform`; these own the distinct
+bridge names `solana-wallet-session` and `solana-wallet-platform`. This hybrid
+registration requires the public framework correction tracked by source unit480.
+The current3c pin rejects the metadata. Do not claim generated support until the
+verified framework successor is selected consistently and the app actually runs.
+
+`GuestMobileWallet::connect_android` retains a real pending bridge lease while it
+creates an association, waits for its correlated URI event, launches the Android
+wallet and connects the existing `NativeMobileWallet`. The application supplies
+its single Events receiver and forwards unrelated events intact. Dropping the
+lease cancels native state even between operations or during Android handover.
+No second WebSocket or MWA protocol implementation is added.
+
+`GuestLocalWallet::create` selects real native entropy and creates an in-memory
+key. `load`, `save` and `backup` require explicit application actions. The guest
+never receives private bytes. `sign_with_approval` waits for the actual approval
+future before submitting signing work. `local_signing_approval` binds real native
+Approve/Reject button actions to a non-reused review identity. The generated
+fixture executes only a matching approval, then independently verifies the exact
+signature. Native buttons, bounded queues, busy/cancel and disconnect states are
+ordinary source; keyboard, focus and installed accessibility remain unverified.
+
+Persistence uses a canonical host-selected app sandbox root and a private0700
+child directory. Guest input never selects a file path. Loads reject leaf
+symlinks with O_NOFOLLOW, nonregular/oversized files and permissive modes. Saves
+reuse the private0600, atomic no-overwrite writer. The host must keep its sandbox
+root trusted; this is not a hostile same-user directory-race defense. Desktop
+Unix, Android and iOS use this path. Other systems fail explicitly rather than
+writing an insecure file. The separate private copy remains inside the app; it
+is not an off-device recovery backup and can be lost on uninstall. No automatic
+export or silent overwrite occurs.
+
+`WalletService` owns one finite command mailbox, one native runtime thread and
+one session/key authority. Cancellation advances its generation, destroys active
+private state and rejects stale delivery. `AppService::close` stops admission
+and returns an owned future that joins the worker before Ready, including errors.
+Use the framework's ClosingApp scheduler for replacement/unload. Drop signals
+cancellation; it cannot itself await join. Original native causes remain in the
+bounded `WalletFailures` journal available to custom native owners. Bridge errors
+remain the framework's fixed codes; no secret or peer text enters UI diagnostics.
+
+For a composite app, drain its HttpDriver and route its SocketDriver leftovers,
+then pass the remaining requests/cancellations to `WalletService::route` as
+`ServiceWork`. Unrelated work returns to the framework router in its original
+order. Wallet-only `AppService::poll` calls this same method. The app's one
+ServiceClose must await every driver's shutdown before ClosingApp finishes.
+
+The [generated-app adaptation](../../verification/leptoskit-app-journey/wallet/README.md)
+contains actual action callers and prospective generator/build commands. All new
+code, source tests and native registrations require compilation and execution.
+Generated desktop/Android/iOS D1–D9/A1–A9/I1–I9 journeys remain required. All APIs
+are off-chain client code; on-chain programs use Pina or official Solana libraries.

@@ -3,16 +3,27 @@ name = "solana_kit_browser"
 version = "0.1.0"
 authors.workspace = true
 edition.workspace = true
-include = ["src/**", "README.md", "LICENSE"]
+include = ["src/**", "README.md", "LICENSE", "DART-LICENSE", "THIRD_PARTY_NOTICES.md"]
 license.workspace = true
 readme = "README.md"
 repository = "https://github.com/pina-rs/solana_kit/tree/main/crates/solana_kit_browser"
 rust-version.workspace = true
 description = "Owned browser Fetch and WebSocket transports for off-chain Solana applications"
 
+[features]
+default = []
+keys = ["dep:solana_kit_core"]
+wallet = ["dep:solana_kit_core", "dep:solana_kit_wallet", "dep:solana_kit_signers"]
+
 [target.'cfg(all(target_arch = "wasm32", target_os = "unknown"))'.dependencies]
 js-sys = "=0.3.105"
 solana_kit_client.workspace = true
+solana_kit_core = { workspace = true, features = ["crypto"], optional = true }
+solana_kit_wallet = { version = "0.1.0", path = "../solana_kit_wallet", default-features = false, optional = true }
+solana_kit_signers = { version = "0.1.0", path = "../solana_kit_signers", default-features = false, features = ["crypto"], optional = true }
 wasm-bindgen = "=0.2.128"
 wasm-bindgen-futures = "=0.4.78"
-web-sys = { version = "=0.3.105", features = ["BinaryType", "Blob", "CloseEvent", "Event", "MessageEvent", "WebSocket", "AbortController", "AbortSignal", "Headers", "ReadableStream", "ReadableStreamDefaultReader", "ReferrerPolicy", "Request", "RequestCredentials", "RequestInit", "RequestMode", "RequestRedirect", "Response", "ResponseType", "Url", "Window"] }
+web-sys = { version = "=0.3.105", features = ["CustomEvent", "CustomEventInit", "EventTarget", "BinaryType", "Blob", "CloseEvent", "Event", "MessageEvent", "WebSocket", "AbortController", "AbortSignal", "Headers", "ReadableStream", "ReadableStreamDefaultReader", "ReferrerPolicy", "Request", "RequestCredentials", "RequestInit", "RequestMode", "RequestRedirect", "Response", "ResponseType", "Url", "Window"] }
+
+[target.'cfg(all(target_arch = "wasm32", target_os = "unknown"))'.dev-dependencies]
+wasm-bindgen-test = "=0.3.78"

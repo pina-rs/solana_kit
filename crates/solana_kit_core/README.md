@@ -25,6 +25,16 @@ and invalid or mismatched public halves with `crypto::KeypairImportError`.
 Import leaves the caller's buffer unchanged. The signer exposes no secret export
 or `Debug`; callers remain responsible for protecting and erasing their input.
 
+Applications that intentionally need backups can select `crypto::ExportableKeypair`
+when creating or importing their key. Its explicit `backup()` returns zeroizing
+`KeypairBackup` storage with redacted diagnostics. `expose_secret()` deliberately
+borrows the secret bytes; protect that borrow and erase any copies you create.
+`into_signer()` consumes the export capability and returns an ordinary `Keypair`.
+There is no conversion that grants export to an existing non-exporting signer.
+`ExportableKeypair::generate` accepts a caller-owned `crypto::Entropy` host and
+zeroizes the temporary seed on success, failure and cancellation. Core selects
+no random source, storage API or executor. This is client application code only.
+
 The `transaction` module compiles and strictly decodes immutable legacy/v0/v1
 messages and retains ordered signature slots. Complete legacy/v0 packets are
 bounded to 1232 bytes; complete V1 envelopes are bounded to 4096 bytes, inclusive.

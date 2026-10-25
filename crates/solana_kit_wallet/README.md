@@ -59,3 +59,12 @@ source pin, independent Dart vectors, and compile-only target evidence. Platform
 launching, Android intents, browser discovery, reflector networking, installed
 wallet availability, and wallet UI remain separate work. A guest cannot launch
 mobile applications by constructing an association URI.
+
+Wallet implementations return owned chain, account and feature snapshots.
+`WalletFeatures` clones share immutable concrete feature owners through `Rc`;
+wallet changes replace a snapshot rather than invalidating a borrowed slice.
+Bind `let features = wallet.features();` before borrowing a concrete feature from
+that snapshot. A snapshot describes authorization at its observation time, so
+platform controllers must revalidate it after asynchronous work or wallet events.
+The optional browser adapter supplies actual Window discovery and controller
+ownership; the portable registry itself remains passive.

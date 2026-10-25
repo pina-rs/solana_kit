@@ -45,9 +45,9 @@ pub trait Signer {
 }
 
 /// Signs exact bare bytes. This does not add an off-chain message envelope.
-pub trait MessageSigner: Signer {
+pub trait MessageSigner<Failure = Error>: Signer {
     /// Signing operation, which may retain non-`Send` state across suspension.
-    type Sign<'a>: Future<Output = Result<SignatureOutput, Error>> + 'a
+    type Sign<'a>: Future<Output = Result<SignatureOutput, Failure>> + 'a
     where
         Self: 'a;
 
@@ -56,9 +56,9 @@ pub trait MessageSigner: Signer {
 }
 
 /// Adds only this signer's signature to an immutable transaction snapshot.
-pub trait TransactionPartialSigner: Signer {
+pub trait TransactionPartialSigner<Failure = Error>: Signer {
     /// Signing operation without an executor or universal `Send` requirement.
-    type Sign<'a>: Future<Output = Result<SignatureOutput, Error>> + 'a
+    type Sign<'a>: Future<Output = Result<SignatureOutput, Failure>> + 'a
     where
         Self: 'a;
 
@@ -67,9 +67,9 @@ pub trait TransactionPartialSigner: Signer {
 }
 
 /// May replace a transaction before subsequent signers authorize its bytes.
-pub trait TransactionModifyingSigner: Signer {
+pub trait TransactionModifyingSigner<Failure = Error>: Signer {
     /// Modification and signing operation.
-    type Modify<'a>: Future<Output = Result<Transaction, Error>> + 'a
+    type Modify<'a>: Future<Output = Result<Transaction, Failure>> + 'a
     where
         Self: 'a;
 
@@ -78,9 +78,9 @@ pub trait TransactionModifyingSigner: Signer {
 }
 
 /// Explicit caller-granted submission capability.
-pub trait TransactionSendingSigner: Signer {
+pub trait TransactionSendingSigner<Failure = Error>: Signer {
     /// Submission operation. Its result is not confirmation of execution.
-    type Send<'a>: Future<Output = Result<Signature, Error>> + 'a
+    type Send<'a>: Future<Output = Result<Signature, Failure>> + 'a
     where
         Self: 'a;
 

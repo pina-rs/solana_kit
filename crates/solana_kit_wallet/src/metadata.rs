@@ -1,4 +1,4 @@
-use alloc::{boxed::Box, collections::BTreeMap, string::String, vec::Vec};
+use alloc::{collections::BTreeMap, rc::Rc, string::String, vec::Vec};
 use base64::{Engine, engine::general_purpose::STANDARD};
 use core::{any::Any, fmt};
 
@@ -187,8 +187,8 @@ impl<T: WalletFeature> ErasedFeature for T {
 }
 
 /// Extensible feature discovery retaining concrete backend types and futures.
-#[derive(Default)]
-pub struct WalletFeatures(BTreeMap<String, Box<dyn ErasedFeature>>);
+#[derive(Clone, Default)]
+pub struct WalletFeatures(BTreeMap<String, Rc<dyn ErasedFeature>>);
 
 impl WalletFeatures {
     /// Creates an empty feature map.
@@ -208,7 +208,7 @@ impl WalletFeatures {
             return Err(MetadataError::InvalidIdentifier(identifier));
         }
 
-        self.0.insert(identifier, Box::new(feature));
+        self.0.insert(identifier, Rc::new(feature));
         Ok(())
     }
 
@@ -239,10 +239,10 @@ pub trait Wallet {
     fn name(&self) -> &str;
     /// Canonical icon.
     fn icon(&self) -> &WalletIcon;
-    /// Supported chains.
-    fn chains(&self) -> &[String];
-    /// Concrete versioned capabilities.
-    fn features(&self) -> &WalletFeatures;
-    /// Accounts currently authorized by the user.
-    fn accounts(&self) -> &[WalletAccount];
+    /// Current owned chain snapshot, safe across backend metadata changes.
+    fn chains(&self) -> Vec<String>;
+    /// Current capability snapshot retaining each concrete feature owner.
+    fn features(&self) -> WalletFeatures;
+    /// Current owned account authorization snapshot.
+    fn accounts(&self) -> Vec<WalletAccount>;
 }
