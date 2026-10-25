@@ -1620,11 +1620,18 @@ dependencies = [
  "leptoskit_bridge_ffi",
  "leptoskit_native",
  "leptoskit_wasm",
+ "libc",
+ "serde",
+ "serde_json",
+ "solana_kit_browser",
  "solana_kit_client",
+ "solana_kit_core",
  "solana_kit_native",
+ "solana_kit_wallet",
  "tokio",
  "tokio-tungstenite",
  "wat",
+ "zeroize",
 ]
 
 [[package]]
@@ -1648,10 +1655,12 @@ dependencies = [
  "serde_json",
  "solana_kit_client",
  "solana_kit_core",
+ "solana_kit_wallet",
  "tokio",
  "tokio-rustls",
  "tokio-tungstenite",
  "webpki-roots",
+ "zeroize",
 ]
 
 [[package]]

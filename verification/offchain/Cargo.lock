@@ -184,6 +184,7 @@ dependencies = [
  "curve25519-dalek",
  "ed25519-dalek",
  "sha2",
+ "zeroize",
 ]
 
 [[package]]
