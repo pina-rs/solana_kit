@@ -9,7 +9,7 @@ crate-type = ["cdylib"]
 
 [dependencies]
 futures = { version = "=0.3.34", default-features = false, features = ["executor", "std"] }
-leptoskit_bridge = { git = "https://github.com/ifiokjr/leptoskit", rev = "706334eaa3e011d1ef986159911b0d80c80d3e9f", features = ["guest"] }
+leptoskit_bridge = { git = "https://github.com/ifiokjr/leptoskit", rev = "3c6383a17f786172d696e1e83d8026cba2085fa4", features = ["guest"] }
 serde_json = "=1.0.154"
 solana_kit_client = { path = "../../../crates/solana_kit_client" }
 solana_kit_core = { path = "../../../crates/solana_kit_core", default-features = false }

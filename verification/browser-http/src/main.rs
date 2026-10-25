@@ -62,6 +62,7 @@ fn chrome(endpoint: &str) -> std::io::Result<std::process::ExitStatus> {
     Command::new("cargo")
         .args([
             "test",
+            "--message-format=json",
             "-p",
             "solana_kit_browser_http_verification",
             "--lib",

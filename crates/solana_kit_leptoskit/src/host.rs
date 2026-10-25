@@ -3,7 +3,7 @@ use crate::{HostError, HostLimits, HttpDriver, Routed};
 use leptoskit_bridge::PluginId;
 use leptoskit_native::NativeBackend;
 use leptoskit_wasm::WasmHost;
-use solana_kit_native::NativeHttp;
+use solana_kit_native::{NativeHttp, NativeRest};
 
 /// Actual interpreter and its single HTTP driver for application-owned routing.
 ///
@@ -56,6 +56,21 @@ impl<B: NativeBackend> HttpHost<B> {
     pub fn drain(&mut self) -> Result<Routed, HostError> {
         self.driver
             .drain(self.host.as_mut().ok_or(HostError::Unloaded)?)
+    }
+
+    /// Registers one fixed named REST service through this same HTTP driver.
+    pub fn install_rest(
+        &mut self,
+        name: &str,
+        service: NativeRest<()>,
+        granted: bool,
+    ) -> Result<PluginId, HostError> {
+        self.driver.install_rest(
+            self.host.as_mut().ok_or(HostError::Unloaded)?,
+            name,
+            service,
+            granted,
+        )
     }
 
     /// Counts running and aborting native tasks until their join is observed.

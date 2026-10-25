@@ -109,3 +109,8 @@ cancelled Waker destruction, ready and expired-timer removal, capacity rejection
 and cleanup, and wake delivery. The unchanged independent public safe Wake/Drop
 consumer also passes after failing against the preserved original component.
 See `evidence/waker-execution.txt` for the actual bounded receipt.
+
+The CLI runner takes the concrete Wasmtime executable and actual Cargo-selected
+component path as its two arguments. The embedded host requires
+`SOLANA_KIT_WASI_HTTP_GUEST` to name that actual component. Neither assumes a
+repository-local target directory.

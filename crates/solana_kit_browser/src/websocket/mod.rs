@@ -1,9 +1,19 @@
 //! Caller-owned local browser WebSocket operations.
 mod config;
+mod session;
 mod state;
 pub use config::WsConfig;
+pub use session::BrowserSubscriptionSocket;
+use solana_kit_client::subscriptions::ReceivedFrame;
 use state::{Handlers, Phase, Shared, State};
-use std::{cell::RefCell, collections::VecDeque, fmt, future::poll_fn, rc::Rc, task::Poll};
+use std::{
+    cell::RefCell,
+    collections::VecDeque,
+    fmt,
+    future::poll_fn,
+    rc::Rc,
+    task::{Context, Poll},
+};
 use wasm_bindgen::{JsCast, closure::Closure};
 use web_sys::{WebSocket, Window};
 
@@ -125,30 +135,51 @@ impl BrowserWebSocket {
     /// A deadline ends the socket and discards all retained messages.
     pub async fn receive(&mut self) -> Result<String, WsError> {
         let _deadline = Deadline::new(&self.shared, &self.window)?;
-        poll_fn(|cx| {
-            let waker = cx.waker().clone();
-            let mut state = self.shared.state.borrow_mut();
+        match poll_fn(|cx| self.poll_received(cx)).await? {
+            ReceivedFrame::Text(text) => Ok(text),
+            ReceivedFrame::Binary(_) => {
+                self.shared.stop(Some(WsError::Binary));
 
-            if state.phase != Phase::Open {
-                return Poll::Ready(Err(state.failure.unwrap_or(WsError::Closed)));
+                Err(WsError::Binary)
             }
+        }
+    }
+    /// Receives one bounded text or binary message through the maintained event queue.
+    pub async fn receive_frame(&mut self) -> Result<ReceivedFrame, WsError> {
+        let _deadline = Deadline::new(&self.shared, &self.window)?;
+        poll_fn(|cx| self.poll_received(cx)).await
+    }
+    fn poll_received(&self, cx: &mut Context<'_>) -> Poll<Result<ReceivedFrame, WsError>> {
+        let waker = cx.waker().clone();
+        let mut state = self.shared.state.borrow_mut();
 
-            if let Some(text) = state.queue.pop_front() {
-                state.bytes -= text.len();
-                return Poll::Ready(Ok(text));
-            }
+        if state.phase != Phase::Open {
+            return Poll::Ready(Err(state.failure.unwrap_or(WsError::Closed)));
+        }
 
-            let previous = state.waker.replace(waker);
-            drop(state);
-            drop(previous);
+        if let Some(text) = state.queue.pop_front() {
+            state.bytes -= text.len();
 
-            Poll::Pending
-        })
-        .await
+            return Poll::Ready(Ok(text));
+        }
+
+        let previous = state.waker.replace(waker);
+        drop(state);
+        drop(previous);
+
+        Poll::Pending
     }
     /// Consumes the socket, discards queued data and waits for the close event.
     /// Cancelling this future drops and closes the owner immediately.
     pub async fn close(self) -> Result<(), WsError> {
+        if self.shared.state.borrow().phase == Phase::Closed {
+            return self.shared.state.borrow().failure.map_or(Ok(()), Err);
+        }
+
+        self.begin_close()?;
+        self.wait(Phase::Closed).await
+    }
+    fn begin_close(&self) -> Result<(), WsError> {
         {
             let mut state = self.shared.state.borrow_mut();
 
@@ -160,30 +191,29 @@ impl BrowserWebSocket {
             state.queue.clear();
             state.bytes = 0;
         }
-        self.shared.socket.close().map_err(|_| WsError::Browser)?;
-        self.wait(Phase::Closed).await
+        self.shared.socket.close().map_err(|_| WsError::Browser)
     }
     async fn wait(&self, target: Phase) -> Result<(), WsError> {
         let _deadline = Deadline::new(&self.shared, &self.window)?;
-        poll_fn(|cx| {
-            let waker = cx.waker().clone();
-            let mut state = self.shared.state.borrow_mut();
+        poll_fn(|cx| self.poll_phase(cx, target)).await
+    }
+    fn poll_phase(&self, cx: &mut Context<'_>, target: Phase) -> Poll<Result<(), WsError>> {
+        let waker = cx.waker().clone();
+        let mut state = self.shared.state.borrow_mut();
 
-            if state.phase == Phase::Closed {
-                return Poll::Ready(state.failure.map_or(Ok(()), Err));
-            }
+        if state.phase == Phase::Closed {
+            return Poll::Ready(state.failure.map_or(Ok(()), Err));
+        }
 
-            if state.phase == target {
-                return Poll::Ready(Ok(()));
-            }
+        if state.phase == target {
+            return Poll::Ready(Ok(()));
+        }
 
-            let previous = state.waker.replace(waker);
-            drop(state);
-            drop(previous);
+        let previous = state.waker.replace(waker);
+        drop(state);
+        drop(previous);
 
-            Poll::Pending
-        })
-        .await
+        Poll::Pending
     }
 }
 impl Drop for BrowserWebSocket {

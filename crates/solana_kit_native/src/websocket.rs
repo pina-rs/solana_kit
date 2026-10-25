@@ -1,9 +1,12 @@
 //! Bounded native text WebSocket I/O for a separate caller-owned Connection.
+mod session;
 use crate::{
     ConfigError, WsConfig,
     websocket_connect::{self, Socket},
 };
 use futures_util::{SinkExt, StreamExt};
+pub use session::NativeSubscriptionSocket;
+use solana_kit_client::subscriptions::ReceivedFrame;
 use std::{error::Error, fmt};
 use tokio::time::timeout;
 use tokio_tungstenite::tungstenite::{Error as SocketError, Message, error::ProtocolError};
@@ -109,6 +112,17 @@ impl NativeWebSocket {
     /// error. A pending receive sleeps on Tokio I/O and is safe to cancel while retaining
     /// this owner. A completed timeout or error closes the socket.
     pub async fn receive(&mut self) -> Result<Option<String>, WsError> {
+        let result = match self.receive_frame().await? {
+            Some(ReceivedFrame::Text(text)) => Ok(Some(text)),
+            Some(ReceivedFrame::Binary(_)) => Err(WsError::Binary),
+            None => Ok(None),
+        };
+
+        self.finish(result)
+    }
+
+    /// Receives text or binary through the same bounded parser and control-frame lifecycle.
+    pub async fn receive_frame(&mut self) -> Result<Option<ReceivedFrame>, WsError> {
         let socket = self.socket.as_mut().ok_or(WsError::Closed)?;
         let result = timeout(self.config.operation_timeout, receive(socket))
             .await
@@ -149,10 +163,12 @@ impl NativeWebSocket {
     }
 }
 
-async fn receive(socket: &mut Socket) -> Result<Option<String>, WsError> {
+async fn receive(socket: &mut Socket) -> Result<Option<ReceivedFrame>, WsError> {
     loop {
         match socket.next().await {
-            Some(Ok(Message::Text(text))) => return Ok(Some(text.to_string())),
+            Some(Ok(Message::Text(text))) => {
+                return Ok(Some(ReceivedFrame::Text(text.to_string())));
+            }
 
             Some(Ok(Message::Close(_))) | None => match socket.flush().await {
                 Ok(()) | Err(SocketError::ConnectionClosed) => return Ok(None),
@@ -162,7 +178,9 @@ async fn receive(socket: &mut Socket) -> Result<Option<String>, WsError> {
             Some(Ok(Message::Ping(_) | Message::Pong(_))) => {
                 socket.flush().await.map_err(socket_error)?;
             }
-            Some(Ok(Message::Binary(_))) => return Err(WsError::Binary),
+            Some(Ok(Message::Binary(bytes))) => {
+                return Ok(Some(ReceivedFrame::Binary(bytes.to_vec())));
+            }
             Some(Ok(Message::Frame(_))) => return Err(WsError::Protocol),
             Some(Err(SocketError::ConnectionClosed)) => return Ok(None),
             Some(Err(error)) => return Err(socket_error(error)),

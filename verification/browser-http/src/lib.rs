@@ -2,3 +2,6 @@
 #![forbid(unsafe_code)]
 #[cfg(all(test, target_arch = "wasm32"))]
 mod tests;
+
+#[cfg(all(test, target_arch = "wasm32"))]
+mod rest_tests;

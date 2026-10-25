@@ -5,9 +5,36 @@ use std::collections::BTreeMap;
 use std::future::Future;
 use std::pin::Pin;
 use std::rc::Rc;
-use std::task::{Context, Poll, Waker};
+use std::sync::{
+    Arc,
+    atomic::{AtomicBool, Ordering},
+};
+use std::task::{Context, Poll, Wake, Waker};
 use wasip2::clocks::monotonic_clock;
 use wasip2::io::poll::{Pollable, poll};
+
+#[derive(Default)]
+struct PollWake(AtomicBool);
+
+impl Wake for PollWake {
+    fn wake(self: Arc<Self>) {
+        self.wake_by_ref();
+    }
+
+    fn wake_by_ref(self: &Arc<Self>) {
+        self.0.store(true, Ordering::Release);
+    }
+}
+
+impl PollWake {
+    fn drive(&self, reactor: &Reactor) -> Result<(), DriveError> {
+        if self.0.swap(false, Ordering::AcqRel) {
+            return Ok(());
+        }
+
+        reactor.drive()
+    }
+}
 
 /// Caller-owned local readiness driver. Clones share one registration owner.
 #[derive(Clone, Default)]
@@ -30,6 +57,23 @@ pub(crate) struct Wait {
     id: u64,
 }
 
+impl Wait {
+    #[cfg(feature = "websocket")]
+    pub(crate) fn register(&mut self, context: &Context<'_>) {
+        let waker = context.waker().clone();
+        let previous = self
+            .reactor
+            .0
+            .borrow_mut()
+            .waits
+            .get_mut(&self.id)
+            .expect("live registration")
+            .waker
+            .replace(waker);
+        drop(previous);
+    }
+}
+
 impl Future for Wait {
     type Output = Result<(), ()>;
 
@@ -37,6 +81,7 @@ impl Future for Wait {
         let waker = context.waker().clone();
         let mut registry = self.reactor.0.borrow_mut();
         let entry = registry.waits.get_mut(&self.id).expect("live registration");
+
         let result = if entry.timer.ready() {
             Err(())
         } else if entry.signal.ready() {
@@ -48,6 +93,7 @@ impl Future for Wait {
 
             return Poll::Pending;
         };
+
         let completed = registry.waits.remove(&self.id);
         drop(registry);
         drop(completed);
@@ -141,19 +187,23 @@ impl Reactor {
         Ok(())
     }
 
-    /// Synchronously drives a local future using this reactor's host readiness.
+    /// Drives cooperative local polls before blocking on this reactor's host readiness.
     ///
     /// # Errors
-    /// Returns NoReadiness for Pending work that did not register a WASI signal.
+    /// Returns NoReadiness when Pending work neither requests another poll nor
+    /// registers a WASI signal.
     pub fn block_on<F: Future>(&self, future: F) -> Result<F::Output, DriveError> {
-        let waker = Waker::noop();
-        let mut context = Context::from_waker(waker);
+        let wake = Arc::new(PollWake::default());
+        let waker = Waker::from(wake.clone());
+        let mut context = Context::from_waker(&waker);
         let mut future = std::pin::pin!(future);
 
         loop {
+            wake.0.store(false, Ordering::Release);
+
             match future.as_mut().poll(&mut context) {
                 Poll::Ready(output) => return Ok(output),
-                Poll::Pending => self.drive()?,
+                Poll::Pending => wake.drive(self)?,
             }
         }
     }

@@ -108,15 +108,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .expect("one crypto provider");
     let engine = Engine::default();
     let cli_only = std::env::args().any(|argument| argument == "--cli-only");
-    let guest = if cli_only {
-        "cli_guest"
-    } else {
-        "embedded_guest"
-    };
-
-    let path = Path::new(env!("CARGO_MANIFEST_DIR"))
-        .join(format!("target/wasm32-wasip2/debug/{guest}.wasm"));
-    let component = Component::from_file(&engine, path)?;
+    let guest = std::env::var_os("SOLANA_KIT_WASI_HTTP_GUEST")
+        .ok_or("SOLANA_KIT_WASI_HTTP_GUEST must name the actual Cargo-selected component")?;
+    let component = Component::from_file(&engine, Path::new(&guest))?;
     let linker = linker(&engine, &component, cli_only)?;
     let selected = std::env::args().nth(1);
     let baseline = run(&engine, &component, &linker, "baseline", None).await?;

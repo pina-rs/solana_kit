@@ -1,0 +1,34 @@
+[workspace]
+
+[package]
+name = "solana_kit_wasi_text_socket_verification"
+version = "0.0.0"
+edition = "2024"
+publish = false
+
+[dependencies]
+anyhow = "=1.0.104"
+solana_kit_wasi = { path = "../../crates/solana_kit_wasi", features = ["websocket"] }
+wasip2 = "=1.0.4"
+
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+rustls = { version = "=0.23.46", default-features = false, features = ["std", "ring", "tls12"] }
+tungstenite = { version = "=0.29.0", default-features = false, features = ["handshake"] }
+solana_kit_wasi_sockets_proof = { path = "../wasi-sockets" }
+wasmtime = { version = "=50.0.0", default-features = false, features = ["async", "component-model", "cranelift", "runtime", "std"] }
+wasmtime-wasi = { version = "=50.0.0", default-features = false, features = ["p2"] }
+tokio = { version = "=1.54.1", features = ["rt-multi-thread", "macros", "time"] }
+wasmparser = "=0.240.0"
+wasm-encoder = "=0.261.0"
+
+[[bin]]
+name = "guest"
+path = "src/guest.rs"
+
+[[bin]]
+name = "runner"
+path = "src/runner.rs"
+
+[[bin]]
+name = "audit"
+path = "src/audit.rs"

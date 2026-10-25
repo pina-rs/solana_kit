@@ -1,10 +1,10 @@
 //! Task state never owns an interpreter or retains a borrow across native I/O.
-use crate::wire;
+use crate::{rest_wire, wire};
 use leptoskit_bridge::{BridgeIdentity, Bytes, CallId, PluginId, Request};
 use leptoskit_native::NativeBackend;
 use leptoskit_wasm::{HostIdentity, WasmHost};
 use solana_kit_client::{Transport, TransportError, TransportFailureKind};
-use solana_kit_native::NativeHttp;
+use solana_kit_native::{NativeHttp, NativeRest};
 use std::{collections::BTreeMap, sync::Arc};
 use tokio::task::{AbortHandle, Id, JoinSet};
 
@@ -54,7 +54,7 @@ impl From<leptoskit_wasm::WasmError> for HostError {
 pub struct HostLimits {
     /// Running and aborting native jobs together consume this capacity.
     pub jobs: usize,
-    /// Maximum JSON body accepted before starting native work.
+    /// Maximum RPC JSON body or complete REST frame before starting native work.
     pub request_bytes: usize,
     /// Maximum received body, including non-success responses.
     pub reply_bytes: usize,
@@ -74,6 +74,12 @@ pub struct Routed {
 struct Job {
     call: CallId,
     abort: AbortHandle,
+}
+
+#[derive(Clone)]
+enum HttpService {
+    Rpc(Arc<NativeHttp>),
+    Rest(Arc<NativeRest<()>>),
 }
 
 /// Owned and deliberately neither Clone nor Copy. Joining releases all capacity.
@@ -109,7 +115,7 @@ pub struct HttpDriver {
     interpreter: HostIdentity,
     bridge: BridgeIdentity,
     limits: HostLimits,
-    services: BTreeMap<PluginId, Arc<NativeHttp>>,
+    services: BTreeMap<PluginId, HttpService>,
     jobs: BTreeMap<Id, Job>,
     tasks: JoinSet<(CallId, Vec<u8>)>,
     closed: bool,
@@ -164,13 +170,33 @@ impl HttpDriver {
         self.check(host)?;
         let plugin = host.plugins().register(name, [wire::POST])?;
         host.plugins().grant(plugin, wire::POST, granted)?;
-        self.services.insert(plugin, Arc::new(service));
+        self.services
+            .insert(plugin, HttpService::Rpc(Arc::new(service)));
         Ok(plugin)
     }
 
     /// Counts running and aborting jobs until their join is observed.
     pub fn retained_jobs(&self) -> usize {
         self.jobs.len()
+    }
+
+    /// Installs a named REST capability with fixed native roots and policy.
+    ///
+    /// Method1 is additive. Existing POST method0 and its wire remain unchanged.
+    /// Guest path/query/body bytes cannot grant or select another destination.
+    pub fn install_rest<B: NativeBackend>(
+        &mut self,
+        host: &mut WasmHost<B>,
+        name: &str,
+        service: NativeRest<()>,
+        granted: bool,
+    ) -> Result<PluginId, HostError> {
+        self.check(host)?;
+        let plugin = host.plugins().register(name, [rest_wire::REST])?;
+        host.plugins().grant(plugin, rest_wire::REST, granted)?;
+        self.services
+            .insert(plugin, HttpService::Rest(Arc::new(service)));
+        Ok(plugin)
     }
 
     #[cfg(test)]
@@ -202,7 +228,11 @@ impl HttpDriver {
                 routed.requests.push(request);
                 continue;
             };
-            routed.guest_woken |= self.admit(host, request, service)?;
+
+            routed.guest_woken |= match service {
+                HttpService::Rpc(service) => self.admit(host, request, service)?,
+                HttpService::Rest(service) => self.admit_rest(host, request, service)?,
+            };
         }
 
         if routed.guest_woken {
@@ -212,6 +242,7 @@ impl HttpDriver {
         Ok(routed)
     }
 
+    // Admission validates the guest envelope before reserving a native job or task.
     fn admit<B: NativeBackend>(
         &mut self,
         host: &mut WasmHost<B>,
@@ -256,6 +287,52 @@ impl HttpDriver {
         let abort = self
             .tasks
             .spawn(async move { (call, wire::reply(service.exchange(decoded).await)) });
+        self.jobs.insert(abort.id(), Job { call, abort });
+        Ok(false)
+    }
+
+    // Malformed REST calls complete synchronously so they never consume native capacity.
+    fn admit_rest<B: NativeBackend>(
+        &mut self,
+        host: &mut WasmHost<B>,
+        request: Request,
+        service: Arc<NativeRest<()>>,
+    ) -> Result<bool, HostError> {
+        if request.method != rest_wire::REST || self.jobs.len() >= self.limits.jobs {
+            host.plugins()
+                .complete(request.id, Err(leptoskit_bridge::Error::Busy))?;
+
+            return Ok(true);
+        }
+
+        let decoded = if request.payload.len() > self.limits.request_bytes {
+            Err(TransportError::new(TransportFailureKind::BodyLimit))
+        } else {
+            rest_wire::decode(&request.payload)
+        }
+        .and_then(|decoded| {
+            if decoded.max_reply_bytes == 0 || decoded.max_reply_bytes > self.limits.reply_bytes {
+                return Err(TransportError::new(TransportFailureKind::BodyLimit));
+            }
+
+            Ok(decoded)
+        });
+
+        let decoded = match decoded {
+            Ok(decoded) => decoded,
+            Err(error) => {
+                host.plugins()
+                    .complete(request.id, Ok(wire::reply(Err(error)).into()))?;
+                return Ok(true);
+            }
+        };
+
+        let call = request.id;
+        let abort = self.tasks.spawn(async move {
+            let reply =
+                solana_kit_client::rest::Transport::exchange(service.as_ref(), decoded).await;
+            (call, wire::reply(reply))
+        });
         self.jobs.insert(abort.id(), Job { call, abort });
         Ok(false)
     }

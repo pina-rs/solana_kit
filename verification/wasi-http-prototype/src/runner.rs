@@ -5,7 +5,7 @@ mod imports;
 
 use std::io::{Read, Write};
 use std::net::{TcpListener, TcpStream};
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
 use std::thread;
 use std::time::{Duration, Instant};
@@ -33,8 +33,11 @@ fn main() {
         String::from_utf8(version.stdout).expect("UTF8"),
         "wasmtime 50.0.0 (ebe5e8df1 2026-10-20)\n"
     );
-    let component = Path::new(env!("CARGO_MANIFEST_DIR"))
-        .join("target/wasm32-wasip2/debug/solana_kit_wasi_http_prototype.wasm");
+    let component = PathBuf::from(
+        std::env::args_os()
+            .nth(2)
+            .expect("actual Cargo-selected component"),
+    );
     imports::inspect(&component);
 
     for mode in [

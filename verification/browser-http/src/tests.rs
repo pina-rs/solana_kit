@@ -23,7 +23,7 @@ fn adapter(path: &str, millis: u64) -> BrowserHttp {
     )
     .unwrap()
 }
-async fn pause(millis: i32) {
+pub(super) async fn pause(millis: i32) {
     let promise = js_sys::Promise::new(&mut |resolve, _| {
         web_sys::window()
             .unwrap()
@@ -43,7 +43,7 @@ async fn raw(
         })
         .await
 }
-async fn state(key: &str) -> String {
+pub(super) async fn state(key: &str) -> String {
     String::from_utf8(raw(&format!("/state/{key}"), 100).await.unwrap().body).unwrap()
 }
 

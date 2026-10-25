@@ -6,6 +6,35 @@
 mod wire;
 
 #[cfg(all(feature = "guest", target_arch = "wasm32"))]
+mod rest_guest;
+#[cfg(any(feature = "host", all(feature = "guest", target_arch = "wasm32")))]
+mod rest_wire;
+#[cfg(all(feature = "guest", target_arch = "wasm32"))]
+pub use rest_guest::GuestRest;
+
+#[cfg(any(feature = "host", all(feature = "guest", target_arch = "wasm32")))]
+mod socket_wire;
+#[cfg(any(feature = "host", all(feature = "guest", target_arch = "wasm32")))]
+pub use socket_wire::SocketFailure;
+
+#[cfg(all(feature = "guest", target_arch = "wasm32"))]
+mod socket_guest;
+#[cfg(all(feature = "guest", target_arch = "wasm32"))]
+pub use socket_guest::{GuestWebSocket, SocketCall, SocketState};
+
+#[cfg(all(feature = "guest", target_arch = "wasm32"))]
+mod socket_session;
+#[cfg(all(feature = "guest", target_arch = "wasm32"))]
+pub use socket_session::GuestSubscriptionSocket;
+
+#[cfg(feature = "host")]
+mod socket_actor;
+#[cfg(feature = "host")]
+mod socket_driver;
+#[cfg(feature = "host")]
+pub use socket_driver::{SocketCompletion, SocketDriver, SocketLimits};
+
+#[cfg(all(feature = "guest", target_arch = "wasm32"))]
 mod guest;
 #[cfg(all(feature = "guest", target_arch = "wasm32"))]
 pub use guest::{GuestExchange, GuestHttp};

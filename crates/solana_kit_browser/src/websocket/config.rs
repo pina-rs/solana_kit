@@ -13,11 +13,11 @@ const MAX_ENDPOINT_BYTES: usize = 8192;
 pub struct WsConfig {
     /// Browser subprotocol offers, at most 16 unique HTTP tokens of 128 bytes each.
     pub protocols: Vec<String>,
-    /// Maximum queued complete text messages.
+    /// Maximum queued complete text or binary messages.
     pub queue_messages: usize,
-    /// Maximum retained UTF-8 bytes across the receive queue.
+    /// Maximum retained payload bytes across the receive queue.
     pub queue_bytes: usize,
-    /// Maximum encoded bytes in one incoming or outgoing text message.
+    /// Maximum payload bytes in one incoming message or outgoing text message.
     pub message_bytes: usize,
     /// Maximum browser bufferedAmount after accepting an outgoing message.
     pub buffered_bytes: u32,

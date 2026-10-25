@@ -1,17 +1,36 @@
 //! One mutable owner serializes registration, acknowledgements and bounded queues.
-use super::SubscriptionMethod;
+use super::{NotificationKind, SubscriptionMethod};
 use crate::{Error, Limits, Presence};
 use serde::{Deserialize, Serialize};
 use serde_json::value::RawValue;
+use std::borrow::Cow;
 use std::collections::{BTreeMap, VecDeque};
-use std::sync::Arc;
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::{Arc, Mutex, Weak};
+use std::task::Waker;
+
+mod binary;
+mod payload;
+mod sharing;
+use payload::Payload;
+use sharing::{PendingFailure, Physical, SharingKey};
+
+/// Independent limits for one local consumer. Aggregate connection limits also apply.
+#[derive(Debug, Clone, Copy)]
+pub struct QueueBudget {
+    /// Maximum retained notifications for this handle.
+    pub messages: usize,
+    /// Maximum retained payload bytes for this handle.
+    pub bytes: usize,
+}
 
 /// Resource budgets for one connection generation.
 #[derive(Debug, Clone, Copy)]
 pub struct Budget {
     /// Shared JSON byte and depth limits for every incoming and outgoing frame.
     pub frame: Limits,
-    /// Maximum registrations, including cancelled registrations awaiting replies.
+    /// Maximum local registrations and physical registrations, each independently.
+    /// Includes cancelled registrations and uncertain-unsubscribe tombstones.
     pub subscriptions: usize,
     /// Maximum queued frames, including early notifications and outbound frames.
     pub messages: usize,
@@ -41,7 +60,9 @@ pub enum Failure {
     Deadline,
     /// Server IDs collided or acknowledgement identity was unknown.
     Correlation,
-    /// Notification method contradicted the registered family.
+    /// An identical provider registration has pending or uncertain physical settlement.
+    Closing,
+    /// Notification kind/method contradicted a family, or binary namespaces were ambiguous.
     Method,
     /// The server refused to unsubscribe.
     UnsubscribeFalse,
@@ -95,6 +116,29 @@ pub struct Subscription<R> {
     generation: u64,
     owner: Arc<()>,
     request: R,
+    lease: Arc<LocalLease>,
+}
+
+#[derive(Debug)]
+struct LocalLease {
+    waker: Mutex<Option<Waker>>,
+    dropped: AtomicBool,
+}
+
+impl<R> Drop for Subscription<R> {
+    fn drop(&mut self) {
+        self.lease.dropped.store(true, Ordering::Release);
+        let waker = self
+            .lease
+            .waker
+            .lock()
+            .expect("infallible waker replacement")
+            .take();
+
+        if let Some(waker) = waker {
+            waker.wake();
+        }
+    }
 }
 /// Replacement always has a possible event gap. No historical replay is promised.
 #[derive(Debug, PartialEq, Eq)]
@@ -136,12 +180,22 @@ impl Phase {
     }
 }
 struct Entry {
-    phase: Phase,
+    physical: u32,
+    deadline: u64,
+    ended: bool,
     cancelled: bool,
-    unsubscribe: &'static str,
-    notification: &'static str,
-    queue: VecDeque<Box<RawValue>>,
-    failure: Option<Failure>,
+    lease: Weak<LocalLease>,
+    budget: QueueBudget,
+    bytes: usize,
+    queue: VecDeque<Payload>,
+    failure: Option<PendingFailure>,
+}
+impl Entry {
+    fn abandoned(&self) -> bool {
+        self.lease
+            .upgrade()
+            .is_none_or(|lease| lease.dropped.load(Ordering::Acquire))
+    }
 }
 struct Early {
     server: u64,
@@ -166,6 +220,7 @@ pub struct Connection {
     budget: Budget,
     next: u32,
     entries: BTreeMap<u32, Entry>,
+    physical: BTreeMap<u32, Physical>,
     outbound: VecDeque<Vec<u8>>,
     early: VecDeque<Early>,
     bytes: usize,
@@ -181,6 +236,7 @@ impl Connection {
             budget,
             next: 1,
             entries: BTreeMap::new(),
+            physical: BTreeMap::new(),
             outbound: VecDeque::new(),
             early: VecDeque::new(),
             bytes: 0,
@@ -194,25 +250,54 @@ impl Connection {
         request: R,
         deadline: u64,
     ) -> Result<Subscription<R>, Failure> {
+        self.subscribe_with_budget(
+            request,
+            deadline,
+            QueueBudget {
+                messages: self.budget.messages,
+                bytes: self.budget.queued_bytes,
+            },
+        )
+    }
+    /// Registers a consumer with its own limits. Any overflow is terminal, with no partial fan-out.
+    /// Identical provider work awaiting unsubscribe is rejected with `Failure::Closing`.
+    /// For opted-in providers, false, failed or missing unsubscribe acknowledgement quarantines the key
+    /// and reserves its known server ID until the connection is replaced.
+    /// An expired shared subscribe acknowledgement also quarantines the key.
+    /// Its server ID is unknown; a late acknowledgement is a terminal correlation
+    /// error. Replace the connection before retrying this uncertain provider work.
+    pub fn subscribe_with_budget<R: SubscriptionMethod>(
+        &mut self,
+        request: R,
+        deadline: u64,
+        budget: QueueBudget,
+    ) -> Result<Subscription<R>, Failure> {
         self.open()?;
 
         if self.entries.len() >= self.budget.subscriptions {
             return Err(Failure::Capacity);
         }
 
+        self.binary_namespace::<R>()?;
+
         let key = self.reserve()?;
         let body = crate::json::request(u64::from(key), &request, self.budget.frame)?.body;
-        self.enqueue(body)?;
+        let sharing = SharingKey::new::<R>(&body)?;
+        let physical = self.registration::<R>(key, deadline, sharing, body)?;
+        let lease = Arc::new(LocalLease {
+            waker: Mutex::new(None),
+            dropped: AtomicBool::new(false),
+        });
         self.entries.insert(
             key,
             Entry {
-                phase: Phase::Subscribing {
-                    request: key,
-                    deadline,
-                },
+                physical,
+                deadline,
+                ended: false,
                 cancelled: false,
-                unsubscribe: R::UNSUBSCRIBE,
-                notification: R::NOTIFICATION,
+                lease: Arc::downgrade(&lease),
+                budget,
+                bytes: 0,
                 queue: VecDeque::new(),
                 failure: None,
             },
@@ -222,6 +307,7 @@ impl Connection {
             generation: self.generation,
             owner: Arc::clone(&self.identity),
             request,
+            lease,
         })
     }
     /// Removes the next complete frame. The caller sends it once without retries.
@@ -235,16 +321,62 @@ impl Connection {
         self.handle(subscription)?;
         let entry = self.entries.get(&subscription.key).ok_or(Failure::Closed)?;
 
-        if entry.cancelled && !matches!(entry.phase, Phase::Unsubscribing { .. }) {
+        let physical = self.physical.get(&entry.physical).ok_or(Failure::Closed)?;
+
+        if entry.ended
+            || (entry.cancelled && !matches!(physical.phase, Phase::Unsubscribing { .. }))
+        {
             return Ok(Status::Closed);
         }
 
-        Ok(match entry.phase {
+        Ok(match physical.phase {
             Phase::Subscribing { .. } => Status::Subscribing,
             Phase::Active(_) => Status::Active,
             Phase::Unsubscribing { .. } => Status::Unsubscribing,
             Phase::Ended => Status::Closed,
         })
+    }
+    /// Whether this local consumer has settled. Detached consumers do not close shared work.
+    pub fn settled<R>(&self, subscription: &Subscription<R>) -> Result<bool, Failure> {
+        self.handle(subscription)?;
+        self.entries
+            .get(&subscription.key)
+            .map(|entry| entry.ended)
+            .ok_or(Failure::Closed)
+    }
+    /// Earliest physical or independent local acknowledgement deadline.
+    #[must_use]
+    pub fn next_deadline(&self) -> Option<u64> {
+        let physical = self
+            .physical
+            .values()
+            .filter_map(|registration| match registration.phase {
+                Phase::Subscribing { deadline, .. } | Phase::Unsubscribing { deadline, .. } => {
+                    Some(deadline)
+                }
+                _ => None,
+            });
+
+        let local = self.entries.values().filter_map(|entry| {
+            let registration = self.physical.get(&entry.physical)?;
+            (!entry.ended && matches!(registration.phase, Phase::Subscribing { .. }))
+                .then_some(entry.deadline)
+        });
+
+        physical.chain(local).min()
+    }
+    pub(super) fn register_waker(&self, waker: &Waker) {
+        for entry in self.entries.values() {
+            if let Some(lease) = entry.lease.upgrade() {
+                let replacement = waker.clone();
+                let previous = lease
+                    .waker
+                    .lock()
+                    .expect("infallible waker replacement")
+                    .replace(replacement);
+                drop(previous);
+            }
+        }
     }
     /// Ingests one complete bounded JSON text frame from this generation's socket.
     /// A failure on the current generation is terminal for this connection.
@@ -266,6 +398,28 @@ impl Connection {
 
         result
     }
+    /// Broadcasts a complete binary frame within one explicitly named provider namespace.
+    ///
+    /// Binary headers need not contain a subscription ID. Only live, uncancelled
+    /// registrations that explicitly accept the same namespace receive a copy.
+    /// Pre-ack frames remain queued until their subscribe acknowledgement. The
+    /// complete broadcast is budgeted before any payload is allocated or copied.
+    /// A current-generation failure terminates this connection; stale frames do not.
+    pub fn ingest_binary(&mut self, generation: u64, body: &[u8]) -> Result<(), Failure> {
+        self.open()?;
+
+        if generation != self.generation {
+            return Err(Failure::Closed);
+        }
+
+        let result = self.binary(body);
+
+        if result.is_err() {
+            self.terminate();
+        }
+
+        result
+    }
     /// Drains one typed notification. Decode failure terminates this connection.
     pub fn next<R: SubscriptionMethod>(
         &mut self,
@@ -278,19 +432,30 @@ impl Connection {
             .ok_or(Failure::Closed)?;
 
         if let Some(error) = entry.failure.take() {
-            return Err(error);
+            return Err(error.into_failure());
         }
 
-        if entry.cancelled || matches!(entry.phase, Phase::Ended) {
+        if entry.cancelled || entry.ended {
             return Ok(Drain::Closed);
+        }
+
+        if matches!(
+            self.physical
+                .get(&entry.physical)
+                .ok_or(Failure::Closed)?
+                .phase,
+            Phase::Subscribing { .. }
+        ) {
+            return Ok(Drain::Pending);
         }
 
         let Some(raw) = entry.queue.pop_front() else {
             return Ok(Drain::Pending);
         };
-        self.release(raw.get().len());
+        entry.bytes -= raw.len();
+        self.release(raw.len());
 
-        let value = match subscription.request.decode(raw.get()) {
+        let value = match raw.decode(&subscription.request) {
             Ok(value) => value,
             Err(error) => {
                 self.terminate();
@@ -313,11 +478,14 @@ impl Connection {
             .get_mut(&subscription.key)
             .ok_or(Failure::Closed)?;
         entry.cancelled = true;
+        entry.bytes = 0;
         let queue = std::mem::take(&mut entry.queue);
 
         for raw in queue {
-            self.release(raw.get().len());
+            self.release(raw.len());
         }
+
+        self.detach_if_shared(subscription.key)?;
 
         Ok(())
     }
@@ -330,7 +498,12 @@ impl Connection {
         deadline: u64,
     ) -> Result<(), Failure> {
         self.cancel(subscription)?;
-        self.start_unsubscribe(subscription.key, deadline)
+        let physical = self
+            .entries
+            .get(&subscription.key)
+            .ok_or(Failure::Closed)?
+            .physical;
+        self.start_unsubscribe(physical, deadline)
     }
     /// Applies caller monotonic time and starts cleanup for quiet cancellations.
     /// Missing acknowledgements become observable per-subscription deadline errors.
@@ -340,17 +513,30 @@ impl Connection {
 
         for key in keys {
             let entry = self.entries.get_mut(&key).ok_or(Failure::Closed)?;
-            let expired = entry.phase.expired(now);
+            let registration = self.physical.get(&entry.physical).ok_or(Failure::Closed)?;
 
-            if expired {
-                entry.phase = Phase::Ended;
-                entry.failure = Some(Failure::Deadline);
+            if !entry.ended
+                && matches!(registration.phase, Phase::Subscribing { .. })
+                && now >= entry.deadline
+            {
+                entry.ended = true;
+                entry.failure = Some(PendingFailure::Local(Failure::Deadline));
             }
 
-            if entry.cancelled && matches!(entry.phase, Phase::Active(_)) {
-                self.start_unsubscribe(key, cleanup_deadline)?;
+            if entry.abandoned() && !entry.cancelled {
+                entry.cancelled = true;
+                entry.bytes = 0;
+                let queue = std::mem::take(&mut entry.queue);
+
+                for raw in queue {
+                    self.release(raw.len());
+                }
             }
+
+            self.detach_if_shared(key)?;
         }
+
+        self.tick_physical(now, cleanup_deadline)?;
 
         self.discard_early_if_settled();
         Ok(())
@@ -360,7 +546,7 @@ impl Connection {
         self.handle(&subscription)?;
         let entry = self.entries.get(&subscription.key).ok_or(Failure::Closed)?;
 
-        if !matches!(entry.phase, Phase::Ended) {
+        if !entry.ended {
             return Err(Failure::Correlation);
         }
 
@@ -370,8 +556,10 @@ impl Connection {
             .ok_or(Failure::Closed)?;
 
         for raw in entry.queue {
-            self.release(raw.get().len());
+            self.release(raw.len());
         }
+
+        self.remove_physical_if_unused(entry.physical);
 
         Ok(())
     }
@@ -379,6 +567,7 @@ impl Connection {
     pub fn terminate(&mut self) {
         self.closed = true;
         self.entries.clear();
+        self.physical.clear();
         self.outbound.clear();
         self.early.clear();
         self.bytes = 0;
@@ -408,11 +597,20 @@ impl Connection {
 
     fn finish(&mut self, key: u32) -> Result<(), Failure> {
         let entry = self.entries.get_mut(&key).ok_or(Failure::Closed)?;
-        entry.phase = Phase::Ended;
+        entry.ended = true;
+        entry.bytes = 0;
+        let physical = entry.physical;
         let queue = std::mem::take(&mut entry.queue);
 
         for raw in queue {
-            self.release(raw.get().len());
+            self.release(raw.len());
+        }
+
+        if !self.has_receivers(physical) {
+            self.physical
+                .get_mut(&physical)
+                .ok_or(Failure::Closed)?
+                .phase = Phase::Ended;
         }
 
         Ok(())
@@ -458,7 +656,11 @@ impl Connection {
         Ok(())
     }
     fn start_unsubscribe(&mut self, key: u32, deadline: u64) -> Result<(), Failure> {
-        let entry = self.entries.get(&key).ok_or(Failure::Closed)?;
+        if self.has_receivers(key) {
+            return Ok(());
+        }
+
+        let entry = self.physical.get(&key).ok_or(Failure::Closed)?;
         let Phase::Active(server) = entry.phase else {
             return Ok(());
         };
@@ -486,11 +688,13 @@ impl Connection {
         }
 
         self.enqueue(body)?;
-        self.entries.get_mut(&key).ok_or(Failure::Closed)?.phase = Phase::Unsubscribing {
+        self.physical.get_mut(&key).ok_or(Failure::Closed)?.phase = Phase::Unsubscribing {
             request,
             server,
             deadline,
         };
+        let entry = self.physical.get_mut(&key).ok_or(Failure::Closed)?;
+        entry.quarantined = entry.sharing.is_some();
         Ok(())
     }
     fn receive(&mut self, body: &[u8]) -> Result<(), Failure> {
@@ -510,7 +714,7 @@ impl Connection {
     }
     fn ack(&mut self, id: u32, body: &[u8]) -> Result<(), Failure> {
         let key = self
-            .entries
+            .physical
             .iter()
             .find_map(|(key, entry)| match entry.phase {
                 Phase::Subscribing { request, .. } | Phase::Unsubscribing { request, .. }
@@ -532,9 +736,7 @@ impl Connection {
 
         match raw {
             Err(Error::Remote(error)) => {
-                let entry = self.entries.get_mut(&key).ok_or(Failure::Closed)?;
-                entry.phase = Phase::Ended;
-                entry.failure = Some(Failure::Protocol(Error::Remote(error)));
+                self.remote_error(key, error)?;
             }
             Err(error) => return Err(error.into()),
             Ok(raw) => self.accept(key, &raw)?,
@@ -544,7 +746,7 @@ impl Connection {
         Ok(())
     }
     fn accept(&mut self, key: u32, raw: &RawValue) -> Result<(), Failure> {
-        let entry = self.entries.get(&key).ok_or(Failure::Closed)?;
+        let entry = self.physical.get(&key).ok_or(Failure::Closed)?;
 
         if matches!(entry.phase, Phase::Unsubscribing { .. }) {
             return self.accept_unsubscribe(key, raw);
@@ -553,24 +755,41 @@ impl Connection {
         let server: u64 = serde_json::from_str(raw.get()).map_err(Error::Schema)?;
 
         if self
-            .entries
+            .physical
             .values()
-            .any(|entry| entry.phase.server() == Some(server))
+            .any(|entry| entry.server() == Some(server))
         {
             return Err(Failure::Correlation);
         }
 
-        self.entries.get_mut(&key).ok_or(Failure::Closed)?.phase = Phase::Active(server);
+        self.physical.get_mut(&key).ok_or(Failure::Closed)?.phase = Phase::Active(server);
         self.route_early(key, server)
     }
 
     fn accept_unsubscribe(&mut self, key: u32, raw: &RawValue) -> Result<(), Failure> {
         let accepted: bool = serde_json::from_str(raw.get()).map_err(Error::Schema)?;
-        let entry = self.entries.get_mut(&key).ok_or(Failure::Closed)?;
-        entry.phase = Phase::Ended;
+        let entry = self.physical.get_mut(&key).ok_or(Failure::Closed)?;
+        entry.reserved_server = if !accepted && entry.sharing.is_some() {
+            entry.phase.server()
+        } else {
+            None
+        };
 
-        if !accepted {
-            entry.failure = Some(Failure::UnsubscribeFalse);
+        entry.phase = Phase::Ended;
+        entry.quarantined = !accepted && entry.sharing.is_some();
+
+        for entry in self
+            .entries
+            .values_mut()
+            .filter(|entry| entry.physical == key)
+        {
+            if !entry.ended {
+                entry.ended = true;
+
+                if !accepted {
+                    entry.failure = Some(PendingFailure::Local(Failure::UnsubscribeFalse));
+                }
+            }
         }
 
         Ok(())
@@ -586,8 +805,8 @@ impl Connection {
                 continue;
             }
 
-            self.bytes -= early.method.len();
-            self.route(key, &early.method, early.result)?;
+            self.release(early.method.len() + early.result.get().len());
+            self.route(key, &early.method, &early.result)?;
         }
 
         Ok(())
@@ -596,16 +815,20 @@ impl Connection {
     fn notification(&mut self, body: &[u8]) -> Result<(), Failure> {
         #[derive(Deserialize)]
         #[serde(deny_unknown_fields)]
-        struct Frame {
-            jsonrpc: String,
-            method: String,
-            params: Params,
+        struct Frame<'a> {
+            #[serde(borrow)]
+            jsonrpc: Cow<'a, str>,
+            #[serde(borrow)]
+            method: Cow<'a, str>,
+            #[serde(borrow)]
+            params: Params<'a>,
         }
         #[derive(Deserialize)]
         #[serde(deny_unknown_fields)]
-        struct Params {
+        struct Params<'a> {
             subscription: u64,
-            result: Box<RawValue>,
+            #[serde(borrow)]
+            result: &'a RawValue,
         }
         let frame: Frame = serde_json::from_slice(body).map_err(Error::Json)?;
 
@@ -613,49 +836,50 @@ impl Connection {
             return Err(Failure::Protocol(Error::Envelope));
         }
 
-        let key = self.entries.iter().find_map(|(key, entry)| {
-            (entry.phase.server() == Some(frame.params.subscription)).then_some(*key)
+        let key = self.physical.iter().find_map(|(key, entry)| {
+            (entry.server() == Some(frame.params.subscription)).then_some(*key)
         });
 
         if let Some(key) = key {
-            self.retain(frame.params.result.get().len())?;
-
             return self.route(key, &frame.method, frame.params.result);
         }
 
         if self
-            .entries
+            .physical
             .values()
             .any(|e| matches!(e.phase, Phase::Subscribing { .. }))
         {
             self.retain(frame.params.result.get().len() + frame.method.len())?;
             self.early.push_back(Early {
                 server: frame.params.subscription,
-                method: frame.method,
-                result: frame.params.result,
+                method: frame.method.into_owned(),
+                result: frame.params.result.to_owned(),
             });
         }
         Ok(())
     }
-    fn route(&mut self, key: u32, method: &str, raw: Box<RawValue>) -> Result<(), Failure> {
-        let entry = self.entries.get_mut(&key).ok_or(Failure::Closed)?;
+    fn route(&mut self, key: u32, method: &str, raw: &RawValue) -> Result<(), Failure> {
+        let entry = self.physical.get(&key).ok_or(Failure::Closed)?;
 
-        if entry.notification != method {
+        if entry.notification != method || entry.kind != NotificationKind::Json {
             return Err(Failure::Method);
         }
 
-        if entry.cancelled {
-            self.release(raw.get().len());
+        let bytes = raw.get().len();
+        let keys = self.receivers(key);
+        self.preflight(&keys, bytes)?;
 
-            return Ok(());
+        for key in keys {
+            let entry = self.entries.get_mut(&key).ok_or(Failure::Closed)?;
+            entry.bytes += bytes;
+            entry.queue.push_back(Payload::Json(raw.to_owned()));
         }
 
-        entry.queue.push_back(raw);
         Ok(())
     }
     fn discard_early_if_settled(&mut self) {
         if self
-            .entries
+            .physical
             .values()
             .any(|e| matches!(e.phase, Phase::Subscribing { .. }))
         {

@@ -9,6 +9,7 @@ use hyper::{
 };
 use hyper_util::rt::TokioIo;
 use solana_kit_client::{Reply, Request, TransportError, TransportFailureKind as Kind};
+use std::borrow::Cow;
 use tokio::{
     io::{AsyncRead, AsyncWrite},
     net::TcpStream,
@@ -20,12 +21,37 @@ pub(crate) async fn execute(
     adapter: &NativeHttp,
     request: Request,
 ) -> Result<Reply, TransportError> {
+    execute_http(
+        adapter,
+        HttpRequest {
+            method: "POST",
+            target: Cow::Borrowed(&adapter.endpoint.path),
+            body: request.body,
+            content_type: Some("application/json"),
+            max_reply_bytes: request.max_reply_bytes,
+        },
+    )
+    .await
+}
+
+pub(crate) struct HttpRequest<'a> {
+    pub(crate) method: &'static str,
+    pub(crate) target: Cow<'a, str>,
+    pub(crate) body: Vec<u8>,
+    pub(crate) content_type: Option<&'static str>,
+    pub(crate) max_reply_bytes: usize,
+}
+
+pub(crate) async fn execute_http(
+    adapter: &NativeHttp,
+    request: HttpRequest<'_>,
+) -> Result<Reply, TransportError> {
     timeout(adapter.config.exchange_timeout, connect(adapter, request))
         .await
         .map_err(|error| TransportError::with_source(Kind::Deadline, error))?
 }
 
-async fn connect(adapter: &NativeHttp, request: Request) -> Result<Reply, TransportError> {
+async fn connect(adapter: &NativeHttp, request: HttpRequest<'_>) -> Result<Reply, TransportError> {
     let stream = timeout(adapter.config.connect_timeout, open(adapter))
         .await
         .map_err(|error| TransportError::with_source(Kind::Deadline, error))??;
@@ -63,7 +89,7 @@ async fn open(adapter: &NativeHttp) -> Result<Stream, TransportError> {
 
 async fn exchange<S>(
     adapter: &NativeHttp,
-    request: Request,
+    request: HttpRequest<'_>,
     stream: S,
 ) -> Result<Reply, TransportError>
 where
@@ -80,7 +106,7 @@ where
         .map_err(http_error)?;
 
     let limit = request.max_reply_bytes;
-    let outgoing = outgoing(adapter, request.body)?;
+    let outgoing = outgoing(adapter, request)?;
     let receive = async move {
         let response = sender.send_request(outgoing).await.map_err(http_error)?;
         collect(response, limit).await
@@ -97,15 +123,15 @@ where
     }
 }
 
-/// Builds the fixed POST envelope after the connection handshake succeeds.
+/// Builds the caller method and target after the connection handshake succeeds.
 fn outgoing(
     adapter: &NativeHttp,
-    body: Vec<u8>,
+    request: HttpRequest<'_>,
 ) -> Result<hyper::Request<Full<Bytes>>, TransportError> {
     let mut outgoing = hyper::Request::builder()
-        .method("POST")
-        .uri(&adapter.endpoint.path)
-        .body(Full::new(Bytes::from(body)))
+        .method(request.method)
+        .uri(request.target.as_ref())
+        .body(Full::new(Bytes::from(request.body)))
         .map_err(|error| TransportError::with_source(Kind::Denied, error))?;
 
     *outgoing.headers_mut() = adapter.config.headers.clone();
@@ -117,10 +143,12 @@ fn outgoing(
             .parse()
             .map_err(|error| TransportError::with_source(Kind::Denied, error))?,
     );
-    outgoing.headers_mut().insert(
-        header::CONTENT_TYPE,
-        header::HeaderValue::from_static("application/json"),
-    );
+    if let Some(content_type) = request.content_type {
+        outgoing.headers_mut().insert(
+            header::CONTENT_TYPE,
+            header::HeaderValue::from_static(content_type),
+        );
+    }
     outgoing.headers_mut().insert(
         header::CONNECTION,
         header::HeaderValue::from_static("close"),

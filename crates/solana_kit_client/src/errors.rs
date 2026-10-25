@@ -4,6 +4,11 @@ use serde::Deserialize;
 use serde_json::value::RawValue;
 use std::{error::Error as StdError, fmt};
 
+#[cfg(all(target_arch = "wasm32", target_os = "unknown"))]
+type TransportSource = dyn StdError;
+#[cfg(not(all(target_arch = "wasm32", target_os = "unknown")))]
+type TransportSource = dyn StdError + Send + Sync;
+
 /// Portable host failure categories, independent of a particular HTTP library.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum TransportFailureKind {
@@ -26,11 +31,16 @@ pub enum TransportFailureKind {
 }
 
 /// A categorized adapter failure retaining its original error when available.
+///
+/// On `wasm32-unknown-unknown`, sources may contain local values, so this error
+/// and errors containing it do not promise `Send` or `Sync`. This also applies
+/// to JavaScript-free guests on that target and adds no host dependency. Other
+/// targets retain `Send + Sync` sources, including native and WASI adapters.
 #[derive(Debug)]
 pub struct TransportError {
     /// Portable failure category.
     pub kind: TransportFailureKind,
-    source: Option<Box<dyn StdError + Send + Sync>>,
+    source: Option<Box<TransportSource>>,
 }
 
 impl TransportError {
@@ -40,10 +50,23 @@ impl TransportError {
     }
 
     /// Retains an adapter's original error and portable category.
+    #[cfg(not(all(target_arch = "wasm32", target_os = "unknown")))]
     pub fn with_source(
         kind: TransportFailureKind,
         source: impl StdError + Send + Sync + 'static,
     ) -> Self {
+        Self {
+            kind,
+            source: Some(Box::new(source)),
+        }
+    }
+
+    /// Retains an adapter's original, possibly local error and category.
+    ///
+    /// Available on `wasm32-unknown-unknown`, including JavaScript-free guests.
+    /// Sources need not implement `Send` or `Sync` on this target.
+    #[cfg(all(target_arch = "wasm32", target_os = "unknown"))]
+    pub fn with_source(kind: TransportFailureKind, source: impl StdError + 'static) -> Self {
         Self {
             kind,
             source: Some(Box::new(source)),

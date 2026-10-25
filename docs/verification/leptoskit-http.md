@@ -20,7 +20,7 @@ only the driver, so the application can use or destroy its actual App independen
 There is one service registry and one owner of task accounting.
 
 The actual owning identity and scoped-access APIs come from public commit
-`706334eaa3e011d1ef986159911b0d80c80d3e9f`. The adapter and canonical HTTP fixture
+`3c6383a17f786172d696e1e83d8026cba2085fa4`. The adapter and canonical HTTP fixture
 pin that revision. The separate portable conformance host and async fixture retain
 their earlier immutable pins and behavior.
 
@@ -62,9 +62,9 @@ local Rc across observed Pending and wake, retained-call no-EOF control, guest D
 cancellation, capacity retained until abort termination joins, unrelated Events,
 and awaited unload with peer EOF. Successful peers and tasks are awaited.
 
-## Executed verification
+## Historical execution receipts
 
-Both actual Rust 1.99.1 and 1.89.0 compile the byte-identical canonical guest source
+The earlier recorded Rust 1.99.1 and 1.89.0 producers compile the byte-identical canonical guest source
 and execute all four journeys. Verbose producer logs identify each actual child
 rustc and rustdoc. The actual local guest artifact hashes are:
 
