@@ -74,6 +74,7 @@ jobs:
           set -euo pipefail
           manifest=verification/wasi-text-sockets/Cargo.toml
           cargo +1.99.1 fmt --manifest-path "$manifest" --all --check
+          cargo +1.99.1 test --locked --manifest-path "$manifest" --bin runner embedded::tests
           cargo +1.99.1 clippy --locked --manifest-path "$manifest" \
             --bin runner --bin audit -- -D warnings
           cargo +1.99.1 clippy --locked --manifest-path "$manifest" --bin guest \

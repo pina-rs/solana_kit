@@ -171,6 +171,12 @@ fn omitted_suffixes() {
         second: None,
     };
     assert!(empty.resolve(OTHER_PROGRAM).unwrap().is_empty());
+    let no_accounts = empty
+        .instruction_with_program(OTHER_PROGRAM, &resolvers::OmitRoles {}, LIMITS)
+        .unwrap();
+    assert!(no_accounts.accounts.is_empty());
+    resolvers::OmitRoles::parse_with_program(OTHER_PROGRAM, &no_accounts, LIMITS).unwrap();
+
     let one = resolvers::OmitRolesAccounts {
         first: Some(SOURCE),
         second: None,
@@ -178,13 +184,22 @@ fn omitted_suffixes() {
     let one_account = one.resolve(OTHER_PROGRAM).unwrap();
     assert_eq!(one_account.len(), 1);
     assert_eq!(one_account[0].address, SOURCE);
-    one.instruction_with_program(OTHER_PROGRAM, &resolvers::OmitRoles {}, LIMITS)
+    let invocation = one
+        .instruction_with_program(OTHER_PROGRAM, &resolvers::OmitRoles {}, LIMITS)
         .unwrap();
+    resolvers::OmitRoles::parse_with_program(OTHER_PROGRAM, &invocation, LIMITS).unwrap();
+
     let both = resolvers::OmitRolesAccounts {
         first: Some(SOURCE),
         second: Some(DESTINATION),
     };
-    assert_eq!(both.resolve(OTHER_PROGRAM).unwrap().len(), 2);
+    let invocation = both
+        .instruction_with_program(OTHER_PROGRAM, &resolvers::OmitRoles {}, LIMITS)
+        .unwrap();
+    assert_eq!(invocation.accounts.len(), 2);
+    resolvers::OmitRoles::parse_with_program(OTHER_PROGRAM, &invocation, LIMITS).unwrap();
+    reject_excess_optional_accounts(invocation);
+
     let hole = resolvers::OmitRolesAccounts {
         first: None,
         second: Some(DESTINATION),
@@ -192,6 +207,22 @@ fn omitted_suffixes() {
     assert_eq!(
         hole.resolve(OTHER_PROGRAM),
         Err(resolvers::DefaultError::Codec(Error::InvalidValue))
+    );
+}
+
+fn reject_excess_optional_accounts(mut invocation: Instruction) {
+    invocation.accounts.push(invocation.accounts[0]);
+    assert_eq!(
+        resolvers::OmitRoles::parse_with_program(OTHER_PROGRAM, &invocation, LIMITS),
+        Err(Error::InvalidValue)
+    );
+    assert_eq!(
+        resolvers::OmitRoles {}.instruction_with_program(
+            OTHER_PROGRAM,
+            &invocation.accounts,
+            LIMITS
+        ),
+        Err(Error::InvalidValue)
     );
 }
 

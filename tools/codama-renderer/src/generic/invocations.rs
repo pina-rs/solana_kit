@@ -1,6 +1,6 @@
 //! Ordered invocation builders and strict parsers from validated role policies.
 use super::{Instruction, Program, RemainingPrivileges, Signer};
-fn count(item: &Instruction) -> String {
+fn count(item: &Instruction) -> Option<String> {
     let maximum = item.roles.len();
 
     if item.remaining.is_some() {
@@ -10,21 +10,26 @@ fn count(item: &Instruction) -> String {
     if item.omit_optional {
         let required = item.roles.iter().take_while(|role| !role.optional).count();
 
-        return format!("{} || accounts.len() > {maximum}", minimum(required));
+        if required < maximum {
+            return Some(match minimum(required) {
+                Some(lower) => format!("{lower} || accounts.len() > {maximum}"),
+                None => format!("accounts.len() > {maximum}"),
+            });
+        }
     }
 
     if maximum == 0 {
-        return "!accounts.is_empty()".to_owned();
+        return Some("!accounts.is_empty()".to_owned());
     }
 
-    format!("accounts.len() != {maximum}")
+    Some(format!("accounts.len() != {maximum}"))
 }
 
-fn minimum(count: usize) -> String {
+fn minimum(count: usize) -> Option<String> {
     match count {
-        0 => "false".to_owned(),
-        1 => "accounts.is_empty()".to_owned(),
-        _ => format!("accounts.len() < {count}"),
+        0 => None,
+        1 => Some("accounts.is_empty()".to_owned()),
+        _ => Some(format!("accounts.len() < {count}")),
     }
 }
 
@@ -35,7 +40,9 @@ pub(super) fn helpers() -> String {
 
 pub(super) fn emit(item: &Instruction) -> String {
     let name = &item.name;
-    let invalid_count = count(item);
+    let count_check = count(item)
+        .map(|invalid| format!("if {invalid} {{ return Err(Error::InvalidValue); }}\n\n"))
+        .unwrap_or_default();
     let requirements = item
         .roles
         .iter()
@@ -56,7 +63,7 @@ pub(super) fn emit(item: &Instruction) -> String {
         .collect::<Vec<_>>()
         .join(",");
     let mut out = format!(
-        "impl {name} {{\nfn validate_accounts(program: Address, accounts: &[AccountMeta], limits: Limits) -> Result<(), Error> {{\nlet _ = program;\n\nif {invalid_count} {{ return Err(Error::InvalidValue); }}\n\nif accounts.len() > limits.max_items {{ return Err(Error::LimitExceeded); }}\n\nif !accounts.iter().zip([{requirements}]).all(|(meta,expected)|role_matches(program,meta,&expected)) {{ return Err(Error::InvalidValue); }}\n"
+        "impl {name} {{\nfn validate_accounts(program: Address, accounts: &[AccountMeta], limits: Limits) -> Result<(), Error> {{\nlet _ = program;\n\n{count_check}if accounts.len() > limits.max_items {{ return Err(Error::LimitExceeded); }}\n\nif !accounts.iter().zip([{requirements}]).all(|(meta,expected)|role_matches(program,meta,&expected)) {{ return Err(Error::InvalidValue); }}\n"
     );
 
     if let Some(remaining) = &item.remaining
