@@ -1,0 +1,11 @@
+[package]
+name = "solana_kit_metaplex_guest"
+version = "0.0.0"
+edition = "2024"
+publish = false
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+solana_kit_metaplex_portable = { path = ".." }

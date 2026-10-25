@@ -166,3 +166,23 @@ publish = { enabled = false }
 path = "crates/solana_kit_loader"
 type = "cargo"
 publish = { enabled = false }
+
+[package.solana_kit_account_compression]
+path = "crates/solana_kit_account_compression"
+type = "cargo"
+publish = { enabled = false }
+
+[package.solana_kit_mpl_core]
+path = "crates/solana_kit_mpl_core"
+type = "cargo"
+publish = { enabled = false }
+
+[package.solana_kit_mpl_token_metadata]
+path = "crates/solana_kit_mpl_token_metadata"
+type = "cargo"
+publish = { enabled = false }
+
+[package.solana_kit_mpl_bubblegum]
+path = "crates/solana_kit_mpl_bubblegum"
+type = "cargo"
+publish = { enabled = false }

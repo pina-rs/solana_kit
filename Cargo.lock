@@ -1462,6 +1462,13 @@ name = "solana_kit"
 version = "0.0.0"
 
 [[package]]
+name = "solana_kit_account_compression"
+version = "0.1.0"
+dependencies = [
+ "solana_kit_core",
+]
+
+[[package]]
 name = "solana_kit_address_lookup_table"
 version = "0.1.0"
 dependencies = [
@@ -1666,6 +1673,33 @@ dependencies = [
 
 [[package]]
 name = "solana_kit_memo"
+version = "0.1.0"
+dependencies = [
+ "solana_kit_core",
+]
+
+[[package]]
+name = "solana_kit_mpl_bubblegum"
+version = "0.1.0"
+dependencies = [
+ "futures-util",
+ "serde",
+ "serde_json",
+ "sha3",
+ "solana_kit_account_compression",
+ "solana_kit_client",
+ "solana_kit_core",
+]
+
+[[package]]
+name = "solana_kit_mpl_core"
+version = "0.1.0"
+dependencies = [
+ "solana_kit_core",
+]
+
+[[package]]
+name = "solana_kit_mpl_token_metadata"
 version = "0.1.0"
 dependencies = [
  "solana_kit_core",

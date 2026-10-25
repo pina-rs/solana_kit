@@ -1,0 +1,61 @@
+code	message
+6000	Asset owner does not match
+6001	Public key mismatch
+6002	Hashing mismatch within leaf schema
+6003	Unsupported schema version
+6004	Creator shares must sum to 100
+6005	No duplicate creator addresses in metadata
+6006	Creator did not verify the metadata
+6007	Creator not found in creator Vec
+6008	No creators in creator Vec
+6009	User-provided creator Vec must result in same user-provided creator hash
+6010	User-provided metadata must result in same user-provided data hash
+6011	Creators list too long
+6012	Name in metadata is too long
+6013	Symbol in metadata is too long
+6014	URI in metadata is too long
+6015	Basis points in metadata cannot exceed 10000
+6016	Tree creator or tree delegate must sign
+6017	Not enough unapproved mints left
+6018	Numerical overflow error
+6019	Incorrect account owner
+6020	Cannot verify collection in this instruction
+6021	Collection not found on metadata
+6022	Collection item is already verified
+6023	Collection item is already unverified
+6024	Incorrect leaf metadata update authority
+6025	This transaction must be signed by either the leaf owner or leaf delegate
+6026	Collection must be a sized collection
+6027	Metadata mint does not match collection mint
+6028	Invalid collection authority
+6029	Invalid delegate record PDA derivation
+6030	Edition account doesn't match collection
+6031	Collection must be a unique master edition v2
+6032	Could not convert external error to BubblegumError
+6033	Decompression is disabled for this tree
+6034	Missing collection mint account
+6035	Missing collection metadata account
+6036	Collection mismatch
+6037	Metadata not mutable
+6038	Can only update primary sale to true
+6039	Creator did not unverify the metadata
+6040	Only NonFungible standard is supported
+6041	Canopy size should be set bigger for this tree
+6042	Invalid log wrapper program
+6043	Invalid compression program
+6044	Leaf must be delegated to someone other than the leaf owner
+6045	Asset is frozen
+6046	Asset is non-transferable
+6047	Invalid authority
+6048	Collection is frozen
+6049	Core collections must have the Bubblegum V2 plugin on them
+6050	Feature not currently available
+6051	Missing collection account
+6052	Asset data length too long
+6053	Item is already in the collection
+6054	Item is already not in a collection
+6055	Missing mpl-core CPI signer account
+6056	Asset is not frozen
+6057	Core collections must have the Royalties plugin to inherit seller fee basis points
+6058	Inherited seller fee basis points cannot be used with leaf-level creators
+6059	Cannot remove from collection while seller fee basis points are inherited

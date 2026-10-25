@@ -78,32 +78,72 @@ fn render(root: &Path) -> Result<(String, usize), Error> {
 }
 
 /// Rejects signatures the portable zero-argument contract registry cannot execute.
-fn entrypoints(source: &str) -> Result<Vec<&str>, Error> {
-    let mut names = Vec::new();
-
-    for line in source
-        .lines()
-        .filter_map(|line| line.strip_prefix("pub fn "))
-    {
-        let name = line
-            .strip_suffix("() {")
-            .ok_or("contract must be a zero-argument body")?;
-
-        if !name
-            .bytes()
-            .all(|byte| byte.is_ascii_alphanumeric() || byte == b'_')
-        {
-            return Err("invalid contract entrypoint".into());
-        }
-
-        names.push(name);
-    }
+pub(crate) fn entrypoints(source: &str) -> Result<Vec<String>, Error> {
+    let names = item_entrypoints(&syn::parse_file(source)?.items)?;
 
     if names.is_empty() {
         return Err("contract file has no portable bodies".into());
     }
 
     Ok(names)
+}
+
+/// Reads module-level owners, including literal case macros and reexported DAS bodies.
+fn item_entrypoints(items: &[syn::Item]) -> Result<Vec<String>, Error> {
+    let mut names = Vec::new();
+
+    for item in items {
+        match item {
+            syn::Item::Fn(function) => {
+                names.extend(function_name(function)?);
+            }
+            syn::Item::Macro(item) if item.mac.path.is_ident("case") => {
+                names.push(case_name(&item.mac)?);
+            }
+            syn::Item::Mod(syn::ItemMod {
+                content: Some((_, items)),
+                ..
+            }) => {
+                names.extend(item_entrypoints(items)?);
+            }
+            _ => {}
+        }
+    }
+
+    Ok(names)
+}
+
+/// Private helpers are excluded; public behavior owners must be directly callable.
+fn function_name(function: &syn::ItemFn) -> Result<Option<String>, Error> {
+    if !matches!(function.vis, syn::Visibility::Public(_)) {
+        return Ok(None);
+    }
+
+    if !function.sig.inputs.is_empty()
+        || !matches!(function.sig.output, syn::ReturnType::Default)
+        || !function.sig.generics.params.is_empty()
+        || function.sig.asyncness.is_some()
+        || !matches!(function.sig.safety, syn::Safety::Default)
+    {
+        return Err("contract must be a synchronous zero-argument unit body".into());
+    }
+
+    Ok(Some(function.sig.ident.to_string()))
+}
+
+/// The first case argument names the actual function emitted by the source macro.
+fn case_name(item: &syn::Macro) -> Result<String, Error> {
+    let mut tokens = item.tokens.clone().into_iter();
+    let Some(proc_macro2::TokenTree::Ident(name)) = tokens.next() else {
+        return Err("contract case name required".into());
+    };
+
+    if !matches!(tokens.next(), Some(proc_macro2::TokenTree::Punct(comma)) if comma.as_char() == ',')
+    {
+        return Err("contract case arguments required".into());
+    }
+
+    Ok(name.to_string())
 }
 
 #[cfg(all(test, feature = "verification"))]
@@ -124,5 +164,20 @@ mod tests {
         assert!(
             source.contains("stake_options::all_lockup_option_combinations_have_literal_frames")
         );
+    }
+
+    #[test]
+    fn macro_cases_and_reexported_bodies_preserve_source_order() {
+        assert_eq!(
+            entrypoints(
+                "case!(wire, Data, Codec, value, bytes);\n\
+                 mod enabled { pub fn provider() {} fn helper() {} }"
+            )
+            .unwrap(),
+            ["wire", "provider"]
+        );
+        assert!(entrypoints("case!(123, Data);").is_err());
+        assert!(entrypoints("pub fn value() -> usize { 1 }").is_err());
+        assert!(entrypoints("pub async fn pending() {}").is_err());
     }
 }

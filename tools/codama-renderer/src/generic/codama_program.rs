@@ -262,7 +262,7 @@ fn event_record(node: &Value) -> Result<Definition, Error> {
     })
 }
 
-fn event_header(node: &Value) -> Result<Vec<u8>, Error> {
+pub(super) fn event_header(node: &Value) -> Result<Vec<u8>, Error> {
     let mut bytes = Vec::new();
 
     for item in parse::array(node, "discriminators")? {

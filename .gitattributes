@@ -1,2 +1,5 @@
 # Keep canonical receipts and fixtures byte-identical across host checkouts.
 *.tsv text eol=lf
+
+# This upstream diagnostic fixture contains a significant trailing space.
+crates/solana_kit_mpl_core/tests/fixtures/errors.tsv whitespace=-blank-at-eol

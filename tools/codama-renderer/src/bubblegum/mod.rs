@@ -26,7 +26,7 @@ pub(crate) fn source() -> Result<Value, Error> {
 }
 
 pub(crate) fn render(root: &Value) -> Result<String, Error> {
-    generic::render_complete_program(
+    generic::render_prefixed_program(
         root,
         &generic::Policy {
             name: "mplBubblegum",
