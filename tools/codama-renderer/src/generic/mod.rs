@@ -1,6 +1,8 @@
 //! Bounded second-program generator with explicit input trust and finite types.
 mod account_output;
 #[cfg(feature = "verification")]
+mod account_prefix;
+#[cfg(feature = "verification")]
 mod anchor;
 #[cfg(feature = "verification")]
 mod anchor_types;
@@ -202,6 +204,12 @@ pub(crate) fn render(root: &Value, policy: &Policy<'_>) -> Result<String, Error>
 #[cfg(feature = "verification")]
 pub(crate) fn render_complete_program(root: &Value, policy: &Policy<'_>) -> Result<String, Error> {
     codama_program::render(root, policy)
+}
+
+/// Private source tables declare separate account headers through an explicit adapter.
+#[cfg(feature = "verification")]
+pub(crate) fn render_prefixed_program(root: &Value, policy: &Policy<'_>) -> Result<String, Error> {
+    account_prefix::render(root, policy)
 }
 
 #[cfg(feature = "verification")]

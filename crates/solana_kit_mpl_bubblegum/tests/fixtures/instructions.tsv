@@ -1,0 +1,37 @@
+name	header	payload	roles	proof
+burn	116,110,29,56,107,219,42,93	proof	rsewrrr	true
+burnV2	115,210,34,240,232,143,183,16	v2	wWSrrwwrrrrr	true
+cancelRedeem	111,76,232,50,39,175,48,242	root	rWwwrrr	true
+closeTreeV2	45,172,6,94,28,90,157,70	empty	wswwwrrr	false
+collectV2	21,11,159,47,4,195,106,56	empty	ww	false
+compress	82,193,176,117,176,21,115,253	empty	rsr rwwwwWrrrrr	false
+createTree	165,83,136,142,89,202,47,220	create	wwWsrrr	false
+createTreeV2	55,99,95,215,142,203,227,205	create	wwWSrrr	false
+decompressV1	54,85,76,70,228,250,164,81	metadata	wWwwwwwrrrrrr	false
+delegate	90,147,75,178,85,88,4,137	proof	rsrrwrrr	true
+delegateAndFreezeV2	17,229,35,218,190,241,250,123	v2collection	wWSrrwrrr	true
+delegateV2	95,87,125,140,181,131,128,227	v2collection	wWSrrwrrr	true
+freezeV2	200,151,244,102,16,195,255,3	v2	wWSrrwrrrr	true
+mintToCollectionV1	153,18,178,47,197,158,86,15	metadata	wrrwsssr rwrrrrrr	creators
+mintV1	145,98,192,118,184,147,118,104	metadata	wrrwssrrr	creators
+mintV2	120,121,23,146,173,110,199,205	mint2	wWSSrrwwrrrrr	creators
+redeem	184,12,86,149,70,196,97,225	proof	rWrwwrrr	true
+setAndVerifyCollection	235,242,121,216,158,234,180,234	collection	 rrrwsrsrrwrrrrrr	true
+setCollectionV2	229,35,61,91,15,14,99,160	metadata2proof	wWSSrrwwwrrrrr	true
+setDecompressableState	18,135,238,168,246,195,61,115	state	ws	false
+setDecompressibleState	82,104,152,6,149,111,100,13	state	ws	false
+setNonTransferableV2	181,141,206,58,242,199,152,168	v2	wWSrrwrrrr	true
+setTreeDelegate	253,118,66,37,190,49,154,102	empty	wsrrr	false
+thawAndRevokeV2	86,214,190,37,167,4,28,116	v2collection	wWSrwrrr	true
+thawV2	96,133,101,93,82,220,146,191	v2	wWSrrwrrrr	true
+transfer	163,52,200,231,140,3,69,186	proof	rserwrrr	true
+transferV2	119,40,6,235,234,221,248,49	v2	wWSrrrwrrrr	true
+unverifyCollection	250,251,42,106,41,137,186,168	proofmetadata	rrrwsrsrrwrrrrrr	true
+unverifyCreator	107,178,57,39,105,115,112,152	proofmetadata	rrrwssrrr	true
+unverifyCreatorV2	174,112,29,142,230,100,239,7	metadata2proof	wWSrrwrrr	true
+updateAssetDataV2	59,56,111,43,95,14,11,61	assetupdate	wWSrrwrrrr	true
+updateMetadata	170,182,43,239,97,78,225,186	update1	rsrr rrrswrrrr	true
+updateMetadataV2	43,103,89,42,121,242,62,72	update2	wWSrrwrrrr	true
+verifyCollection	56,113,101,253,79,55,122,169	proofmetadata	rrrwsrsrrwrrrrrr	true
+verifyCreator	52,17,96,132,71,4,85,194	proofmetadata	rrrwssrrr	true
+verifyCreatorV2	85,138,140,42,22,241,118,102	metadata2proof	wWSrrwrrr	true

@@ -8,17 +8,22 @@ use std::{
 type Error = Box<dyn std::error::Error>;
 type Rows = BTreeMap<String, Vec<String>>;
 const ORIGINAL_COLUMNS: usize = 14;
-const DECLARATIONS: usize = 636;
-const PACKAGES: [&str; 4] = [
+const DECLARATIONS: usize = 5501;
+const PACKAGES: [&str; 8] = [
     "solana_kit_address_lookup_table",
     "solana_kit_config",
     "solana_kit_stake",
     "solana_kit_loader",
+    "solana_kit_spl_account_compression",
+    "solana_kit_mpl_core",
+    "solana_kit_mpl_token_metadata",
+    "solana_kit_mpl_bubblegum",
 ];
 const CANONICAL: &str = include_str!("../../../../docs/parity/capabilities.tsv");
-const RECEIPTS: [&str; 2] = [
+const RECEIPTS: [&str; 3] = [
     include_str!("../../../../docs/parity/alt-config.tsv"),
     include_str!("../../../../docs/parity/stake-loader.tsv"),
+    include_str!("../../../../docs/parity/metaplex-source.tsv"),
 ];
 const DART_LICENSE: &str = "dd0836fdc750ca3bc8f8ffab6b1b8fc7feac918ac41af286da46cd10cedd1b25";
 const UPSTREAM_LICENSE: &str = "a6cba85bc92e0cff7a450b1d873c0eaa2e9fc96bf472df0247a26bec77bf3ff9";
@@ -31,7 +36,7 @@ fn main() -> Result<(), Error> {
     let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
     audit(&root, Path::new(&reference))?;
     println!(
-        "PASS 636 exact original rows, defining sources and all retained licenses; statuses unchanged"
+        "PASS 5501 exact original rows, defining sources and all retained licenses; statuses unchanged"
     );
     Ok(())
 }
@@ -122,12 +127,33 @@ fn audit(root: &Path, reference: &Path) -> Result<(), Error> {
     digest(&reference.join("LICENSE"), DART_LICENSE)?;
 
     for package in PACKAGES {
-        let folder = root.join("crates").join(package);
+        let rust_package = match package {
+            "solana_kit_spl_account_compression" => "solana_kit_account_compression",
+            package => package,
+        };
+        let folder = root.join("crates").join(rust_package);
         digest(&folder.join("DART-LICENSE"), DART_LICENSE)?;
-        digest(&folder.join("UPSTREAM-LICENSE"), UPSTREAM_LICENSE)?;
+
+        if let Some(expected) = upstream_license(package) {
+            digest(&folder.join("UPSTREAM-LICENSE"), expected)?;
+        }
     }
 
     Ok(())
+}
+
+/// MIT-only modeled clients retain their Dart notice; Apache IDL clients retain both notices.
+fn upstream_license(package: &str) -> Option<&'static str> {
+    match package {
+        "solana_kit_spl_account_compression" => {
+            Some("d8ddd6435eae4d5e7df65248f19a347fcf67e2d454d0826cb418a33648e2dd54")
+        }
+        "solana_kit_address_lookup_table"
+        | "solana_kit_config"
+        | "solana_kit_stake"
+        | "solana_kit_loader" => Some(UPSTREAM_LICENSE),
+        _ => None,
+    }
 }
 
 /// Checks actual bytes with a fixed digest, preserving path-specific failures.
@@ -145,17 +171,22 @@ mod tests {
 
     #[test]
     fn complete_membership_and_original_rows_are_required() {
-        assert_eq!(validate(&RECEIPTS).unwrap().len(), 636);
+        assert_eq!(validate(&RECEIPTS).unwrap().len(), 5501);
         assert!(validate(&RECEIPTS[..1]).is_err());
-        assert!(validate(&[RECEIPTS[0], RECEIPTS[0], RECEIPTS[1]]).is_err());
+        let mut duplicated = RECEIPTS.to_vec();
+        duplicated.push(RECEIPTS[0]);
+        assert!(validate(&duplicated).is_err());
         let altered = RECEIPTS[1].replacen("\tpending\t", "\tcomplete\t", 1);
-        assert!(validate(&[RECEIPTS[0], &altered]).is_err());
+        let mut changed = RECEIPTS.to_vec();
+        changed[1] = &altered;
+        assert!(validate(&changed).is_err());
         let foreign = format!(
             "{}\nforeign\tforeign\t{}",
             RECEIPTS[1],
             ["x"; 12].join("\t")
         );
-        assert!(validate(&[RECEIPTS[0], &foreign]).is_err());
+        changed[1] = &foreign;
+        assert!(validate(&changed).is_err());
     }
 
     #[test]

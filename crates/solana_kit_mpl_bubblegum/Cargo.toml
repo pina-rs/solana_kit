@@ -1,0 +1,27 @@
+[package]
+name = "solana_kit_mpl_bubblegum"
+version = "0.1.0"
+authors.workspace = true
+edition.workspace = true
+license = "Unlicense AND MIT"
+publish = false
+readme = "README.md"
+repository = "https://github.com/pina-rs/solana_kit/tree/main/crates/solana_kit_mpl_bubblegum"
+rust-version.workspace = true
+description = "Portable Bubblegum compressed NFT client for off-chain applications"
+
+[features]
+default = []
+pda = ["solana_kit_core/crypto"]
+tree = ["pda", "dep:solana_kit_account_compression"]
+hashing = ["dep:sha3"]
+das = ["dep:solana_kit_client", "dep:serde", "dep:serde_json", "dep:futures-util"]
+
+[dependencies]
+futures-util = { version = "0.3.31", default-features = false, features = ["alloc"], optional = true }
+serde = { version = "1.0.229", default-features = false, features = ["derive", "alloc"], optional = true }
+serde_json = { version = "1.0.154", optional = true }
+sha3 = { version = "0.10.8", default-features = false, optional = true }
+solana_kit_account_compression = { path = "../solana_kit_account_compression", version = "0.1.0", optional = true }
+solana_kit_client = { path = "../solana_kit_client", version = "0.1.0", optional = true }
+solana_kit_core.workspace = true

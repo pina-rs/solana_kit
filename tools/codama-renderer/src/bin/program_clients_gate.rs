@@ -1,13 +1,23 @@
-//! Enforces the four clients' actual normal/build closures on every portable target.
+//! Enforces each client's actual normal/build closure on every portable target.
 
 use std::{collections::BTreeSet, error::Error, path::Path, process::Command};
 
 type Result<T> = std::result::Result<T, Box<dyn Error>>;
-const CLIENTS: [&str; 4] = [
+const CLIENTS: [&str; 8] = [
     "solana_kit_address_lookup_table",
     "solana_kit_config",
     "solana_kit_stake",
     "solana_kit_loader",
+    "solana_kit_account_compression",
+    "solana_kit_mpl_core",
+    "solana_kit_mpl_token_metadata",
+    "solana_kit_mpl_bubblegum",
+];
+const PDA_CLIENTS: [&str; 4] = [
+    "solana_kit_address_lookup_table",
+    "solana_kit_mpl_core",
+    "solana_kit_mpl_token_metadata",
+    "solana_kit_mpl_bubblegum",
 ];
 const TARGETS: [Option<&str>; 4] = [
     None,
@@ -141,20 +151,21 @@ fn main() -> Result<()> {
 
     for target in TARGETS {
         for client in CLIENTS {
-            for edges in ["normal", "normal,build"] {
-                graph(&root, client, target, edges, false)?;
-            }
+            views(&root, client, target, false)?;
         }
 
-        for edges in ["normal", "normal,build"] {
-            graph(
-                &root,
-                "solana_kit_address_lookup_table",
-                target,
-                edges,
-                true,
-            )?;
+        for client in PDA_CLIENTS {
+            views(&root, client, target, true)?;
         }
+    }
+
+    Ok(())
+}
+
+/// Normal and normal-plus-build closures are independent Cargo queries.
+fn views(root: &Path, client: &str, target: Option<&str>, pda: bool) -> Result<()> {
+    for edges in ["normal", "normal,build"] {
+        graph(root, client, target, edges, pda)?;
     }
 
     Ok(())
