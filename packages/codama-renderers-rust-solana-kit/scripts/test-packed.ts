@@ -4,6 +4,7 @@ import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { preparePackedConsumer } from "./prepare-packed.ts";
 import { verifyGeneratedClient } from "./verify-client.ts";
 
 const packageDirectory = resolve(dirname(fileURLToPath(import.meta.url)), "..");
@@ -25,16 +26,21 @@ const archive = process.argv[2]
 const consumer = mkdtempSync(join(tmpdir(), "solana-kit-packed-"));
 
 try {
-  writeFileSync(join(consumer, "package.json"), JSON.stringify({ private: true, type: "module" }));
+  preparePackedConsumer({
+    packageDirectory,
+    consumer,
+    archive,
+    name: metadata.name,
+    version: metadata.version,
+    codama: metadata.devDependencies.codama,
+  });
   execFileSync("npm", [
-    "install",
+    "ci",
     "--offline",
     "--ignore-scripts",
     "--no-audit",
     "--no-fund",
     "--user-agent=solana-kit-package-verification",
-    resolve(archive),
-    `codama@${metadata.devDependencies.codama}`,
   ], { cwd: consumer, stdio: "inherit" });
 
   const source = readFileSync(join(packageDirectory, "test/packed-consumer.ts"), "utf8");

@@ -39,6 +39,8 @@ jobs:
           cargo +1.89.0 fetch --manifest-path verification/codama-consumer/Cargo.toml
           cd packages/codama-renderers-rust-solana-kit
           npm ci --ignore-scripts --no-audit --no-fund
+          # test:packed derives its exact consumer lock from these hydrated artifacts.
+          # Its outside installation and renderer execution remain offline.
 
       - name: Build accepted Monostyle source and prepare pinned formatter
         shell: bash
