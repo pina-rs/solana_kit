@@ -47,6 +47,7 @@ fn file_commands_require_one_path() {
         "package-review",
         "package-report",
         "registry-fixture",
+        "prepare-wallet",
     ] {
         assert!(parse_command(&[name]).is_err(), "{name}");
         assert!(parse_command(&[name, "fixture"]).is_ok(), "{name}");

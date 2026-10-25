@@ -5,24 +5,94 @@ use std::{fs, path::Path};
 pub(super) const REVISION: &str = "25b1861ddc729a8f3b70117cd0c48e06659c9697";
 const SOURCE: &str = "https://github.com/ifiokjr/leptoskit";
 const VERSION: &str = "{ version = \"=0.1.0\"";
+const SDK_FRAMEWORK_DECLARATIONS: usize = 5;
 
 pub(super) fn verify_sdk(sdk: &Path) -> Result<()> {
     let manifest = fs::read_to_string(sdk.join("crates/solana_kit_leptoskit/Cargo.toml"))?;
-    let dependencies: Vec<_> = manifest
-        .lines()
-        .filter(|line| line.starts_with("leptoskit_") && line.contains(SOURCE))
-        .collect();
-    let pin = format!("rev = {REVISION:?}");
+    verify_manifest(&manifest)
+}
 
-    if dependencies.len() != 5 || dependencies.iter().any(|line| !line.contains(&pin)) {
+fn verify_manifest(manifest: &str) -> Result<()> {
+    let manifest: toml::Table = manifest.parse()?;
+    let mut dependencies = Vec::new();
+    collect_dependencies(&manifest, &mut dependencies)?;
+
+    if let Some(targets) = manifest.get("target") {
+        for target in targets
+            .as_table()
+            .ok_or("expected Cargo target tables")?
+            .values()
+        {
+            collect_dependencies(
+                target.as_table().ok_or("expected a Cargo target table")?,
+                &mut dependencies,
+            )?;
+        }
+    }
+
+    if dependencies.len() != SDK_FRAMEWORK_DECLARATIONS
+        || dependencies
+            .iter()
+            .any(|dependency| !same_source(dependency))
+    {
         return Err("SDK framework dependencies must select the verified revision".into());
     }
 
     Ok(())
 }
 
+/// Inspect Cargo's dependency sections, including renamed packages. Metadata
+/// must never satisfy a required declaration or hide a different source.
+fn collect_dependencies<'a>(
+    manifest: &'a toml::Table,
+    selected: &mut Vec<&'a toml::Table>,
+) -> Result<()> {
+    for section in ["dependencies", "dev-dependencies", "build-dependencies"] {
+        let Some(dependencies) = manifest.get(section) else {
+            continue;
+        };
+
+        for (name, dependency) in dependencies
+            .as_table()
+            .ok_or("expected Cargo dependencies")?
+        {
+            let package = dependency
+                .get("package")
+                .and_then(toml::Value::as_str)
+                .unwrap_or(name);
+
+            if package == "leptoskit" || package.starts_with("leptoskit_") {
+                selected.push(
+                    dependency
+                        .as_table()
+                        .ok_or("framework requires an explicit Git source")?,
+                );
+            }
+        }
+    }
+
+    Ok(())
+}
+
+fn same_source(dependency: &toml::Table) -> bool {
+    dependency.get("git").and_then(toml::Value::as_str) == Some(SOURCE)
+        && dependency.get("rev").and_then(toml::Value::as_str) == Some(REVISION)
+        && [
+            "path",
+            "branch",
+            "tag",
+            "registry",
+            "registry-index",
+            "workspace",
+        ]
+        .iter()
+        .all(|key| !dependency.contains_key(*key))
+}
+
 pub(super) fn pin(contents: &str) -> Result<String> {
-    if contents.contains("[patch.") {
+    let manifest: toml::Table = contents.parse()?;
+
+    if manifest.contains_key("patch") {
         return Err("generated consumer must not use Cargo source patches".into());
     }
 
@@ -51,6 +121,7 @@ fn dependency(line: &str) -> Result<Option<String>> {
 
     if let Some(suffix) = value.strip_prefix(&pinned) {
         validate_suffix(suffix)?;
+
         return Ok(None);
     }
 
@@ -63,17 +134,23 @@ fn dependency(line: &str) -> Result<Option<String>> {
 }
 
 fn validate_suffix(suffix: &str) -> Result<()> {
+    let declaration: toml::Table = format!("dependency = {VERSION}{suffix}").parse()?;
+    let dependency = declaration["dependency"]
+        .as_table()
+        .ok_or("expected an inline framework dependency")?;
     let source_keys = [
-        "git =",
-        "path =",
-        "rev =",
-        "branch =",
-        "tag =",
-        "package =",
-        "registry =",
+        "git",
+        "path",
+        "rev",
+        "branch",
+        "tag",
+        "package",
+        "registry",
+        "registry-index",
+        "workspace",
     ];
 
-    if !suffix.starts_with(',') || source_keys.iter().any(|key| suffix.contains(key)) {
+    if !suffix.starts_with(',') || source_keys.iter().any(|key| dependency.contains_key(*key)) {
         return Err("review the generated framework dependency before changing its source".into());
     }
 
@@ -83,6 +160,27 @@ fn validate_suffix(suffix: &str) -> Result<()> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn rejects_metadata_masquerading_as_sdk_dependencies() {
+        let manifest = include_str!("../../../crates/solana_kit_leptoskit/Cargo.toml");
+        assert!(verify_manifest(manifest).is_ok());
+        let metadata = manifest
+            .replace("[dependencies]", "[package.metadata.dependencies]")
+            .replace("[dev-dependencies]", "[package.metadata.dev-dependencies]");
+        assert!(verify_manifest(&metadata).is_err());
+    }
+
+    #[test]
+    fn rejects_patch_tables_with_equivalent_toml_spellings() {
+        for source in [
+            "[ patch . \"https://github.com/ifiokjr/leptoskit\" ]\nexample = { path = \"other\" }\n",
+            "[\"patch\".crates-io]\nexample = { path = \"other\" }\n",
+            "patch = { crates-io = { example = { path = \"other\" } } }\n",
+        ] {
+            assert!(pin(source).is_err(), "accepted an alternate patch table");
+        }
+    }
 
     #[test]
     fn pins_generated_dependencies_and_preserves_features_and_local_packages() {

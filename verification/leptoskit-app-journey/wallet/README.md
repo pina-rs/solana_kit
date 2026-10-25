@@ -32,8 +32,8 @@ Use the CLI built from that verified framework source:
 
 ```sh
 leptoskit new "$PROJECT" --name solana_wallet_app --platform native --native-target macos
-"$RUSTC" --edition 2024 verification/leptoskit-app-journey/wallet/prepare.rs -o "$PREPARE"
-"$PREPARE" "$SDK" "$PROJECT"
+cargo run --locked --manifest-path "$SDK/Cargo.toml" --package solana_kit_xtask \
+  -- prepare-wallet "$PROJECT"
 cd "$PROJECT"
 leptoskit build --platform macos
 leptoskit build --platform android

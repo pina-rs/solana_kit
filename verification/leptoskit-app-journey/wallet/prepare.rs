@@ -1,24 +1,19 @@
 //! Adds wallet source to a real public-generator workspace, retaining its hosts.
+#[path = "framework.rs"]
 mod framework;
 use std::{
     error::Error,
     fs,
     path::{Path, PathBuf},
 };
-type Result<T> = std::result::Result<T, Box<dyn Error>>;
+type Result<T> = std::result::Result<T, Box<dyn Error + Send + Sync>>;
 
 /// Gather and validate every expected generated member before changing files.
 /// A new public template must fail visibly rather than receiving partial hooks.
-fn main() -> Result<()> {
-    let arguments = std::env::args().skip(1).collect::<Vec<_>>();
-
-    if arguments.len() != 2 {
-        return Err("expected SDK_ROOT GENERATED_PROJECT".into());
-    }
-
-    let sdk = fs::canonicalize(&arguments[0])?;
+pub(crate) fn run(project: &Path) -> Result<()> {
+    let sdk = fs::canonicalize(".")?;
     framework::verify_sdk(&sdk)?;
-    let project = fs::canonicalize(&arguments[1])?;
+    let project = fs::canonicalize(project)?;
     let edits = plan(&sdk, &project)?;
     write(&project, edits)
 }

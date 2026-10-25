@@ -12,7 +12,6 @@ env:
   CARGO_HTTP_USER_AGENT: solana-kit-verification
   GIT_HTTP_USER_AGENT: solana-kit-verification
   CARGO_INCREMENTAL: "0"
-  RUST_EDITION: "2024"
   LEPTOSKIT_REVISION: 25b1861ddc729a8f3b70117cd0c48e06659c9697
   LEPTOSKIT_SOURCE: https://github.com/ifiokjr/leptoskit
 
@@ -41,17 +40,11 @@ jobs:
           cargo +1.99.1 build --locked --manifest-path framework/Cargo.toml \
             -p leptoskit_cli --bin leptoskit --message-format=json > "$RUNNER_TEMP/cli.jsonl"
 
-      - name: Check and build the preparation command
+      - name: Check the preparation command
         run: |
           set -euo pipefail
-          rustc +1.99.1 --edition "$RUST_EDITION" -D warnings --test \
-            sdk/verification/leptoskit-app-journey/wallet/prepare.rs \
-            -o "$RUNNER_TEMP/prepare-tests"
-          "$RUNNER_TEMP/prepare-tests"
-
-          rustc +1.99.1 --edition "$RUST_EDITION" -D warnings \
-            sdk/verification/leptoskit-app-journey/wallet/prepare.rs \
-            -o "$RUNNER_TEMP/prepare"
+          cargo +1.99.1 test --locked --manifest-path sdk/Cargo.toml \
+            --package solana_kit_xtask generated_wallet::
 
       - name: Generate and adapt the ordinary wallet consumer
         run: |
@@ -63,7 +56,8 @@ jobs:
             "$RUNNER_TEMP/cli.jsonl")"
           app="$RUNNER_TEMP/wallet-app"
           "$cli" new "$app" --name solana_wallet_app --platform native --native-target macos
-          "$RUNNER_TEMP/prepare" "$GITHUB_WORKSPACE/sdk" "$app"
+          cargo +1.99.1 run --locked --manifest-path sdk/Cargo.toml \
+            --package solana_kit_xtask -- prepare-wallet "$app"
 
       - name: Verify repeatable preparation and ordinary dependency sources
         run: |
@@ -71,15 +65,9 @@ jobs:
           app="$RUNNER_TEMP/wallet-app"
           find "$app" -type f -print0 | sort -z | xargs -0 sha256sum \
             > "$RUNNER_TEMP/generated.sha256"
-          "$RUNNER_TEMP/prepare" "$GITHUB_WORKSPACE/sdk" "$app"
+          cargo +1.99.1 run --locked --manifest-path sdk/Cargo.toml \
+            --package solana_kit_xtask -- prepare-wallet "$app"
           sha256sum --check "$RUNNER_TEMP/generated.sha256"
-
-          if grep -R -n --include=Cargo.toml '^\[patch\.' "$app"; then
-            exit 1
-          else
-            result=$?
-            test "$result" -eq 1
-          fi
 
           cargo +1.99.1 metadata --manifest-path "$app/Cargo.toml" --format-version 1 \
             > "$RUNNER_TEMP/consumer-metadata.json"

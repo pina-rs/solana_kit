@@ -8,6 +8,7 @@ const OFFLINE: &str = "xtask does not forward Cargo flags; use CARGO_NET_OFFLINE
 
 pub(crate) enum Command {
     ArtifactCapture(PathBuf),
+    PrepareWallet(PathBuf),
     Style(Option<PathBuf>),
     StyleReport(PathBuf),
     Native,
@@ -33,6 +34,7 @@ pub(crate) fn parse(arguments: &[OsString]) -> Result<Command> {
 
     match command {
         "artifact-capture" => Ok(Command::ArtifactCapture(required_path(paths, command)?)),
+        "prepare-wallet" => Ok(Command::PrepareWallet(required_path(paths, command)?)),
         "style" => Ok(Command::Style(path(paths, command, false)?)),
         "style-report" => Ok(Command::StyleReport(required_path(paths, command)?)),
         "imports" => Ok(Command::Imports(required_path(paths, command)?)),
