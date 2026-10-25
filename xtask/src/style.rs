@@ -7,7 +7,7 @@ use std::{collections::BTreeSet, path::Path, process::Command};
 
 mod coverage;
 
-const VERSION: &str = "monostyle 0.3.26";
+const VERSION: &str = "monostyle 0.3.27";
 const FLOOR: f64 = 90.0;
 const REPORT: &str = "target/style-evidence/report.json";
 
@@ -41,10 +41,7 @@ pub(crate) fn run(root: Option<&Path>) -> Result<()> {
     }
 
     let version = process::success(Command::new("monostyle").arg("--version"), "style-version")?;
-    ensure!(
-        std::str::from_utf8(&version.stdout)?.trim() == VERSION,
-        "style gate requires {VERSION}"
-    );
+    require_version(&version.stdout)?;
     let inventory = coverage::inventory()?;
     std::fs::create_dir_all("target/style-evidence")?;
     process::success(
@@ -96,7 +93,17 @@ fn print_report(report: &Report) {
     );
 }
 
-/// Required cells mirror monostyle 0.3.26's ProjectReport and FileReport score objects.
+/// Rejects every other analyzer before inventory discovery or report generation.
+fn require_version(output: &[u8]) -> Result<()> {
+    ensure!(
+        std::str::from_utf8(output)?.trim() == VERSION,
+        "style gate requires {VERSION}"
+    );
+
+    Ok(())
+}
+
+/// Required cells mirror the pinned analyzer's ProjectReport and FileReport score objects.
 fn validate(bytes: &[u8]) -> Result<Report> {
     let report: Report = serde_json::from_slice(bytes).context("parse monostyle JSON report")?;
     let mut paths = BTreeSet::new();

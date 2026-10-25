@@ -1,10 +1,25 @@
 //! Negative controls for the report boundary, independent of monostyle's exit status.
 
-use super::{FLOOR, coverage, validate};
+use super::{FLOOR, coverage, require_version, validate};
 use serde_json::{Value, json};
 
 const HIGH_AGGREGATE: f64 = 99.8;
 const ABOVE_MAXIMUM: f64 = 100.1;
+
+#[test]
+fn requires_the_reviewed_parser_version() {
+    assert!(require_version(b"monostyle 0.3.27\n").is_ok());
+
+    for output in [
+        b"monostyle 0.3.26".as_slice(),
+        b"monostyle 0.3.28",
+        b"monostyle 0.3.27 extra",
+        b"",
+        b"\xff",
+    ] {
+        assert!(require_version(output).is_err());
+    }
+}
 
 /// Builds the required cells from the actual pinned JSON model.
 fn report() -> Value {

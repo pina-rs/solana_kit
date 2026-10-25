@@ -164,7 +164,7 @@ and normalization script are source references, not tests executed in this unit.
 
 ## Generated output style corpus
 
-The private `generated-style` command requires monostyle 0.3.26 and the repository
+The private `generated-style` command requires monostyle 0.3.27 and the repository
 configuration. It generates the unchanged full 256-variant enum and instruction
 reproducers, sparse and empty payloads, linked records, Token, and the independent
 role-only and anonymous compound layouts. Every emitted Rust file is explicitly
