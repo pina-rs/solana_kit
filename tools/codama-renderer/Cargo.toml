@@ -64,3 +64,13 @@ required-features = ["verification"]
 name = "token_fixtures"
 path = "src/bin/token_fixtures.rs"
 required-features = ["verification"]
+
+[[bin]]
+name = "program_clients_gate"
+path = "src/bin/program_clients_gate.rs"
+required-features = ["verification"]
+
+[[bin]]
+name = "program_clients_audit"
+path = "src/bin/program_clients_audit.rs"
+required-features = ["verification"]

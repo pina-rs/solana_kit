@@ -1,0 +1,31 @@
+[package]
+name = "solana_kit_stake_loader_portable"
+version = "0.0.0"
+edition = "2024"
+publish = false
+
+[workspace]
+members = ["guest", "host"]
+
+[dependencies]
+solana_kit_address_lookup_table = { path = "../../crates/solana_kit_address_lookup_table", features = ["pda"] }
+solana_kit_config = { path = "../../crates/solana_kit_config" }
+solana_kit_core = { path = "../../crates/solana_kit_core" }
+solana_kit_loader = { path = "../../crates/solana_kit_loader" }
+solana_kit_stake = { path = "../../crates/solana_kit_stake" }
+solana_kit_system = { path = "../../crates/solana_kit_system" }
+
+[features]
+default = ["pda"]
+pda = []
+corrupt = []
+
+[target.'cfg(target_arch = "wasm32")'.dev-dependencies]
+wasm-bindgen = "=0.2.128"
+wasm-bindgen-test = "=0.3.78"
+
+[profile.release]
+strip = "none"
+
+[profile.release.build-override]
+strip = "none"

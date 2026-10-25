@@ -1462,6 +1462,13 @@ name = "solana_kit"
 version = "0.0.0"
 
 [[package]]
+name = "solana_kit_address_lookup_table"
+version = "0.1.0"
+dependencies = [
+ "solana_kit_core",
+]
+
+[[package]]
 name = "solana_kit_anchor"
 version = "0.1.0"
 dependencies = [
@@ -1557,6 +1564,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "solana_kit_config"
+version = "0.1.0"
+dependencies = [
+ "solana_kit_core",
+]
+
+[[package]]
 name = "solana_kit_conformance"
 version = "0.1.0"
 dependencies = [
@@ -1644,6 +1658,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "solana_kit_loader"
+version = "0.1.0"
+dependencies = [
+ "solana_kit_core",
+]
+
+[[package]]
 name = "solana_kit_memo"
 version = "0.1.0"
 dependencies = [
@@ -1678,6 +1699,14 @@ version = "0.1.0"
 dependencies = [
  "solana_kit_core",
  "tokio",
+]
+
+[[package]]
+name = "solana_kit_stake"
+version = "0.1.0"
+dependencies = [
+ "solana_kit_core",
+ "solana_kit_system",
 ]
 
 [[package]]
