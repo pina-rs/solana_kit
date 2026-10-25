@@ -1,0 +1,11 @@
+[package]
+name = "packed_counter_guest"
+version = "0.0.0"
+edition = "2024"
+publish = false
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+packed_counter_client = { path = ".." }

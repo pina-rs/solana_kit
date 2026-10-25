@@ -271,6 +271,15 @@ Acceptance: generator golden output and drift check, negative IDLs/security case
 byte oracles, and pinned validator integration. No program client pulls an Agave
 client or validator into application normal/build dependencies.
 
+The Codama deliverable also includes the NPM package
+`codama-renderers-rust-solana-kit`. It bundles a portable Rust engine and exposes
+the normal Codama renderer visitor, sharing `tools/codama-renderer` with native
+program generation. Node dependencies stay outside Rust application graphs.
+Acceptance includes an actual packed-package external Codama consumer, repeated
+generation preserving caller files, native/NPM output equality, portable generated
+Rust consumers and complete packaged/generated source quality. Source preparation
+and name availability do not establish these results or authorize NPM publication.
+
 ## Phase 7: wallets and application integration
 
 Port Wallet Standard and Mobile Wallet Adapter protocols; local, modifying,

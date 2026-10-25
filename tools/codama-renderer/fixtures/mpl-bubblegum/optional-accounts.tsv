@@ -1,0 +1,17 @@
+name	indices
+burnV2	2,4,6,7
+createTreeV2	3
+delegateAndFreezeV2	2,3
+delegateV2	2,3
+freezeV2	2,6
+mintV2	2,3,5,7,8
+setCollectionV2	2,3,5,7,8
+setNonTransferableV2	2,4
+thawAndRevokeV2	2
+thawV2	2,6
+transferV2	2,4,7
+unverifyCreatorV2	2,4
+updateAssetDataV2	2,4,6
+updateMetadata	2,3,4
+updateMetadataV2	2,4,6
+verifyCreatorV2	2,4

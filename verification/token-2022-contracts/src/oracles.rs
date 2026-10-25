@@ -15,7 +15,7 @@ fn hex(text: &str) -> Vec<u8> {
         .collect()
 }
 fn rows(prefix: &str) -> Vec<(&'static str, Vec<u8>)> {
-    include_str!("../../../verification/codegen-design/fixtures/token-2022-oracle.tsv")
+    include_str!("../../../tools/codama-renderer/fixtures/token-2022-oracle.tsv")
         .lines()
         .filter_map(|row| {
             let (name, rest) = row.split_once('\t').unwrap();

@@ -1,8 +1,14 @@
 //! Exact destination grants and actual embedded Store destruction/replacement.
+#[cfg(test)]
+#[path = "embedded_tests.rs"]
+mod tests;
+
 use anyhow::{Result, ensure};
 use std::{
+    future::{Future, poll_fn},
     net::{SocketAddr, TcpListener},
     path::Path,
+    task::Poll,
     thread,
     time::Duration,
 };
@@ -137,32 +143,49 @@ async fn invoke(
         wasmtime_wasi::p2::bindings::Command::instantiate_async(&mut *store, component, linker)
             .await
             .map_err(host_error)?;
-    let limit = if mode == "unload" {
-        Duration::from_millis(STORE_DROP_MILLIS)
-    } else {
-        Duration::from_secs(GUEST_SECONDS)
-    };
-
-    let result = tokio::time::timeout(limit, command.wasi_cli_run().call_run(store)).await;
-    let stdout = output.contents();
-    let stdout = String::from_utf8_lossy(&stdout);
+    let run = command.wasi_cli_run().call_run(store);
 
     if mode == "unload" {
-        ensure!(
-            result.is_err() && stdout.contains("PENDING unload"),
-            "Store not actually pending"
-        );
-
-        return Ok(());
+        return unload(run, output).await;
     }
 
-    result?
+    tokio::time::timeout(Duration::from_secs(GUEST_SECONDS), run)
+        .await?
         .map_err(host_error)?
         .map_err(|()| anyhow::anyhow!("guest failed {mode}"))?;
+    let stdout = output.contents();
+    let stdout = String::from_utf8_lossy(&stdout);
     ensure!(
         stdout.contains(&format!("PASS {mode}")),
         "missing guest assertions"
     );
+    Ok(())
+}
+
+/// Start the drop interval only after guest assertions and a real suspended poll.
+async fn unload(
+    run: impl Future<Output = wasmtime::Result<Result<(), ()>>>,
+    output: &MemoryOutputPipe,
+) -> Result<()> {
+    let mut run = std::pin::pin!(run);
+    let pending = poll_fn(|context| match run.as_mut().poll(context) {
+        Poll::Ready(result) => Poll::Ready(Err(anyhow::anyhow!(
+            "guest completed before pending I/O: {result:?}"
+        ))),
+        Poll::Pending if String::from_utf8_lossy(&output.contents()).contains("PENDING unload") => {
+            Poll::Ready(Ok(()))
+        }
+        Poll::Pending => Poll::Pending,
+    });
+    tokio::time::timeout(Duration::from_secs(GUEST_SECONDS), pending)
+        .await
+        .map_err(|_| anyhow::anyhow!("guest did not reach pending I/O"))??;
+    let result = tokio::time::timeout(Duration::from_millis(STORE_DROP_MILLIS), run).await;
+    ensure!(
+        result.is_err(),
+        "pending guest completed before Store drop: {result:?}"
+    );
+
     Ok(())
 }
 

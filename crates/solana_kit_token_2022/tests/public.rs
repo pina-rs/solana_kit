@@ -28,8 +28,7 @@ fn all_100_dispatch_and_400_independent_frames_preserve_accounts() {
     let mut count = 0;
     let mut strict = 0;
 
-    for row in
-        include_str!("../../../verification/codegen-design/fixtures/token-2022-oracle.tsv").lines()
+    for row in include_str!("../../../tools/codama-renderer/fixtures/token-2022-oracle.tsv").lines()
     {
         let fields: Vec<_> = row.split('\t').collect();
 
@@ -221,10 +220,9 @@ fn omitted_middle_accounts_keep_actual_positions() {
 
 #[test]
 fn all_errors_preserve_unknown_numeric_codes_and_actual_index() {
-    for row in include_str!(
-        "../../../verification/codegen-design/fixtures/token-2022-rust-error-labels.tsv"
-    )
-    .lines()
+    for row in
+        include_str!("../../../tools/codama-renderer/fixtures/token-2022-rust-error-labels.tsv")
+            .lines()
     {
         let (code, label) = row.split_once('\t').unwrap();
         let code = code.parse().unwrap();

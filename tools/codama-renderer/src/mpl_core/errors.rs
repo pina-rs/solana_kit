@@ -1,0 +1,143 @@
+//! Exact MIT Dart error code order and messages, including meaningful trailing space.
+use serde_json::{Value, json};
+
+pub(super) const ERRORS: &[(&str, &str)] = &[
+    ("InvalidSystemProgram", "Invalid System Program"),
+    ("DeserializationError", "Error deserializing account"),
+    ("SerializationError", "Error serializing account"),
+    ("PluginsNotInitialized", "Plugins not initialized"),
+    ("PluginNotFound", "Plugin not found"),
+    ("NumericalOverflow", "Numerical Overflow"),
+    ("IncorrectAccount", "Incorrect account"),
+    ("IncorrectAssetHash", "Incorrect asset hash"),
+    ("InvalidPlugin", "Invalid Plugin"),
+    ("InvalidAuthority", "Invalid Authority"),
+    ("AssetIsFrozen", "Cannot transfer a frozen asset"),
+    ("MissingCompressionProof", "Missing compression proof"),
+    (
+        "CannotMigrateMasterWithSupply",
+        "Cannot migrate a master edition used for prints",
+    ),
+    ("CannotMigratePrints", "Cannot migrate a print edition"),
+    ("CannotBurnCollection", "Cannot burn a collection NFT"),
+    ("PluginAlreadyExists", "Plugin already exists"),
+    ("NumericalOverflowError", "Numerical overflow"),
+    ("AlreadyCompressed", "Already compressed account"),
+    ("AlreadyDecompressed", "Already decompressed account"),
+    ("InvalidCollection", "Invalid Collection passed in"),
+    ("MissingUpdateAuthority", "Missing update authority"),
+    ("MissingNewOwner", "Missing new owner"),
+    ("MissingSystemProgram", "Missing system program"),
+    ("NotAvailable", "Feature not available"),
+    ("InvalidAsset", "Invalid Asset passed in"),
+    ("MissingCollection", "Missing collection"),
+    (
+        "NoApprovals",
+        "Neither the asset or any plugins have approved this operation",
+    ),
+    (
+        "CannotRedelegate",
+        "Plugin Manager cannot redelegate a delegated plugin without revoking first",
+    ),
+    ("InvalidPluginSetting", "Invalid setting for plugin"),
+    (
+        "ConflictingAuthority",
+        "Cannot specify both an update authority and collection on an asset",
+    ),
+    ("InvalidLogWrapperProgram", "Invalid Log Wrapper Program"),
+    (
+        "ExternalPluginAdapterNotFound",
+        "External Plugin Adapter not found",
+    ),
+    (
+        "ExternalPluginAdapterAlreadyExists",
+        "External Plugin Adapter already exists",
+    ),
+    (
+        "MissingAsset",
+        "Missing asset needed for extra account PDA derivation",
+    ),
+    (
+        "MissingExternalPluginAdapterAccount",
+        "Missing account needed for external plugin adapter",
+    ),
+    (
+        "OracleCanRejectOnly",
+        "Oracle external plugin adapter can only be configured to reject",
+    ),
+    (
+        "RequiresLifecycleCheck",
+        "External plugin adapter must have at least one lifecycle check",
+    ),
+    (
+        "DuplicateLifecycleChecks",
+        "Duplicate lifecycle checks were provided for external plugin adapter ",
+    ),
+    (
+        "InvalidOracleAccountData",
+        "Could not read from oracle account",
+    ),
+    (
+        "UninitializedOracleAccount",
+        "Oracle account is uninitialized",
+    ),
+    ("MissingSigner", "Missing required signer for operation"),
+    ("InvalidPluginOperation", "Invalid plugin operation"),
+    (
+        "CollectionMustBeEmpty",
+        "Collection must be empty to be burned",
+    ),
+    (
+        "TwoDataSources",
+        "Two data sources provided, only one is allowed",
+    ),
+    (
+        "UnsupportedOperation",
+        "External Plugin does not support this operation",
+    ),
+    ("NoDataSources", "No data sources provided, one is required"),
+    (
+        "InvalidPluginAdapterTarget",
+        "This plugin adapter cannot be added to an Asset",
+    ),
+    (
+        "CannotAddDataSection",
+        "Cannot add a Data Section without a linked external plugin",
+    ),
+    (
+        "PermanentDelegatesPreventMove",
+        "Cannot move asset to collection with permanent delegates",
+    ),
+    (
+        "InvalidExecutePda",
+        "Invalid Signing PDA for Asset or Collection Execute",
+    ),
+    (
+        "BlockedByBubblegumV2",
+        "Bubblegum V2 Plugin limits other plugins",
+    ),
+    ("AgentIdentityMustSign", "Agent Identity Program must sign"),
+    ("GroupMustBeEmpty", "Group must be empty to be closed"),
+    (
+        "DuplicateEntry",
+        "Duplicate entry provided when adding relationships to a group",
+    ),
+    ("GroupVectorFull", "Group vector is at maximum capacity"),
+    ("GroupNestingDepthExceeded", "Group nesting depth exceeded"),
+    (
+        "InconsistentGroupRelationship",
+        "Bidirectional group relationship is inconsistent",
+    ),
+];
+
+pub(super) fn errors() -> Vec<Value> {
+    ERRORS
+        .iter()
+        .enumerate()
+        .map(|(code, (name, message))| {
+            json!({
+                "kind":"errorNode","name":name,"code":code,"message":message,
+            })
+        })
+        .collect()
+}

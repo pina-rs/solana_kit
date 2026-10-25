@@ -9,6 +9,11 @@ pub const PROGRAM: Address = Address::from_bytes([
     3, 6, 70, 111, 229, 33, 23, 50, 255, 236, 173, 186, 114, 195, 155, 231, 188, 140, 229, 187,
     197, 247, 18, 107, 44, 67, 155, 58, 64, 0, 0, 0,
 ]);
+const INSTRUCTION_TAG_0: u8 = 0;
+const INSTRUCTION_TAG_1: u8 = 1;
+const INSTRUCTION_TAG_2: u8 = 2;
+const INSTRUCTION_TAG_3: u8 = 3;
+const INSTRUCTION_TAG_4: u8 = 4;
 /// Validated data for `RequestUnits`.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct RequestUnits {
@@ -32,7 +37,7 @@ impl Encoder<RequestUnits> for RequestUnitsCodec {
         Ok(size)
     }
     fn write(&self, value: &RequestUnits, writer: &mut Writer<'_>) -> Result<(), Error> {
-        Constant(&[0]).write(&(), writer)?;
+        Constant(&[INSTRUCTION_TAG_0]).write(&(), writer)?;
         Number::<u32>::LE.write(&value.units, writer)?;
         Number::<u32>::LE.write(&value.additional_fee, writer)?;
         Ok(())
@@ -40,7 +45,7 @@ impl Encoder<RequestUnits> for RequestUnitsCodec {
 }
 impl Decoder<RequestUnits> for RequestUnitsCodec {
     fn read(&self, reader: &mut Reader<'_>) -> Result<RequestUnits, Error> {
-        Constant(&[0]).read(reader)?;
+        Constant(&[INSTRUCTION_TAG_0]).read(reader)?;
         Ok(RequestUnits {
             units: Number::<u32>::LE.read(reader)?,
             additional_fee: Number::<u32>::LE.read(reader)?,
@@ -83,14 +88,14 @@ impl Encoder<RequestHeapFrame> for RequestHeapFrameCodec {
         Ok(size)
     }
     fn write(&self, value: &RequestHeapFrame, writer: &mut Writer<'_>) -> Result<(), Error> {
-        Constant(&[1]).write(&(), writer)?;
+        Constant(&[INSTRUCTION_TAG_1]).write(&(), writer)?;
         Number::<u32>::LE.write(&value.bytes, writer)?;
         Ok(())
     }
 }
 impl Decoder<RequestHeapFrame> for RequestHeapFrameCodec {
     fn read(&self, reader: &mut Reader<'_>) -> Result<RequestHeapFrame, Error> {
-        Constant(&[1]).read(reader)?;
+        Constant(&[INSTRUCTION_TAG_1]).read(reader)?;
         Ok(RequestHeapFrame {
             bytes: Number::<u32>::LE.read(reader)?,
         })
@@ -132,14 +137,14 @@ impl Encoder<SetComputeUnitLimit> for SetComputeUnitLimitCodec {
         Ok(size)
     }
     fn write(&self, value: &SetComputeUnitLimit, writer: &mut Writer<'_>) -> Result<(), Error> {
-        Constant(&[2]).write(&(), writer)?;
+        Constant(&[INSTRUCTION_TAG_2]).write(&(), writer)?;
         Number::<u32>::LE.write(&value.units, writer)?;
         Ok(())
     }
 }
 impl Decoder<SetComputeUnitLimit> for SetComputeUnitLimitCodec {
     fn read(&self, reader: &mut Reader<'_>) -> Result<SetComputeUnitLimit, Error> {
-        Constant(&[2]).read(reader)?;
+        Constant(&[INSTRUCTION_TAG_2]).read(reader)?;
         Ok(SetComputeUnitLimit {
             units: Number::<u32>::LE.read(reader)?,
         })
@@ -181,14 +186,14 @@ impl Encoder<SetComputeUnitPrice> for SetComputeUnitPriceCodec {
         Ok(size)
     }
     fn write(&self, value: &SetComputeUnitPrice, writer: &mut Writer<'_>) -> Result<(), Error> {
-        Constant(&[3]).write(&(), writer)?;
+        Constant(&[INSTRUCTION_TAG_3]).write(&(), writer)?;
         Number::<u64>::LE.write(&value.micro_lamports, writer)?;
         Ok(())
     }
 }
 impl Decoder<SetComputeUnitPrice> for SetComputeUnitPriceCodec {
     fn read(&self, reader: &mut Reader<'_>) -> Result<SetComputeUnitPrice, Error> {
-        Constant(&[3]).read(reader)?;
+        Constant(&[INSTRUCTION_TAG_3]).read(reader)?;
         Ok(SetComputeUnitPrice {
             micro_lamports: Number::<u64>::LE.read(reader)?,
         })
@@ -234,14 +239,14 @@ impl Encoder<SetLoadedAccountsDataSizeLimit> for SetLoadedAccountsDataSizeLimitC
         value: &SetLoadedAccountsDataSizeLimit,
         writer: &mut Writer<'_>,
     ) -> Result<(), Error> {
-        Constant(&[4]).write(&(), writer)?;
+        Constant(&[INSTRUCTION_TAG_4]).write(&(), writer)?;
         Number::<u32>::LE.write(&value.account_data_size_limit, writer)?;
         Ok(())
     }
 }
 impl Decoder<SetLoadedAccountsDataSizeLimit> for SetLoadedAccountsDataSizeLimitCodec {
     fn read(&self, reader: &mut Reader<'_>) -> Result<SetLoadedAccountsDataSizeLimit, Error> {
-        Constant(&[4]).read(reader)?;
+        Constant(&[INSTRUCTION_TAG_4]).read(reader)?;
         Ok(SetLoadedAccountsDataSizeLimit {
             account_data_size_limit: Number::<u32>::LE.read(reader)?,
         })
@@ -268,15 +273,15 @@ impl SetLoadedAccountsDataSizeLimit {
 /// All selected instruction data variants.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum ComputeBudgetInstructionData {
-    /// Data for tag 0.
+    /// Data for tag INSTRUCTION_TAG_0.
     RequestUnits(RequestUnits),
-    /// Data for tag 1.
+    /// Data for tag INSTRUCTION_TAG_1.
     RequestHeapFrame(RequestHeapFrame),
-    /// Data for tag 2.
+    /// Data for tag INSTRUCTION_TAG_2.
     SetComputeUnitLimit(SetComputeUnitLimit),
-    /// Data for tag 3.
+    /// Data for tag INSTRUCTION_TAG_3.
     SetComputeUnitPrice(SetComputeUnitPrice),
-    /// Data for tag 4.
+    /// Data for tag INSTRUCTION_TAG_4.
     SetLoadedAccountsDataSizeLimit(SetLoadedAccountsDataSizeLimit),
 }
 /// Strict bounded instruction dispatch codec.
@@ -331,19 +336,19 @@ impl Decoder<ComputeBudgetInstructionData> for ComputeBudgetInstructionDataCodec
         let tag = *reader.remaining().first().ok_or(Error::Truncated)?;
 
         match tag {
-            0 => Ok(ComputeBudgetInstructionData::RequestUnits(
+            INSTRUCTION_TAG_0 => Ok(ComputeBudgetInstructionData::RequestUnits(
                 RequestUnitsCodec.read(reader)?,
             )),
-            1 => Ok(ComputeBudgetInstructionData::RequestHeapFrame(
+            INSTRUCTION_TAG_1 => Ok(ComputeBudgetInstructionData::RequestHeapFrame(
                 RequestHeapFrameCodec.read(reader)?,
             )),
-            2 => Ok(ComputeBudgetInstructionData::SetComputeUnitLimit(
+            INSTRUCTION_TAG_2 => Ok(ComputeBudgetInstructionData::SetComputeUnitLimit(
                 SetComputeUnitLimitCodec.read(reader)?,
             )),
-            3 => Ok(ComputeBudgetInstructionData::SetComputeUnitPrice(
+            INSTRUCTION_TAG_3 => Ok(ComputeBudgetInstructionData::SetComputeUnitPrice(
                 SetComputeUnitPriceCodec.read(reader)?,
             )),
-            4 => Ok(
+            INSTRUCTION_TAG_4 => Ok(
                 ComputeBudgetInstructionData::SetLoadedAccountsDataSizeLimit(
                     SetLoadedAccountsDataSizeLimitCodec.read(reader)?,
                 ),
@@ -357,11 +362,11 @@ pub fn identify_instruction(data: &[u8]) -> Result<u8, Error> {
     let tag = *data.first().ok_or(Error::Truncated)?;
 
     match tag {
-        0 => Ok(tag),
-        1 => Ok(tag),
-        2 => Ok(tag),
-        3 => Ok(tag),
-        4 => Ok(tag),
+        INSTRUCTION_TAG_0 => Ok(tag),
+        INSTRUCTION_TAG_1 => Ok(tag),
+        INSTRUCTION_TAG_2 => Ok(tag),
+        INSTRUCTION_TAG_3 => Ok(tag),
+        INSTRUCTION_TAG_4 => Ok(tag),
         _ => Err(Error::InvalidDiscriminator),
     }
 }

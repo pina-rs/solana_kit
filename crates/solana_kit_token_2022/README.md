@@ -71,7 +71,7 @@ expected program address.
 
 Data codecs regenerate through the existing shared typed IR/emitter. Invocation
 wrappers regenerate through the separate, exact-IDL native projection in
-`verification/codegen-design/src/client_projection`. All source contracts resolve
+`tools/codama-renderer/src/client_projection`. All source contracts resolve
 and every output formats before any final file replacement. This provides
 single-file atomic replacement, not multi-file crash durability. No runtime JSON
 model or second data-layout emitter is used. Drift and original-source audits

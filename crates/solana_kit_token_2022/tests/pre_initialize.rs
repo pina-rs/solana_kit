@@ -4,8 +4,7 @@ use solana_kit_core::{
 };
 use solana_kit_token_2022::extensions::pre_initialize_mint_extensions;
 use solana_kit_token_2022::*;
-const ORACLE: &str =
-    include_str!("../../../verification/codegen-design/fixtures/token-2022-oracle.tsv");
+const ORACLE: &str = include_str!("../../../tools/codama-renderer/fixtures/token-2022-oracle.tsv");
 const ITEMS: usize = 4096;
 const RADIX: u32 = 16;
 const CASES: [(&str, &str); 15] = [
