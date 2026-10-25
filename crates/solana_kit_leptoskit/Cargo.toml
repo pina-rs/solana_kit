@@ -32,10 +32,10 @@ wallet-host = [
 host = ["dep:leptoskit_native", "dep:leptoskit_wasm", "dep:solana_kit_native", "dep:tokio"]
 
 [dependencies]
-leptoskit_bridge = { version = "=0.1.0", git = "https://github.com/ifiokjr/leptoskit", rev = "3c6383a17f786172d696e1e83d8026cba2085fa4" }
-leptoskit_bridge_ffi = { version = "=0.1.0", git = "https://github.com/ifiokjr/leptoskit", rev = "3c6383a17f786172d696e1e83d8026cba2085fa4", features = ["app"], optional = true }
-leptoskit_native = { version = "=0.1.0", git = "https://github.com/ifiokjr/leptoskit", rev = "3c6383a17f786172d696e1e83d8026cba2085fa4", optional = true }
-leptoskit_wasm = { version = "=0.1.0", git = "https://github.com/ifiokjr/leptoskit", rev = "3c6383a17f786172d696e1e83d8026cba2085fa4", optional = true }
+leptoskit_bridge = { version = "=0.1.0", git = "https://github.com/ifiokjr/leptoskit", rev = "25b1861ddc729a8f3b70117cd0c48e06659c9697" }
+leptoskit_bridge_ffi = { version = "=0.1.0", git = "https://github.com/ifiokjr/leptoskit", rev = "25b1861ddc729a8f3b70117cd0c48e06659c9697", features = ["app"], optional = true }
+leptoskit_native = { version = "=0.1.0", git = "https://github.com/ifiokjr/leptoskit", rev = "25b1861ddc729a8f3b70117cd0c48e06659c9697", optional = true }
+leptoskit_wasm = { version = "=0.1.0", git = "https://github.com/ifiokjr/leptoskit", rev = "25b1861ddc729a8f3b70117cd0c48e06659c9697", optional = true }
 libc = { version = "=0.2.191", optional = true }
 serde = { version = "1.0.229", optional = true }
 serde_json = { version = "=1.0.154", optional = true }
@@ -51,7 +51,7 @@ solana_kit_browser = { workspace = true, features = ["wallet"], optional = true 
 
 [dev-dependencies]
 futures-util = { version = "=0.3.34", features = ["sink"] }
-leptoskit_bridge_ffi = { version = "=0.1.0", git = "https://github.com/ifiokjr/leptoskit", rev = "3c6383a17f786172d696e1e83d8026cba2085fa4", features = ["app"] }
+leptoskit_bridge_ffi = { version = "=0.1.0", git = "https://github.com/ifiokjr/leptoskit", rev = "25b1861ddc729a8f3b70117cd0c48e06659c9697", features = ["app"] }
 tokio = { version = "=1.54.1", features = ["rt-multi-thread", "macros", "net", "time", "io-util"] }
 tokio-tungstenite = "=0.29.0"
 wat = "=1.262.0"
@@ -61,4 +61,4 @@ name = "solana-wallet"
 rust-service-factory = "wallet_service::from_app_dirs"
 android-type = "dev.solanakit.wallet.MwaPlatform"
 android-context = true
-android-query-actions = ["android.intent.action.VIEW"]
+android-query-intents = [{ action = "android.intent.action.VIEW", scheme = "solana-wallet" }]
