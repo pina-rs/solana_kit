@@ -1,0 +1,141 @@
+//! Android's external wallet owns its own signing approval and persistence.
+use super::{Action, LocalWalletCommands, LocalWalletEvents, cancellable, show};
+use base64::{Engine, engine::general_purpose::STANDARD};
+use solana_kit_core::{Address, Signature, crypto::verify};
+use solana_kit_leptoskit::{GuestMobileWallet, WalletSessionError, wallet_ui::mobile_wallet_panel};
+use solana_kit_wallet::mwa::Method;
+
+const SIGNATURE_BYTES: usize = 64;
+
+/// Authorization establishes the exact account used to verify later signatures;
+/// cancellation drops the pending operation and the external wallet lease.
+pub(super) async fn run(
+    mut wallet: GuestMobileWallet,
+    actions: &mut LocalWalletEvents,
+    commands: &LocalWalletCommands,
+    generation: &mut u64,
+) -> Result<(), WalletSessionError> {
+    let Some((encoded, address)) = authorize(&mut wallet, actions).await? else {
+        return Ok(());
+    };
+    show(
+        mobile_wallet_panel(&address.to_string(), false, commands),
+        "Android wallet authorized",
+    );
+
+    while let Ok(action) = actions.next_action().await {
+        if action == Action::Cancel {
+            return Ok(());
+        }
+
+        if action == Action::Disconnect {
+            return wallet.close().await;
+        }
+
+        if action != Action::Review {
+            continue;
+        }
+
+        *generation = generation
+            .checked_add(1)
+            .ok_or(WalletSessionError::Malformed)?;
+        show(
+            mobile_wallet_panel(&address.to_string(), true, commands),
+            "Waiting for external wallet approval",
+        );
+
+        if !sign_review(&mut wallet, &encoded, &address, *generation, actions).await? {
+            return Ok(());
+        }
+
+        show(
+            mobile_wallet_panel(&address.to_string(), false, commands),
+            "Wallet signature verified",
+        );
+    }
+
+    wallet.close().await
+}
+
+async fn authorize(
+    wallet: &mut GuestMobileWallet,
+    actions: &mut LocalWalletEvents,
+) -> Result<Option<(String, Address)>, WalletSessionError> {
+    let params =
+        serde_json::json!({"chain":"solana:devnet", "identity":{"name":"Solana Kit fixture"}});
+    let params = params
+        .as_object()
+        .ok_or(WalletSessionError::Malformed)?
+        .clone();
+    let Some(result) = cancellable(wallet.call(Method::Authorize, params), actions).await else {
+        return Ok(None);
+    };
+    let encoded = account(&result?)?;
+    let bytes = STANDARD
+        .decode(&encoded)
+        .map_err(|_| WalletSessionError::Malformed)?;
+    let address = Address::try_from(bytes.as_slice()).map_err(|_| WalletSessionError::Malformed)?;
+    Ok(Some((encoded, address)))
+}
+
+async fn sign_review(
+    wallet: &mut GuestMobileWallet,
+    encoded: &str,
+    address: &Address,
+    generation: u64,
+    actions: &mut LocalWalletEvents,
+) -> Result<bool, WalletSessionError> {
+    match cancellable(sign(wallet, encoded, address, generation), actions).await {
+        Some(result) => result.map(|_| true),
+        None => Ok(false),
+    }
+}
+
+fn account(
+    result: &serde_json::Map<String, serde_json::Value>,
+) -> Result<String, WalletSessionError> {
+    result
+        .get("accounts")
+        .and_then(|value| value.get(0))
+        .and_then(|value| value.get("address"))
+        .and_then(|value| value.as_str())
+        .map(str::to_owned)
+        .ok_or(WalletSessionError::Malformed)
+}
+
+async fn sign(
+    wallet: &mut GuestMobileWallet,
+    encoded: &str,
+    address: &Address,
+    generation: u64,
+) -> Result<(), WalletSessionError> {
+    let message = format!("Solana Kit Android review {generation}");
+    let params =
+        serde_json::json!({"addresses":[encoded],"payloads":[STANDARD.encode(message.as_bytes())]});
+    let params = params
+        .as_object()
+        .ok_or(WalletSessionError::Malformed)?
+        .clone();
+    let result = wallet.call(Method::SignMessages, params).await?;
+    let payloads = result
+        .get("signed_payloads")
+        .and_then(|value| value.as_array())
+        .ok_or(WalletSessionError::Malformed)?;
+
+    if payloads.len() != 1 {
+        return Err(WalletSessionError::Malformed);
+    }
+
+    let encoded = payloads[0].as_str().ok_or(WalletSessionError::Malformed)?;
+    let signed = STANDARD
+        .decode(encoded)
+        .map_err(|_| WalletSessionError::Malformed)?;
+
+    if signed.len() != message.len() + SIGNATURE_BYTES || !signed.starts_with(message.as_bytes()) {
+        return Err(WalletSessionError::Malformed);
+    }
+
+    let signature =
+        Signature::try_from(&signed[message.len()..]).map_err(|_| WalletSessionError::Malformed)?;
+    verify(address, message.as_bytes(), &signature).map_err(|_| WalletSessionError::Malformed)
+}

@@ -87,3 +87,17 @@ partial outputs cannot claim foreign owners, and cardinality is checked.
 `MessageSigner` by invoking it once per input in order. Implement the bulk trait
 directly for a backend-native bulk operation. The adapter preserves the singular
 future's actual auto traits and stops at its first failure.
+
+Low-level capability traits accept a defaulted failure parameter. Existing
+implementations keep `Error`; a local host backend can instead return its concrete
+error without discarding an original platform cause. Transaction `local` and
+`native` registrations and compositions preserve that parameter. Construct a typed
+composition with `Composition::<Failure>::with_failure`, where `Failure:
+From<Error>` retains protocol-validation failures. `Composition::new` keeps the
+existing default-error behavior.
+
+`local::Registration::partial_with` admits a backend with another concrete error
+through an explicit caller-selected mapper. This allows a local key and a browser
+wallet to share the normal ordered/concurrent composition without mapping every
+backend failure to rejection. The default native error and native future bounds
+remain unchanged; browser-local causes do not enter portable default graphs.

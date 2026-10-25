@@ -3,6 +3,22 @@
 Tokio HTTP/1 and text WebSocket transports with verified TLS for off-chain Solana application code.
 Use Pina or official Solana program libraries for on-chain programs.
 
+The optional `keys` feature adds `keys::NativeEntropy` for explicit exportable-key
+generation and `keys::write_keypair_new` for intentional Solana-keygen JSON backups.
+The entropy owner uses a caller-selected rustls secure provider; its default is
+the same ring provider used by TLS. The original provider failure remains typed.
+No global provider or executor is installed.
+
+Backup writes are blocking. Callers select their blocking executor and join its
+work before teardown. On Unix, the destination appears only after the complete
+file is flushed in a new private staging directory. A hard link publishes it
+without overwriting an existing file or symbolic link. The caller must supply a
+trusted parent directory. Private files use mode 0600 and staging directories use
+0700. An error reports whether publication preceded cleanup failure, and retains
+all cleanup errors. Filesystems without hard links fail explicitly. Other
+platforms return Unsupported before creating a file. This does not promise
+power-loss durability or protection against a hostile owner of the parent path.
+
 `NativeHttp::new(endpoint, HttpConfig::default())` implements the public
 `solana_kit_client::Transport`. Each polled exchange owns its connection and
 HTTP driver. It creates no runtime, pool, detached task, redirect, retry, proxy,
@@ -97,3 +113,22 @@ inline socket and driver, bounds response copies, follows no redirects and sends
 once. Normal REST errors redact request values while retaining the original cause
 chain for explicit inspection. Original fixed-POST RPC behavior remains separate.
 Current/MSRV compilation, quality and actual REST peer replay remain pending.
+
+## Optional mobile wallet transport
+
+Enable `mwa` for a caller-owned binary Mobile Wallet Adapter session. After an
+explicit user action, generate `mwa::NativeAssociation` with `NativeEntropy`,
+present its URI to an Android wallet, and consume the proposal in `connect`.
+Use `call` with the existing portable MWA method and typed response contracts.
+Wallet rejection remains a protocol response; transport errors preserve their
+original source. Dropping a pending call closes local authority. Await `close`
+for the bounded peer close, or drop the unique owner for immediate local close.
+
+Authorization and signing use `MwaConfig::approval_timeout`, which defaults to
+five minutes and includes the user's approval time. Capability queries, revocation
+and peer close use the socket operation deadline. Applications can configure both.
+
+This transport does not launch Android activities or grant signing approval.
+Desktop and iOS applications must select their actual available wallet backend;
+Android MWA availability is never inferred from a Wasm target. A generated app
+still needs to compose the native session with its application service factory.

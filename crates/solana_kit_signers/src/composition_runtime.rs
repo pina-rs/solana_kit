@@ -3,16 +3,18 @@
 /// Modifiers run in declaration order, followed by concurrent partial operations
 /// over one immutable final snapshot. Results merge in declaration order. Dropping
 /// this future drops unfinished operations; no task or runtime is started here.
-pub struct Composition<'a> {
-    registrations: Vec<Registration<'a>>,
+pub struct Composition<'a, Failure = Error> {
+    registrations: Vec<Registration<'a, Failure>>,
     duplicate_sender_only: bool,
 }
-impl<'a> Composition<'a> {
+impl<'a, Failure: From<Error>> Composition<'a, Failure> {
     /// Validates at most 256 registrations and deduplicates shared logical handles.
     ///
     /// # Errors
     /// Rejects distinct same-address handles and inconsistent declarations before effects.
-    pub fn new(registrations: impl Into<Vec<Registration<'a>>>) -> Result<Self, Error> {
+    pub fn with_failure(
+        registrations: impl Into<Vec<Registration<'a, Failure>>>,
+    ) -> Result<Self, Error> {
         let registrations = registrations.into();
 
         if registrations.len() > MAX_ITEMS {
@@ -60,7 +62,7 @@ impl<'a> Composition<'a> {
     ///
     /// # Errors
     /// Propagates backend failures and rejects tampered or foreign authorization.
-    pub async fn partially_sign(&self, tx: &Transaction) -> Result<Transaction, Error> {
+    pub async fn partially_sign(&self, tx: &Transaction) -> Result<Transaction, Failure> {
         let roles = self.roles(false)?;
         self.apply(tx, &roles).await
     }
@@ -68,7 +70,7 @@ impl<'a> Composition<'a> {
         &self,
         tx: &Transaction,
         roles: &[(Address, Role)],
-    ) -> Result<Transaction, Error> {
+    ) -> Result<Transaction, Failure> {
         let mut current = tx.clone();
 
         for (registration, (_, role)) in self.registrations.iter().zip(roles) {
@@ -116,7 +118,7 @@ impl<'a> Composition<'a> {
     ///
     /// # Errors
     /// Also rejects missing signatures and, with crypto, invalid signatures.
-    pub async fn sign(&self, tx: &Transaction) -> Result<Transaction, Error> {
+    pub async fn sign(&self, tx: &Transaction) -> Result<Transaction, Failure> {
         let result = self.partially_sign(tx).await?;
         crate::pipeline::require_complete(&result)?;
         Ok(result)
@@ -129,7 +131,7 @@ impl<'a> Composition<'a> {
     ///
     /// # Errors
     /// Resolves sender cardinality before effects; propagates backend failures.
-    pub async fn sign_and_send(&self, tx: &Transaction) -> Result<Signature, Error> {
+    pub async fn sign_and_send(&self, tx: &Transaction) -> Result<Signature, Failure> {
         let roles = self.roles(true)?;
         let signed = self.apply(tx, &roles).await?;
         let sender = self
@@ -142,7 +144,9 @@ impl<'a> Composition<'a> {
 
         for (address, slot) in signed.message().signers().iter().zip(signed.signatures()) {
             if *address != sender.info.address && slot.is_none() {
-                return Err(solana_kit_core::transaction::Error::MissingSignature.into());
+                return Err(
+                    Error::from(solana_kit_core::transaction::Error::MissingSignature).into(),
+                );
             }
 
             if let Some(signature) = slot {
@@ -159,7 +163,7 @@ impl<'a> Composition<'a> {
             .await?;
 
         if identifier.as_bytes() == &[0; 64] {
-            return Err(solana_kit_core::transaction::Error::InvalidSignature.into());
+            return Err(Error::from(solana_kit_core::transaction::Error::InvalidSignature).into());
         }
 
         Ok(identifier)
@@ -174,9 +178,9 @@ impl<'a> Composition<'a> {
     pub async fn sign_batch(
         &self,
         transactions: &[Transaction],
-    ) -> Result<Vec<Transaction>, Error> {
+    ) -> Result<Vec<Transaction>, Failure> {
         if transactions.len() > MAX_ITEMS {
-            return Err(Error::TooManySigners);
+            return Err(Error::TooManySigners.into());
         }
 
         let mut results = Vec::with_capacity(transactions.len());
@@ -186,5 +190,15 @@ impl<'a> Composition<'a> {
         }
 
         Ok(results)
+    }
+}
+
+impl<'a> Composition<'a, Error> {
+    /// Builds the default error-preserving composition.
+    ///
+    /// # Errors
+    /// Rejects conflicting or excessive registrations before backend effects.
+    pub fn new(registrations: impl Into<Vec<Registration<'a, Error>>>) -> Result<Self, Error> {
+        Self::with_failure(registrations)
     }
 }

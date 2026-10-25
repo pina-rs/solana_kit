@@ -8,6 +8,10 @@ mod exchange;
 mod rest;
 mod tls;
 
+/// Explicit operating-system entropy and native key backup operations.
+#[cfg(feature = "keys")]
+pub mod keys;
+
 pub use config::{ConfigError, HttpConfig};
 pub use hyper::http::{HeaderMap, HeaderName, HeaderValue};
 pub use rest::NativeRest;
@@ -91,3 +95,5 @@ mod websocket_config;
 mod websocket_connect;
 pub use websocket::{NativeSubscriptionSocket, NativeWebSocket, WsError};
 pub use websocket_config::WsConfig;
+#[cfg(feature = "mwa")]
+pub mod mwa;

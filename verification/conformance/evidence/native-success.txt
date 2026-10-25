@@ -359,4 +359,6 @@ sysvar-public-history-fetch-composition: Ok(())
 sysvar-public-fetch-absence-owner: Ok(())
 sysvar-public-fetch-decoder-failures: Ok(())
 sysvar-public-fetch-rpc-causes-limits: Ok(())
-solana-kit-core-v37: 354/354 cases passed
+explicit-backup-roundtrip: Ok(())
+explicit-backup-consume-export-capability: Ok(())
+solana-kit-core-v38: 356/356 cases passed

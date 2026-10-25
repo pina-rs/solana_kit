@@ -215,30 +215,60 @@ impl HttpDriver {
     /// Drains cancellation first, admits bounded HTTP and returns other work.
     pub fn drain<B: NativeBackend>(&mut self, host: &mut WasmHost<B>) -> Result<Routed, HostError> {
         self.check(host)?;
-        let mut routed = Routed::default();
+        let mut incoming = Routed::default();
 
         while let Some(call) = host.plugins().next_cancelled() {
+            incoming.cancelled.push(call);
+        }
+
+        while let Some(request) = host.plugins().next_request() {
+            incoming.requests.push(request);
+        }
+
+        self.route(host, incoming)
+    }
+
+    /// Admits already-drained HTTP work and preserves other services' ownership.
+    /// Use this after another service wakes a guest that submits an HTTP call.
+    pub fn route<B: NativeBackend>(
+        &mut self,
+        host: &mut WasmHost<B>,
+        incoming: Routed,
+    ) -> Result<Routed, HostError> {
+        self.check(host)?;
+        let mut routed = Routed {
+            guest_woken: incoming.guest_woken,
+            ..Routed::default()
+        };
+        let mut wake_guest = false;
+
+        for call in incoming.cancelled {
             if !self.abort_call(call) {
                 routed.cancelled.push(call);
             }
         }
 
-        while let Some(request) = host.plugins().next_request() {
+        for request in incoming.requests {
             let Some(service) = self.services.get(&request.plugin).cloned() else {
                 routed.requests.push(request);
                 continue;
             };
 
-            routed.guest_woken |= match service {
+            if !matches!(host.plugins().result(request.id), Ok(None)) {
+                continue;
+            }
+
+            wake_guest |= match service {
                 HttpService::Rpc(service) => self.admit(host, request, service)?,
                 HttpService::Rest(service) => self.admit_rest(host, request, service)?,
             };
         }
 
-        if routed.guest_woken {
+        if wake_guest {
             host.wake_plugins()?;
         }
 
+        routed.guest_woken |= wake_guest;
         Ok(routed)
     }
 

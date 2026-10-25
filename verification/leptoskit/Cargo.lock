@@ -839,6 +839,7 @@ dependencies = [
  "num-traits",
  "sha2",
  "sha3",
+ "zeroize",
 ]
 
 [[package]]

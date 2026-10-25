@@ -1,8 +1,8 @@
-//! Original local JavaScript failures behind redacted HTTP diagnostics.
+//! Original local JavaScript failures behind redacted browser diagnostics.
 use std::{error::Error, fmt};
 use wasm_bindgen::JsValue;
 
-/// A browser HTTP failure's exact original JavaScript value.
+/// A browser operation's exact original JavaScript failure value.
 ///
 /// Obtain this cause by traversing `std::error::Error::source` and downcasting.
 /// Normal diagnostics omit the value. Explicit access can expose private request
@@ -28,7 +28,7 @@ impl fmt::Debug for BrowserCause {
 
 impl fmt::Display for BrowserCause {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
-        formatter.write_str("browser HTTP failure")
+        formatter.write_str("browser JavaScript failure")
     }
 }
 

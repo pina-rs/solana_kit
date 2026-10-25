@@ -4,6 +4,10 @@ mod pda;
 
 use core::fmt;
 
+mod backup;
+
+pub use backup::{Entropy, ExportableKeypair, KeypairBackup};
+
 use ed25519_dalek::Signer;
 use sha2::{Digest, Sha256};
 

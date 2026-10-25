@@ -59,14 +59,14 @@ impl Wallet for Probe {
     fn icon(&self) -> &WalletIcon {
         &self.icon
     }
-    fn chains(&self) -> &[String] {
-        &[]
+    fn chains(&self) -> Vec<String> {
+        Vec::new()
     }
-    fn features(&self) -> &WalletFeatures {
-        &self.features
+    fn features(&self) -> WalletFeatures {
+        self.features.clone()
     }
-    fn accounts(&self) -> &[WalletAccount] {
-        &[]
+    fn accounts(&self) -> Vec<WalletAccount> {
+        Vec::new()
     }
 }
 

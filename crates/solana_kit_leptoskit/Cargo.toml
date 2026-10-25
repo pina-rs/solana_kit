@@ -3,25 +3,51 @@ name = "solana_kit_leptoskit"
 version = "0.1.0"
 authors.workspace = true
 edition.workspace = true
-include = ["src/**", "README.md", "LICENSE"]
+include = ["src/**", "android/**", "README.md", "LICENSE"]
 license.workspace = true
 readme = "README.md"
 repository = "https://github.com/pina-rs/solana_kit/tree/main/crates/solana_kit_leptoskit"
 rust-version.workspace = true
-description = "Explicit LeptosKit guest HTTP and text sockets for off-chain clients"
+description = "Explicit LeptosKit transports and optional wallet controls for off-chain clients"
 
 [features]
 default = []
 guest = ["leptoskit_bridge/guest"]
+wallet-platform = ["guest", "dep:solana_kit_core", "dep:solana_kit_wallet", "solana_kit_wallet/mwa"]
+wallet-ui = ["dep:leptoskit_native", "dep:solana_kit_wallet"]
+wallet-browser-ui = ["wallet-ui", "dep:solana_kit_browser"]
+wallet-session = ["wallet-platform", "dep:serde_json"]
+wallet-host = [
+  "host",
+  "dep:solana_kit_core",
+  "dep:solana_kit_wallet",
+  "solana_kit_wallet/mwa",
+  "dep:serde_json",
+  "dep:serde",
+  "dep:leptoskit_bridge_ffi",
+  "solana_kit_native/mwa",
+  "dep:zeroize",
+  "dep:libc",
+]
 host = ["dep:leptoskit_native", "dep:leptoskit_wasm", "dep:solana_kit_native", "dep:tokio"]
 
 [dependencies]
 leptoskit_bridge = { version = "=0.1.0", git = "https://github.com/ifiokjr/leptoskit", rev = "3c6383a17f786172d696e1e83d8026cba2085fa4" }
+leptoskit_bridge_ffi = { version = "=0.1.0", git = "https://github.com/ifiokjr/leptoskit", rev = "3c6383a17f786172d696e1e83d8026cba2085fa4", features = ["app"], optional = true }
 leptoskit_native = { version = "=0.1.0", git = "https://github.com/ifiokjr/leptoskit", rev = "3c6383a17f786172d696e1e83d8026cba2085fa4", optional = true }
 leptoskit_wasm = { version = "=0.1.0", git = "https://github.com/ifiokjr/leptoskit", rev = "3c6383a17f786172d696e1e83d8026cba2085fa4", optional = true }
+libc = { version = "=0.2.191", optional = true }
+serde = { version = "1.0.229", optional = true }
+serde_json = { version = "=1.0.154", optional = true }
 solana_kit_client.workspace = true
+solana_kit_core = { workspace = true, features = ["crypto"], optional = true }
 solana_kit_native = { workspace = true, optional = true }
+solana_kit_wallet = { workspace = true, optional = true }
 tokio = { version = "=1.54.1", features = ["rt", "sync", "macros"], optional = true }
+zeroize = { version = "=1.9.1", optional = true }
+
+[target.'cfg(all(target_arch = "wasm32", target_os = "unknown"))'.dependencies]
+solana_kit_browser = { workspace = true, features = ["wallet"], optional = true }
 
 [dev-dependencies]
 futures-util = { version = "=0.3.34", features = ["sink"] }
@@ -29,3 +55,10 @@ leptoskit_bridge_ffi = { version = "=0.1.0", git = "https://github.com/ifiokjr/l
 tokio = { version = "=1.54.1", features = ["rt-multi-thread", "macros", "net", "time", "io-util"] }
 tokio-tungstenite = "=0.29.0"
 wat = "=1.262.0"
+
+[package.metadata.leptoskit.runtime]
+name = "solana-wallet"
+rust-service-factory = "wallet_service::from_app_dirs"
+android-type = "dev.solanakit.wallet.MwaPlatform"
+android-context = true
+android-query-actions = ["android.intent.action.VIEW"]

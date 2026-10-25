@@ -10,38 +10,40 @@ use core::{
     pin::Pin,
 };
 use solana_kit_core::{Address, Signature, transaction::Transaction};
-type Operation<'a, T> = Pin<Box<dyn Future<Output = Result<T, Error>> + Send + 'a>>;
-trait PartialOperation {
-    fn partial<'a>(&'a self, tx: &'a Transaction) -> Operation<'a, SignatureOutput>;
+type Operation<'a, T, Failure> = Pin<Box<dyn Future<Output = Result<T, Failure>> + Send + 'a>>;
+trait PartialOperation<Failure> {
+    fn partial<'a>(&'a self, tx: &'a Transaction) -> Operation<'a, SignatureOutput, Failure>;
 }
-trait ModifyOperation {
-    fn modify<'a>(&'a self, tx: &'a Transaction) -> Operation<'a, Transaction>;
+trait ModifyOperation<Failure> {
+    fn modify<'a>(&'a self, tx: &'a Transaction) -> Operation<'a, Transaction, Failure>;
 }
-trait SendOperation {
-    fn send<'a>(&'a self, tx: &'a Transaction) -> Operation<'a, Signature>;
+trait SendOperation<Failure> {
+    fn send<'a>(&'a self, tx: &'a Transaction) -> Operation<'a, Signature, Failure>;
 }
 struct Adapter<'a, P>(&'a SignerCapability<'a, P>);
-impl<P: TransactionPartialSigner + Sync> PartialOperation for Adapter<'_, P>
+impl<Failure, P: TransactionPartialSigner<Failure> + Sync> PartialOperation<Failure>
+    for Adapter<'_, P>
 where
-    for<'t> <P as TransactionPartialSigner>::Sign<'t>: Send,
+    for<'t> <P as TransactionPartialSigner<Failure>>::Sign<'t>: Send,
 {
-    fn partial<'a>(&'a self, tx: &'a Transaction) -> Operation<'a, SignatureOutput> {
+    fn partial<'a>(&'a self, tx: &'a Transaction) -> Operation<'a, SignatureOutput, Failure> {
         Box::pin(self.0.signer.sign_transaction(tx))
     }
 }
-impl<P: TransactionModifyingSigner + Sync> ModifyOperation for Adapter<'_, P>
+impl<Failure, P: TransactionModifyingSigner<Failure> + Sync> ModifyOperation<Failure>
+    for Adapter<'_, P>
 where
-    for<'t> <P as TransactionModifyingSigner>::Modify<'t>: Send,
+    for<'t> <P as TransactionModifyingSigner<Failure>>::Modify<'t>: Send,
 {
-    fn modify<'a>(&'a self, tx: &'a Transaction) -> Operation<'a, Transaction> {
+    fn modify<'a>(&'a self, tx: &'a Transaction) -> Operation<'a, Transaction, Failure> {
         Box::pin(self.0.signer.modify_transaction(tx))
     }
 }
-impl<P: TransactionSendingSigner + Sync> SendOperation for Adapter<'_, P>
+impl<Failure, P: TransactionSendingSigner<Failure> + Sync> SendOperation<Failure> for Adapter<'_, P>
 where
-    for<'t> <P as TransactionSendingSigner>::Send<'t>: Send,
+    for<'t> <P as TransactionSendingSigner<Failure>>::Send<'t>: Send,
 {
-    fn send<'a>(&'a self, tx: &'a Transaction) -> Operation<'a, Signature> {
+    fn send<'a>(&'a self, tx: &'a Transaction) -> Operation<'a, Signature, Failure> {
         Box::pin(self.0.signer.send_transaction(tx))
     }
 }
@@ -49,24 +51,24 @@ where
 ///
 /// Only declared interfaces are eligible for role selection. Constructors require
 /// the corresponding backend traits; absent interfaces have no backend adapter.
-pub struct Registration<'a> {
+pub struct Registration<'a, Failure = Error> {
     info: Descriptor,
-    partial: Option<Box<dyn PartialOperation + Send + Sync + 'a>>,
-    modify: Option<Box<dyn ModifyOperation + Send + Sync + 'a>>,
-    send: Option<Box<dyn SendOperation + Send + Sync + 'a>>,
+    partial: Option<Box<dyn PartialOperation<Failure> + Send + Sync + 'a>>,
+    modify: Option<Box<dyn ModifyOperation<Failure> + Send + Sync + 'a>>,
+    send: Option<Box<dyn SendOperation<Failure> + Send + Sync + 'a>>,
 }
-impl<'a> Registration<'a> {
+impl<'a, Failure: 'a> Registration<'a, Failure> {
     /// Joins two registrations of heterogeneous backend types in input order.
     pub fn and(self, other: Self) -> Vec<Self> {
         vec![self, other]
     }
 
     /// Declares exactly the `partial` interfaces for this logical handle.
-    pub fn partial<P: TransactionPartialSigner + Sync>(
+    pub fn partial<P: TransactionPartialSigner<Failure> + Sync>(
         capability: &'a SignerCapability<'a, P>,
     ) -> Self
     where
-        for<'t> <P as TransactionPartialSigner>::Sign<'t>: Send,
+        for<'t> <P as TransactionPartialSigner<Failure>>::Sign<'t>: Send,
     {
         Self {
             info: Descriptor {
@@ -85,11 +87,11 @@ impl<'a> Registration<'a> {
     }
 
     /// Declares exactly the `modifying` interfaces for this logical handle.
-    pub fn modifying<P: TransactionModifyingSigner + Sync>(
+    pub fn modifying<P: TransactionModifyingSigner<Failure> + Sync>(
         capability: &'a SignerCapability<'a, P>,
     ) -> Self
     where
-        for<'t> <P as TransactionModifyingSigner>::Modify<'t>: Send,
+        for<'t> <P as TransactionModifyingSigner<Failure>>::Modify<'t>: Send,
     {
         Self {
             info: Descriptor {
@@ -108,11 +110,11 @@ impl<'a> Registration<'a> {
     }
 
     /// Declares exactly the `sending` interfaces for this logical handle.
-    pub fn sending<P: TransactionSendingSigner + Sync>(
+    pub fn sending<P: TransactionSendingSigner<Failure> + Sync>(
         capability: &'a SignerCapability<'a, P>,
     ) -> Self
     where
-        for<'t> <P as TransactionSendingSigner>::Send<'t>: Send,
+        for<'t> <P as TransactionSendingSigner<Failure>>::Send<'t>: Send,
     {
         Self {
             info: Descriptor {
@@ -131,12 +133,14 @@ impl<'a> Registration<'a> {
     }
 
     /// Declares exactly the `partial_modifying` interfaces for this logical handle.
-    pub fn partial_modifying<P: TransactionPartialSigner + TransactionModifyingSigner + Sync>(
+    pub fn partial_modifying<
+        P: TransactionPartialSigner<Failure> + TransactionModifyingSigner<Failure> + Sync,
+    >(
         capability: &'a SignerCapability<'a, P>,
     ) -> Self
     where
-        for<'t> <P as TransactionPartialSigner>::Sign<'t>: Send,
-        for<'t> <P as TransactionModifyingSigner>::Modify<'t>: Send,
+        for<'t> <P as TransactionPartialSigner<Failure>>::Sign<'t>: Send,
+        for<'t> <P as TransactionModifyingSigner<Failure>>::Modify<'t>: Send,
     {
         Self {
             info: Descriptor {
@@ -155,12 +159,14 @@ impl<'a> Registration<'a> {
     }
 
     /// Declares exactly the `partial_sending` interfaces for this logical handle.
-    pub fn partial_sending<P: TransactionPartialSigner + TransactionSendingSigner + Sync>(
+    pub fn partial_sending<
+        P: TransactionPartialSigner<Failure> + TransactionSendingSigner<Failure> + Sync,
+    >(
         capability: &'a SignerCapability<'a, P>,
     ) -> Self
     where
-        for<'t> <P as TransactionPartialSigner>::Sign<'t>: Send,
-        for<'t> <P as TransactionSendingSigner>::Send<'t>: Send,
+        for<'t> <P as TransactionPartialSigner<Failure>>::Sign<'t>: Send,
+        for<'t> <P as TransactionSendingSigner<Failure>>::Send<'t>: Send,
     {
         Self {
             info: Descriptor {
@@ -179,12 +185,14 @@ impl<'a> Registration<'a> {
     }
 
     /// Declares exactly the `modifying_sending` interfaces for this logical handle.
-    pub fn modifying_sending<P: TransactionModifyingSigner + TransactionSendingSigner + Sync>(
+    pub fn modifying_sending<
+        P: TransactionModifyingSigner<Failure> + TransactionSendingSigner<Failure> + Sync,
+    >(
         capability: &'a SignerCapability<'a, P>,
     ) -> Self
     where
-        for<'t> <P as TransactionModifyingSigner>::Modify<'t>: Send,
-        for<'t> <P as TransactionSendingSigner>::Send<'t>: Send,
+        for<'t> <P as TransactionModifyingSigner<Failure>>::Modify<'t>: Send,
+        for<'t> <P as TransactionSendingSigner<Failure>>::Send<'t>: Send,
     {
         Self {
             info: Descriptor {
@@ -204,14 +212,17 @@ impl<'a> Registration<'a> {
 
     /// Declares exactly the `composite` interfaces for this logical handle.
     pub fn composite<
-        P: TransactionPartialSigner + TransactionModifyingSigner + TransactionSendingSigner + Sync,
+        P: TransactionPartialSigner<Failure>
+            + TransactionModifyingSigner<Failure>
+            + TransactionSendingSigner<Failure>
+            + Sync,
     >(
         capability: &'a SignerCapability<'a, P>,
     ) -> Self
     where
-        for<'t> <P as TransactionPartialSigner>::Sign<'t>: Send,
-        for<'t> <P as TransactionModifyingSigner>::Modify<'t>: Send,
-        for<'t> <P as TransactionSendingSigner>::Send<'t>: Send,
+        for<'t> <P as TransactionPartialSigner<Failure>>::Sign<'t>: Send,
+        for<'t> <P as TransactionModifyingSigner<Failure>>::Modify<'t>: Send,
+        for<'t> <P as TransactionSendingSigner<Failure>>::Send<'t>: Send,
     {
         Self {
             info: Descriptor {
@@ -230,8 +241,8 @@ impl<'a> Registration<'a> {
     }
 }
 
-impl<'a> From<Registration<'a>> for Vec<Registration<'a>> {
-    fn from(registration: Registration<'a>) -> Self {
+impl<'a, Failure> From<Registration<'a, Failure>> for Vec<Registration<'a, Failure>> {
+    fn from(registration: Registration<'a, Failure>) -> Self {
         vec![registration]
     }
 }

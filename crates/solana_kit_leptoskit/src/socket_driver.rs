@@ -180,6 +180,7 @@ impl SocketDriver {
             guest_woken: routed.guest_woken,
             ..Routed::default()
         };
+        let mut wake_guest = false;
 
         for call in routed.cancelled {
             if !self.cancel(call) {
@@ -193,13 +194,18 @@ impl SocketDriver {
                 continue;
             }
 
-            output.guest_woken |= self.admit(host, request)?;
+            if !matches!(host.plugins().result(request.id), Ok(None)) {
+                continue;
+            }
+
+            wake_guest |= self.admit(host, request)?;
         }
 
-        if output.guest_woken {
+        if wake_guest {
             host.wake_plugins()?;
         }
 
+        output.guest_woken |= wake_guest;
         Ok(output)
     }
 

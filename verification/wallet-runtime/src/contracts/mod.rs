@@ -161,7 +161,8 @@ pub(super) fn typed_extensible_features_preserve_versions() {
     assert_eq!(wallet.icon().mime_type(), "image/png");
     assert_eq!(wallet.chains(), ["solana:localnet"]);
     assert_eq!(wallet.accounts().len(), 1);
-    let feature = wallet.features().feature::<Backend>(CONNECT).unwrap();
+    let features = wallet.features();
+    let feature = features.feature::<Backend>(CONNECT).unwrap();
     assert_eq!(
         done(feature.connect(ConnectInput::default()))
             .unwrap()
