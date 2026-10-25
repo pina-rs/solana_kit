@@ -27,9 +27,9 @@ pub const CONTRACT_GROUPS: usize = 8;
 fn literal_wire() {
     let value = SetValue { value: VALUE };
     let codec = SetValueCodec;
-    let bytes = (&codec).encode(&value, WIRE.len()).unwrap();
+    let bytes = codec.encode(&value, WIRE.len()).unwrap();
     assert_eq!(bytes, WIRE);
-    assert_eq!((&codec).decode(&WIRE, LIMITS).unwrap().value, VALUE);
+    assert_eq!(codec.decode(&WIRE, LIMITS).unwrap().value, VALUE);
     assert_eq!(codec.encode(&value, 8), Err(Error::LimitExceeded));
 
     let invocation = value.instruction(LIMITS).unwrap();
@@ -60,8 +60,8 @@ fn metadata_composition() {
     let number = Number::<u64>::LE;
     let paired = Paired::<_, _, u64, u64>::try_new(&number, &number).unwrap();
     assert_eq!(paired.encode_size().unwrap(), Size::Fixed(8));
-    assert_eq!((&paired).encode(&VALUE, 8).unwrap(), WIRE[1..]);
-    assert_eq!((&paired).decode(&WIRE[1..], LIMITS).unwrap(), VALUE);
+    assert_eq!(paired.encode(&VALUE, 8).unwrap(), WIRE[1..]);
+    assert_eq!(paired.decode(&WIRE[1..], LIMITS).unwrap(), VALUE);
 }
 
 fn imported_signer() {
