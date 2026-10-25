@@ -27,6 +27,9 @@ pub struct MwaConfig {
     pub socket: WsConfig,
     /// Maximum encrypted calls before a new association is required.
     pub max_requests: usize,
+    /// Deadline for wallet authorization and signing, including user approval.
+    /// Defaults to five minutes, independently of the socket operation deadline.
+    pub approval_timeout: std::time::Duration,
 }
 
 impl Default for MwaConfig {
@@ -39,6 +42,7 @@ impl Default for MwaConfig {
                 ..WsConfig::default()
             },
             max_requests: 128,
+            approval_timeout: std::time::Duration::from_secs(300),
         }
     }
 }
@@ -211,6 +215,15 @@ impl NativeMobileWallet {
             return Err(MwaError::Capacity);
         }
 
+        let deadline = match method {
+            Method::GetCapabilities | Method::Deauthorize => self.config.socket.operation_timeout,
+            Method::Authorize
+            | Method::Reauthorize
+            | Method::SignTransactions
+            | Method::SignMessages
+            | Method::SignAndSendTransactions
+            | Method::CloneAuthorization => self.config.approval_timeout,
+        };
         let request = Request::new(
             self.next_id,
             method,
@@ -224,7 +237,7 @@ impl NativeMobileWallet {
             &mut self.entropy,
             self.config.socket.max_frame_bytes,
         );
-        let result = tokio::time::timeout(self.config.socket.operation_timeout, operation)
+        let result = tokio::time::timeout(deadline, operation)
             .await
             .map_err(MwaError::Deadline)??;
         self.active = Some(active);

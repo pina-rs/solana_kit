@@ -9,6 +9,28 @@ use solana_kit_core::{AccountMeta, AccountRole, Address, Instruction, Signature}
 use solana_kit_signers::TransactionSendingSigner;
 use std::future::{Ready, pending, ready};
 
+#[wasm_bindgen_test]
+fn caller_pipeline_errors_keep_their_original_cause_and_request_classification() {
+    use solana_kit_signers::Error as PipelineError;
+
+    for error in [
+        PipelineError::TooManySigners,
+        PipelineError::ConflictingSigner,
+        PipelineError::MissingSender,
+        PipelineError::MultipleSenders,
+    ] {
+        let failure = WalletFailure::from(error);
+        assert_eq!(failure.code(), WalletErrorCode::InvalidRequest);
+        assert!(failure.source().unwrap().is::<PipelineError>());
+    }
+
+    for error in [PipelineError::ForeignSigner, PipelineError::ChangedSnapshot] {
+        let failure = WalletFailure::from(error);
+        assert_eq!(failure.code(), WalletErrorCode::InvalidResponse);
+        assert!(failure.source().unwrap().is::<PipelineError>());
+    }
+}
+
 fn listeners(harness: &Harness) -> f64 {
     Reflect::get(&harness.fixture, &"listeners".into())
         .unwrap()

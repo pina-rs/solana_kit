@@ -1,3 +1,5 @@
+mod deadlines;
+
 use super::*;
 use futures_util::{SinkExt, StreamExt};
 use solana_kit_wallet::mwa::{ProtocolVersion, encrypt_message, verify_hello_request};

@@ -124,6 +124,10 @@ Wallet rejection remains a protocol response; transport errors preserve their
 original source. Dropping a pending call closes local authority. Await `close`
 for the bounded peer close, or drop the unique owner for immediate local close.
 
+Authorization and signing use `MwaConfig::approval_timeout`, which defaults to
+five minutes and includes the user's approval time. Capability queries, revocation
+and peer close use the socket operation deadline. Applications can configure both.
+
 This transport does not launch Android activities or grant signing approval.
 Desktop and iOS applications must select their actual available wallet backend;
 Android MWA availability is never inferred from a Wasm target. A generated app

@@ -51,6 +51,8 @@ pub(super) async fn run(
             &mut generation,
         )
         .await;
+        // This fixture has no other event consumers; finish each selection's queue.
+        unrelated.clear();
 
         let status = match result {
             Ok(()) => "Choose a wallet",

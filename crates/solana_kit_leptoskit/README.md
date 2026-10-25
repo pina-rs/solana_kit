@@ -79,7 +79,7 @@ not an execution or dependency compatibility claim.
 
 Enable `wallet-ui` for an accessible wallet picker/status view and bounded action
 channel. Native buttons provide the platform's keyboard semantics. The view uses
-opaque choice identities, actual account metadata and a 44 pixel minimum control
+opaque choice identities, actual account metadata and a 44-pixel minimum control
 height. Applications own focus restoration and must verify it on each platform.
 
 Browser bundles can enable `wallet-browser-ui` and construct `BrowserWalletView`
@@ -103,8 +103,9 @@ Enable `wallet-host` in the native host and `wallet-session` in the interpreted
 guest. Runtime selection `solana-wallet` installs
 `wallet_service::from_app_dirs` and Android's `MwaPlatform`; these own the distinct
 bridge names `solana-wallet-session` and `solana-wallet-platform`. This hybrid
-registration requires the public framework correction tracked by source unit480.
-The current3c pin rejects the metadata. Do not claim generated support until the
+registration requires the public framework correction in
+[LeptosKit](https://github.com/ifiokjr/leptoskit/pull/181).
+The pinned `3c6383a` dependency rejects the metadata. Do not claim generated support until the
 verified framework successor is selected consistently and the app actually runs.
 
 `GuestMobileWallet::connect_android` retains a real pending bridge lease while it
@@ -123,10 +124,10 @@ fixture executes only a matching approval, then independently verifies the exact
 signature. Native buttons, bounded queues, busy/cancel and disconnect states are
 ordinary source; keyboard, focus and installed accessibility remain unverified.
 
-Persistence uses a canonical host-selected app sandbox root and a private0700
+Persistence uses a canonical host-selected app sandbox root and a private `0700`
 child directory. Guest input never selects a file path. Loads reject leaf
 symlinks with O_NOFOLLOW, nonregular/oversized files and permissive modes. Saves
-reuse the private0600, atomic no-overwrite writer. The host must keep its sandbox
+reuse the private `0600`, atomic no-overwrite writer. The host must keep its sandbox
 root trusted; this is not a hostile same-user directory-race defense. Desktop
 Unix, Android and iOS use this path. Other systems fail explicitly rather than
 writing an insecure file. The separate private copy remains inside the app; it

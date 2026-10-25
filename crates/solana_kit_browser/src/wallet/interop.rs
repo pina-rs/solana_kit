@@ -188,7 +188,13 @@ impl From<solana_kit_signers::Error> for WalletFailure {
         let code = match error {
             solana_kit_signers::Error::Rejected => WalletErrorCode::UserRejected,
             solana_kit_signers::Error::Cancelled => WalletErrorCode::Disconnected,
-            _ => WalletErrorCode::InvalidResponse,
+            solana_kit_signers::Error::TooManySigners
+            | solana_kit_signers::Error::ConflictingSigner
+            | solana_kit_signers::Error::MissingSender
+            | solana_kit_signers::Error::MultipleSenders => WalletErrorCode::InvalidRequest,
+            solana_kit_signers::Error::ForeignSigner
+            | solana_kit_signers::Error::ChangedSnapshot
+            | solana_kit_signers::Error::Transaction(_) => WalletErrorCode::InvalidResponse,
         };
         Self {
             code,
