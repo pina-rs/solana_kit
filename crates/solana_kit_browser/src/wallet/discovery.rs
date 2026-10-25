@@ -252,16 +252,15 @@ impl WalletDiscovery {
             return;
         }
 
-        if let Some(listener) = self.listener.take() {
-            if let Err(error) = self
+        if let Some(listener) = self.listener.take()
+            && let Err(error) = self
                 .window
                 .remove_event_listener_with_callback(REGISTER, &listener)
-            {
-                self.inner
-                    .failures
-                    .borrow_mut()
-                    .push(WalletFailure::js(error));
-            }
+        {
+            self.inner
+                .failures
+                .borrow_mut()
+                .push(WalletFailure::js(error));
         }
 
         let removed = std::mem::take(&mut *self.inner.entries.borrow_mut());

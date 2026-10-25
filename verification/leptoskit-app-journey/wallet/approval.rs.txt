@@ -26,7 +26,7 @@ pub(super) async fn request(
         "Awaiting your approval",
     );
 
-    while let Ok(action) = actions.next().await {
+    while let Ok(action) = actions.next_action().await {
         let decision = match action {
             Action::Approve(current) if current == generation => Decision::Approve,
 

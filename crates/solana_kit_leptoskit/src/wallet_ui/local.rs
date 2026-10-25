@@ -87,7 +87,7 @@ impl LocalWalletCommands {
 
 impl LocalWalletEvents {
     /// Waits for the next action; dropping this future leaves queued actions intact.
-    pub fn next(
+    pub fn next_action(
         &mut self,
     ) -> impl Future<Output = Result<LocalWalletAction, LocalQueueError>> + '_ {
         std::future::poll_fn(|context| {

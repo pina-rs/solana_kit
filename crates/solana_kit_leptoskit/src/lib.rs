@@ -44,7 +44,10 @@ mod wallet_platform;
 #[cfg(all(feature = "wallet-platform", target_arch = "wasm32"))]
 pub use wallet_platform::{GuestWalletPlatform, WalletPlatformError};
 
-#[cfg(any(feature = "wallet-session", feature = "wallet-host"))]
+#[cfg(any(
+    feature = "wallet-host",
+    all(feature = "wallet-session", target_arch = "wasm32")
+))]
 mod wallet_wire;
 
 /// Native session service with one joined worker and one wallet authority.

@@ -1,21 +1,31 @@
 //! Private app-sandbox persistence, selected only by explicit user actions.
-use serde::Deserializer;
-use serde::de::{SeqAccess, Visitor};
-use solana_kit_core::crypto::{ExportableKeypair, KeypairImportError};
+#[cfg(unix)]
+use serde::{
+    Deserializer,
+    de::{SeqAccess, Visitor},
+};
+use solana_kit_core::crypto::ExportableKeypair;
+#[cfg(unix)]
+use solana_kit_core::crypto::KeypairImportError;
 use solana_kit_native::keys::{KeyFileError, write_keypair_new};
+#[cfg(unix)]
+use std::{fs, io::Read};
 use std::{
-    fs,
-    io::{self, Read},
+    io,
     path::{Path, PathBuf},
 };
+#[cfg(unix)]
 use zeroize::{Zeroize, Zeroizing};
 
+#[cfg(unix)]
 const MAX_KEY_FILE_BYTES: usize = 1024;
 
 pub(super) enum StorageError {
     Io(io::Error),
     Backup(KeyFileError),
+    #[cfg(unix)]
     Key(solana_kit_core::crypto::KeypairImportError),
+    #[cfg(unix)]
     Json(serde_json::Error),
 }
 
@@ -36,7 +46,9 @@ impl std::error::Error for StorageError {
         match self {
             Self::Io(error) => Some(error),
             Self::Backup(error) => Some(error),
+            #[cfg(unix)]
             Self::Key(error) => Some(error),
+            #[cfg(unix)]
             Self::Json(error) => Some(error),
         }
     }
@@ -66,10 +78,10 @@ impl Directory {
         use std::os::unix::fs::{DirBuilderExt, PermissionsExt};
         let result = fs::DirBuilder::new().mode(0o700).create(&self.0);
 
-        if let Err(error) = result {
-            if error.kind() != io::ErrorKind::AlreadyExists {
-                return Err(error);
-            }
+        if let Err(error) = result
+            && error.kind() != io::ErrorKind::AlreadyExists
+        {
+            return Err(error);
         }
 
         let metadata = fs::symlink_metadata(&self.0)?;
@@ -156,6 +168,7 @@ impl Directory {
     }
 }
 
+#[cfg(unix)]
 fn read_bounded(mut reader: impl Read, bytes: &mut [u8]) -> io::Result<usize> {
     let mut length = 0;
 
@@ -172,6 +185,7 @@ fn read_bounded(mut reader: impl Read, bytes: &mut [u8]) -> io::Result<usize> {
 }
 
 /// Decode into the existing secret owner; no parser-owned growable byte copy exists.
+#[cfg(unix)]
 pub(super) fn decode_key(
     text: &[u8],
     bytes: &mut Zeroizing<[u8; 64]>,
@@ -195,8 +209,10 @@ pub(super) fn decode_key(
     result
 }
 
+#[cfg(unix)]
 struct KeyBytes<'a>(&'a mut [u8; 64]);
 
+#[cfg(unix)]
 impl<'de> Visitor<'de> for KeyBytes<'_> {
     type Value = usize;
 

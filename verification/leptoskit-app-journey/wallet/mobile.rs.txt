@@ -23,7 +23,7 @@ pub(super) async fn run(
         "Android wallet authorized",
     );
 
-    while let Ok(action) = actions.next().await {
+    while let Ok(action) = actions.next_action().await {
         if action == Action::Cancel {
             return Ok(());
         }

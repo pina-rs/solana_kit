@@ -36,7 +36,7 @@ pub(super) async fn run(
         "Choose a wallet",
     );
 
-    while let Ok(action) = actions.next().await {
+    while let Ok(action) = actions.next_action().await {
         show(
             local_wallet_panel(None, true, android, &commands),
             "Opening selected wallet",
@@ -141,7 +141,7 @@ pub(super) async fn cancellable<T>(
     actions: &mut LocalWalletEvents,
 ) -> Option<T> {
     let mut operation = Box::pin(operation);
-    let mut action = Box::pin(actions.next());
+    let mut action = Box::pin(actions.next_action());
     std::future::poll_fn(|context| {
         for _ in 0..ACTION_BUDGET {
             match action.as_mut().poll(context) {

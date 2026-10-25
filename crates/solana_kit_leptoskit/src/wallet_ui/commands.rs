@@ -114,7 +114,7 @@ impl PanelCommands {
 
 impl PanelEvents {
     /// Sleeps without a task/runtime until a UI action arrives or admission closes.
-    pub fn next(
+    pub fn next_action(
         &mut self,
     ) -> impl Future<Output = Result<Option<PanelAction>, PanelQueueError>> + '_ {
         std::future::poll_fn(move |context| self.poll_next(context))

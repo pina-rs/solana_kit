@@ -129,13 +129,9 @@ async fn deferred_owned_cancellation_is_consumed_without_forwarding_or_admission
         .plugins()
         .submit(plugin, MethodId(0), Bytes::from_static(b"retained"))
         .unwrap();
-    let incoming = ServiceWork {
-        requests: vec![],
-        cancelled: vec![],
-    };
     let waker = futures_util::task::noop_waker();
     let mut context = Context::from_waker(&waker);
-    let routed = service.route(&mut host, &mut context, incoming).unwrap();
+    let routed = service.poll(&mut host, &mut context).unwrap();
 
     assert!(routed.cancelled.is_empty());
     assert_eq!(

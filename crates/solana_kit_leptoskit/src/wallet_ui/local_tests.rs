@@ -23,7 +23,7 @@ fn local_action_mailbox_wakes_and_refuses_excess_or_closed_admission() {
     let signals = Arc::new(Signals(AtomicUsize::new(0)));
     let waker = Waker::from(Arc::clone(&signals));
     let mut context = Context::from_waker(&waker);
-    let mut next = Box::pin(events.next());
+    let mut next = Box::pin(events.next_action());
     assert!(next.as_mut().poll(&mut context).is_pending());
     commands
         .send(LocalWalletAction::Approve(APPROVAL_GENERATION))

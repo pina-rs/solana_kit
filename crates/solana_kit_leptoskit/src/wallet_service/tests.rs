@@ -54,19 +54,37 @@ fn submit(
         .unwrap()
 }
 
-async fn event(host: &mut WasmHost<HeadlessBackend>, service: &mut WalletService) -> Event {
-    tokio::time::timeout(
+async fn event(
+    host: &mut WasmHost<HeadlessBackend>,
+    service: &mut WalletService,
+    call: CallId,
+) -> Event {
+    let outcome = tokio::time::timeout(
         Duration::from_secs(3),
         std::future::poll_fn(|context| {
             service.poll(host, context).unwrap();
+
+            if let Ok(Some(Err(error))) = host.plugins().result(call) {
+                panic!("opening call {call:?} failed: {error:?}");
+            }
+
             match host.plugins().next_event() {
                 Some(event) => Poll::Ready(event),
                 None => Poll::Pending,
             }
         }),
     )
-    .await
-    .unwrap()
+    .await;
+
+    outcome.unwrap_or_else(|_| {
+        panic!(
+            "opening call {call:?} timed out: epoch={}, stopped={}, lease={:?}, pending={:?}",
+            service.shared.epoch(),
+            service.shared.stopped(),
+            service.lease,
+            service.pending.keys().collect::<Vec<_>>()
+        )
+    })
 }
 
 async fn reply(
@@ -100,7 +118,7 @@ async fn selected_local_key_signs_exact_bytes_and_persists_only_on_request() {
     let mut service = WalletService::install(&mut host, &sandbox.0).unwrap();
     let failures = service.failures();
     let lease = submit(&mut host, &service, 8, &[]);
-    let opened = event(&mut host, &mut service).await;
+    let opened = event(&mut host, &mut service, lease).await;
     assert_eq!(&opened.payload.as_ref()[..8], &lease.0.to_le_bytes());
     let address: Address = std::str::from_utf8(&opened.payload.as_ref()[8..])
         .unwrap()
@@ -145,7 +163,7 @@ async fn association_lease_cancellation_disposes_pending_connect_and_joins_worke
     let mut host = interpreter(WASM);
     let mut service = WalletService::install(&mut host, &sandbox.0).unwrap();
     let lease = submit(&mut host, &service, 0, &[]);
-    let first = event(&mut host, &mut service).await;
+    let first = event(&mut host, &mut service, lease).await;
 
     let connect = submit(&mut host, &service, 1, &[]);
     std::future::poll_fn(|context| {
@@ -165,8 +183,8 @@ async fn association_lease_cancellation_disposes_pending_connect_and_joins_worke
         host.plugins().result(connect),
         Ok(Some(Err(Error::Cancelled)))
     ));
-    let _replacement = submit(&mut host, &service, 0, &[]);
-    let second = event(&mut host, &mut service).await;
+    let replacement = submit(&mut host, &service, 0, &[]);
+    let second = event(&mut host, &mut service, replacement).await;
 
     assert_ne!(&first.payload.as_ref()[8..], &second.payload.as_ref()[8..]);
     let shared = Arc::clone(&service.shared);

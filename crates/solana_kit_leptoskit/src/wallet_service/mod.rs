@@ -3,6 +3,8 @@ mod install_error;
 mod storage;
 pub use install_error::WalletInstallError;
 #[cfg(all(test, unix))]
+mod composition_tests;
+#[cfg(all(test, unix))]
 mod routing_tests;
 #[cfg(all(test, unix))]
 mod tests;
@@ -26,7 +28,7 @@ pub use worker::{WalletFailure, WalletFailures};
 const SERVICE: &str = "solana-wallet-session";
 const MAX_BYTES: usize = 65_536;
 const MAX_CALLS: u64 = 256;
-const MAX_ROUTE_TURNS: usize = 32;
+const MAX_ROUTE_TURNS: usize = wire::POLL_BUDGET;
 
 /// Owns a unique native session, its native worker, and original error journal.
 pub struct WalletService {
@@ -134,8 +136,10 @@ impl WalletService {
         completion: worker::Completion,
         method: u32,
     ) -> Result<(), Error> {
-        let mut payload = completion.call.0.to_le_bytes().to_vec();
-        payload.extend_from_slice(&completion.result?);
+        let bytes = completion.result?;
+        let mut payload = Vec::with_capacity(wire::CALL_BYTES + bytes.len());
+        payload.extend_from_slice(&completion.call.0.to_le_bytes());
+        payload.extend_from_slice(&bytes);
         host.plugins().emit(Event {
             plugin: self.plugin,
             kind: wire::OPENED,
@@ -261,9 +265,12 @@ impl WalletService {
         Ok(())
     }
 
-    /// Routes already-drained work from the application's HTTP/socket owner.
-    /// Returns unrelated requests and cancellations intact and in order. This
-    /// permits one composite AppService without another Bridge event consumer.
+    /// Routes one supplied batch, preserving unrelated work in its input order.
+    /// The composite caller owns raw Bridge draining and quantum overflow. Use
+    /// `AppService::poll` consistently when this service is the standalone owner.
+    ///
+    /// Returns `InvalidCall` for another host or a held standalone quantum.
+    /// Finish standalone polling before changing the application's draining owner.
     pub fn route(
         &mut self,
         host: &mut WasmHost<HeadlessBackend>,
@@ -277,34 +284,21 @@ impl WalletService {
             return Err(Error::Native);
         }
 
-        let mut incoming = self.append_queued(incoming);
-        let fresh = drain(host);
-        incoming.requests.extend(fresh.requests);
-        incoming.cancelled.extend(fresh.cancelled);
-        let mut work = ServiceWork::default();
-
-        for _ in 0..MAX_ROUTE_TURNS {
-            self.drained.extend(
-                incoming
-                    .requests
-                    .iter()
-                    .filter(|request| request.plugin == self.plugin)
-                    .map(|request| request.id),
-            );
-            self.cancellations(host, incoming.cancelled, &mut work)?;
-            self.deliver(host)?;
-            self.requests(host, incoming.requests, &mut work)?;
-            incoming = drain(host);
-
-            if incoming.requests.is_empty() && incoming.cancelled.is_empty() {
-                return Ok(work);
-            }
+        if !self.queued.requests.is_empty() || !self.queued.cancelled.is_empty() {
+            return Err(Error::InvalidCall);
         }
 
-        // A completion can synchronously submit more calls. Drain their ownership
-        // before yielding so the platform router cannot steal the next quantum.
-        self.queued = incoming;
-        context.waker().wake_by_ref();
+        let mut work = ServiceWork::default();
+        self.drained.extend(
+            incoming
+                .requests
+                .iter()
+                .filter(|request| request.plugin == self.plugin)
+                .map(|request| request.id),
+        );
+        self.cancellations(host, incoming.cancelled, &mut work)?;
+        self.deliver(host)?;
+        self.requests(host, incoming.requests, &mut work)?;
         Ok(work)
     }
 
@@ -322,7 +316,31 @@ impl AppService for WalletService {
         host: &mut WasmHost<HeadlessBackend>,
         context: &mut Context<'_>,
     ) -> Result<ServiceWork, Error> {
-        self.route(host, context, ServiceWork::default())
+        self.check(host)?;
+        self.shared.watch(context.waker())?;
+
+        if self.shared.stopped() {
+            return Err(Error::Native);
+        }
+
+        let mut incoming = self.append_queued(drain(host));
+        let mut work = ServiceWork::default();
+
+        for _ in 0..MAX_ROUTE_TURNS {
+            let mut routed = self.route(host, context, incoming)?;
+            work.requests.append(&mut routed.requests);
+            work.cancelled.append(&mut routed.cancelled);
+            incoming = drain(host);
+
+            if incoming.requests.is_empty() && incoming.cancelled.is_empty() {
+                return Ok(work);
+            }
+        }
+
+        // Keep the next quantum owned until the standalone service is polled again.
+        self.queued = incoming;
+        context.waker().wake_by_ref();
+        Ok(work)
     }
 
     fn close(mut self: Box<Self>) -> ServiceClose {

@@ -380,10 +380,10 @@ impl Drop for WalletSubscription {
 
 impl Drop for BrowserWallet {
     fn drop(&mut self) {
-        if Rc::strong_count(&self.0) == 1 {
-            if let Err(error) = self.close() {
-                self.0.failures.borrow_mut().push(error);
-            }
+        if Rc::strong_count(&self.0) == 1
+            && let Err(error) = self.close()
+        {
+            self.0.failures.borrow_mut().push(error);
         }
     }
 }

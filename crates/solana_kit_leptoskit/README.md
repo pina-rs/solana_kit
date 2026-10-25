@@ -142,11 +142,20 @@ cancellation; it cannot itself await join. Original native causes remain in the
 bounded `WalletFailures` journal available to custom native owners. Bridge errors
 remain the framework's fixed codes; no secret or peer text enters UI diagnostics.
 
-For a composite app, drain its HttpDriver and route its SocketDriver leftovers,
-then pass the remaining requests/cancellations to `WalletService::route` as
-`ServiceWork`. Unrelated work returns to the framework router in its original
-order. Wallet-only `AppService::poll` calls this same method. The app's one
-ServiceClose must await every driver's shutdown before ClosingApp finishes.
+For a composite app, one AppService owns raw Bridge draining and a retained
+`ServiceWork` queue. Each turn appends fresh work after retained work, then passes
+that fixed batch through `HttpDriver::route`, `SocketDriver::route` and
+`WalletService::route`. Their leftovers have visited every SDK owner and can
+return to the framework in order. Drain requests created by guest wakes into
+the next turn. Bound the loop to 32 turns, retain its unprocessed next batch and
+wake the app before yielding. Poll native completion waits after admissions so
+new jobs register their wakers before the app waits.
+
+Each route method consumes its supplied batch. Choose the composite loop or
+wallet-only `AppService::poll` as the draining owner for the service lifetime.
+The standalone poll owns its own bounded drain loop and retained overflow.
+The app's one ServiceClose must await every driver's shutdown before ClosingApp
+finishes, including when one shutdown reports an error.
 
 The [generated-app adaptation](../../verification/leptoskit-app-journey/wallet/README.md)
 contains actual action callers and prospective generator/build commands. All new
