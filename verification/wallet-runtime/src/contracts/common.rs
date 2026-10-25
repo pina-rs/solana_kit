@@ -216,7 +216,7 @@ impl Wallet for TestWallet {
         &self.icon
     }
     fn chains(&self) -> Vec<String> {
-        self.accounts[0].chains()
+        self.accounts[0].chains().to_vec()
     }
     fn features(&self) -> WalletFeatures {
         self.features.clone()

@@ -159,10 +159,10 @@ fn write_json(file: &mut File, keypair: &ExportableKeypair) -> io::Result<()> {
 fn cleanup(staged: &Path, directory: &Path) -> Vec<io::Error> {
     let mut errors = Vec::new();
 
-    if let Err(error) = fs::remove_file(staged) {
-        if error.kind() != io::ErrorKind::NotFound {
-            errors.push(error);
-        }
+    if let Err(error) = fs::remove_file(staged)
+        && error.kind() != io::ErrorKind::NotFound
+    {
+        errors.push(error);
     }
 
     if let Err(error) = fs::remove_dir(directory) {

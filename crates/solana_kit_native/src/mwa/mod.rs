@@ -31,11 +31,13 @@ pub struct MwaConfig {
 
 impl Default for MwaConfig {
     fn default() -> Self {
-        let mut socket = WsConfig::default();
-        socket.connect_timeout =
-            std::time::Duration::from_millis(u64::from(mwa::CONNECTION_TIMEOUT_MS));
         Self {
-            socket,
+            socket: WsConfig {
+                connect_timeout: std::time::Duration::from_millis(u64::from(
+                    mwa::CONNECTION_TIMEOUT_MS,
+                )),
+                ..WsConfig::default()
+            },
             max_requests: 128,
         }
     }

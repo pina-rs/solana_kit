@@ -5,7 +5,7 @@ use std::time::Duration;
 use tokio::net::TcpListener;
 use tokio_tungstenite::tungstenite::{
     Message,
-    handshake::server::{Request as Upgrade, Response as Accepted},
+    handshake::server::{Callback, ErrorResponse, Request as Upgrade, Response as Accepted},
     http::HeaderValue,
 };
 
@@ -31,21 +31,31 @@ async fn association() -> (NativeAssociation, TcpListener) {
 
 type PeerSocket = tokio_tungstenite::WebSocketStream<tokio::net::TcpStream>;
 
+/// Checks the real peer's binary subprotocol through Tungstenite's callback contract.
+struct BinaryProtocol;
+
+impl Callback for BinaryProtocol {
+    fn on_request(
+        self,
+        request: &Upgrade,
+        mut response: Accepted,
+    ) -> Result<Accepted, ErrorResponse> {
+        assert_eq!(request.uri().path(), mwa::LOCAL_WEBSOCKET_PATH);
+        assert_eq!(
+            request.headers()["sec-websocket-protocol"],
+            mwa::WEBSOCKET_BINARY
+        );
+        response.headers_mut().insert(
+            "sec-websocket-protocol",
+            HeaderValue::from_static(mwa::WEBSOCKET_BINARY),
+        );
+        Ok(response)
+    }
+}
+
 async fn handshake(listener: TcpListener, association: mwa::PublicPoint) -> (PeerSocket, Session) {
     let (stream, _) = listener.accept().await.unwrap();
-    let mut socket =
-        tokio_tungstenite::accept_hdr_async(stream, |request: &Upgrade, mut response: Accepted| {
-            assert_eq!(request.uri().path(), mwa::LOCAL_WEBSOCKET_PATH);
-            assert_eq!(
-                request.headers()["sec-websocket-protocol"],
-                mwa::WEBSOCKET_BINARY
-            );
-            response.headers_mut().insert(
-                "sec-websocket-protocol",
-                HeaderValue::from_static(mwa::WEBSOCKET_BINARY),
-            );
-            Ok(response)
-        })
+    let mut socket = tokio_tungstenite::accept_hdr_async(stream, BinaryProtocol)
         .await
         .unwrap();
     let Message::Binary(hello) = socket.next().await.unwrap().unwrap() else {
