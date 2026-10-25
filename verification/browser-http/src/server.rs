@@ -7,7 +7,7 @@ use std::{
     time::{Duration, Instant},
 };
 pub type Events = Arc<Mutex<BTreeMap<String, (bool, bool)>>>;
-const CORS: &str = "Access-Control-Allow-Origin: *\r\nAccess-Control-Allow-Headers: content-type, authorization, x-client\r\nAccess-Control-Allow-Methods: POST, OPTIONS\r\nAccess-Control-Expose-Headers: content-encoding\r\n";
+const CORS: &str = "Access-Control-Allow-Origin: *\r\nAccess-Control-Allow-Headers: content-type, authorization, x-client\r\nAccess-Control-Allow-Methods: GET, POST, OPTIONS\r\nAccess-Control-Expose-Headers: content-encoding\r\n";
 const OK: u16 = 200;
 const EMPTY: u16 = 204;
 const REDIRECT: u16 = 307;
@@ -53,6 +53,10 @@ fn route(
     request: Incoming,
     sink_url: &str,
 ) -> std::io::Result<()> {
+    if request.path.starts_with("/rest/") {
+        return rest(stream, request);
+    }
+
     match request.path.as_str() {
         "/balance" => balance(stream, request),
         "/auth" => {
@@ -227,4 +231,33 @@ fn respond(stream: &mut TcpStream, status: u16, headers: &str, body: &[u8]) -> s
         body.len()
     )?;
     stream.write_all(body)
+}
+
+fn rest(stream: &mut TcpStream, request: Incoming) -> std::io::Result<()> {
+    assert!(!request.lower.contains("cookie:") && !request.lower.contains("referer:"));
+
+    match request.path.as_str() {
+        "/rest/a%2Fb?k=a%20b&k=two" => {
+            assert!(request.first.starts_with("GET "));
+            assert!(request.body.is_empty());
+            assert!(!request.lower.contains("content-type:"));
+        }
+        "/rest/post" => {
+            assert!(request.first.starts_with("POST "));
+            assert!(request.lower.contains("content-type: application/json"));
+            assert_eq!(request.body, b"null");
+        }
+        "/rest/form" => {
+            assert!(request.first.starts_with("POST "));
+            assert!(
+                request
+                    .lower
+                    .contains("content-type: application/x-www-form-urlencoded")
+            );
+            assert_eq!(request.body, b"x=a+b");
+        }
+        other => panic!("unexpected REST fixture target: {other}"),
+    }
+
+    respond(stream, OK, CORS, b"rest")
 }

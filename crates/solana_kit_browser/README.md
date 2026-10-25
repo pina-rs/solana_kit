@@ -4,6 +4,12 @@ This crate is exclusively for off-chain browser application code. Use Pina or
 Solana's program libraries for on-chain programs. Explicitly importing this
 adapter opts into JavaScript. Core and client crates do not gain browser imports.
 
+`BrowserSubscriptionSocket::from(BrowserWebSocket)` adapts the maintained socket
+to `subscriptions::Session` without a task or executor. Pending receive and close
+operations retain their event wakers and bounded timers between transient polls.
+Synchronous sends hand bounded text to browser buffering. The shared Session
+receives bounded text and binary frames through the same maintained owner.
+
 `BrowserHttp` implements the executor-neutral public `Transport` using Window
 Fetch. It supports browser windows, not workers or interpreted no-JavaScript
 guests. Its named exchange future is local and boxes once. Dropping a polled
@@ -28,8 +34,12 @@ headers are visible. A Content-Length hint is used only for identity-encoded
 visible responses. CORS denials, TLS failures and other Fetch rejections are
 reported as I/O failures because browsers deliberately hide their distinction.
 Opaque responses are rejected. Non-success status is preserved for the client.
-JavaScript error objects are discarded to avoid retaining unbounded or sensitive
-browser diagnostics and cannot satisfy portable Send plus Sync error sources.
+HTTP failures retain their exact original JavaScript value in `BrowserCause`.
+Normal Debug and Display omit that value. Explicit error-source traversal and
+downcasting to `BrowserCause` lets callers borrow it through `value()`, including
+its object identity and any private diagnostics. Retaining an error also retains
+the JavaScript value and objects reachable from it. These local sources do not
+promise Send or Sync. Native and WASI error sources keep those bounds.
 
 ## WebSocket
 
@@ -49,14 +59,20 @@ with its generation. The application owns its protocol ticks and terminates that
 Connection when the socket ends. Socket and Connection Drop affect their own
 state separately. Signature completion leaves other subscriptions active.
 
-`WsConfig` bounds endpoint spelling, subprotocol offers, message UTF-8 bytes,
-queued message count and bytes, and browser bufferedAmount. ArrayBuffer and Blob
-messages terminate this JSON text adapter with `Binary`; they are never decoded
-lossily. The browser can allocate a complete message before Rust checks its size.
-The adapter checks JavaScript UTF-16 length before conversion, then checks exact
-UTF-8 bytes. Conversion can temporarily retain up to three UTF-8 bytes per allowed
-UTF-16 code unit before the exact byte check rejects a message.
+`WsConfig` bounds endpoint spelling, subprotocol offers, message payload bytes,
+queued message count and bytes, and browser bufferedAmount. `receive()` retains
+its text-only contract and rejects binary. The source-only `receive_frame()` and
+`BrowserSubscriptionSocket` expose explicit text or ArrayBuffer-backed binary to
+the client `Session`. Blob and unknown representations remain errors. The browser
+can allocate a complete event and payload before Rust checks its size. Exact UTF-8
+length is computed from JavaScript UTF-16 before converting text. Frame and queue
+admission precede Rust text or binary copying.
 No bound on browser framing, network, TLS, or whole-process memory is promised.
+
+The new Session path retains operation deadlines between short polls and awaits
+the actual browser close event. Its Helius consumer keeps Rc across real socket
+awaits. Binary forwarding and these new bodies still require browser replay;
+historical text-only evidence does not verify the current source extension.
 
 Browsers cannot set arbitrary Authorization headers. Caller URL query parameters
 and subprotocols are supported under browser policy. Browser-managed cookies may
@@ -68,3 +84,14 @@ their own frame logging and browser developer tools. The executed scope is Chrom
 Window; Worker, native UI webviews, interpreted Wasm and mobile devices remain
 unverified. See the [ownership design](../../docs/architecture/browser-websocket.md)
 and [execution receipt](../../docs/verification/browser-websocket.md).
+
+The unverified REST source extension adds `BrowserRest<D>` over the existing
+Window Fetch owner. Named routes retain approved roots and configured headers.
+Encoded segments and ordered duplicate query pairs append to the approved base
+path and fixed query. Decoded dot segments and GET bodies are denied before Fetch.
+Each exchange derives content type from absent, JSON or form bytes, owns its
+abort controller and deadline, omits ambient credentials and referrers, rejects
+redirects and reuses bounded streamed reception. Browser CORS still applies.
+The new public provider consumer has actual Fetch calls with Rc across awaits.
+It still needs an admitted browser driver and real peer replay. Historical RPC
+or socket evidence does not verify this REST source.

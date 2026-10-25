@@ -85,10 +85,19 @@ From the repository root, set `WASMTIME` to the pinned executable:
 sockets_manifest=verification/wasi-sockets/Cargo.toml
 cargo +1.99.1 fmt --manifest-path "$sockets_manifest" --all --check
 cargo +1.99.1 clippy --locked --manifest-path "$sockets_manifest" --all-targets -- -D warnings
-cargo +1.99.1 build --locked --manifest-path "$sockets_manifest" --bin guest --target wasm32-wasip2
+cargo +1.99.1 build --locked --manifest-path "$sockets_manifest" --bin guest \
+  --target wasm32-wasip2 --message-format=json > /tmp/solana-kit-sockets.json
+component="$(jq -se '
+  [.[] | select(.reason == "compiler-artifact" and .target.name == "guest" and
+    (.manifest_path | endswith("/wasi-sockets/Cargo.toml")) and
+    (.target.kind | index("bin")) != null) | .filenames[] |
+    select(endswith(".wasm"))] |
+  if length == 1 then .[0] else error("expected one socket component") end
+' /tmp/solana-kit-sockets.json)"
 cargo +1.99.1 clippy --locked --manifest-path "$sockets_manifest" --bin guest \
   --target wasm32-wasip2 -- -D warnings
-cargo +1.99.1 run --locked --manifest-path "$sockets_manifest" --bin runner -- "$WASMTIME"
+cargo +1.99.1 run --locked --manifest-path "$sockets_manifest" --bin runner -- \
+  "$WASMTIME" "$component"
 cargo +1.99.1 xtask style
 ```
 

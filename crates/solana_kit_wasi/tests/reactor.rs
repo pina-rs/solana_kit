@@ -136,3 +136,21 @@ fn wake_delivery_and_driver_errors_allow_reentrancy() {
     );
     assert_eq!(reactor.registrations(), 0);
 }
+
+#[cfg(feature = "websocket")]
+#[test]
+fn immediately_ready_socket_registration_remains_drivable() {
+    let reactor = Reactor::default();
+    let mut wait = reactor
+        .wait(subscribe_duration(0), u64::MAX)
+        .expect("registration");
+    let context = Context::from_waker(std::task::Waker::noop());
+    wait.register(&context);
+    assert_eq!(reactor.registrations(), 1);
+    reactor.drive().expect("immediate readiness retained");
+    assert_eq!(
+        Pin::new(&mut wait).poll(&mut Context::from_waker(std::task::Waker::noop())),
+        Poll::Ready(Ok(()))
+    );
+    assert_eq!(reactor.registrations(), 0);
+}

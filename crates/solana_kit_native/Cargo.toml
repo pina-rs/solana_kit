@@ -23,6 +23,9 @@ tokio-tungstenite = { version = "=0.29.0", default-features = false, features = 
 webpki-roots = "=1.0.10"
 
 [dev-dependencies]
+base64 = "=0.22.1"
 log = "=0.4.34"
+serde_json = { version = "1.0.154", features = ["arbitrary_precision", "raw_value"] }
+solana_kit_client = { workspace = true, features = ["confirmation-factories"] }
 solana_kit_core.workspace = true
-tokio = { version = "=1.54.1", features = ["rt-multi-thread"] }
+tokio = { version = "=1.54.1", features = ["rt-multi-thread", "sync"] }

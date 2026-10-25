@@ -3,3 +3,5 @@
 mod application;
 #[cfg(target_arch = "wasm32")]
 mod journey;
+#[cfg(target_arch = "wasm32")]
+mod rest;

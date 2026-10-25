@@ -79,3 +79,21 @@ automatic ping timer or retry exists.
 
 The native WebSocket verification receipt records actual loopback WS and fixture
 WSS tests. Browser, WASI, LeptosKit and installed device sockets remain pending.
+
+The source-only Session extension exposes `receive_frame()` for explicit text or
+binary messages and `NativeSubscriptionSocket` for the client `Session`. It reuses
+the same tungstenite parser, budgets, deadlines and native socket ownership.
+`receive()` continues to reject binary on its text-only contract. The maintained
+Helius journey shares one physical JSON registration, forwards pre-ack binary,
+checks a quiet last-handle Drop wake and separately awaits actual close. These
+new bodies have not executed in this checkpoint.
+
+The unverified REST source extension adds `NativeRest<D>` over these same HTTP
+owners. Each named route owns an approved `NativeHttp` root, headers, TLS policy
+and deadlines. Request segments and ordered query pairs append to that root with
+separate percent encoding. Fixed root query values remain first. Decoded dot
+segments are denied. Body presence owns its media type. The exchange retains its
+inline socket and driver, bounds response copies, follows no redirects and sends
+once. Normal REST errors redact request values while retaining the original cause
+chain for explicit inspection. Original fixed-POST RPC behavior remains separate.
+Current/MSRV compilation, quality and actual REST peer replay remain pending.

@@ -1,5 +1,6 @@
 //! Event ownership without detached work or callback cycles.
 use super::{WsConfig, WsError};
+use solana_kit_client::subscriptions::ReceivedFrame;
 use std::{cell::RefCell, collections::VecDeque, rc::Rc, task::Waker};
 use wasm_bindgen::{JsCast, closure::Closure};
 use web_sys::{CloseEvent, Event, MessageEvent, WebSocket};
@@ -13,7 +14,7 @@ pub(super) enum Phase {
 }
 pub(super) struct State {
     pub phase: Phase,
-    pub queue: VecDeque<String>,
+    pub queue: VecDeque<ReceivedFrame>,
     pub bytes: usize,
     pub failure: Option<WsError>,
     pub waker: Option<Waker>,
@@ -63,13 +64,14 @@ impl Shared {
         };
         wake(waker);
     }
+    // Reserve both queue budgets before copying data out of browser-owned storage.
     fn message(&self, event: MessageEvent) {
         if self.state.borrow().phase != Phase::Open {
             return;
         }
 
-        let text = match incoming(event.data(), self.config.message_bytes) {
-            Ok(text) => text,
+        let incoming = match Incoming::new(event.data(), self.config.message_bytes) {
+            Ok(incoming) => incoming,
             Err(error) => {
                 self.stop(Some(error));
                 return;
@@ -80,7 +82,7 @@ impl Shared {
             let mut state = self.state.borrow_mut();
 
             if state.queue.len() >= self.config.queue_messages
-                || text.len() > self.config.queue_bytes.saturating_sub(state.bytes)
+                || incoming.len() > self.config.queue_bytes.saturating_sub(state.bytes)
             {
                 drop(state);
                 self.stop(Some(WsError::QueueLimit));
@@ -88,27 +90,104 @@ impl Shared {
                 return;
             }
 
-            state.bytes += text.len();
-            state.queue.push_back(text);
+            let frame = match incoming.copy() {
+                Ok(frame) => frame,
+                Err(error) => {
+                    drop(state);
+                    self.stop(Some(error));
+
+                    return;
+                }
+            };
+
+            state.bytes += frame.len();
+
+            state.queue.push_back(frame);
             state.waker.take()
         };
         wake(waker);
     }
 }
-fn incoming(data: wasm_bindgen::JsValue, max: usize) -> Result<String, WsError> {
-    let value = data.dyn_ref::<js_sys::JsString>().ok_or(WsError::Binary)?;
+enum Incoming {
+    Text(js_sys::JsString, usize),
+    Binary(js_sys::Uint8Array, usize),
+}
+impl Incoming {
+    fn new(data: wasm_bindgen::JsValue, max: usize) -> Result<Self, WsError> {
+        let incoming = if let Some(text) = data.dyn_ref::<js_sys::JsString>() {
+            let bytes = utf8_len(text, max)?;
+            Self::Text(text.clone(), bytes)
+        } else if data.is_instance_of::<js_sys::ArrayBuffer>() {
+            let bytes = js_sys::Uint8Array::new(&data);
+            let len = usize::try_from(bytes.length()).map_err(|_| WsError::MessageLimit)?;
+            Self::Binary(bytes, len)
+        } else {
+            return Err(WsError::Binary);
+        };
 
-    if value.length() as usize > max {
-        return Err(WsError::MessageLimit);
+        if incoming.len() > max {
+            return Err(WsError::MessageLimit);
+        }
+
+        Ok(incoming)
     }
 
-    let text = value.as_string().ok_or(WsError::Binary)?;
-
-    if text.len() > max {
-        return Err(WsError::MessageLimit);
+    fn len(&self) -> usize {
+        match self {
+            Self::Text(_, len) | Self::Binary(_, len) => *len,
+        }
     }
 
-    Ok(text)
+    fn copy(self) -> Result<ReceivedFrame, WsError> {
+        match self {
+            Self::Text(text, _) => text
+                .as_string()
+                .map(ReceivedFrame::Text)
+                .ok_or(WsError::Binary),
+            Self::Binary(bytes, _) => Ok(ReceivedFrame::Binary(bytes.to_vec())),
+        }
+    }
+}
+
+fn utf8_len(text: &js_sys::JsString, max: usize) -> Result<usize, WsError> {
+    let mut index = 0;
+    let mut bytes = 0_usize;
+
+    while index < text.length() {
+        let (width, units) = utf8_width(text, index);
+        bytes = bytes.checked_add(width).ok_or(WsError::MessageLimit)?;
+
+        if bytes > max {
+            return Err(WsError::MessageLimit);
+        }
+
+        index += units;
+    }
+
+    Ok(bytes)
+}
+
+// A paired surrogate consumes two code units; isolated surrogates become replacement characters.
+fn utf8_width(text: &js_sys::JsString, index: u32) -> (usize, u32) {
+    const ASCII_MAX: f64 = 127.0;
+    const TWO_BYTE_MAX: f64 = 2047.0;
+    const HIGH_SURROGATE: std::ops::RangeInclusive<f64> = 55296.0..=56319.0;
+    const LOW_SURROGATE: std::ops::RangeInclusive<f64> = 56320.0..=57343.0;
+    let unit = text.char_code_at(index);
+
+    if unit <= ASCII_MAX {
+        return (1, 1);
+    }
+
+    if unit <= TWO_BYTE_MAX {
+        return (2, 1);
+    }
+
+    let paired = HIGH_SURROGATE.contains(&unit)
+        && index + 1 < text.length()
+        && LOW_SURROGATE.contains(&text.char_code_at(index + 1));
+
+    if paired { (4, 2) } else { (3, 1) }
 }
 fn wake(waker: Option<Waker>) {
     if let Some(waker) = waker {

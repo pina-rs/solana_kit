@@ -25,12 +25,14 @@ members = [
   "xtask",
 ]
 exclude = [
+  "verification/confirmation-factories",
   "verification/core-contracts-portable",
   "verification/durable-nonce",
   "verification/leptoskit",
   "verification/wallet-consumer",
   "verification/wallet-runtime",
   "verification/signer-capabilities",
+  "verification/wasi-text-sockets",
 ]
 resolver = "3"
 
@@ -44,3 +46,4 @@ rust-version = "1.89"
 solana_kit_client = { version = "0.1.0", path = "crates/solana_kit_client" }
 solana_kit_core = { version = "0.1.0", path = "crates/solana_kit_core", default-features = false }
 solana_kit_native = { version = "0.1.0", path = "crates/solana_kit_native" }
+solana_kit_system = { version = "0.1.0", path = "crates/solana_kit_system" }

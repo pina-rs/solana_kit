@@ -8,7 +8,7 @@ license.workspace = true
 readme = "README.md"
 repository = "https://github.com/pina-rs/solana_kit/tree/main/crates/solana_kit_leptoskit"
 rust-version.workspace = true
-description = "Explicit LeptosKit guest HTTP and native host ownership for off-chain clients"
+description = "Explicit LeptosKit guest HTTP and text sockets for off-chain clients"
 
 [features]
 default = []
@@ -16,14 +16,16 @@ guest = ["leptoskit_bridge/guest"]
 host = ["dep:leptoskit_native", "dep:leptoskit_wasm", "dep:solana_kit_native", "dep:tokio"]
 
 [dependencies]
-leptoskit_bridge = { version = "=0.1.0", git = "https://github.com/ifiokjr/leptoskit", rev = "706334eaa3e011d1ef986159911b0d80c80d3e9f" }
-leptoskit_native = { version = "=0.1.0", git = "https://github.com/ifiokjr/leptoskit", rev = "706334eaa3e011d1ef986159911b0d80c80d3e9f", optional = true }
-leptoskit_wasm = { version = "=0.1.0", git = "https://github.com/ifiokjr/leptoskit", rev = "706334eaa3e011d1ef986159911b0d80c80d3e9f", optional = true }
+leptoskit_bridge = { version = "=0.1.0", git = "https://github.com/ifiokjr/leptoskit", rev = "3c6383a17f786172d696e1e83d8026cba2085fa4" }
+leptoskit_native = { version = "=0.1.0", git = "https://github.com/ifiokjr/leptoskit", rev = "3c6383a17f786172d696e1e83d8026cba2085fa4", optional = true }
+leptoskit_wasm = { version = "=0.1.0", git = "https://github.com/ifiokjr/leptoskit", rev = "3c6383a17f786172d696e1e83d8026cba2085fa4", optional = true }
 solana_kit_client.workspace = true
 solana_kit_native = { workspace = true, optional = true }
-tokio = { version = "=1.54.1", features = ["rt"], optional = true }
+tokio = { version = "=1.54.1", features = ["rt", "sync", "macros"], optional = true }
 
 [dev-dependencies]
-leptoskit_bridge_ffi = { version = "=0.1.0", git = "https://github.com/ifiokjr/leptoskit", rev = "706334eaa3e011d1ef986159911b0d80c80d3e9f", features = ["app"] }
+futures-util = { version = "=0.3.34", features = ["sink"] }
+leptoskit_bridge_ffi = { version = "=0.1.0", git = "https://github.com/ifiokjr/leptoskit", rev = "3c6383a17f786172d696e1e83d8026cba2085fa4", features = ["app"] }
 tokio = { version = "=1.54.1", features = ["rt-multi-thread", "macros", "net", "time", "io-util"] }
+tokio-tungstenite = "=0.29.0"
 wat = "=1.262.0"

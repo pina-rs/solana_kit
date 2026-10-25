@@ -7,8 +7,8 @@ publish = false
 [dependencies]
 anyhow = "1.0"
 leptoskit_bridge.workspace = true
-leptoskit_native = { git = "https://github.com/ifiokjr/leptoskit", rev = "fecf8628d326ff7b03f295523e6bb584c3fdf88d" }
-leptoskit_wasm = { git = "https://github.com/ifiokjr/leptoskit", rev = "fecf8628d326ff7b03f295523e6bb584c3fdf88d" }
+leptoskit_native = { git = "https://github.com/ifiokjr/leptoskit", rev = "3c6383a17f786172d696e1e83d8026cba2085fa4" }
+leptoskit_wasm = { git = "https://github.com/ifiokjr/leptoskit", rev = "3c6383a17f786172d696e1e83d8026cba2085fa4" }
 serde_json = "1.0"
 wasmparser = "0.262"
 

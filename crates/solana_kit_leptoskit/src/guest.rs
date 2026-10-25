@@ -21,7 +21,7 @@ impl GuestHttp {
 
 /// Local cancel-on-drop future using the actual upstream plugin call registry.
 pub struct GuestExchange<'a> {
-    future: Pin<Box<dyn Future<Output = Result<Reply, TransportError>> + 'a>>,
+    pub(crate) future: Pin<Box<dyn Future<Output = Result<Reply, TransportError>> + 'a>>,
 }
 
 impl Future for GuestExchange<'_> {

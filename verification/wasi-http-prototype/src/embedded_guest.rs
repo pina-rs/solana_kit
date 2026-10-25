@@ -1,4 +1,5 @@
 //! Public client journeys for an embedded host with independently owned policy.
+mod rest_journey;
 
 use solana_kit_client::methods::Balance;
 use solana_kit_client::{Client, Error, Limits, TransportFailureKind as Kind};
@@ -52,6 +53,11 @@ fn main() {
         vec![("authorization".into(), b"Bearer fixture-only".to_vec())],
     )
     .expect("fixture endpoint");
+
+    if mode.starts_with("rest") {
+        rest_journey::run(&reactor, transport, mode);
+        return;
+    }
 
     if matches!(mode.as_str(), "early-status" | "upload-deadline") {
         upload(&reactor, &transport, mode);

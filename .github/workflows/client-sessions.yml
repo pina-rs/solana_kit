@@ -1,0 +1,97 @@
+name: Public WASI sessions
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+env:
+  CARGO_HTTP_USER_AGENT: solana-kit-verification
+  GIT_HTTP_USER_AGENT: solana-kit-verification
+
+jobs:
+  actual-sessions:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Prepare pinned compiler and runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          rustup toolchain install 1.99.1 --profile minimal --component clippy --component rustfmt \
+            --target wasm32-wasip1,wasm32-wasip2
+          mkdir "$RUNNER_TEMP/session-host"
+          release=https://github.com/bytecodealliance/wasmtime/releases/download/v50.0.0
+          curl --fail --silent --show-error --location --user-agent solana-kit-verification \
+            "$release/wasmtime-v50.0.0-x86_64-linux.tar.xz" \
+            --output "$RUNNER_TEMP/session-host/host.tar.xz"
+          printf '%s  %s\n' 77c19ee0437991f9ac7837b9c269d9c7076744f85dad263fea5214cc2723c7ff \
+            "$RUNNER_TEMP/session-host/host.tar.xz" | sha256sum --check --strict
+          tar -xf "$RUNNER_TEMP/session-host/host.tar.xz" --strip-components=1 \
+            -C "$RUNNER_TEMP/session-host"
+      - name: Execute typed factories and cooperative reactor regressions
+        shell: bash
+        run: |
+          set -euo pipefail
+          manifest=verification/confirmation-factories/Cargo.toml
+          for target in wasm32-wasip1 wasm32-wasip2; do
+            cargo +1.99.1 build --locked --manifest-path "$manifest" --target "$target" \
+              --bin solana_kit_confirmation_factory_verification --message-format=json \
+              > "$RUNNER_TEMP/factories.json"
+            component="$(jq -sre '
+              [.[] | select(.reason == "compiler-artifact" and
+                .target.name == "solana_kit_confirmation_factory_verification" and
+                (.target.kind | index("bin")) != null and
+                (.manifest_path | endswith("/confirmation-factories/Cargo.toml"))) |
+                .filenames[] | select(endswith(".wasm"))] |
+              if length == 1 then .[0] else error("expected one factory component") end
+            ' "$RUNNER_TEMP/factories.json")"
+            "$RUNNER_TEMP/session-host/wasmtime" "$component"
+          done
+          cargo +1.99.1 build --locked --manifest-path "$manifest" --target wasm32-wasip2 \
+            --bin wasi_reactor --message-format=json > "$RUNNER_TEMP/reactor.json"
+          component="$(jq -sre '
+            [.[] | select(.reason == "compiler-artifact" and .target.name == "wasi_reactor" and
+              (.target.kind | index("bin")) != null and
+              (.manifest_path | endswith("/confirmation-factories/Cargo.toml"))) |
+              .filenames[] | select(endswith(".wasm"))] |
+            if length == 1 then .[0] else error("expected one reactor component") end
+          ' "$RUNNER_TEMP/reactor.json")"
+          for mode in no-signal with-timer unwakeable; do
+            "$RUNNER_TEMP/session-host/wasmtime" "$component" "$mode"
+          done
+      - name: Execute real TLS text sockets and typed Session
+        shell: bash
+        env:
+          RUSTDOCFLAGS: -D warnings
+        run: |
+          set -euo pipefail
+          manifest=verification/wasi-text-sockets/Cargo.toml
+          cargo +1.99.1 fmt --manifest-path "$manifest" --all --check
+          cargo +1.99.1 clippy --locked --manifest-path "$manifest" \
+            --bin runner --bin audit -- -D warnings
+          cargo +1.99.1 clippy --locked --manifest-path "$manifest" --bin guest \
+            --target wasm32-wasip2 -- -D warnings
+          cargo +1.99.1 build --locked --manifest-path "$manifest" --bin guest \
+            --target wasm32-wasip2 --message-format=json > "$RUNNER_TEMP/text-socket.json"
+          component="$(jq -sre '
+            [.[] | select(.reason == "compiler-artifact" and .target.name == "guest" and
+              (.target.kind | index("bin")) != null and
+              (.manifest_path | endswith("/wasi-text-sockets/Cargo.toml"))) |
+              .filenames[] | select(endswith(".wasm"))] |
+            if length == 1 then .[0] else error("expected one text socket component") end
+          ' "$RUNNER_TEMP/text-socket.json")"
+          cargo +1.99.1 run --locked --manifest-path "$manifest" --bin runner -- \
+            "$RUNNER_TEMP/session-host/wasmtime" "$component"
+          cargo +1.99.1 run --locked --manifest-path "$manifest" --bin runner -- \
+            --embedded "$component"
+          cargo +1.99.1 run --locked --manifest-path "$manifest" --bin audit -- \
+            "$component" "$RUNNER_TEMP/forbidden-service.wasm"
+          cargo +1.99.1 doc --locked -p solana_kit_wasi --features websocket --no-deps \
+            --target wasm32-wasip2

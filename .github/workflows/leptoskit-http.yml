@@ -8,6 +8,10 @@ on:
 permissions:
   contents: read
 
+env:
+  CARGO_HTTP_USER_AGENT: solana-kit-verification
+  GIT_HTTP_USER_AGENT: solana-kit-verification
+
 jobs:
   actual-http-host:
     runs-on: "ubuntu-24.04"
@@ -26,13 +30,22 @@ jobs:
 
       - name: Build actual guest and execute real HTTP TLS lifecycle
         run: |
+          set -euo pipefail
           cargo +1.99.1 build --locked --manifest-path verification/leptoskit-http/Cargo.toml -p \
-            solana_kit_leptoskit_http_guest --target wasm32-unknown-unknown
+            solana_kit_leptoskit_http_guest --target wasm32-unknown-unknown \
+            --message-format=json > "$RUNNER_TEMP/leptoskit-http-guest.json"
+          component="$(jq -sre '
+            [.[] | select(.reason == "compiler-artifact" and
+              .target.name == "solana_kit_leptoskit_http_guest" and
+              (.manifest_path | endswith("/leptoskit-http/guest/Cargo.toml")) and
+              (.target.kind | index("cdylib")) != null) | .filenames[] |
+              select(endswith(".wasm"))] |
+            if length == 1 then .[0] else error("expected one interpreted guest") end
+          ' "$RUNNER_TEMP/leptoskit-http-guest.json")"
+          test -f "$component"
 
           cargo +1.99.1 run --locked --manifest-path verification/leptoskit-http/Cargo.toml -p \
-            solana_kit_leptoskit_http_host -- \
-            verification/leptoskit-http/target/wasm32-unknown-unknown/debug/\
-          solana_kit_leptoskit_http_guest.wasm
+            solana_kit_leptoskit_http_host -- "$component"
 
       - name: Check explicit guest and host source
         env:

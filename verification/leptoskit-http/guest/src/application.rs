@@ -31,7 +31,7 @@ pub(super) fn record(event: &'static str) {
 }
 
 /// Publishes after executor borrows end; the real renderer copies the live bytes.
-fn publish() {
+pub(super) fn publish() {
     let props = TRACE.with_borrow(|trace| {
         serde_json::json!({"text": serde_json::to_string(trace).expect("trace JSON")}).to_string()
     });

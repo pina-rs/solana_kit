@@ -20,7 +20,7 @@ only the driver, so the application can use or destroy its actual App independen
 There is one service registry and one owner of task accounting.
 
 The actual owning identity and scoped-access APIs come from public commit
-`706334eaa3e011d1ef986159911b0d80c80d3e9f`. The adapter and canonical HTTP fixture
+`3c6383a17f786172d696e1e83d8026cba2085fa4`. The adapter and canonical HTTP fixture
 pin that revision. The separate portable conformance host and async fixture retain
 their earlier immutable pins and behavior.
 
@@ -39,17 +39,26 @@ and cannot establish awaited cleanup.
 
 ## Execute the actual guest
 
-Execute from the repository root. An explicit `CARGO_TARGET_DIR` must be absolute;
-the compiled-artifact test reads its required guest from that directory.
+Execute from the repository root. Select the actual guest from Cargo's JSON
+output so the host also works with an absolute external `CARGO_TARGET_DIR`.
 
 ```sh
 cargo +1.99.1 build --locked --offline \
   --manifest-path verification/leptoskit-http/Cargo.toml \
-  -p solana_kit_leptoskit_http_guest --target wasm32-unknown-unknown
+  -p solana_kit_leptoskit_http_guest --target wasm32-unknown-unknown \
+  --message-format=json > /tmp/solana-kit-http-guest.json
+component="$(jq -se '
+  [.[] | select(.reason == "compiler-artifact" and
+    .target.name == "solana_kit_leptoskit_http_guest" and
+    (.manifest_path | endswith("/leptoskit-http/guest/Cargo.toml")) and
+    (.target.kind | index("cdylib")) != null) | .filenames[] |
+    select(endswith(".wasm"))] |
+  if length == 1 then .[0] else error("expected one interpreted guest") end
+' /tmp/solana-kit-http-guest.json)"
 cargo +1.99.1 run --locked --offline \
   --manifest-path verification/leptoskit-http/Cargo.toml \
   -p solana_kit_leptoskit_http_host -- \
-  verification/leptoskit-http/target/wasm32-unknown-unknown/debug/solana_kit_leptoskit_http_guest.wasm
+  "$component"
 cargo +1.99.1 test --locked --offline -p solana_kit_leptoskit --all-features
 cargo +1.99.1 test --locked --offline \
   --manifest-path verification/leptoskit-http/Cargo.toml --workspace
@@ -62,9 +71,15 @@ local Rc across observed Pending and wake, retained-call no-EOF control, guest D
 cancellation, capacity retained until abort termination joins, unrelated Events,
 and awaited unload with peer EOF. Successful peers and tasks are awaited.
 
-## Executed verification
+The maintained REST extension adds actual host grant denial, encoded relative
+paths and duplicate query keys, authenticated JSON body delivery and reply limits
+through the same `HttpDriver` and `HttpHost` owners. This extension is pending
+runtime and CI execution. The historical receipts below do not cover these new
+REST bodies or the current public transport checkpoint.
 
-Both actual Rust 1.99.1 and 1.89.0 compile the byte-identical canonical guest source
+## Historical execution receipts
+
+The earlier recorded Rust 1.99.1 and 1.89.0 producers compile the byte-identical canonical guest source
 and execute all four journeys. Verbose producer logs identify each actual child
 rustc and rustdoc. The actual local guest artifact hashes are:
 

@@ -69,7 +69,11 @@ pub(super) async fn create(mode: &'static str) -> Result<Fixture> {
     let (accepted_tx, accepted) = mpsc::channel(4);
     let (closed_tx, closed) = mpsc::channel(4);
     let task = tokio::spawn(async move {
-        let count = if mode == "quiet" { 2 } else { 1 };
+        let count = if matches!(mode, "quiet" | "rest") {
+            2
+        } else {
+            1
+        };
         for _ in 0..count {
             let (socket, _) = listener.accept().await?;
             connection(socket, mode, secure, &accepted_tx, &closed_tx).await?;
@@ -97,13 +101,14 @@ fn acceptor() -> Result<TlsAcceptor> {
     Ok(TlsAcceptor::from(Arc::new(config)))
 }
 
+/// Every fixture consumes its exact request before choosing a lifecycle or reply failure.
 async fn serve<S: AsyncRead + AsyncWrite + Unpin>(
     stream: &mut S,
     mode: &str,
     accepted: &mpsc::Sender<()>,
     closed: &mpsc::Sender<()>,
 ) -> Result<()> {
-    read_request(stream).await?;
+    read_request(stream, mode).await?;
     let mut byte = [0];
     accepted.send(()).await?;
 
@@ -123,6 +128,8 @@ async fn serve<S: AsyncRead + AsyncWrite + Unpin>(
     };
     let body = if mode == "large" {
         vec![b'x'; 2048]
+    } else if mode == "rest" {
+        b"done".to_vec()
     } else {
         BALANCE.to_vec()
     };
@@ -139,7 +146,7 @@ async fn serve<S: AsyncRead + AsyncWrite + Unpin>(
 }
 
 /// Verifies the complete authenticated request before exposing fixture acceptance.
-async fn read_request<S: AsyncRead + Unpin>(stream: &mut S) -> Result<()> {
+async fn read_request<S: AsyncRead + Unpin>(stream: &mut S, mode: &str) -> Result<()> {
     let mut bytes = Vec::new();
     let mut byte = [0];
 
@@ -150,14 +157,23 @@ async fn read_request<S: AsyncRead + Unpin>(stream: &mut S) -> Result<()> {
     }
 
     let header = std::str::from_utf8(&bytes)?;
-    ensure!(
-        header.starts_with("POST /rpc HTTP/1.1\r\n"),
-        "exact HTTP destination"
-    );
+    let target = if mode == "rest" {
+        "POST /rpc/a%2Fb?key=a%20b&key=%26 HTTP/1.1\r\n"
+    } else {
+        "POST /rpc HTTP/1.1\r\n"
+    };
+
+    ensure!(header.starts_with(target), "exact HTTP destination");
     ensure!(
         header.contains("authorization: Bearer synthetic-local-fixture\r\n"),
         "host-only auth"
     );
+
+    ensure!(
+        header.contains("content-type: application/json\r\n"),
+        "exact request media type"
+    );
+
     let length: usize = header
         .lines()
         .find_map(|line| line.strip_prefix("content-length: "))
@@ -165,7 +181,13 @@ async fn read_request<S: AsyncRead + Unpin>(stream: &mut S) -> Result<()> {
         .parse()?;
     let mut body = vec![0; length];
     stream.read_exact(&mut body).await?;
-    ensure!(body == REQUEST, "exact public Client balance request");
+    let expected = if mode == "rest" {
+        b"null".as_slice()
+    } else {
+        REQUEST
+    };
+
+    ensure!(body == expected, "exact public request body");
 
     Ok(())
 }

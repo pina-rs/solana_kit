@@ -16,13 +16,15 @@ const HEADER_FIELD_BYTES: usize = 8192;
 /// Explicit Preview2 HTTP adapter with caller-owned local readiness.
 pub struct WasiHttp {
     reactor: Reactor,
-    endpoint: Endpoint,
-    headers: Vec<(String, Vec<u8>)>,
+    pub(crate) endpoint: Endpoint,
+    pub(crate) headers: Vec<(String, Vec<u8>)>,
     timeout_nanos: u64,
 }
 
 /// One local owned exchange. Dropping it releases all retained host resources.
-pub struct Exchange<'a>(Pin<Box<dyn Future<Output = Result<Reply, TransportError>> + 'a>>);
+pub struct Exchange<'a>(
+    pub(crate) Pin<Box<dyn Future<Output = Result<Reply, TransportError>> + 'a>>,
+);
 
 impl Future for Exchange<'_> {
     type Output = Result<Reply, TransportError>;
@@ -84,25 +86,45 @@ impl WasiHttp {
     }
 
     async fn post(&self, request: Request) -> Result<Reply, TransportError> {
+        self.send(
+            Method::Post,
+            &self.endpoint.path,
+            solana_kit_client::rest::Body::Json(request.body),
+            request.max_reply_bytes,
+        )
+        .await
+    }
+
+    pub(crate) async fn send(
+        &self,
+        method: Method,
+        target: &str,
+        request_body: solana_kit_client::rest::Body,
+        max_reply_bytes: usize,
+    ) -> Result<Reply, TransportError> {
         let deadline = monotonic_clock::now()
             .checked_add(self.timeout_nanos)
             .ok_or_else(|| TransportError::new(Kind::Deadline))?;
-        let (outgoing, options) = self.prepare(request.body.len())?;
+        let (outgoing, options) = self.prepare(
+            method,
+            target,
+            request_body.content_type(),
+            request_body.as_deref().map_or(0, <[u8]>::len),
+        )?;
+        let bytes = request_body.into_bytes();
         let body = outgoing
             .body()
             .map_err(|()| TransportError::new(Kind::Io))?;
         let response = outgoing_handler::handle(outgoing, Some(options)).map_err(host_error)?;
         let response = self
-            .upload_response(body, &request.body, response, deadline)
+            .upload_response(body, &bytes, response, deadline)
             .await?;
         let status = response.status();
         let body = response
             .consume()
             .map_err(|()| TransportError::new(Kind::InvalidResponse))?;
 
-        let body = self
-            .read_body(body, request.max_reply_bytes, deadline)
-            .await?;
+        let body = self.read_body(body, max_reply_bytes, deadline).await?;
 
         Ok(Reply { status, body })
     }
@@ -138,20 +160,29 @@ impl WasiHttp {
         .await
     }
 
-    fn prepare(&self, length: usize) -> Result<(OutgoingRequest, RequestOptions), TransportError> {
+    fn prepare(
+        &self,
+        method: Method,
+        target: &str,
+        content_type: Option<&str>,
+        length: usize,
+    ) -> Result<(OutgoingRequest, RequestOptions), TransportError> {
         let mut headers = self.headers.clone();
-        headers.push(("content-type".into(), b"application/json".to_vec()));
+
+        if let Some(content_type) = content_type {
+            headers.push(("content-type".into(), content_type.as_bytes().to_vec()));
+        }
         headers.push(("content-length".into(), length.to_string().into_bytes()));
         let fields = Fields::from_list(&headers).map_err(|_| TransportError::new(Kind::Denied))?;
         let outgoing = OutgoingRequest::new(fields);
         outgoing
-            .set_method(&Method::Post)
+            .set_method(&method)
             .map_err(|()| TransportError::new(Kind::Unavailable))?;
         outgoing
             .set_authority(Some(&self.endpoint.authority))
             .map_err(|()| TransportError::new(Kind::Denied))?;
         outgoing
-            .set_path_with_query(Some(&self.endpoint.path))
+            .set_path_with_query(Some(target))
             .map_err(|()| TransportError::new(Kind::Denied))?;
 
         let scheme = if self.endpoint.secure {
@@ -349,6 +380,8 @@ fn check_deadline(deadline: u64) -> Result<(), TransportError> {
 /// Invalid explicit adapter configuration, before starting network work.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ConfigurationError {
+    /// REST routes are empty, duplicated or lack a target limit.
+    Routes,
     /// The endpoint cannot be represented by this conservative HTTP contract.
     Endpoint(&'static str),
     /// The timeout is zero or overflows the host's nanosecond clock.

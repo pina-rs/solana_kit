@@ -59,6 +59,7 @@ pub(super) async fn run(cancellation: oneshot::Receiver<()>) {
     assert!(matches!(balance("deadline").await,
         Err(Error::Transport(error)) if error.kind == TransportFailureKind::Deadline));
     record("quiet-deadline");
+    crate::rest::run().await;
     let quiet = Box::pin(balance("quiet"));
 
     match select(quiet, cancellation).await {

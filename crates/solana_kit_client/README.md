@@ -5,6 +5,13 @@ not for Solana on-chain programs; use Pina or official Solana program libraries.
 It uses std and owned Kit values without a runtime, network, JavaScript or ambient
 randomness dependency. Native and local futures share one Client protocol owner.
 
+`rest` owns provider HTTP methods, explicit absent/JSON/form bodies, ordered
+decoded path/query pairs, bounded JSON admission and `Transport<D>`. Each provider
+owns its destination identity. Concrete adapters map that identity to approved
+roots, credentials and deadlines. REST does not pass through RPC envelopes.
+See the [REST design](../../docs/architecture/provider-rest.md) for the source
+checkpoint, adapter ownership and held runtime gates.
+
 The initial typed operations are getBalance, getLatestBlockhash and full-base64
 getAccountInfo, together with all nineteen node metadata operations in `methods::node`
 and all eight economic operations in `methods::economics`. The `methods::accounts`
@@ -68,6 +75,14 @@ floating-point range. Decoded duplicate object keys remain invalid at every
 depth; typed integer and domain schemas remain strict. Client IDs are monotonic, exactly browser-representable and fail
 before wrapping; a fresh client needs its own adapter correlation namespace.
 
+`TransportError::with_source` retains `Error + Send + Sync` sources on native
+and WASI targets. On `wasm32-unknown-unknown` it accepts local `Error` sources.
+Errors containing `TransportError` therefore do not promise `Send` or `Sync` on
+that target, including JavaScript-free interpreted guests. This changes no
+dependency or import graph. Browser adapters can retain their original local
+JavaScript values without adding JavaScript to this crate or the portable core.
+Explicit source traversal may expose private adapter diagnostics.
+
 The portable protocol executes with memory transports in native Rust, a real
 browser, WASI Preview 1 and 2, and the actual pinned LeptosKit interpreted host.
 Those fixtures include all 54 catalog methods with typed results and literal requests.
@@ -84,6 +99,20 @@ Call `tick()` to enforce acknowledgement deadlines and remote cancellation clean
 Six families are stable. Block, vote, and slot-update methods are explicitly
 unstable. This transport-neutral protocol does not establish networking support
 for any host. Replacement returns an explicit event gap and never promises replay.
+
+`subscriptions::Session` drives that same protocol owner through transient socket
+polls. The optional `confirmation-factories` feature supplies known-signature
+confirmation and guarded one-shot submission with an injected clock, deadline and
+cancellation. Shared operations take short `SessionAccess` borrows, preserving
+unrelated registrations. Applications retain their executor and shared socket
+lifetime. See the [factory contract](../../docs/verification/confirmation-factories.md)
+for ownership, uncertain cleanup and expiry freshness.
+
+`Clock::Sleep` returns `Result<(), ClockError>`. Successful expiry remains distinct
+from capacity, deadline-range and unavailable-clock failures. Confirmation retains
+clock failures and their original causes separately from cleanup failures. A clock
+failure never authorizes a submission retry. These composed source paths await
+current/MSRV, platform and quality verification.
 
 `plans` executes core-owned transaction trees through caller-owned concrete
 futures. Parallel branches overlap while results retain plan order. Ordered

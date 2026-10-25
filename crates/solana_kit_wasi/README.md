@@ -57,3 +57,49 @@ handler. See the private verification README and execution receipt for the
 precise policy, resource baselines and host limits. Operating-system DNS stalls,
 uncancellable late resolver callbacks and local MSRV Preview2 execution remain
 unverified. Focused CI provisions the MSRV target and executes that component.
+
+The unverified REST source extension adds `WasiRest<D>` only on Preview2. Named
+routes reuse existing `WasiHttp`, Reactor registrations, outgoing HTTP resources,
+concurrent upload/response progress, typed host denial and bounded body reception.
+Approved base queries remain first; decoded operation segments and ordered pairs
+are separately encoded. Body presence determines media type. Original RPC POST
+framing remains unchanged. The public provider consumer must run under its actual
+caller-driven component host. Preview1 has no networking adapter. Compilation,
+actual provider REST replay, resource checks and negative controls remain pending.
+
+## Framed WebSockets and subscription time
+
+Enable the explicit `websocket` feature for `WasiWebSocket`, `SocketConfig` and
+`SocketError` on Preview2. The owner uses the same caller-owned Reactor,
+nonblocking WASI TCP/DNS resources, Tungstenite0.29 framing and validating
+rustls0.23 TLS. WSS requires explicit DER CA roots. The host grants DNS and TCP
+destinations. Preview1, browser and plain guests gain no socket imports.
+
+`connect` has one deadline across DNS, TCP, TLS and the strict HTTP upgrade.
+Send, receive and graceful close have finite deadlines. Frame, complete-message
+and encoded write-buffer limits are explicit. Text-only `receive` and
+`poll_receive` reject binary. `receive_frame` and `poll_receive_frame` return
+`ReceivedFrame::Text` or `ReceivedFrame::Binary`, checking payload limits before
+copying parser-owned bytes. Ping/pong and graceful close retain the existing
+bounded control-frame turn. The socket owns one parser and separate read/write
+readiness slots.
+
+`WasiWebSocket` implements the shared `TextSocket` directly. Pass the connected
+socket to `subscriptions::Session::new`. Session owns correlation, generations,
+provider sharing and bounded local queues. Outgoing commands remain text.
+Transient send/flush/receive/close polls allow a quiet receive to coexist with
+unsubscribe progress. Cancelling a send is uncertain and never permits replay.
+Shutdown unregisters readiness before releasing parent socket resources.
+
+`WasiClock::new(reactor.clone())` uses monotonic milliseconds and one existing
+Reactor registration per sleep. Drop unregisters its pollables. Checked conversion
+reports `ClockError::DeadlineRange`. Readiness admission reports
+`ClockError::Capacity`. Both propagate as `SessionError::Clock`, distinct from a
+successfully elapsed deadline. No separate timer scheduler or executor exists.
+
+These socket/clock and `verification/wasi-subscriptions` source paths await
+admitted current/MSRV and named-host execution. They add no runtime acceptance.
+The application drives its Reactor and separately awaits Session shutdown.
+Ordinary P2 socket packaging also needs a WASI-capable C compiler and archiver
+for ring. The existing private fixture's loopback policy and original331 tests
+remain separate from installed-host, resolver-cancellation and broad WASI support.

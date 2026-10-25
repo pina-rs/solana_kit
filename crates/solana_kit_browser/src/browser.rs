@@ -1,4 +1,5 @@
 //! Window Fetch ownership and bounded streamed reception.
+use crate::BrowserCause;
 use js_sys::{Reflect, Uint8Array};
 use solana_kit_client::{Reply, Request, Transport, TransportError, TransportFailureKind as Kind};
 use std::{
@@ -38,9 +39,11 @@ pub struct HttpConfig {
 }
 impl Default for HttpConfig {
     fn default() -> Self {
+        const DEFAULT_EXCHANGE_TIMEOUT: Duration = Duration::from_secs(30);
+
         Self {
             headers: Vec::new(),
-            exchange_timeout: Duration::from_secs(30),
+            exchange_timeout: DEFAULT_EXCHANGE_TIMEOUT,
         }
     }
 }
@@ -201,7 +204,8 @@ struct ExchangeOwner {
 }
 impl ExchangeOwner {
     fn new(adapter: &BrowserHttp) -> Result<Self, TransportError> {
-        let controller = AbortController::new().map_err(|_| failure(Kind::Unavailable))?;
+        let controller =
+            AbortController::new().map_err(|cause| caused_failure(Kind::Unavailable, cause))?;
         let expired = Rc::new(Cell::new(false));
         let flag = expired.clone();
         let abort = controller.clone();
@@ -215,7 +219,7 @@ impl ExchangeOwner {
                 callback.as_ref().unchecked_ref(),
                 adapter.timeout,
             )
-            .map_err(|_| failure(Kind::Unavailable))?;
+            .map_err(|cause| caused_failure(Kind::Unavailable, cause))?;
 
         Ok(Self {
             controller,
@@ -226,12 +230,14 @@ impl ExchangeOwner {
             reader: None,
         })
     }
-    fn error(&self) -> TransportError {
-        failure(if self.expired.get() {
+    fn error(&self, cause: JsValue) -> TransportError {
+        let kind = if self.expired.get() {
             Kind::Deadline
         } else {
             Kind::Io
-        })
+        };
+
+        caused_failure(kind, cause)
     }
 }
 impl Drop for ExchangeOwner {
@@ -244,27 +250,38 @@ fn failure(kind: Kind) -> TransportError {
     TransportError::new(kind)
 }
 
-async fn execute(adapter: &BrowserHttp, request: Request) -> Result<Reply, TransportError> {
-    let mut owner = ExchangeOwner::new(adapter)?;
-    let init = RequestInit::new();
-    init.set_method("POST");
-    init.set_headers(&adapter.headers);
-    init.set_body(&Uint8Array::from(request.body.as_slice()));
+fn caused_failure(kind: Kind, cause: JsValue) -> TransportError {
+    TransportError::with_source(kind, BrowserCause::new(cause))
+}
 
-    init.set_credentials(RequestCredentials::Omit);
-    init.set_referrer("");
-    init.set_referrer_policy(web_sys::ReferrerPolicy::NoReferrer);
-    init.set_redirect(RequestRedirect::Error);
-    init.set_mode(RequestMode::Cors);
-    init.set_signal(Some(&owner.controller.signal()));
-    let fetch = adapter
-        .window
-        .fetch_with_str_and_init(&adapter.endpoint, &init);
+async fn execute(adapter: &BrowserHttp, request: Request) -> Result<Reply, TransportError> {
+    execute_http(
+        adapter,
+        &adapter.endpoint,
+        "POST",
+        &adapter.headers,
+        solana_kit_client::rest::Body::Json(request.body),
+        request.max_reply_bytes,
+    )
+    .await
+}
+
+async fn execute_http(
+    adapter: &BrowserHttp,
+    endpoint: &str,
+    method: &str,
+    headers: &Headers,
+    body: solana_kit_client::rest::Body,
+    max_reply_bytes: usize,
+) -> Result<Reply, TransportError> {
+    let mut owner = ExchangeOwner::new(adapter)?;
+    let init = request_init(method, headers, &body, &owner.controller);
+    let fetch = adapter.window.fetch_with_str_and_init(endpoint, &init);
     let response: Response = JsFuture::from(fetch)
         .await
-        .map_err(|_| owner.error())?
+        .map_err(|cause| owner.error(cause))?
         .dyn_into()
-        .map_err(|_| failure(Kind::InvalidResponse))?;
+        .map_err(|cause| caused_failure(Kind::InvalidResponse, cause))?;
 
     if matches!(
         response.type_(),
@@ -274,7 +291,7 @@ async fn execute(adapter: &BrowserHttp, request: Request) -> Result<Reply, Trans
         return Err(failure(Kind::InvalidResponse));
     }
 
-    check_length(&response, request.max_reply_bytes)?;
+    check_length(&response, max_reply_bytes)?;
     let status = response.status();
     let Some(stream) = response.body() else {
         return Ok(Reply {
@@ -285,18 +302,161 @@ async fn execute(adapter: &BrowserHttp, request: Request) -> Result<Reply, Trans
     let reader = stream
         .get_reader()
         .dyn_into::<ReadableStreamDefaultReader>()
-        .map_err(|_| failure(Kind::Unavailable))?;
+        .map_err(|cause| caused_failure(Kind::Unavailable, cause.into()))?;
     owner.reader = Some(reader);
-    let body = collect(&owner, request.max_reply_bytes).await?;
+    let body = collect(&owner, max_reply_bytes).await?;
 
     Ok(Reply { status, body })
+}
+
+// Every route uses the same credential, redirect, referrer and abort policy.
+fn request_init(
+    method: &str,
+    headers: &Headers,
+    body: &solana_kit_client::rest::Body,
+    controller: &AbortController,
+) -> RequestInit {
+    let init = RequestInit::new();
+    init.set_method(method);
+    init.set_headers(headers);
+
+    if let Some(bytes) = body.as_deref() {
+        init.set_body(&Uint8Array::from(bytes));
+    }
+
+    init.set_credentials(RequestCredentials::Omit);
+    init.set_referrer("");
+    init.set_referrer_policy(web_sys::ReferrerPolicy::NoReferrer);
+    init.set_redirect(RequestRedirect::Error);
+    init.set_mode(RequestMode::Cors);
+    init.set_signal(Some(&controller.signal()));
+
+    init
+}
+
+/// Explicit provider destinations over the existing Window Fetch owner.
+pub struct BrowserRest<D> {
+    routes: Vec<(D, BrowserHttp)>,
+    max_target_bytes: usize,
+}
+
+impl<D: Eq> BrowserRest<D> {
+    /// Binds unique approved routes and an encoded relative target limit.
+    pub fn new(
+        routes: Vec<(D, BrowserHttp)>,
+        max_target_bytes: usize,
+    ) -> Result<Self, ConfigError> {
+        if routes.is_empty() || max_target_bytes == 0 {
+            return Err(ConfigError(
+                "REST routes and target budget must be nonempty",
+            ));
+        }
+
+        for (index, (name, _)) in routes.iter().enumerate() {
+            if routes[..index].iter().any(|(other, _)| name == other) {
+                return Err(ConfigError("duplicate REST destination"));
+            }
+        }
+
+        Ok(Self {
+            routes,
+            max_target_bytes,
+        })
+    }
+}
+
+impl<D> fmt::Debug for BrowserRest<D> {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        formatter
+            .debug_struct("BrowserRest")
+            .field("route_count", &self.routes.len())
+            .finish_non_exhaustive()
+    }
+}
+
+impl<D: Eq> solana_kit_client::rest::Transport<D> for BrowserRest<D> {
+    type Exchange<'a>
+        = BrowserExchange<'a>
+    where
+        Self: 'a;
+
+    fn exchange(&self, request: solana_kit_client::rest::Request<D>) -> Self::Exchange<'_> {
+        BrowserExchange {
+            future: Box::pin(execute_rest(self, request)),
+        }
+    }
+}
+
+async fn execute_rest<D: Eq>(
+    routes: &BrowserRest<D>,
+    request: solana_kit_client::rest::Request<D>,
+) -> Result<Reply, TransportError> {
+    let adapter = routes
+        .routes
+        .iter()
+        .find(|(name, _)| *name == request.service)
+        .map(|(_, adapter)| adapter)
+        .ok_or_else(|| failure(Kind::Denied))?;
+
+    if request.method == solana_kit_client::rest::Method::Get && request.body.as_deref().is_some() {
+        return Err(failure(Kind::Denied));
+    }
+
+    let endpoint = rest_endpoint(adapter, &request, routes.max_target_bytes)?;
+    let headers = rest_headers(adapter, &request.body)?;
+
+    execute_http(
+        adapter,
+        &endpoint,
+        request.method.as_str(),
+        &headers,
+        request.body,
+        request.max_reply_bytes,
+    )
+    .await
+}
+
+fn rest_endpoint<D>(
+    adapter: &BrowserHttp,
+    request: &solana_kit_client::rest::Request<D>,
+    maximum: usize,
+) -> Result<String, TransportError> {
+    let root = Url::new(&adapter.endpoint).map_err(|cause| caused_failure(Kind::Denied, cause))?;
+    let path = format!("{}{}", root.pathname(), root.search());
+    let target = solana_kit_client::rest::request_target(
+        &path,
+        &request.path_segments,
+        &request.query,
+        maximum,
+    )?;
+
+    Ok(format!("{}{target}", root.origin()))
+}
+
+fn rest_headers(
+    adapter: &BrowserHttp,
+    body: &solana_kit_client::rest::Body,
+) -> Result<Headers, TransportError> {
+    let headers = Headers::new_with_headers(&adapter.headers)
+        .map_err(|cause| caused_failure(Kind::Unavailable, cause))?;
+    headers
+        .delete("content-type")
+        .map_err(|cause| caused_failure(Kind::Denied, cause))?;
+
+    if let Some(content_type) = body.content_type() {
+        headers
+            .set("content-type", content_type)
+            .map_err(|cause| caused_failure(Kind::Denied, cause))?;
+    }
+
+    Ok(headers)
 }
 
 fn check_length(response: &Response, max: usize) -> Result<(), TransportError> {
     let headers = response.headers();
     let encoding = headers
         .get("content-encoding")
-        .map_err(|_| failure(Kind::InvalidResponse))?;
+        .map_err(|cause| caused_failure(Kind::InvalidResponse, cause))?;
 
     // CORS can hide Content-Encoding, so an absent header is not an identity guarantee.
     if encoding.as_deref() != Some("identity") {
@@ -305,7 +465,7 @@ fn check_length(response: &Response, max: usize) -> Result<(), TransportError> {
 
     if let Some(length) = headers
         .get("content-length")
-        .map_err(|_| failure(Kind::InvalidResponse))?
+        .map_err(|cause| caused_failure(Kind::InvalidResponse, cause))?
     {
         let length = length
             .parse::<u64>()
@@ -328,19 +488,19 @@ async fn collect(owner: &ExchangeOwner, max: usize) -> Result<Vec<u8>, Transport
     loop {
         let value = JsFuture::from(reader.read())
             .await
-            .map_err(|_| owner.error())?;
+            .map_err(|cause| owner.error(cause))?;
         let done = Reflect::get(&value, &JsValue::from_str("done"))
-            .map_err(|_| failure(Kind::InvalidResponse))?;
+            .map_err(|cause| caused_failure(Kind::InvalidResponse, cause))?;
 
         if done.as_bool() == Some(true) {
             return Ok(body);
         }
 
         let chunk = Reflect::get(&value, &JsValue::from_str("value"))
-            .map_err(|_| failure(Kind::InvalidResponse))?;
+            .map_err(|cause| caused_failure(Kind::InvalidResponse, cause))?;
         let chunk = chunk
             .dyn_into::<Uint8Array>()
-            .map_err(|_| failure(Kind::InvalidResponse))?;
+            .map_err(|cause| caused_failure(Kind::InvalidResponse, cause))?;
         let length = chunk.length() as usize;
         let total = body
             .len()

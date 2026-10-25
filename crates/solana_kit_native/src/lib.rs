@@ -5,10 +5,12 @@
 mod config;
 mod endpoint;
 mod exchange;
+mod rest;
 mod tls;
 
 pub use config::{ConfigError, HttpConfig};
 pub use hyper::http::{HeaderMap, HeaderName, HeaderValue};
+pub use rest::NativeRest;
 pub use tls::TlsRoots;
 
 use endpoint::Endpoint;
@@ -87,5 +89,5 @@ impl Transport for NativeHttp {
 mod websocket;
 mod websocket_config;
 mod websocket_connect;
-pub use websocket::{NativeWebSocket, WsError};
+pub use websocket::{NativeSubscriptionSocket, NativeWebSocket, WsError};
 pub use websocket_config::WsConfig;
