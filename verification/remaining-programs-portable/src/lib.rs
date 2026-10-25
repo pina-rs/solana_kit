@@ -3,12 +3,12 @@
 mod registry;
 pub use registry::COUNT;
 
+/// Shared marker for the intentional failure across native and interpreted execution.
+pub const CORRUPTION_MARKER: &str = include_str!("../corruption.txt");
+
 /// Returns the full count only after every original assertion has executed.
 pub fn run() -> usize {
-    assert!(
-        !cfg!(feature = "corrupt"),
-        "intentional portable contract corruption"
-    );
+    assert!(!cfg!(feature = "corrupt"), "{CORRUPTION_MARKER}");
 
     for (name, body) in &registry::CASES {
         body();

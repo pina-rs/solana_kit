@@ -24,6 +24,10 @@ native and WASI corruption controls require the exact intentional panic marker.
 The interpreted host requires one successful report commit, rejects one-fuel
 execution and rejects a corrupt guest before any commit. Its compiled import
 table must pass the closed SDK gate. Heavy host and platform builds belong in CI.
+The corruption check requires a marked Trap, not an arbitrary startup failure.
+The guest forwards only the intentional panic payload through an existing typed
+host import; no diagnostic import is added. An unrelated panic is an independent
+negative control and must not satisfy the marked-corruption check.
 
 All generated modules and the registry must regenerate byte identically. Private
 source adapters make separate Attestation/Squads account prefixes and Subscriptions

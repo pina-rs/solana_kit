@@ -1,9 +1,10 @@
 //! Executes the complete public client registry in the production LeptosKit WasmHost.
-use anyhow::{Context, Result, ensure};
+use anyhow::{Context, Result, bail, ensure};
 use leptoskit_wasm::{WasmError, WasmHost};
 const WIDTH: f32 = 320.0;
 const HEIGHT: f32 = 480.0;
 const FUEL: u64 = 25_000_000_000;
+const CORRUPTION_MARKER: &str = include_str!("../../corruption.txt");
 
 fn main() -> Result<()> {
     let path = std::env::args_os().nth(1).context("guest Wasm required")?;
@@ -19,9 +20,15 @@ fn main() -> Result<()> {
     host.set_fuel_budget(FUEL);
 
     if std::env::args().nth(2).as_deref() == Some("--expect-corrupt") {
-        ensure!(host.start(WIDTH, HEIGHT).is_err(), "corrupt guest returned");
+        let Err(WasmError::Trap(message)) = host.start(WIDTH, HEIGHT) else {
+            bail!("corrupt guest did not produce the expected trap");
+        };
+        ensure!(
+            message.contains(CORRUPTION_MARKER),
+            "corruption trap marker missing"
+        );
         ensure!(host.commits() == 0, "corrupt guest committed");
-        println!("intentional contract corruption trapped before commit");
+        println!("{CORRUPTION_MARKER}; trapped before commit");
 
         return Ok(());
     }

@@ -9,3 +9,6 @@ crate-type = ["cdylib"]
 
 [dependencies]
 solana_kit_remaining_programs_portable = { path = ".." }
+
+[features]
+unexpected-panic = []

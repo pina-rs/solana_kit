@@ -12,6 +12,12 @@ after every body returns through production LeptosKit WasmHost at revision
 Deliberate corruption and one-fuel exhaustion must reject before a report commit.
 The compiled guest must pass the closed three-import SDK gate.
 
+The intentional assertion has one shared marker. A private guest panic hook
+forwards only that payload through the existing typed property import, where a
+deliberately invalid boolean produces an observable host trap containing the
+marker. The host requires that marked Trap and zero commits. An unrelated guest
+panic must fail this confirmation rather than count as corruption evidence.
+
 The fixture enables the three clients' PDA features and its matching local pda
 configuration. The clients' default dependency graphs are checked independently.
 All fixture packages remain private and excluded from placeholder publication.

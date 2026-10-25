@@ -286,7 +286,32 @@ jobs:
           ' "$RUNNER_TEMP/program-corrupt-guest.jsonl")"
 
           cargo +1.99.1 run --locked --manifest-path "$PROGRAM_MANIFEST" \
-            --package solana_kit_remaining_programs_host -- "$guest" --expect-corrupt
+            --package solana_kit_remaining_programs_host -- "$guest" --expect-corrupt \
+            | tee "$RUNNER_TEMP/corrupt-wasmi.txt"
+          grep -F 'intentional portable contract corruption' "$RUNNER_TEMP/corrupt-wasmi.txt"
+
+      - name: Reject an unrelated guest panic as corruption evidence
+        run: |
+          set -euo pipefail
+          CARGO_TARGET_DIR="$RUNNER_TEMP/program-corrupt" cargo +1.99.1 build --locked \
+            --manifest-path "$PROGRAM_MANIFEST" --package solana_kit_remaining_programs_guest \
+            --features unexpected-panic --target wasm32-unknown-unknown --message-format=json \
+            > "$RUNNER_TEMP/program-unrelated-guest.jsonl"
+          guest="$(jq -sre '
+            [.[] | select(.reason == "compiler-artifact" and
+              .target.name == "solana_kit_remaining_programs_guest") | .filenames[] |
+              select(endswith(".wasm"))] |
+            if length == 1 then .[0] else error("expected one unrelated-panic guest") end
+          ' "$RUNNER_TEMP/program-unrelated-guest.jsonl")"
+
+          if cargo +1.99.1 run --locked --manifest-path "$PROGRAM_MANIFEST" \
+            --package solana_kit_remaining_programs_host -- "$guest" --expect-corrupt \
+            > "$RUNNER_TEMP/unrelated-wasmi.txt" 2>&1; then
+            echo "unrelated guest panic falsely confirmed corruption" >&2
+            exit 1
+          fi
+
+          grep -F 'corruption trap marker missing' "$RUNNER_TEMP/unrelated-wasmi.txt"
 
       - name: Verify minimal normal and build dependencies on every target
         run: |
