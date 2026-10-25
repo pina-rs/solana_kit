@@ -74,7 +74,7 @@ jobs:
           "$RUNNER_TEMP/prepare" "$GITHUB_WORKSPACE/sdk" "$app"
           sha256sum --check "$RUNNER_TEMP/generated.sha256"
 
-          if rg -n '^\[patch\.' "$app" -g Cargo.toml; then
+          if grep -R -n --include=Cargo.toml '^\[patch\.' "$app"; then
             exit 1
           else
             result=$?
