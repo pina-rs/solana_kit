@@ -7,8 +7,8 @@ const BYTE_BITS_U8: u8 = 8;
 const BYTE_RADIX: u32 = 256;
 const MAX_ALPHABET: usize = 65536;
 const MAX_SYMBOL_BITS: u8 = 16;
-const MAX_DIGITS: usize = 4096;
-const SCRATCH: usize = MAX_DIGITS * 2;
+pub(super) const MAX_DIGITS: usize = 4096;
+pub(super) const SCRATCH: usize = MAX_DIGITS * 2;
 const BASE58: &str = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
 
 /// Alphabet text to minimal big-endian bytes, retaining one zero byte per leading zero symbol.
@@ -82,59 +82,15 @@ impl<'a> BaseX<'a> {
         self.validate(value)?;
         let zero = self.alphabet.chars().next().ok_or(Error::InvalidValue)?;
         let leading = value.chars().take_while(|c| *c == zero).count();
-        let mut length = 0;
-
-        for symbol in value.chars().skip(leading) {
-            let mut carry = self.index(symbol)?;
-
-            for byte in &mut buffer[..length] {
-                carry += self.base * u32::from(*byte);
-                *byte = u8::try_from(carry & 255).map_err(|_| Error::Overflow)?;
-                carry >>= BYTE_BITS;
-            }
-
-            while carry != 0 {
-                let byte = buffer.get_mut(length).ok_or(Error::LimitExceeded)?;
-                *byte = u8::try_from(carry & 255).map_err(|_| Error::Overflow)?;
-                length += 1;
-                carry >>= BYTE_BITS;
-            }
-        }
+        let digits = value.chars().skip(leading).map(|symbol| self.index(symbol));
+        let length = fold_digits(digits, self.base, buffer)?;
 
         Ok((leading, length))
     }
 
     /// Converts a bounded input slice into least-significant-first digit indexes.
     fn digits(&self, bytes: &[u8], reader: &mut Reader<'_>) -> Result<Vec<u32>, Error> {
-        let bits = (u32::BITS - 1) - self.base.leading_zeros();
-        let capacity = bytes
-            .len()
-            .checked_mul(usize::from(BYTE_BITS_U8))
-            .and_then(|n| n.checked_add(usize::try_from(bits).ok()? - 1))
-            .ok_or(Error::Overflow)?
-            / usize::try_from(bits).map_err(|_| Error::Overflow)?;
-        reader.claim(capacity)?;
-        let mut digits = Vec::<u32>::new();
-        digits
-            .try_reserve_exact(capacity)
-            .map_err(|_| Error::AllocationFailed)?;
-
-        for byte in bytes {
-            let mut carry = u32::from(*byte);
-
-            for digit in &mut digits {
-                carry += BYTE_RADIX * *digit;
-                *digit = carry % self.base;
-                carry /= self.base;
-            }
-
-            while carry != 0 {
-                digits.push(carry % self.base);
-                carry /= self.base;
-            }
-        }
-
-        Ok(digits)
+        expand_digits(bytes, self.base, reader)
     }
 
     /// Reads an index proven by arithmetic to be below the alphabet base.
@@ -144,6 +100,70 @@ impl<'a> BaseX<'a> {
             .nth(usize::try_from(index).map_err(|_| Error::Overflow)?)
             .ok_or(Error::InvalidValue)
     }
+}
+
+pub(super) fn fold_digits(
+    digits: impl Iterator<Item = Result<u32, Error>>,
+    base: u32,
+    buffer: &mut [u8],
+) -> Result<usize, Error> {
+    let mut length = 0;
+
+    for digit in digits {
+        let mut carry = digit?;
+
+        for byte in &mut buffer[..length] {
+            carry += base * u32::from(*byte);
+            *byte = u8::try_from(carry & 255).map_err(|_| Error::Overflow)?;
+            carry >>= BYTE_BITS;
+        }
+
+        while carry != 0 {
+            let byte = buffer.get_mut(length).ok_or(Error::LimitExceeded)?;
+            *byte = u8::try_from(carry & 255).map_err(|_| Error::Overflow)?;
+            length += 1;
+            carry >>= BYTE_BITS;
+        }
+    }
+
+    Ok(length)
+}
+
+pub(super) fn expand_digits(
+    bytes: &[u8],
+    base: u32,
+    reader: &mut Reader<'_>,
+) -> Result<Vec<u32>, Error> {
+    let bits =
+        usize::try_from((u32::BITS - 1) - base.leading_zeros()).map_err(|_| Error::Overflow)?;
+    let capacity = bytes
+        .len()
+        .checked_mul(usize::from(BYTE_BITS_U8))
+        .and_then(|size| size.checked_add(bits - 1))
+        .ok_or(Error::Overflow)?
+        / bits;
+    reader.claim(capacity)?;
+    let mut digits = Vec::<u32>::new();
+    digits
+        .try_reserve_exact(capacity)
+        .map_err(|_| Error::AllocationFailed)?;
+
+    for byte in bytes {
+        let mut carry = u32::from(*byte);
+
+        for digit in &mut digits {
+            carry += BYTE_RADIX * *digit;
+            *digit = carry % base;
+            carry /= base;
+        }
+
+        while carry != 0 {
+            digits.push(carry % base);
+            carry /= base;
+        }
+    }
+
+    Ok(digits)
 }
 
 impl Encoder<str> for BaseX<'_> {
@@ -238,25 +258,8 @@ impl Encoder<str> for BaseXReslice<'_> {
     }
     fn write(&self, value: &str, writer: &mut Writer<'_>) -> Result<(), Error> {
         self.encoded_len(value)?;
-        let mut accumulator = 0u32;
-        let mut bits = 0;
-
-        for symbol in value.chars() {
-            accumulator = (accumulator << self.bits) | self.alphabet.index(symbol)?;
-            bits += self.bits;
-
-            while u32::from(bits) >= BYTE_BITS {
-                bits -= BYTE_BITS_U8;
-
-                writer.put(&[
-                    u8::try_from((accumulator >> bits) & 255).map_err(|_| Error::Overflow)?
-                ])?;
-            }
-
-            accumulator &= (1 << bits) - 1;
-        }
-
-        Ok(())
+        let digits = value.chars().map(|symbol| self.alphabet.index(symbol));
+        write_resliced(digits, self.bits, writer)
     }
 }
 
@@ -284,29 +287,58 @@ impl BaseXReslice<'_> {
         bytes: &[u8],
         mut emit: impl FnMut(char) -> Result<(), Error>,
     ) -> Result<(), Error> {
-        let mut accumulator = 0u32;
-        let mut bits = 0;
-        let mask = (1 << self.bits) - 1;
-
-        for byte in bytes {
-            accumulator = (accumulator << BYTE_BITS) | u32::from(*byte);
-            bits += BYTE_BITS_U8;
-
-            while bits >= self.bits {
-                bits -= self.bits;
-                emit(self.alphabet.symbol((accumulator >> bits) & mask)?)?;
-            }
-
-            accumulator &= (1 << bits) - 1;
-        }
-
-        if bits > 0 {
-            emit(
-                self.alphabet
-                    .symbol((accumulator << (self.bits - bits)) & mask)?,
-            )?;
-        }
-
-        Ok(())
+        visit_resliced(bytes, self.bits, |index| emit(self.alphabet.symbol(index)?))
     }
+}
+
+pub(super) fn write_resliced(
+    digits: impl Iterator<Item = Result<u32, Error>>,
+    symbol_bits: u8,
+    writer: &mut Writer<'_>,
+) -> Result<(), Error> {
+    let mut accumulator = 0u32;
+    let mut bits = 0;
+
+    for digit in digits {
+        accumulator = (accumulator << symbol_bits) | digit?;
+        bits += symbol_bits;
+
+        while u32::from(bits) >= BYTE_BITS {
+            bits -= BYTE_BITS_U8;
+            writer
+                .put(&[u8::try_from((accumulator >> bits) & 255).map_err(|_| Error::Overflow)?])?;
+        }
+
+        accumulator &= (1 << bits) - 1;
+    }
+
+    Ok(())
+}
+
+pub(super) fn visit_resliced(
+    bytes: &[u8],
+    symbol_bits: u8,
+    mut emit: impl FnMut(u32) -> Result<(), Error>,
+) -> Result<(), Error> {
+    let mut accumulator = 0u32;
+    let mut bits = 0;
+    let mask = (1 << symbol_bits) - 1;
+
+    for byte in bytes {
+        accumulator = (accumulator << BYTE_BITS) | u32::from(*byte);
+        bits += BYTE_BITS_U8;
+
+        while bits >= symbol_bits {
+            bits -= symbol_bits;
+            emit((accumulator >> bits) & mask)?;
+        }
+
+        accumulator &= (1 << bits) - 1;
+    }
+
+    if bits > 0 {
+        emit((accumulator << (symbol_bits - bits)) & mask)?;
+    }
+
+    Ok(())
 }

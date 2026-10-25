@@ -1,30 +1,16 @@
 //! Compiler collation from the pinned Dart address comparator.
 
-use alloc::{string::ToString, vec::Vec};
-
-use crate::Address;
-
 /// Orders base58 digits first, then each lowercase letter before its uppercase.
 ///
 /// Address text contains only base58 ASCII. These per-character ranks preserve
 /// the reference comparator's prefix-length tie-break without a host collator.
-pub(super) fn address_key(address: Address) -> Vec<u8> {
-    address
-        .to_string()
-        .bytes()
-        .map(|byte| {
-            if byte.is_ascii_digit() {
-                byte - b'0'
-            } else {
-                (byte.to_ascii_lowercase() - b'a') * 2 + 10 + u8::from(byte.is_ascii_uppercase())
-            }
-        })
-        .collect()
-}
+pub(super) use crate::address_order::sort_key as address_key;
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::Address;
+    use alloc::vec::Vec;
 
     #[test]
     fn every_base58_character_uses_pinned_collation() {

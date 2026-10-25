@@ -7,6 +7,8 @@ messages.
 The default dependency graph contains only `bs58`. The optional `crypto` feature
 adds SHA-256, validated program-derived addresses, and deterministic Ed25519
 signing and strict verification through RustCrypto implementations.
+The independent `keccak` feature adds original Keccak-256 through RustCrypto;
+`bigint-codecs` adds arbitrary-width integer codecs using `num-bigint`.
 
 This crate is only for off-chain application code. Do not use it in Solana
 on-chain programs; use Pina or official Solana program libraries instead.
@@ -34,6 +36,15 @@ because expiry height is absent from the wire. Optional `crypto` signs and
 verifies those frozen bytes; structural decoding alone does not authenticate
 signatures. Durable nonce lifecycle, full introspection, and
 general signer capabilities remain pending.
+
+`Instruction<InstructionAccount>` retains explicit `AccountLookupMeta` origins
+beside ordinary `AccountMeta` values. Compile these with
+`Message::compile_with_lookup_accounts` and caller-authenticated table snapshots.
+The existing compiler validates the exact table/index/address and rejects
+conflicting origins or hints on merged signer, payer or invoked-program accounts.
+An invalid explicit origin never silently selects another table or static storage.
+Ordinary `Instruction` and `Message::compile` callers keep their existing types
+and snapshot-selection behavior.
 
 `accounts` owns present and missing snapshots and decodes data while preserving
 metadata and enforcing the expected owner and reported size. `sysvars` provides
@@ -149,6 +160,25 @@ assert!(!received.is_complete());
 Shared error facts use `errors::{ErrorCode, ErrorDomain, ErrorFacts, Diagnostic,
 Context}`. The [account and diagnostic receipt](../../docs/verification/core-contracts.md)
 describes their bounded representation and executed client contracts.
+
+Insertion-ordered map and set values compose existing count and termination
+codecs without sorting keys or discarding wire allocation claims. See the
+[ordered collection contracts](../../docs/parity/ordered-collections.md) for
+duplicate handling, Rust equality and executed portable coverage.
+
+`UnionEncoder` and `UnionDecoder` select an untagged alternative before any
+payload operation. `Contextual` maps decoded values with their original byte
+context. Runtime tuple and record schemas use caller-defined Rust value types
+and borrowed codec objects. Named records retain schema order and borrow their
+names. Explicit UTF-16 BaseX codecs preserve surrogate code units that Rust
+strings cannot represent. See the [core parity contracts](../../docs/parity/core-parity.md)
+for limits, reference corrections and executed verification.
+
+`compare_addresses` provides the pinned text collation independently of the
+address's byte-wise `Ord`. `AccountLookupMeta` retains a table address and index
+with a role that cannot sign. Its conversion to ordinary `AccountMeta` drops
+lookup provenance explicitly. `address_constants` exposes canonical program,
+sysvar and mint identities without program-client dependencies.
 
 `plans` provides owned instruction trees, transactional packers, exact message
 planning and typed execution result models. Applications supply fee payers,

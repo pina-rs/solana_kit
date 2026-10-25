@@ -11,6 +11,26 @@ mod override_contract;
 mod tests {
     use solana_kit_core::{Address, Hash};
 
+    /// Archive exports retain insertion order and normalize repeated keys.
+    #[test]
+    fn ordered_maps_are_available_from_the_archive() {
+        use solana_kit_core::collections::OrderedMap;
+        let value = OrderedMap::from_entries(vec![(2_u8, 5_u8), (1, 7), (2, 9)]);
+        assert_eq!(value.as_slice(), &[(2_u8, 9_u8), (1_u8, 7_u8)]);
+    }
+
+    /// The packaged optional feature keeps original Keccak padding.
+    #[test]
+    fn keccak_is_available_from_the_archive() {
+        use solana_kit_core::keccak::keccak256;
+        let expected = [
+            0x4e, 0x03, 0x65, 0x7a, 0xea, 0x45, 0xa9, 0x4f, 0xc7, 0xd4, 0x7b, 0xa8, 0x26, 0xc8,
+            0xd6, 0x67, 0xc0, 0xd1, 0xe6, 0xe3, 0x3a, 0x64, 0xa0, 0x36, 0xec, 0x44, 0xf5, 0x8f,
+            0xa1, 0x2d, 0x6c, 0x45,
+        ];
+        assert_eq!(keccak256(&[b"ab", b"c"]).to_bytes(), expected);
+    }
+
     /// The registry dependency preserves owned and borrowed complete-operation policies.
     #[test]
     fn borrowed_codec_operation_policies() {

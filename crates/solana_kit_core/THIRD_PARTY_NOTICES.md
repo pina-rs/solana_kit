@@ -6,6 +6,12 @@ from the Dart Solana Kit numeric/string packages at commit
 The durable nonce preparation and recognition contracts use the same pinned
 repository's transaction message sources. Their actual Dart oracle and synthetic
 literal fixtures retain this notice in `verification/durable-nonce/DART-LICENSE`.
+The selected union, contextual transform, dynamic tuple and record, UTF-16 radix,
+integer, address collation, lookup metadata and constant contracts use the same
+pinned repository's corresponding core, data-structure, string, number, address
+and instruction packages. The Keccak test literals come from its core hash tests.
+These adaptations retain the MIT notice below. Cryptographic execution uses the
+separately licensed RustCrypto `sha3` dependency rather than copied hash code.
 
 MIT License
 

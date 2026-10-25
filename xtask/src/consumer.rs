@@ -1,12 +1,11 @@
 //! A clean external consumer tests the normalized packaged core without repo flags.
 
-use crate::process::{cargo, success};
+use crate::process::{cargo, success, target_dir};
 use anyhow::Result;
 use std::{path::PathBuf, process::Command};
 
 /// Packages the public core, extracts it outside the repository, and runs a consumer.
 pub(crate) fn run() -> Result<()> {
-    let root = std::env::current_dir()?;
     let directory: PathBuf =
         std::env::temp_dir().join(format!("solana-kit-consumer-{}", std::process::id()));
     std::fs::create_dir_all(directory.join("src"))?;
@@ -23,7 +22,7 @@ pub(crate) fn run() -> Result<()> {
     success(
         Command::new("tar")
             .arg("-xzf")
-            .arg(root.join("target/package/solana_kit_core-0.1.0.crate"))
+            .arg(target_dir().join("package/solana_kit_core-0.1.0.crate"))
             .arg("-C")
             .arg(&directory),
         "consumer-extract",

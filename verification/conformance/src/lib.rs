@@ -21,13 +21,16 @@ mod codecs;
 mod collection_cases;
 mod composites;
 mod confirmation_cases;
+mod core_parity;
 mod cryptography;
 mod fixed_points;
+mod ordered_collections;
 
 mod framing_cases;
 mod instructions;
 mod introspection_cases;
 mod keypair_import;
+mod lookup_origin;
 
 /// Fixed public-message assertions and host-owned crypto work counts.
 pub mod message_cases;
@@ -49,6 +52,7 @@ mod rpc_submission;
 /// Public signer fixtures for portable orchestration diagnostics.
 pub mod signers;
 mod subscriptions;
+mod sysvar_composition;
 mod text_numbers;
 mod token_cases;
 mod token_oracle;
@@ -65,10 +69,10 @@ pub mod system_client;
 
 use alloc::vec::Vec;
 
-/// Immutable suite identity. Changes to fixtures or assertions require a new ID.
-pub const SUITE_ID: &str = "solana-kit-core-v34";
-/// Required number of cases; a truncated report cannot pass conformance.
-pub const EXPECTED_CASE_COUNT: usize = 321;
+/// Integrated core contract suite; execution receipts identify actual hosts.
+pub const SUITE_ID: &str = "solana-kit-core-v37";
+/// Exact current registrants, including all preserved and appended contract groups.
+pub const EXPECTED_CASE_COUNT: usize = 354;
 
 /// Selects authentic fixtures or the intentionally incorrect hash oracle.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -162,9 +166,20 @@ pub fn run(mode: FixtureMode) -> Report {
     cases.extend(confirmation_cases::cases());
     cases.extend(introspection_cases::cases());
     cases.extend(mwa_cases::cases());
+
     cases.extend(plan_cases::cases());
     cases.extend(anchor_cases::cases());
     cases.extend(collection_cases::cases());
+    append_core_contracts(&mut cases);
+
+    Report {
+        suite_id: SUITE_ID,
+        cases,
+    }
+}
+
+/// Appends shared public-core bodies after the preserved protocol-case prefix.
+fn append_core_contracts(cases: &mut Vec<CaseResult>) {
     cases.extend(
         solana_kit_core_contracts_verification::cases()
             .into_iter()
@@ -175,11 +190,10 @@ pub fn run(mode: FixtureMode) -> Report {
     );
     cases.extend(codec_size::cases());
     cases.extend(keypair_import::cases());
-
-    Report {
-        suite_id: SUITE_ID,
-        cases,
-    }
+    cases.extend(ordered_collections::cases());
+    cases.extend(core_parity::cases());
+    cases.extend(lookup_origin::cases());
+    cases.extend(sysvar_composition::cases());
 }
 
 fn foundational_cases(mode: FixtureMode) -> Vec<CaseResult> {
