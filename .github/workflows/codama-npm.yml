@@ -84,10 +84,13 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          rustc --version --verbose
           toolchain_bin="$(dirname "$(rustup which --toolchain 1.99.1 rustc)")"
+          export PATH="$toolchain_bin:$PATH"
           export CARGO="$toolchain_bin/cargo"
           export RUSTC="$toolchain_bin/rustc"
           export RUSTDOC="$toolchain_bin/rustdoc"
+          command -v cargo cargo-clippy clippy-driver rustc rustdoc
 
           npm run build
           npm run typecheck
@@ -102,8 +105,11 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          rustc --version --verbose
           toolchain_bin="$(dirname "$(rustup which --toolchain 1.89.0 rustc)")"
+          export PATH="$toolchain_bin:$PATH"
           export CARGO="$toolchain_bin/cargo"
           export RUSTC="$toolchain_bin/rustc"
           export RUSTDOC="$toolchain_bin/rustdoc"
+          command -v cargo cargo-clippy clippy-driver rustc rustdoc
           npm run test:packed

@@ -29,6 +29,7 @@ export function verifyGeneratedClient(consumer: string): void {
   equal(output.trim(), "generated-client-contracts:8");
   const lintArguments = [
     "clippy",
+    "--verbose",
     "--offline",
     "--locked",
     "--all-targets",

@@ -1,7 +1,7 @@
 //! Bounded, joined local fixture owners.
 use crate::cases;
 use std::{
-    io::{Read, Write},
+    io::{ErrorKind, Read, Write},
     net::TcpStream,
     sync::{
         Arc,
@@ -58,7 +58,7 @@ pub fn serve(
     let mut socket = tungstenite::accept_hdr(stream, Protocol)?;
 
     dispatch(&path, &mut socket)?;
-    closed(&mut socket, path == "/early-close")
+    closed(&mut socket, &path)
 }
 fn state(stream: &mut TcpStream, handshake: &AtomicBool) -> Result<(), Box<dyn std::error::Error>> {
     let body = u8::from(handshake.load(Ordering::SeqCst));
@@ -183,21 +183,34 @@ fn survive(socket: &mut WebSocket<TcpStream>) -> Result<(), Box<dyn std::error::
 
     Ok(())
 }
-fn closed(
-    socket: &mut WebSocket<TcpStream>,
-    early: bool,
-) -> Result<(), Box<dyn std::error::Error>> {
+fn closed(socket: &mut WebSocket<TcpStream>, path: &str) -> Result<(), Box<dyn std::error::Error>> {
     match socket.read() {
-        Ok(Message::Close(_)) => match socket.flush() {
-            Ok(()) | Err(tungstenite::Error::ConnectionClosed) => Ok(()),
-            Err(error) => Err(error.into()),
-        },
+        Ok(Message::Close(_)) => acknowledge(socket, path),
 
         Err(tungstenite::Error::ConnectionClosed | tungstenite::Error::AlreadyClosed) => Ok(()),
 
         Err(tungstenite::Error::Protocol(
             tungstenite::error::ProtocolError::ResetWithoutClosingHandshake,
-        )) if early => Ok(()),
-        value => Err(format!("fixture expected terminal socket, received {value:?}").into()),
+        )) if path == "/early-close" => Ok(()),
+
+        Err(error) if terminal_peer(&error) => Ok(()),
+        value => Err(format!("fixture {path} expected terminal socket, received {value:?}").into()),
     }
+}
+fn acknowledge(
+    socket: &mut WebSocket<TcpStream>,
+    path: &str,
+) -> Result<(), Box<dyn std::error::Error>> {
+    match socket.flush() {
+        Ok(()) | Err(tungstenite::Error::ConnectionClosed) => Ok(()),
+
+        Err(error) if terminal_peer(&error) => Ok(()),
+        Err(error) => Err(format!("fixture {path} close acknowledgement failed: {error}").into()),
+    }
+}
+
+// After all frame assertions, a peer transport abort also completes fixture teardown.
+fn terminal_peer(error: &tungstenite::Error) -> bool {
+    matches!(error, tungstenite::Error::Io(error) if matches!(error.kind(),
+        ErrorKind::ConnectionReset | ErrorKind::ConnectionAborted | ErrorKind::BrokenPipe))
 }
