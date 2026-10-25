@@ -205,6 +205,10 @@ async fn submission_supplies_missing_payer_and_rejects_a_mismatched_payer_signat
     let primary = payer.sign(transaction.message().bytes());
     let secondary = harness.keypair.sign(transaction.message().bytes());
     let unsigned = Transaction::new(transaction.message().clone());
+    harness.runtime(
+        "submissionSignature",
+        &Uint8Array::from(primary.as_bytes().as_slice()),
+    );
 
     assert_eq!(
         TransactionSendingSigner::<WalletFailure>::send_transaction(&wallet, &unsigned)
