@@ -800,7 +800,7 @@ checksum = "09edd9e8b54e49e587e4f6295a7d29c3ea94d469cb40ab8ca70b288248a81db2"
 [[package]]
 name = "leptoskit_appkit"
 version = "0.1.0"
-source = "git+https://github.com/ifiokjr/leptoskit?rev=3c6383a17f786172d696e1e83d8026cba2085fa4#3c6383a17f786172d696e1e83d8026cba2085fa4"
+source = "git+https://github.com/ifiokjr/leptoskit?rev=25b1861ddc729a8f3b70117cd0c48e06659c9697#25b1861ddc729a8f3b70117cd0c48e06659c9697"
 dependencies = [
  "leptoskit_native",
  "leptoskit_yoga",
@@ -816,7 +816,7 @@ dependencies = [
 [[package]]
 name = "leptoskit_bridge"
 version = "0.1.0"
-source = "git+https://github.com/ifiokjr/leptoskit?rev=3c6383a17f786172d696e1e83d8026cba2085fa4#3c6383a17f786172d696e1e83d8026cba2085fa4"
+source = "git+https://github.com/ifiokjr/leptoskit?rev=25b1861ddc729a8f3b70117cd0c48e06659c9697#25b1861ddc729a8f3b70117cd0c48e06659c9697"
 dependencies = [
  "bytes",
  "thiserror",
@@ -825,7 +825,7 @@ dependencies = [
 [[package]]
 name = "leptoskit_bridge_ffi"
 version = "0.1.0"
-source = "git+https://github.com/ifiokjr/leptoskit?rev=3c6383a17f786172d696e1e83d8026cba2085fa4#3c6383a17f786172d696e1e83d8026cba2085fa4"
+source = "git+https://github.com/ifiokjr/leptoskit?rev=25b1861ddc729a8f3b70117cd0c48e06659c9697#25b1861ddc729a8f3b70117cd0c48e06659c9697"
 dependencies = [
  "leptoskit_appkit",
  "leptoskit_bridge",
@@ -840,7 +840,7 @@ dependencies = [
 [[package]]
 name = "leptoskit_codepush"
 version = "0.1.0"
-source = "git+https://github.com/ifiokjr/leptoskit?rev=3c6383a17f786172d696e1e83d8026cba2085fa4#3c6383a17f786172d696e1e83d8026cba2085fa4"
+source = "git+https://github.com/ifiokjr/leptoskit?rev=25b1861ddc729a8f3b70117cd0c48e06659c9697#25b1861ddc729a8f3b70117cd0c48e06659c9697"
 dependencies = [
  "ed25519-dalek 3.0.0",
  "flate2",
@@ -857,7 +857,7 @@ dependencies = [
 [[package]]
 name = "leptoskit_native"
 version = "0.1.0"
-source = "git+https://github.com/ifiokjr/leptoskit?rev=3c6383a17f786172d696e1e83d8026cba2085fa4#3c6383a17f786172d696e1e83d8026cba2085fa4"
+source = "git+https://github.com/ifiokjr/leptoskit?rev=25b1861ddc729a8f3b70117cd0c48e06659c9697#25b1861ddc729a8f3b70117cd0c48e06659c9697"
 dependencies = [
  "leptoskit_yoga",
  "serde",
@@ -866,7 +866,7 @@ dependencies = [
 [[package]]
 name = "leptoskit_wasm"
 version = "0.1.0"
-source = "git+https://github.com/ifiokjr/leptoskit?rev=3c6383a17f786172d696e1e83d8026cba2085fa4#3c6383a17f786172d696e1e83d8026cba2085fa4"
+source = "git+https://github.com/ifiokjr/leptoskit?rev=25b1861ddc729a8f3b70117cd0c48e06659c9697#25b1861ddc729a8f3b70117cd0c48e06659c9697"
 dependencies = [
  "leptoskit_bridge",
  "leptoskit_native",
@@ -880,7 +880,7 @@ dependencies = [
 [[package]]
 name = "leptoskit_yoga"
 version = "0.1.0"
-source = "git+https://github.com/ifiokjr/leptoskit?rev=3c6383a17f786172d696e1e83d8026cba2085fa4#3c6383a17f786172d696e1e83d8026cba2085fa4"
+source = "git+https://github.com/ifiokjr/leptoskit?rev=25b1861ddc729a8f3b70117cd0c48e06659c9697#25b1861ddc729a8f3b70117cd0c48e06659c9697"
 dependencies = [
  "serde",
 ]
@@ -1348,6 +1348,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "serde_spanned"
+version = "1.1.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4e7523beb55eece201a2356bee0bbca0d1ab466c14c07703b2e0ee6d42cb0c2c"
+dependencies = [
+ "serde_core",
+]
+
+[[package]]
 name = "sha1"
 version = "0.10.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1749,6 +1758,7 @@ dependencies = [
  "serde_json",
  "sha2 0.10.9",
  "solana_kit_conformance",
+ "toml",
  "wasmparser 0.240.0",
  "wat",
 ]
@@ -1870,6 +1880,45 @@ dependencies = [
  "tokio",
  "tungstenite",
 ]
+
+[[package]]
+name = "toml"
+version = "1.1.8+spec-1.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "20489e00e4d8741d6be680764cc12e270655e375a20d1011e844a9c3379e678d"
+dependencies = [
+ "indexmap",
+ "serde_core",
+ "serde_spanned",
+ "toml_datetime",
+ "toml_parser",
+ "toml_writer",
+ "winnow",
+]
+
+[[package]]
+name = "toml_datetime"
+version = "1.1.2+spec-1.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2b86d767906c6c42421dcba507eb9d203e779497710a47782a224bb871653053"
+dependencies = [
+ "serde_core",
+]
+
+[[package]]
+name = "toml_parser"
+version = "1.1.5+spec-1.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "baa693a8032d7e1cada7d0041e96126df243179ff061456783ac7f12bda4744c"
+dependencies = [
+ "winnow",
+]
+
+[[package]]
+name = "toml_writer"
+version = "1.1.3+spec-1.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "06bdbd8cfc056b8d2e2e85f29b56a3bdbecb527cef81eb39e3e7b98af4652770"
 
 [[package]]
 name = "try-lock"
@@ -2317,6 +2366,12 @@ name = "windows_x86_64_msvc"
 version = "0.52.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "589f6da84c646204747d1270a2a5661ea66ed1cced2631d546fdfb155959f9ec"
+
+[[package]]
+name = "winnow"
+version = "1.0.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "23b97319f7b8343df12cc98938e5c3eb436064524c8d2b4e30a1d3a36eecdf81"
 
 [[package]]
 name = "wit-bindgen"

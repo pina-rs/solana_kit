@@ -6,6 +6,8 @@ mod artifact_capture;
 mod client_gate;
 mod consumer;
 mod gates;
+#[path = "../../verification/leptoskit-app-journey/wallet/prepare.rs"]
+mod generated_wallet;
 mod package_review;
 mod process;
 mod registry_fixture;
@@ -24,6 +26,9 @@ fn main() -> Result<()> {
 
     match command {
         Command::ArtifactCapture(path) => artifact_capture::run(&path),
+        Command::PrepareWallet(path) => {
+            generated_wallet::run(&path).map_err(anyhow::Error::from_boxed)
+        }
         Command::Style(root) => style::run(root.as_deref()),
         Command::StyleReport(path) => style::check_report(&path),
         Command::Native => runtimes::native(),

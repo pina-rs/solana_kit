@@ -34,7 +34,7 @@ your interpreter alive; `HttpHost` then unloads its interpreter. Drop aborts wor
 shutdown proves that accounting and native resources have terminated.
 
 The current source selects the compatible public LeptosKit pin
-`3c6383a17f786172d696e1e83d8026cba2085fa4` for the required guest Call identity API.
+`25b1861ddc729a8f3b70117cd0c48e06659c9697` for the required guest Call identity API.
 The manifest and workspace lockfiles select this revision.
 Registry publication requires an
 available compatible upstream release. Component publishing remains disabled.
@@ -70,8 +70,8 @@ through native join and awaited driver shutdown. The REST request cap includes i
 complete binary frame, while the existing RPC cap still applies to its JSON body.
 Actual Rust guest/provider journeys, host routing and joined shutdown replay are
 required for each claimed runtime. The selected framework revision is public commit
-`3c6383a17f786172d696e1e83d8026cba2085fa4`, tree
-`be2aa83a1d9412dbf9f20896282a5ceb21327e1e`. A source revision identifies the
+`25b1861ddc729a8f3b70117cd0c48e06659c9697`, tree
+`24d38f72a5dc36939afc316d648e75e23d5bbd71`. A source revision identifies the
 dependency; the individual transport receipts establish execution coverage.
 
 ## Optional wallet controls and Android platform
@@ -102,10 +102,11 @@ Enable `wallet-host` in the native host and `wallet-session` in the interpreted
 guest. Runtime selection `solana-wallet` installs
 `wallet_service::from_app_dirs` and Android's `MwaPlatform`; these own the distinct
 bridge names `solana-wallet-session` and `solana-wallet-platform`. This hybrid
-registration requires the public framework correction in
-[LeptosKit](https://github.com/ifiokjr/leptoskit/pull/181).
-The pinned `3c6383a` dependency rejects the metadata. Do not claim generated support until the
-verified framework successor is selected consistently and the app actually runs.
+registration uses the public framework support in
+[LeptosKit](https://github.com/ifiokjr/leptoskit/pull/181), including
+[Android scheme visibility](https://github.com/ifiokjr/leptoskit/pull/186).
+The SDK and generated application select the same Git revision. Headless tests
+and generated source checks do not establish installed application support.
 
 `GuestMobileWallet::connect_android` retains a real pending bridge lease while it
 creates an association, waits for its correlated URI event, launches the Android

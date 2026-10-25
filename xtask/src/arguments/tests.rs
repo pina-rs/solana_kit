@@ -47,6 +47,7 @@ fn file_commands_require_one_path() {
         "package-review",
         "package-report",
         "registry-fixture",
+        "prepare-wallet",
     ] {
         assert!(parse_command(&[name]).is_err(), "{name}");
         assert!(parse_command(&[name, "fixture"]).is_ok(), "{name}");
@@ -62,4 +63,14 @@ fn file_commands_require_one_path() {
 fn rejects_missing_and_unknown_commands() {
     assert!(parse_command(&[]).is_err());
     assert!(parse_command(&["unknown"]).is_err());
+}
+
+#[test]
+fn preparation_paths_resolve_against_the_caller() {
+    let caller = std::env::current_dir().unwrap();
+    let Command::PrepareWallet(project) = parse_command(&["prepare-wallet", "wallet app"]).unwrap()
+    else {
+        panic!("expected preparation command");
+    };
+    assert_eq!(project, caller.join("wallet app"));
 }

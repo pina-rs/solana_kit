@@ -8,4 +8,4 @@ publish = false
 
 [dependencies]
 anyhow = "=1.0.104"
-leptoskit_wasm = { git = "https://github.com/ifiokjr/leptoskit", rev = "3c6383a17f786172d696e1e83d8026cba2085fa4" }
+leptoskit_wasm = { git = "https://github.com/ifiokjr/leptoskit", rev = "25b1861ddc729a8f3b70117cd0c48e06659c9697" }

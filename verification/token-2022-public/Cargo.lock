@@ -173,7 +173,7 @@ checksum = "09edd9e8b54e49e587e4f6295a7d29c3ea94d469cb40ab8ca70b288248a81db2"
 [[package]]
 name = "leptoskit_bridge"
 version = "0.1.0"
-source = "git+https://github.com/ifiokjr/leptoskit?rev=3c6383a17f786172d696e1e83d8026cba2085fa4#3c6383a17f786172d696e1e83d8026cba2085fa4"
+source = "git+https://github.com/ifiokjr/leptoskit?rev=25b1861ddc729a8f3b70117cd0c48e06659c9697#25b1861ddc729a8f3b70117cd0c48e06659c9697"
 dependencies = [
  "bytes",
  "thiserror",
@@ -182,7 +182,7 @@ dependencies = [
 [[package]]
 name = "leptoskit_native"
 version = "0.1.0"
-source = "git+https://github.com/ifiokjr/leptoskit?rev=3c6383a17f786172d696e1e83d8026cba2085fa4#3c6383a17f786172d696e1e83d8026cba2085fa4"
+source = "git+https://github.com/ifiokjr/leptoskit?rev=25b1861ddc729a8f3b70117cd0c48e06659c9697#25b1861ddc729a8f3b70117cd0c48e06659c9697"
 dependencies = [
  "leptoskit_yoga",
  "serde",
@@ -191,7 +191,7 @@ dependencies = [
 [[package]]
 name = "leptoskit_wasm"
 version = "0.1.0"
-source = "git+https://github.com/ifiokjr/leptoskit?rev=3c6383a17f786172d696e1e83d8026cba2085fa4#3c6383a17f786172d696e1e83d8026cba2085fa4"
+source = "git+https://github.com/ifiokjr/leptoskit?rev=25b1861ddc729a8f3b70117cd0c48e06659c9697#25b1861ddc729a8f3b70117cd0c48e06659c9697"
 dependencies = [
  "leptoskit_bridge",
  "leptoskit_native",
@@ -205,7 +205,7 @@ dependencies = [
 [[package]]
 name = "leptoskit_yoga"
 version = "0.1.0"
-source = "git+https://github.com/ifiokjr/leptoskit?rev=3c6383a17f786172d696e1e83d8026cba2085fa4#3c6383a17f786172d696e1e83d8026cba2085fa4"
+source = "git+https://github.com/ifiokjr/leptoskit?rev=25b1861ddc729a8f3b70117cd0c48e06659c9697#25b1861ddc729a8f3b70117cd0c48e06659c9697"
 dependencies = [
  "serde",
 ]

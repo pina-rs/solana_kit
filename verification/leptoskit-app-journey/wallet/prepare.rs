@@ -1,36 +1,38 @@
 //! Adds wallet source to a real public-generator workspace, retaining its hosts.
+#[path = "framework.rs"]
 mod framework;
 use std::{
     error::Error,
     fs,
     path::{Path, PathBuf},
 };
-type Result<T> = std::result::Result<T, Box<dyn Error>>;
+type Result<T> = std::result::Result<T, Box<dyn Error + Send + Sync>>;
 
 /// Gather and validate every expected generated member before changing files.
 /// A new public template must fail visibly rather than receiving partial hooks.
-fn main() -> Result<()> {
-    let arguments = std::env::args().skip(1).collect::<Vec<_>>();
+pub(crate) fn run(project: &Path) -> Result<()> {
+    let sdk = fs::canonicalize(".")?;
+    framework::verify_sdk(&sdk)?;
+    let project = fs::canonicalize(project)?;
+    let edits = plan(&sdk, &project)?;
+    write(&project, edits)
+}
 
-    if arguments.len() != 4 {
-        return Err("expected SDK_ROOT FRAMEWORK_ROOT FRAMEWORK_HEAD GENERATED_PROJECT".into());
-    }
+/// Hold every edit until the generated guest, hosts and dependency shapes agree.
+/// A changed template must fail before any member receives a partial adaptation.
+fn plan(sdk: &Path, project: &Path) -> Result<Vec<(PathBuf, String)>> {
+    let app = project.join("solana_wallet_app_app");
+    let mut edits = guest(sdk, &app)?;
 
-    let sdk = fs::canonicalize(&arguments[0])?;
-    let framework = fs::canonicalize(&arguments[1])?;
-    let patches = framework::patches(&framework, &arguments[2])?;
-    let project = fs::canonicalize(&arguments[3])?;
-    let app = project.join("solana_wallet_app");
-    let mut edits = guest(&sdk, &app)?;
-
-    for platform in ["macos", "android", "ios"] {
+    for platform in ["macos", "android", "ios", "windows", "linux"] {
         let path = project.join(platform).join("Cargo.toml");
         let contents = fs::read_to_string(&path)?;
         let dependency = format!(
             "solana_kit_leptoskit = {{ path = {:?}, features = [\"wallet-host\"] }}\n",
             sdk.join("crates/solana_kit_leptoskit")
         );
-        edits.push((path, dependency_entry(&contents, &dependency)?));
+        let section = format!("target.'cfg(target_os = {platform:?})'.dependencies");
+        edits.push((path, dependency_entry(&contents, &dependency, &section)?));
     }
 
     let config = project.join("leptoskit.toml");
@@ -42,12 +44,24 @@ fn main() -> Result<()> {
     }
 
     edits.push((config, source));
-    let manifest = project.join("Cargo.toml");
-    let contents = fs::read_to_string(&manifest)?;
-    edits.push((manifest, framework::workspace(&contents, &patches)?));
 
+    for member in [".", "solana_wallet_app_backend", "solana_wallet_app_shared"] {
+        let path = project.join(member).join("Cargo.toml");
+        edits.push((path.clone(), fs::read_to_string(path)?));
+    }
+
+    for (path, contents) in &mut edits {
+        if path.file_name().is_some_and(|name| name == "Cargo.toml") {
+            *contents = framework::pin(contents)?;
+        }
+    }
+
+    Ok(edits)
+}
+
+fn write(project: &Path, edits: Vec<(PathBuf, String)>) -> Result<()> {
     for (path, _) in &edits {
-        destination(&project, path)?;
+        destination(project, path)?;
     }
 
     for (path, contents) in edits {
@@ -142,7 +156,7 @@ fn guest(sdk: &Path, app: &Path) -> Result<Vec<(PathBuf, String)>> {
     let mut contents = fs::read_to_string(&manifest)?;
 
     for dependency in guest_dependencies(sdk) {
-        contents = dependency_entry(&contents, &dependency)?;
+        contents = dependency_entry(&contents, &dependency, "dependencies")?;
     }
 
     edits.push((manifest, contents));
@@ -157,14 +171,14 @@ fn guest_dependencies(sdk: &Path) -> Vec<String> {
         format!("solana_kit_leptoskit = {{ path = {adapter:?}, features = [\"wallet-session\", \"wallet-ui\"] }}\n"),
         format!("solana_kit_core = {{ path = {core:?}, features = [\"crypto\"] }}\n"),
         format!("solana_kit_wallet = {{ path = {wallet:?}, features = [\"mwa\"] }}\n"),
-        "leptoskit_bridge = { version = \"=0.1.0\", git = \"https://github.com/ifiokjr/leptoskit\", rev = \"3c6383a17f786172d696e1e83d8026cba2085fa4\", features = [\"guest\"] }\n".into(),
+        format!("leptoskit_bridge = {{ version = \"=0.1.0\", git = \"https://github.com/ifiokjr/leptoskit\", rev = {:?}, features = [\"guest\"] }}\n", framework::REVISION),
         "futures = { version = \"=0.3.34\", default-features = false, features = [\"executor\", \"std\"] }\n".into(),
         "base64 = \"=0.22.1\"\n".into(),
         "serde_json = \"=1.0.154\"\n".into(),
     ]
 }
 
-fn dependency_entry(contents: &str, dependency: &str) -> Result<String> {
+fn dependency_entry(contents: &str, dependency: &str, section: &str) -> Result<String> {
     if contents.contains(dependency) {
         return Ok(contents.to_owned());
     }
@@ -182,11 +196,11 @@ fn dependency_entry(contents: &str, dependency: &str) -> Result<String> {
         return Err("existing dependency must be reviewed before fixture adaptation".into());
     }
 
-    let marker = "[dependencies]\n";
+    let marker = format!("[{section}]\n");
 
-    if contents.matches(marker).count() != 1 {
+    if contents.matches(&marker).count() != 1 {
         return Err("expected one generated dependency section".into());
     }
 
-    Ok(contents.replacen(marker, &format!("{marker}{dependency}"), 1))
+    Ok(contents.replacen(&marker, &format!("{marker}{dependency}"), 1))
 }
