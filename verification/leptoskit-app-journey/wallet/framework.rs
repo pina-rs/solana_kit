@@ -92,8 +92,8 @@ fn same_source(dependency: &toml::Table) -> bool {
 pub(super) fn pin(contents: &str) -> Result<String> {
     let manifest: toml::Table = contents.parse()?;
 
-    if manifest.contains_key("patch") {
-        return Err("generated consumer must not use Cargo source patches".into());
+    if manifest.contains_key("patch") || manifest.contains_key("replace") {
+        return Err("generated consumer must not use Cargo source overrides".into());
     }
 
     let mut output = String::new();
@@ -179,6 +179,16 @@ mod tests {
             "patch = { crates-io = { example = { path = \"other\" } } }\n",
         ] {
             assert!(pin(source).is_err(), "accepted an alternate patch table");
+        }
+    }
+
+    #[test]
+    fn rejects_legacy_replace_tables() {
+        for source in [
+            "[replace]\n\"leptoskit_bridge:0.1.0\" = { path = \"other\" }\n",
+            "\"replace\" = { \"leptoskit_bridge:0.1.0\" = { path = \"other\" } }\n",
+        ] {
+            assert!(pin(source).is_err(), "accepted a Cargo replacement");
         }
     }
 

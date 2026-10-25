@@ -34,7 +34,12 @@ pub(crate) fn parse(arguments: &[OsString]) -> Result<Command> {
 
     match command {
         "artifact-capture" => Ok(Command::ArtifactCapture(required_path(paths, command)?)),
-        "prepare-wallet" => Ok(Command::PrepareWallet(required_path(paths, command)?)),
+        "prepare-wallet" => {
+            let project = required_path(paths, command)?;
+            Ok(Command::PrepareWallet(
+                std::env::current_dir()?.join(project),
+            ))
+        }
         "style" => Ok(Command::Style(path(paths, command, false)?)),
         "style-report" => Ok(Command::StyleReport(required_path(paths, command)?)),
         "imports" => Ok(Command::Imports(required_path(paths, command)?)),
