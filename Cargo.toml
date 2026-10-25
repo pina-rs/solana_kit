@@ -52,6 +52,7 @@ license = "Unlicense"
 rust-version = "1.89"
 
 [workspace.dependencies]
+solana_kit_account_compression = { version = "0.1.0", path = "crates/solana_kit_account_compression" }
 solana_kit_browser = { version = "0.1.0", path = "crates/solana_kit_browser" }
 solana_kit_client = { version = "0.1.0", path = "crates/solana_kit_client" }
 solana_kit_core = { version = "0.1.0", path = "crates/solana_kit_core", default-features = false }

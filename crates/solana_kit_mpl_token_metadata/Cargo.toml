@@ -6,7 +6,7 @@ edition.workspace = true
 license = "Unlicense AND MIT"
 publish = false
 readme = "README.md"
-repository = "https://github.com/pina-rs/solana_kit"
+repository = "https://github.com/pina-rs/solana_kit/tree/main/crates/solana_kit_mpl_token_metadata"
 rust-version.workspace = true
 description = "Portable MPL Token Metadata client for off-chain applications"
 
