@@ -258,11 +258,6 @@ async fn mixed_local_and_wallet_pipeline_preserves_backend_causes() {
     ));
 }
 
-struct Noop;
-impl Wake for Noop {
-    fn wake(self: Arc<Self>) {}
-}
-
 #[wasm_bindgen_test]
 fn dropped_unpolled_and_pending_operations_reset_authority() {
     let harness = Harness::new();
@@ -280,8 +275,7 @@ fn dropped_unpolled_and_pending_operations_reset_authority() {
         .connect(discovery.wallets().remove(0), false)
         .unwrap();
     controller.dispose();
-    let waker = Waker::from(Arc::new(Noop));
-    let mut context = Context::from_waker(&waker);
+    let mut context = Context::from_waker(Waker::noop());
     let mut pending = pending;
     assert!(matches!(
         Pin::as_mut(&mut pending).poll(&mut context),
@@ -428,8 +422,7 @@ async fn panel_uses_actual_metadata_and_cancel_invalidates_pending_signing() {
     assert_eq!(snapshot.accounts.len(), 1);
     let signer = panel.controller().signer().unwrap();
     harness.runtime("mode", &"pending".into());
-    let waker = Waker::from(Arc::new(Noop));
-    let mut context = Context::from_waker(&waker);
+    let mut context = Context::from_waker(Waker::noop());
     let mut operation = MessageSigner::<WalletFailure>::sign_message(&signer, b"awaiting approval");
     assert!(operation.as_mut().poll(&mut context).is_pending());
 
