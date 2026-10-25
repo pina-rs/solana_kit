@@ -5,13 +5,23 @@ use solana_kit_client::{TransportFailureKind, rest};
 use solana_kit_leptoskit::GuestRest;
 
 pub async fn run() {
-    let denied = GuestRest::new(vec![((), "denied".into())], 1024).expect("denied service");
+    record("rest-denial-pending");
+    crate::application::publish();
+    let denied = GuestRest::new(vec![((), "rest-denied".into())], 1024).expect("denied service");
     let error = denied
         .exchange(request(4))
         .await
         .expect_err("actual host grant");
+    record(match error.kind {
+        TransportFailureKind::Denied => "rest-permission-denied",
+        TransportFailureKind::Unavailable => "rest-method-unavailable",
+        _ => "rest-unexpected-error",
+    });
+
+    crate::application::publish();
     assert_eq!(error.kind, TransportFailureKind::Denied);
     record("rest-denied");
+
     let adapter = GuestRest::new(vec![((), "rest".into())], 1024).expect("installed REST");
     let reply = adapter
         .exchange(request(4))

@@ -289,8 +289,10 @@ fn session_peer(socket: &mut Peer) -> Result<()> {
         matches!(socket.read()?, Message::Close(_)),
         "Session close handshake"
     );
-    socket.flush()?;
-    Ok(())
+    match socket.flush() {
+        Ok(()) | Err(tungstenite::Error::ConnectionClosed) => Ok(()),
+        Err(error) => Err(error.into()),
+    }
 }
 
 /// Fragmented and corrupt peers preserve the independent expected request.

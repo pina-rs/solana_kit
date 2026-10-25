@@ -61,15 +61,20 @@ impl Application {
         }
     }
 
-    pub(super) fn install_rest(&mut self, service: NativeRest<()>) -> Result<PluginId, HostError> {
+    pub(super) fn install_rest(
+        &mut self,
+        name: &str,
+        service: NativeRest<()>,
+        granted: bool,
+    ) -> Result<PluginId, HostError> {
         match self {
             Self::Borrowed { host, driver } => driver.install_rest(
                 host.as_mut().ok_or(HostError::Unloaded)?,
-                "rest",
+                name,
                 service,
-                true,
+                granted,
             ),
-            Self::Owned(owner) => owner.install_rest("rest", service, true),
+            Self::Owned(owner) => owner.install_rest(name, service, granted),
         }
     }
 

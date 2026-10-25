@@ -2,7 +2,7 @@
 use crate::application::Application as HttpHost;
 use crate::fixture::{self, Fixture};
 use anyhow::{Context, Result, ensure};
-use leptoskit_bridge::{Bridge, Bytes, Event, Limits, PluginId};
+use leptoskit_bridge::{Bridge, Bytes, Error, Event, Limits, MethodId, PluginId};
 use leptoskit_wasm::WasmHost;
 use solana_kit_leptoskit::HostLimits;
 use std::time::Duration;
@@ -38,16 +38,16 @@ async fn message(receiver: &mut tokio::sync::mpsc::Receiver<()>) -> Result<()> {
         .context("fixture sender closed")
 }
 
-async fn progress(app: &mut HttpHost) -> Result<()> {
+async fn progress(app: &mut HttpHost, marker: &str) -> Result<()> {
     let routed = app.drain()?;
     ensure!(
         routed.requests.is_empty() && routed.cancelled.is_empty(),
         "unrouted plugin work"
     );
-    ensure!(
-        tokio::time::timeout(Duration::from_secs(4), app.next_completion()).await??,
-        "missing actual native completion"
-    );
+    let completion = tokio::time::timeout(Duration::from_secs(4), app.next_completion()).await?;
+    let completed = completion
+        .with_context(|| format!("guest completion before {marker}: {:?}", trace(app)))?;
+    ensure!(completed, "missing actual native completion");
     Ok(())
 }
 
@@ -85,12 +85,60 @@ async fn setup(wasm: &[u8], borrowed: bool) -> Result<(HttpHost, Vec<Fixture>)> 
     app.host_mut()?.plugins().register("application", [])?;
     app.host_mut()?.plugins().register("unrelated", [])?;
     let mut rest = fixture::create("rest").await?;
-    app.install_rest(solana_kit_native::NativeRest::new(
-        vec![((), rest.service.take().context("REST service")?)],
-        1024,
-    )?)?;
+    app.install_rest(
+        "rest",
+        solana_kit_native::NativeRest::new(
+            vec![((), rest.service.take().context("REST service")?)],
+            1024,
+        )?,
+        true,
+    )?;
     fixtures.push(rest);
+    app.install_rest(
+        "rest-denied",
+        solana_kit_native::NativeRest::new(
+            vec![(
+                (),
+                solana_kit_native::NativeHttp::new("http://127.0.0.1:1/", Default::default())?,
+            )],
+            1024,
+        )?,
+        false,
+    )?;
+    denial_controls(&mut app)?;
     Ok((app, fixtures))
+}
+
+/// Registered-but-denied and undefined methods remain distinct before any native work.
+fn denial_controls(app: &mut HttpHost) -> Result<()> {
+    let bridge = app.host_mut()?.plugins();
+    let rpc = bridge.resolve("denied").context("RPC denial capability")?;
+    let rest = bridge
+        .resolve("rest-denied")
+        .context("REST denial capability")?;
+
+    for (plugin, method, expected) in [
+        (rpc, MethodId(0), Error::PermissionDenied),
+        (rpc, MethodId(1), Error::Unavailable),
+        (rest, MethodId(1), Error::PermissionDenied),
+    ] {
+        let actual = bridge.submit(plugin, method, Bytes::new());
+        ensure!(
+            actual == Err(expected),
+            "capability {plugin:?}/{method:?}: {actual:?}"
+        );
+        println!("capability {plugin:?}/{method:?}: {expected:?}; no native job");
+    }
+
+    ensure!(
+        bridge.next_request().is_none(),
+        "denied method queued native work"
+    );
+    ensure!(
+        app.retained_jobs() == 0,
+        "denied method retained a native job"
+    );
+    Ok(())
 }
 
 pub(super) async fn run(wasm: &[u8]) -> Result<()> {
@@ -122,7 +170,7 @@ async fn instances(wasm: &[u8], borrowed: bool) -> Result<()> {
             "rest-wire",
             "rest-bounded",
         ] {
-            progress(&mut app).await?;
+            progress(&mut app, marker).await?;
             let actual = trace(&mut app)?;
             ensure!(
                 actual.contains(&marker.to_owned()),

@@ -169,6 +169,11 @@ async fn read_request<S: AsyncRead + Unpin>(stream: &mut S, mode: &str) -> Resul
         "host-only auth"
     );
 
+    ensure!(
+        header.contains("content-type: application/json\r\n"),
+        "exact request media type"
+    );
+
     let length: usize = header
         .lines()
         .find_map(|line| line.strip_prefix("content-length: "))
