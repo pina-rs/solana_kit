@@ -13,6 +13,7 @@ use solana_kit_native::{
 };
 use std::{
     future::{pending, poll_fn},
+    io::ErrorKind,
     num::NonZeroU64,
     pin::Pin,
     sync::{
@@ -127,8 +128,20 @@ async fn rpc_peer(
             "HTTP/1.1 200 OK\r\nContent-Length: {}\r\nConnection: close\r\n\r\n",
             body.len()
         );
-        socket.write_all(headers.as_bytes()).await.unwrap();
-        socket.write_all(&body).await.unwrap();
+        let response = [headers.as_bytes(), &body].concat();
+
+        // A winning subscription cancels its outstanding HTTP read.
+        if let Err(error) = socket.write_all(&response).await {
+            assert!(
+                matches!(
+                    error.kind(),
+                    ErrorKind::BrokenPipe
+                        | ErrorKind::ConnectionReset
+                        | ErrorKind::ConnectionAborted
+                ),
+                "unexpected RPC reply write failure: {error}"
+            );
+        }
     }
 }
 fn notifications() -> Vec<(&'static str, serde_json::Value)> {

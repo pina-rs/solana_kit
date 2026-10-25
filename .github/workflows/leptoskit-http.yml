@@ -34,7 +34,7 @@ jobs:
           cargo +1.99.1 build --locked --manifest-path verification/leptoskit-http/Cargo.toml -p \
             solana_kit_leptoskit_http_guest --target wasm32-unknown-unknown \
             --message-format=json > "$RUNNER_TEMP/leptoskit-http-guest.json"
-          component="$(jq -se '
+          component="$(jq -sre '
             [.[] | select(.reason == "compiler-artifact" and
               .target.name == "solana_kit_leptoskit_http_guest" and
               (.manifest_path | endswith("/leptoskit-http/guest/Cargo.toml")) and

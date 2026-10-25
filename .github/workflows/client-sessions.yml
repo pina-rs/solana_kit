@@ -44,7 +44,7 @@ jobs:
             cargo +1.99.1 build --locked --manifest-path "$manifest" --target "$target" \
               --bin solana_kit_confirmation_factory_verification --message-format=json \
               > "$RUNNER_TEMP/factories.json"
-            component="$(jq -se '
+            component="$(jq -sre '
               [.[] | select(.reason == "compiler-artifact" and
                 .target.name == "solana_kit_confirmation_factory_verification" and
                 (.target.kind | index("bin")) != null and
@@ -56,7 +56,7 @@ jobs:
           done
           cargo +1.99.1 build --locked --manifest-path "$manifest" --target wasm32-wasip2 \
             --bin wasi_reactor --message-format=json > "$RUNNER_TEMP/reactor.json"
-          component="$(jq -se '
+          component="$(jq -sre '
             [.[] | select(.reason == "compiler-artifact" and .target.name == "wasi_reactor" and
               (.target.kind | index("bin")) != null and
               (.manifest_path | endswith("/confirmation-factories/Cargo.toml"))) |
@@ -80,7 +80,7 @@ jobs:
             --target wasm32-wasip2 -- -D warnings
           cargo +1.99.1 build --locked --manifest-path "$manifest" --bin guest \
             --target wasm32-wasip2 --message-format=json > "$RUNNER_TEMP/text-socket.json"
-          component="$(jq -se '
+          component="$(jq -sre '
             [.[] | select(.reason == "compiler-artifact" and .target.name == "guest" and
               (.target.kind | index("bin")) != null and
               (.manifest_path | endswith("/wasi-text-sockets/Cargo.toml"))) |

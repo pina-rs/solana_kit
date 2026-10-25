@@ -64,7 +64,7 @@ jobs:
 
           cargo +1.99.1 build --locked --manifest-path verification/wasi-sockets/Cargo.toml --bin \
             guest --target wasm32-wasip2 --message-format=json > "$RUNNER_TEMP/sockets.json"
-          component="$(jq -se '
+          component="$(jq -sre '
             [.[] | select(.reason == "compiler-artifact" and .target.name == "guest" and
               (.target.kind | index("bin")) != null and
               (.manifest_path | endswith("/wasi-sockets/Cargo.toml"))) | .filenames[] |

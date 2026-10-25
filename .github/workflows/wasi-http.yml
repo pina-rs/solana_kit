@@ -71,7 +71,7 @@ jobs:
           cargo +1.99.1 build --manifest-path verification/wasi-http-prototype/Cargo.toml --bin \
             solana_kit_wasi_http_prototype --target wasm32-wasip2 --locked \
             --message-format=json > "$RUNNER_TEMP/http-component.json"
-          component="$(jq -se '
+          component="$(jq -sre '
             [.[] | select(.reason == "compiler-artifact" and
               .target.name == "solana_kit_wasi_http_prototype" and
               (.manifest_path | endswith("/wasi-http-prototype/Cargo.toml")) and
@@ -102,7 +102,7 @@ jobs:
               --bin embedded_guest --bin cli_guest --target wasm32-wasip2 --locked \
               --message-format=json > "$RUNNER_TEMP/embedded-components.json"
             for guest in embedded_guest cli_guest; do
-              component="$(jq -se --arg name "$guest" '
+              component="$(jq -sre --arg name "$guest" '
                 [.[] | select(.reason == "compiler-artifact" and .target.name == $name and
                   (.manifest_path | endswith("/wasi-http-prototype/Cargo.toml")) and
                   (.target.kind | index("bin")) != null) | .filenames[] |
