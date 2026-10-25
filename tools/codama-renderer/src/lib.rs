@@ -24,6 +24,8 @@ mod generated;
 #[cfg(feature = "verification")]
 mod generated_style;
 #[cfg(feature = "verification")]
+mod program_contracts;
+#[cfg(feature = "verification")]
 mod program_preparation;
 
 mod generic;
@@ -123,6 +125,7 @@ pub fn run_private_command(arguments: &[String]) -> Result<(), Box<dyn std::erro
 #[cfg(feature = "verification")]
 fn run_foundation_audit(arguments: &[String]) -> Result<(), Box<dyn std::error::Error>> {
     match arguments.get(1).map(String::as_str) {
+        Some("program-contracts") => program_contracts::run(),
         Some("inputs") => inputs::audit(),
         Some("alt-config-receipt") => alt_config_receipt::run(),
         Some("alt-config") => alt_config::run(),
