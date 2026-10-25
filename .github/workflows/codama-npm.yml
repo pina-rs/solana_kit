@@ -1,0 +1,107 @@
+name: Codama NPM renderer
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  renderer:
+    runs-on: "ubuntu-24.04"
+    timeout-minutes: 40
+
+    env:
+      CARGO_HTTP_USER_AGENT: solana-kit-verification
+      npm_config_user_agent: solana-kit-verification
+      GIT_HTTP_USER_AGENT: solana-kit-verification
+    steps:
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "24"
+
+      - name: Prepare pinned compiler and dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          rustup toolchain install 1.99.1 --profile minimal --component clippy
+          rustup toolchain install 1.89.0 --profile minimal --component clippy
+          rustup target add --toolchain 1.99.1 wasm32-wasip1
+
+          cargo +1.99.1 fetch --locked --manifest-path tools/codama-renderer/Cargo.toml
+          cargo +1.89.0 fetch --manifest-path verification/codama-consumer/Cargo.toml
+          cd packages/codama-renderers-rust-solana-kit
+          npm ci --ignore-scripts --no-audit --no-fund
+
+      - name: Build accepted Monostyle source and prepare pinned formatter
+        shell: bash
+        env:
+          MONOSTYLE_REVISION: 8da21273398c2a9c56f2f9ba99effadd217633ce
+          MONOSTYLE_TREE: e3f47513e4d0e4bc95899642b85d03df421ad2b5
+          TYPESCRIPT_SHA256: 9c52244de2c25a33addc7ddacff4443234a2dc4b5d3f34131262d1e0df35007c
+        run: |
+          set -euo pipefail
+          source_dir="$RUNNER_TEMP/monostyle-source"
+          tools_dir="$RUNNER_TEMP/renderer-tools"
+          plugin="$RUNNER_TEMP/typescript-0.96.1.wasm"
+
+          git init "$source_dir"
+          git -C "$source_dir" remote add origin https://github.com/ifiokjr/monostyle.git
+          git -C "$source_dir" fetch --depth=1 origin "$MONOSTYLE_REVISION"
+          git -C "$source_dir" checkout --detach FETCH_HEAD
+          test "$(git -C "$source_dir" rev-parse HEAD)" = "$MONOSTYLE_REVISION"
+          test "$(git -C "$source_dir" rev-parse 'HEAD^{tree}')" = "$MONOSTYLE_TREE"
+
+          cargo +1.99.1 build --locked --release --manifest-path "$source_dir/Cargo.toml" \
+            --package monostyle --bin monostyle --target-dir "$RUNNER_TEMP/monostyle-target"
+          mkdir -p "$tools_dir/bin"
+          install -m u=rwx,go=rx "$RUNNER_TEMP/monostyle-target/release/monostyle" "$tools_dir/bin/monostyle"
+          cargo +1.99.1 install dprint --version 0.60.1 --locked --root "$tools_dir"
+
+          curl --fail --silent --show-error --user-agent solana-kit-verification \
+            https://plugins.dprint.dev/typescript-0.96.1.wasm --output "$plugin"
+          printf '%s  %s\n' "$TYPESCRIPT_SHA256" "$plugin" | sha256sum --check --strict
+
+          {
+            echo "MONOSTYLE=$tools_dir/bin/monostyle"
+            echo "MONOSTYLE_CONFIG=$GITHUB_WORKSPACE/monostyle.toml"
+            echo "DPRINT=$tools_dir/bin/dprint"
+            echo "DPRINT_TYPESCRIPT_PLUGIN=$plugin"
+            echo "DPRINT_CACHE_DIR=$RUNNER_TEMP/renderer-dprint-cache"
+          } >> "$GITHUB_ENV"
+
+      - name: Build and test real bundled engine
+        working-directory: packages/codama-renderers-rust-solana-kit
+        shell: bash
+        run: |
+          set -euo pipefail
+          toolchain_bin="$(dirname "$(rustup which --toolchain 1.99.1 rustc)")"
+          export CARGO="$toolchain_bin/cargo"
+          export RUSTC="$toolchain_bin/rustc"
+          export RUSTDOC="$toolchain_bin/rustdoc"
+
+          npm run build
+          npm run typecheck
+          npm test
+          npm run format:dist
+          npm run check:package
+          npm pack --ignore-scripts --offline
+          npm run test:packed
+
+      - name: Execute packed generated client on the minimum Rust version
+        working-directory: packages/codama-renderers-rust-solana-kit
+        shell: bash
+        run: |
+          set -euo pipefail
+          toolchain_bin="$(dirname "$(rustup which --toolchain 1.89.0 rustc)")"
+          export CARGO="$toolchain_bin/cargo"
+          export RUSTC="$toolchain_bin/rustc"
+          export RUSTDOC="$toolchain_bin/rustdoc"
+          npm run test:packed

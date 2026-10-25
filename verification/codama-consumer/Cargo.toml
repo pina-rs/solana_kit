@@ -1,0 +1,27 @@
+[package]
+name = "packed_counter_client"
+version = "0.0.0"
+edition = "2024"
+publish = false
+
+[workspace]
+members = ["guest"]
+exclude = ["host"]
+
+[features]
+default = ["pda"]
+pda = []
+
+[dependencies]
+solana_kit_core = { path = "../../crates/solana_kit_core", default-features = false, features = ["crypto"] }
+
+[target.'cfg(all(target_arch = "wasm32", target_os = "unknown"))'.dev-dependencies]
+wasm-bindgen-test = "=0.3.78"
+
+[[bin]]
+name = "client"
+path = "src/main.rs"
+
+[profile.release]
+overflow-checks = true
+debug-assertions = true

@@ -1,0 +1,162 @@
+//! Native private gate: every generated corpus file is explicitly scored.
+mod corpus;
+use crate::{generic, schema::Error};
+use serde_json::Value;
+use std::{
+    fs,
+    path::{Path, PathBuf},
+    process::Command,
+};
+const TOOL_VERSION: &str = "monostyle 0.3.27";
+const FLOOR: f64 = 90.0;
+
+/// Fail closed on tool identity, missing inventory and either quality floor.
+pub(crate) fn run() -> Result<(), Error> {
+    let version = Command::new("monostyle").arg("--version").output()?;
+
+    require_version(version.status.success(), &version.stdout)?;
+
+    let root = Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("../..")
+        .canonicalize()?;
+    let config = root.join("monostyle.toml");
+    let destination = root.join(format!("target/generated-style-{}", std::process::id()));
+    fs::create_dir_all(&destination)?;
+    let outputs = generate_outputs(&destination)?;
+
+    if !config.is_file() || outputs.is_empty() {
+        return Err("generated style configuration or outputs missing".into());
+    }
+
+    let result = Command::new("monostyle")
+        .arg("--config")
+        .arg(config)
+        .args(["check", "--include-generated", "--format", "json"])
+        .args(&outputs)
+        .output()?;
+    fs::write(destination.join("scores.json"), &result.stdout)?;
+    verify(&result.stdout, &outputs)?;
+
+    if !result.status.success() {
+        return Err(format!(
+            "generated style rejected outputs: {}",
+            String::from_utf8_lossy(&result.stderr)
+        )
+        .into());
+    }
+
+    println!(
+        "scored all {} generated sources with {TOOL_VERSION}",
+        outputs.len()
+    );
+    Ok(())
+}
+
+/// Keep the simple generator corpus and every complete program in one explicit output list.
+fn generate_outputs(destination: &Path) -> Result<Vec<PathBuf>, Error> {
+    let mut outputs = Vec::new();
+
+    for (name, input, policy) in corpus::inputs()? {
+        let output = destination.join(format!("{name}.rs"));
+        generic::replace(&input, &policy, &output)?;
+        outputs.push(output);
+    }
+
+    type Generator = fn(&Path) -> Result<(), Error>;
+    let complete: [(&str, Generator); 7] = [
+        (
+            "compression",
+            crate::program_preparation::generate_compression,
+        ),
+        (
+            "subscriptions",
+            crate::program_preparation::generate_subscriptions,
+        ),
+        ("squads", crate::squads::generate),
+        ("bubblegum", crate::bubblegum::generate),
+        ("mpl-core", crate::mpl_core::generate),
+        ("token-metadata", crate::token_metadata::generate),
+        ("attestation", crate::attestation::generate),
+    ];
+
+    for (name, generate) in complete {
+        let output = destination.join(format!("{name}-complete.rs"));
+        generate(&output)?;
+        outputs.push(output);
+    }
+
+    Ok(outputs)
+}
+
+/// Tool failure or a different parser stops before creating generated output.
+fn require_version(success: bool, output: &[u8]) -> Result<(), Error> {
+    if !success || std::str::from_utf8(output)?.trim() != TOOL_VERSION {
+        return Err(format!("generated style requires {TOOL_VERSION}").into());
+    }
+
+    Ok(())
+}
+
+/// Inventory membership and both finite floors are checked for each explicit output.
+fn verify(bytes: &[u8], outputs: &[std::path::PathBuf]) -> Result<(), Error> {
+    let report: Value = serde_json::from_slice(bytes)?;
+    let files = report["files"]
+        .as_array()
+        .ok_or("style file inventory missing")?;
+
+    if files.len() != outputs.len() {
+        return Err("generated style output inventory incomplete".into());
+    }
+
+    for output in outputs {
+        let path = output.to_str().ok_or("non-UTF8 output path")?;
+        let file = files
+            .iter()
+            .find(|file| file["path"] == path)
+            .ok_or("generated source unscored")?;
+        let readability = score(file, "readability")?;
+        let complexity = score(file, "complexity")?;
+        println!(
+            "{}: readability {readability}, complexity {complexity}",
+            output
+                .file_name()
+                .ok_or("output name missing")?
+                .to_string_lossy()
+        );
+    }
+
+    Ok(())
+}
+
+fn score(file: &Value, metric: &str) -> Result<f64, Error> {
+    let value = file[metric]["value"]
+        .as_f64()
+        .ok_or("style score missing")?;
+
+    if !value.is_finite() || value < FLOOR {
+        return Err(format!("generated source {metric} {value} below {FLOOR}").into());
+    }
+
+    Ok(value)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::require_version;
+
+    #[test]
+    fn accepts_only_the_successful_reviewed_parser_identity() {
+        assert!(require_version(true, b"monostyle 0.3.27\n").is_ok());
+        assert!(require_version(false, b"monostyle 0.3.27").is_err());
+
+        for output in [
+            b"monostyle 0.3.26".as_slice(),
+            b"monostyle 0.3.28",
+            b"monostyle 0.3.27 extra",
+            b"",
+            b"\xff",
+        ] {
+            assert!(require_version(true, output).is_err());
+        }
+    }
+}

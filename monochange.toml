@@ -132,3 +132,17 @@ publish = { enabled = false }
 path = "crates/solana_kit_anchor"
 type = "cargo"
 publish = { enabled = false }
+
+[package.codama_renderers_rust_solana_kit]
+path = "packages/codama-renderers-rust-solana-kit"
+type = "npm"
+publish = { enabled = false }
+
+[ecosystems.npm]
+enabled = true
+
+[ecosystems.npm.publish]
+enabled = false
+
+[ecosystems.npm.auto_discover]
+enabled = false

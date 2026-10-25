@@ -304,3 +304,17 @@ across both directions, entropy, clocks, nonce policy, persistence and platform
 handover. Secret trait and consuming ownership checks remain native compilation
 proofs. All 179 canonical declaration rows remain partial. Installed wallet and
 generated desktop/mobile application journeys remain separate requirements.
+
+## Codama renderer ownership
+
+`tools/codama-renderer` owns the production Rust lowering and emission engine.
+Its default library and WASI binary expose a bounded file-map API; private native
+proof commands and oracle fixtures require the `verification` feature. The NPM
+package `codama-renderers-rust-solana-kit` hosts the same built engine and exposes
+Codama visitors and standard render maps. It resolves the complete map before
+writing only named generated modules, preserving unrelated caller files.
+
+The generator is development tooling. Generated clients use Kit-owned types and
+have no dependency on the Node host, WASI generator or private proof packages.
+Both generator outputs and clients are exclusively off-chain application code.
+Actual bundle, downstream, license and quality verification remains required.

@@ -12,6 +12,9 @@ jobs:
   private-generator:
     runs-on: "ubuntu-24.04"
     timeout-minutes: 10
+    env:
+      SOLANA_KIT_CODEGEN_CONSUMER_TARGET: ${{ runner.temp }}/generated-codegen-consumers
+      RUST_TEST_THREADS: "1"
 
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -26,27 +29,29 @@ jobs:
       - name: Check private generator formatting and lints
         shell: bash
         run: |
-          cargo +1.99.1 fmt --manifest-path verification/codegen-design/Cargo.toml --check
+          cargo +1.99.1 fmt --manifest-path tools/codama-renderer/Cargo.toml --check
 
-          cargo +1.99.1 clippy --locked --manifest-path verification/codegen-design/Cargo.toml \
+          cargo +1.99.1 clippy --locked --manifest-path tools/codama-renderer/Cargo.toml \
+            --features verification \
             --all-targets -- -D warnings
 
       - name: Install pinned generated-output style tool
         shell: bash
         run: |
-          cargo +1.99.1 install monostyle --locked \
-            --git https://github.com/ifiokjr/monostyle \
-            --rev 8da21273398c2a9c56f2f9ba99effadd217633ce
+          cargo +1.99.1 install --locked --git https://github.com/ifiokjr/monostyle.git \
+            --rev 8da21273398c2a9c56f2f9ba99effadd217633ce monostyle
 
       - name: Score every generated corpus source
         shell: bash
         run: |
-          cargo +1.99.1 run --locked --manifest-path verification/codegen-design/Cargo.toml -- \
+          cargo +1.99.1 run --locked --manifest-path tools/codama-renderer/Cargo.toml \
+            --features verification -- \
             generated-style
 
       - name: Run private generator regression tests
         shell: bash
-        run: cargo +1.99.1 test --locked --manifest-path verification/codegen-design/Cargo.toml
+        run: cargo +1.99.1 test --locked --manifest-path tools/codama-renderer/Cargo.toml \
+          --features verification
 
       - name: "Execute all Token-2022 oracle rows"
         shell: bash
@@ -54,7 +59,7 @@ jobs:
           RUSTUP_TOOLCHAIN: 1.99.1
           RUSTUP_AUTO_INSTALL: "0"
           CARGO_NET_OFFLINE: "true"
-          CARGO_TARGET_DIR: ${{ github.workspace }}/verification/codegen-design/target
+          CARGO_TARGET_DIR: ${{ github.workspace }}/tools/codama-renderer/target
 
         run: |
           set -euo pipefail
@@ -75,7 +80,8 @@ jobs:
 
           proof="$RUNNER_TEMP/token-2022-proof"
           "$CARGO" run --offline --locked \
-            --manifest-path verification/codegen-design/Cargo.toml -- "token-2022-proof" "$proof"
+            --manifest-path tools/codama-renderer/Cargo.toml \
+              --features verification -- "token-2022-proof" "$proof"
 
           "$CARGO" generate-lockfile --offline --manifest-path "$proof/Cargo.toml"
           "$CARGO" run --offline --locked --manifest-path "$proof/Cargo.toml"
@@ -98,35 +104,41 @@ jobs:
       - name: Regenerate twice and reject committed output drift
         shell: bash
         run: |
-          cargo +1.99.1 run --locked --manifest-path verification/codegen-design/Cargo.toml -- \
+          cargo +1.99.1 run --locked --manifest-path tools/codama-renderer/Cargo.toml \
+            --features verification -- \
             generate
 
-          git diff --exit-code -- verification/codegen-design/src/generated.rs
+          git diff --exit-code -- tools/codama-renderer/src/generated.rs
 
-          cargo +1.99.1 run --locked --manifest-path verification/codegen-design/Cargo.toml -- \
+          cargo +1.99.1 run --locked --manifest-path tools/codama-renderer/Cargo.toml \
+            --features verification -- \
             generate
 
-          git diff --exit-code -- verification/codegen-design/src/generated.rs
+          git diff --exit-code -- tools/codama-renderer/src/generated.rs
 
       - name: Execute independent literal byte proof
         shell: bash
         run: |
-          cargo +1.99.1 run --locked --manifest-path verification/codegen-design/Cargo.toml -- proof
+          cargo +1.99.1 run --locked --manifest-path tools/codama-renderer/Cargo.toml \
+            --features verification -- proof
 
       - name: Regenerate public System data and reject drift
         shell: bash
         run: |
-          cargo +1.99.1 run --locked --manifest-path verification/codegen-design/Cargo.toml -- \
+          cargo +1.99.1 run --locked --manifest-path tools/codama-renderer/Cargo.toml \
+            --features verification -- \
             system
 
           git diff --exit-code -- crates/solana_kit_system/src/generated.rs
 
-          cargo +1.99.1 run --locked --manifest-path verification/codegen-design/Cargo.toml -- \
+          cargo +1.99.1 run --locked --manifest-path tools/codama-renderer/Cargo.toml \
+            --features verification -- \
             system-receipt
 
           git diff --exit-code -- docs/parity/system-data.tsv
 
-          cargo +1.99.1 run --locked --manifest-path verification/codegen-design/Cargo.toml -- \
+          cargo +1.99.1 run --locked --manifest-path tools/codama-renderer/Cargo.toml \
+            --features verification -- \
             system
 
           git diff --exit-code -- crates/solana_kit_system/src/generated.rs
@@ -134,22 +146,27 @@ jobs:
       - name: Regenerate System client artifacts twice and reject drift
         shell: bash
         run: |
-          cargo +1.99.1 run --locked --manifest-path verification/codegen-design/Cargo.toml -- \
+          cargo +1.99.1 run --locked --manifest-path tools/codama-renderer/Cargo.toml \
+            --features verification -- \
             system-builders
 
-          cargo +1.99.1 run --locked --manifest-path verification/codegen-design/Cargo.toml -- \
+          cargo +1.99.1 run --locked --manifest-path tools/codama-renderer/Cargo.toml \
+            --features verification -- \
             system-errors
 
-          cargo +1.99.1 run --locked --manifest-path verification/codegen-design/Cargo.toml -- \
+          cargo +1.99.1 run --locked --manifest-path tools/codama-renderer/Cargo.toml \
+            --features verification -- \
             system-client-receipt
 
           git diff --exit-code -- crates/solana_kit_system/src/builders.rs \
             crates/solana_kit_system/src/errors.rs docs/parity/system-client.tsv
 
-          cargo +1.99.1 run --locked --manifest-path verification/codegen-design/Cargo.toml -- \
+          cargo +1.99.1 run --locked --manifest-path tools/codama-renderer/Cargo.toml \
+            --features verification -- \
             system-builders
 
-          cargo +1.99.1 run --locked --manifest-path verification/codegen-design/Cargo.toml -- \
+          cargo +1.99.1 run --locked --manifest-path tools/codama-renderer/Cargo.toml \
+            --features verification -- \
             system-errors
 
           git diff --exit-code -- crates/solana_kit_system/src/builders.rs \
@@ -175,16 +192,19 @@ jobs:
       - name: Regenerate Compute Budget and reject drift
         shell: bash
         run: |
-          cargo +1.99.1 run --locked --manifest-path verification/codegen-design/Cargo.toml -- \
+          cargo +1.99.1 run --locked --manifest-path tools/codama-renderer/Cargo.toml \
+            --features verification -- \
             compute-budget
 
-          cargo +1.99.1 run --locked --manifest-path verification/codegen-design/Cargo.toml -- \
+          cargo +1.99.1 run --locked --manifest-path tools/codama-renderer/Cargo.toml \
+            --features verification -- \
             compute-budget-receipt
 
           git diff --exit-code -- crates/solana_kit_compute_budget/src/generated.rs \
             docs/parity/compute-budget.tsv
 
-          cargo +1.99.1 run --locked --manifest-path verification/codegen-design/Cargo.toml -- \
+          cargo +1.99.1 run --locked --manifest-path tools/codama-renderer/Cargo.toml \
+            --features verification -- \
             compute-budget
 
           git diff --exit-code -- crates/solana_kit_compute_budget/src/generated.rs
