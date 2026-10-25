@@ -15,6 +15,8 @@ const GOVERNOR: &str =
     r#"{"initial":0.15,"terminal":0.015,"taper":0.15,"foundation":0.05,"foundationTerm":7}"#;
 const RATE: &str =
     r#"{"total":0.149,"validator":0.148,"foundation":0.001,"epoch":18446744073709551615}"#;
+const GOVERNOR_VALUES: (f64, f64, f64, f64, f64) = (0.15, 0.015, 0.15, 0.05, 7.0);
+const RATE_VALUES: (f64, f64, f64, u64) = (0.149, 0.148, 0.001, u64::MAX);
 
 /// Stable appended economics groups retain all preceding case lines.
 pub(crate) fn cases() -> [crate::CaseResult; 3] {
@@ -138,6 +140,11 @@ fn fees_and_votes() -> Result<(), &'static str> {
         "fees/vote partitions changed",
     )?;
 
+    vote_partitions(&vote)
+}
+
+/// Both partitions retain every exact stake, commission and epoch-credit field.
+fn vote_partitions(vote: &VoteAccountsValue) -> Result<(), &'static str> {
     for value in [&vote.current[0], &vote.delinquent[0]] {
         require(
             value.vote_pubkey == address()
@@ -152,11 +159,19 @@ fn fees_and_votes() -> Result<(), &'static str> {
             "vote values changed",
         )?;
     }
+
     Ok(())
 }
 
 /// Executes governor, current rates, nullable rewards and minimum delegation.
 pub fn inflation_and_rewards() -> Result<(), &'static str> {
+    inflation_values()?;
+    reward_values()?;
+    minimum_delegation()
+}
+
+/// Governor parameters and current rates are independent floating-point facts.
+fn inflation_values() -> Result<(), &'static str> {
     let governor = call(
         InflationGovernor(Some(CommitmentConfig {
             commitment: Some(Commitment::Confirmed),
@@ -174,11 +189,14 @@ pub fn inflation_and_rewards() -> Result<(), &'static str> {
             governor.taper,
             governor.foundation,
             governor.foundation_term,
-        ) == (0.15, 0.015, 0.15, 0.05, 7.0)
-            && (rate.total, rate.validator, rate.foundation, rate.epoch)
-                == (0.149, 0.148, 0.001, u64::MAX),
+        ) == GOVERNOR_VALUES
+            && (rate.total, rate.validator, rate.foundation, rate.epoch) == RATE_VALUES,
         "inflation values changed",
-    )?;
+    )
+}
+
+/// Nullable reward positions retain full-width integers and optional commissions.
+fn reward_values() -> Result<(), &'static str> {
     let rewards = call(
         InflationReward(
             vec![address(); 2],
@@ -214,7 +232,11 @@ pub fn inflation_and_rewards() -> Result<(), &'static str> {
             && value.commission.is_none()
             && value.commission_bps == Some(u16::MAX),
         "reward values changed",
-    )?;
+    )
+}
+
+/// Minimum delegation carries the same exact context/value contract as account reads.
+fn minimum_delegation() -> Result<(), &'static str> {
     let delegation = call(
         StakeMinimumDelegation(Some(ReadConfig {
             commitment: Some(Commitment::Processed),
@@ -285,6 +307,12 @@ fn account_failures() -> Result<(), &'static str> {
 }
 
 fn inflation_failures() -> Result<(), &'static str> {
+    governor_failures()?;
+    rate_and_reward_failures()
+}
+
+/// Every governor field independently rejects each malformed numeric representation.
+fn governor_failures() -> Result<(), &'static str> {
     for (field, original) in [
         ("initial", "0.15"),
         ("terminal", "0.015"),
@@ -304,6 +332,11 @@ fn inflation_failures() -> Result<(), &'static str> {
         }
     }
 
+    Ok(())
+}
+
+/// Rates, rewards and delegation retain their own required numeric and nullable fields.
+fn rate_and_reward_failures() -> Result<(), &'static str> {
     for bad in [
         RATE.replace(MAX, "18446744073709551616"),
         RATE.replace("0.149", "null"),
@@ -372,6 +405,13 @@ fn config_boundaries() -> Result<(), &'static str> {
         "[]",
     )
     .map_err(|_| "empty fees filter failed")?;
+
+    fee_filter_limits()?;
+    nullable_commission()
+}
+
+/// Fee filters accept the exact maximum and reject the immediately larger request.
+fn fee_filter_limits() -> Result<(), &'static str> {
     let keys = vec![format!(r#""{KEY}""#); 128].join(",");
     call(
         RecentPrioritizationFees(Some(vec![address(); 128])),
@@ -391,7 +431,11 @@ fn config_boundaries() -> Result<(), &'static str> {
             Err(Error::Json(_))
         ),
         "129 fee filters accepted",
-    )?;
+    )
+}
+
+/// Zero commission remains distinct from a null optional basis-point field.
+fn nullable_commission() -> Result<(), &'static str> {
     let legacy = reward().replace(
         "\"commission\":null,\"commissionBps\":65535",
         "\"commission\":0,\"commissionBps\":null",

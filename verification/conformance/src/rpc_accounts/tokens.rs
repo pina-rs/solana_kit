@@ -5,6 +5,13 @@ use solana_kit_client::methods::tokens::*;
 pub(super) const AMOUNT: &str = r#"{"amount":"18446744073709551615","decimals":255,"uiAmount":null,"uiAmountString":"scaled independently"}"#;
 
 pub(super) fn quantities() -> Result<(), &'static str> {
+    exact_balance()?;
+    independent_display()?;
+    selectors()
+}
+
+/// The exact integer amount and nullable display fields are independent contracts.
+fn exact_balance() -> Result<(), &'static str> {
     let params = format!(r#"["{KEY}"]"#);
     let got = call(
         TokenAccountBalance(address(), None),
@@ -20,7 +27,11 @@ pub(super) fn quantities() -> Result<(), &'static str> {
             && got.value.ui_amount.is_none()
             && got.value.ui_amount_string == "scaled independently",
         "exact token balance changed",
-    )?;
+    )
+}
+
+/// Tiny display numbers cannot change the raw integer balance or largest-account list.
+fn independent_display() -> Result<(), &'static str> {
     let display = AMOUNT.replace("null", "1e-280");
     let got = call(
         TokenSupply(address(), Some(CommitmentConfig::default())),
@@ -55,8 +66,7 @@ pub(super) fn quantities() -> Result<(), &'static str> {
             && got.value[0].address == Address::from_bytes([1; 32])
             && got.value[0].balance.amount.0 == u64::MAX,
         "largest token values changed",
-    )?;
-    selectors()
+    )
 }
 
 fn selectors() -> Result<(), &'static str> {

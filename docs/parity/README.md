@@ -52,7 +52,7 @@ native role-merge artifact is allowlisted as partial; adding real implementation
 evidence requires an intentional reviewable change to the mapping/checker.
 
 The dedicated parity CI checks the actual pinned source, runs syntax and negative
-fixtures, repeats the check deterministically, and enforces monostyle 0.3.26 with
+fixtures, repeats the check deterministically, and enforces monostyle 0.3.27 with
 generated source included. The native pilot artifact is retained execution
 history, not a fresh execution by this extractor and not cross-runtime evidence.
 

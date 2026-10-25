@@ -124,6 +124,12 @@ fn representations() -> Result<(), &'static str> {
 }
 
 fn slices_and_opaque() -> Result<(), &'static str> {
+    account_slices()?;
+    opaque_representations()
+}
+
+/// Offset boundaries apply to decoded bytes without altering original metadata.
+fn account_slices() -> Result<(), &'static str> {
     const PAST_END: u64 = 9;
 
     for (offset, length, wire, bytes) in [
@@ -143,6 +149,11 @@ fn slices_and_opaque() -> Result<(), &'static str> {
         ).map_err(|_| "account slice failed")?;
         snapshot(got.value, bytes, Some(slice))?;
     }
+    Ok(())
+}
+
+/// Parsed JSON stays exact and compressed payloads remain explicitly compressed.
+fn opaque_representations() -> Result<(), &'static str> {
     let parsed = call(
         AccountInfoWithConfig(address(), Some(config(AccountEncoding::JsonParsed))),
         "getAccountInfo",
@@ -183,6 +194,12 @@ fn slices_and_opaque() -> Result<(), &'static str> {
 }
 
 fn multiple_and_program() -> Result<(), &'static str> {
+    multiple_accounts()?;
+    program_accounts()
+}
+
+/// Missing entries retain their requested identities rather than losing positions.
+fn multiple_accounts() -> Result<(), &'static str> {
     let other = Address::from_bytes([1; 32]);
     let got = call(
         MultipleAccounts(vec![address(), other], None),
@@ -204,7 +221,12 @@ fn multiple_and_program() -> Result<(), &'static str> {
     require(
         matches!(entries.next(), Some(MaybeAccount::Missing(key)) if key == other),
         "multiple null identity changed",
-    )?;
+    )
+}
+
+/// Explicit filters, context and default encoding retain the program response shape.
+fn program_accounts() -> Result<(), &'static str> {
+    let other = Address::from_bytes([1; 32]);
     let filters = vec![
         Filter::DataSize(3),
         Filter::Memcmp(

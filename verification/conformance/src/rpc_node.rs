@@ -58,6 +58,11 @@ pub fn scalar_metadata() -> Result<(), &'static str> {
         "node hash/leader/health mismatch",
     )?;
 
+    identity_version_snapshot()
+}
+
+/// Identity, software version and optional snapshot fields are preserved together.
+fn identity_version_snapshot() -> Result<(), &'static str> {
     let identity = call(
         Identity,
         "getIdentity",
@@ -134,15 +139,7 @@ fn epochs_and_cluster() -> Result<(), &'static str> {
     )
     .map_err(|_| "cluster call failed")?;
     require(
-        epoch.absolute_slot == u64::MAX
-            && epoch.transaction_count.is_none()
-            && epoch.block_height == BLOCK_HEIGHT
-            && epoch.epoch == EPOCH
-            && epoch.slot_index == SLOT_INDEX
-            && epoch.slots_in_epoch == EPOCH_SLOTS
-            && schedule.warmup
-            && schedule.first_normal_epoch == FIRST_NORMAL_EPOCH
-            && schedule.slots_per_epoch == NORMAL_EPOCH_SLOTS
+        epoch_values(&epoch, &schedule)
             && nodes.len() == 1
             && nodes[0].pubkey == Address::from_bytes([0; 32])
             && nodes[0].rpc == Presence::Present(None)
@@ -150,6 +147,19 @@ fn epochs_and_cluster() -> Result<(), &'static str> {
             && nodes[0].shred_version == Presence::Present(Some(u16::MAX)),
         "epoch/cluster fields changed",
     )
+}
+
+/// Epoch position and schedule are checked before the separate cluster projection.
+fn epoch_values(epoch: &EpochInfo, schedule: &EpochSchedule) -> bool {
+    epoch.absolute_slot == u64::MAX
+        && epoch.transaction_count.is_none()
+        && epoch.block_height == BLOCK_HEIGHT
+        && epoch.epoch == EPOCH
+        && epoch.slot_index == SLOT_INDEX
+        && epoch.slots_in_epoch == EPOCH_SLOTS
+        && schedule.warmup
+        && schedule.first_normal_epoch == FIRST_NORMAL_EPOCH
+        && schedule.slots_per_epoch == NORMAL_EPOCH_SLOTS
 }
 
 fn production_and_leaders() -> Result<(), &'static str> {
@@ -219,6 +229,12 @@ pub fn certificate_and_failures() -> Result<(), &'static str> {
             "malformed certificate accepted",
         )?;
     }
+
+    framing_failures()
+}
+
+/// Required nullable fields, correlation and duplicate keys remain protocol errors.
+fn framing_failures() -> Result<(), &'static str> {
     require(
         matches!(
             call(

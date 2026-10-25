@@ -58,7 +58,7 @@ Reference project tests and generated apps were not run. System Program crate
 metadata was inspected with `cargo info`; its selected target graph and behavior
 remain to be tested.
 
-Monostyle 0.3.26 is pinned in CI. `monostyle.toml` sets both per-file floors to
+Monostyle 0.3.27's reviewed parser revision is pinned in CI. `monostyle.toml` sets both per-file floors to
 90, and CI also enforces 90 for both repository categories. Generated code is
 included; no scoring rules are disabled. The initial Rust checker was simplified
 into package parsing, state validation, and reference comparison so it meets the

@@ -3,6 +3,8 @@
 
 extern crate alloc;
 
+#[cfg(feature = "crypto")]
+use solana_kit_core::crypto::Keypair;
 use solana_kit_core::transaction::{
     DurableNonce, Error, Lifetime, Message, NonceAdvance, Transaction, Version,
 };
@@ -128,6 +130,26 @@ fn wire_pair(version: Version, payer: Address) -> Result<(), &'static str> {
 pub fn negatives() -> Result<(), &'static str> {
     let nonce = nonce();
     let valid = nonce.advance().instruction();
+
+    for wrong in invalid_advances(&valid) {
+        assert_eq!(NonceAdvance::recognize(&wrong), None);
+        assert_eq!(
+            Message::compile(
+                Version::V0,
+                Address::from_bytes([1; 32]),
+                Lifetime::DurableNonce(nonce),
+                &[wrong],
+                &[]
+            ),
+            Err(Error::InvalidNonceAdvance)
+        );
+    }
+
+    hash_and_blockhash_control(nonce)
+}
+
+/// Mutations independently cover program, data, account count, identities and roles.
+fn invalid_advances(valid: &Instruction) -> alloc::vec::Vec<Instruction> {
     let mut invalid = alloc::vec![];
     let mut wrong = valid.clone();
     wrong.program_address = Address::from_bytes([9; 32]);
@@ -168,20 +190,11 @@ pub fn negatives() -> Result<(), &'static str> {
         invalid.push(wrong);
     }
 
-    for wrong in invalid {
-        assert_eq!(NonceAdvance::recognize(&wrong), None);
-        assert_eq!(
-            Message::compile(
-                Version::V0,
-                Address::from_bytes([1; 32]),
-                Lifetime::DurableNonce(nonce),
-                &[wrong],
-                &[]
-            ),
-            Err(Error::InvalidNonceAdvance)
-        );
-    }
+    invalid
+}
 
+/// Textual hash rejection must not relax the separate ordinary-blockhash control.
+fn hash_and_blockhash_control(nonce: DurableNonce) -> Result<(), &'static str> {
     for text in [
         "",
         "123",
@@ -216,77 +229,106 @@ pub fn negatives() -> Result<(), &'static str> {
 /// Returns a descriptive failure when signing or verification fails.
 #[cfg(feature = "crypto")]
 pub fn signatures() -> Result<(), &'static str> {
-    use solana_kit_core::crypto::Keypair;
     let payer = Keypair::from_seed(&[1; 32]);
     let authority = Keypair::from_seed(&[3; 32]);
 
     for version in [Version::Legacy, Version::V0, Version::V1] {
-        let nonce = DurableNonce::new(
-            Hash::from_bytes([7; 32]),
-            Address::from_bytes([2; 32]),
-            authority.address(),
-        );
-        let message = Message::compile(
-            version,
-            payer.address(),
-            Lifetime::DurableNonce(nonce),
-            &nonce.prepare_instructions(&[]),
-            &[],
-        )
-        .map_err(|_| "compile")?;
-
-        let signed = Transaction::new(message)
-            .sign(&payer)
-            .map_err(|_| "payer")?
-            .sign(&authority)
-            .map_err(|_| "authority")?;
-        signed.verify().map_err(|_| "verify")?;
-
-        let bytes = signed.encode(true).map_err(|_| "encode")?;
-        let received = Transaction::decode(&bytes).map_err(|_| "decode")?;
-        received.verify().map_err(|_| "received verify")?;
-        assert_eq!(received.encode(true).map_err(|_| "reencode")?, bytes);
-
-        let changed = DurableNonce::new(
-            Hash::from_bytes([8; 32]),
-            nonce.advance().nonce_account,
-            authority.address(),
-        );
-        let message = Message::compile(
-            version,
-            payer.address(),
-            Lifetime::DurableNonce(changed),
-            &changed.prepare_instructions(&[]),
-            &[],
-        )
-        .map_err(|_| "changed compile")?;
-        let fresh = Transaction::new(message);
-        assert_eq!(fresh.verify(), Err(Error::MissingSignature));
-
-        assert_eq!(
-            fresh.with_signature(
-                payer.address(),
-                signed.message().bytes(),
-                signed.signatures()[0].ok_or("missing")?
-            ),
-            Err(Error::ChangedMessage)
-        );
-
-        let mut corrupt = bytes;
-        let index = if version == Version::V1 {
-            corrupt.len() - 1
-        } else {
-            1
-        };
-        corrupt[index] ^= 1;
-        assert_eq!(
-            Transaction::decode(&corrupt)
-                .map_err(|_| "tampered decode")?
-                .verify(),
-            Err(Error::InvalidSignature)
-        );
+        signed_version(version, &payer, &authority)?;
     }
 
+    Ok(())
+}
+
+/// Every wire version signs the same nonce ownership contract before tamper checks.
+#[cfg(feature = "crypto")]
+fn signed_version(
+    version: Version,
+    payer: &Keypair,
+    authority: &Keypair,
+) -> Result<(), &'static str> {
+    let nonce = DurableNonce::new(
+        Hash::from_bytes([7; 32]),
+        Address::from_bytes([2; 32]),
+        authority.address(),
+    );
+    let message = Message::compile(
+        version,
+        payer.address(),
+        Lifetime::DurableNonce(nonce),
+        &nonce.prepare_instructions(&[]),
+        &[],
+    )
+    .map_err(|_| "compile")?;
+
+    let signed = Transaction::new(message)
+        .sign(payer)
+        .map_err(|_| "payer")?
+        .sign(authority)
+        .map_err(|_| "authority")?;
+    signed.verify().map_err(|_| "verify")?;
+
+    let bytes = signed.encode(true).map_err(|_| "encode")?;
+    let received = Transaction::decode(&bytes).map_err(|_| "decode")?;
+    received.verify().map_err(|_| "received verify")?;
+    assert_eq!(received.encode(true).map_err(|_| "reencode")?, bytes);
+
+    reject_stale_nonce(version, payer, authority, nonce, &signed)?;
+    reject_tamper(version, bytes)
+}
+
+/// Replacing nonce bytes invalidates retained signature provenance even before crypto.
+#[cfg(feature = "crypto")]
+fn reject_stale_nonce(
+    version: Version,
+    payer: &Keypair,
+    authority: &Keypair,
+    nonce: DurableNonce,
+    signed: &Transaction,
+) -> Result<(), &'static str> {
+    let changed = DurableNonce::new(
+        Hash::from_bytes([8; 32]),
+        nonce.advance().nonce_account,
+        authority.address(),
+    );
+    let message = Message::compile(
+        version,
+        payer.address(),
+        Lifetime::DurableNonce(changed),
+        &changed.prepare_instructions(&[]),
+        &[],
+    )
+    .map_err(|_| "changed compile")?;
+    let fresh = Transaction::new(message);
+    assert_eq!(fresh.verify(), Err(Error::MissingSignature));
+
+    assert_eq!(
+        fresh.with_signature(
+            payer.address(),
+            signed.message().bytes(),
+            signed.signatures()[0].ok_or("missing")?
+        ),
+        Err(Error::ChangedMessage)
+    );
+
+    Ok(())
+}
+
+/// Version-specific signed-message corruption must fail cryptographic validation.
+#[cfg(feature = "crypto")]
+fn reject_tamper(version: Version, bytes: alloc::vec::Vec<u8>) -> Result<(), &'static str> {
+    let mut corrupt = bytes;
+    let index = if version == Version::V1 {
+        corrupt.len() - 1
+    } else {
+        1
+    };
+    corrupt[index] ^= 1;
+    assert_eq!(
+        Transaction::decode(&corrupt)
+            .map_err(|_| "tampered decode")?
+            .verify(),
+        Err(Error::InvalidSignature)
+    );
     Ok(())
 }
 

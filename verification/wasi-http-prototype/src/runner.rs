@@ -56,6 +56,7 @@ fn main() {
     }
 }
 
+/// Joins the real peer before evaluating the component's observable outcome.
 fn run(host: &str, component: &Path, mode: &'static str) {
     let listener = TcpListener::bind("127.0.0.1:0").expect("bind");
     let address = listener.local_addr().expect("address");
@@ -81,17 +82,7 @@ fn run(host: &str, component: &Path, mode: &'static str) {
         .stderr(Stdio::piped())
         .spawn()
         .expect("host");
-    let deadline = Instant::now() + PROCESS_LIMIT;
-
-    while child.try_wait().expect("wait").is_none() {
-        if Instant::now() >= deadline {
-            child.kill().expect("kill");
-            child.wait().expect("reap");
-            panic!("component deadline exceeded");
-        }
-
-        thread::sleep(TICK);
-    }
+    wait_for_component(&mut child);
 
     let output = child.wait_with_output().expect("output");
     let stdout = String::from_utf8(output.stdout).expect("UTF8");
@@ -116,6 +107,21 @@ fn run(host: &str, component: &Path, mode: &'static str) {
         "PASS {mode}; peer asserted request/auth/body/lifetime; {}",
         stdout.trim().replace('\n', "; ")
     );
+}
+
+/// Deadline failure kills and reaps the child rather than detaching the runtime.
+fn wait_for_component(child: &mut std::process::Child) {
+    let deadline = Instant::now() + PROCESS_LIMIT;
+
+    while child.try_wait().expect("wait").is_none() {
+        if Instant::now() >= deadline {
+            child.kill().expect("kill");
+            child.wait().expect("reap");
+            panic!("component deadline exceeded");
+        }
+
+        thread::sleep(TICK);
+    }
 }
 
 fn serve(listener: TcpListener, mode: &str) {

@@ -66,7 +66,7 @@ Neither result replaces the limits of the private experiments above.
 
 ## Workspace and release gates
 
-The [style gate](style.md) requires Monostyle 0.3.26 and both scores at least 90
+The [style gate](style.md) requires Monostyle 0.3.27 and both scores at least 90
 for the repository and every scored file, including generated code. Git supplies
 tracked and nonignored new files explicitly. Every authored Rust path must appear
 in the scored report, even under a cache-like directory. Unsupported languages

@@ -11,6 +11,25 @@ use super::{
 pub(super) fn outer<'a>(
     decoded: &DecodedRpcTransaction<'a>,
 ) -> Result<Vec<TracedInstruction<'a>>, Error> {
+    let instructions = outer_instructions(decoded)?;
+
+    Ok(instructions
+        .into_iter()
+        .enumerate()
+        .map(|(index, instruction)| TracedInstruction {
+            instruction,
+            trace: InstructionTrace::Outer {
+                index,
+                stack_height: outer_depth(decoded, index),
+            },
+        })
+        .collect())
+}
+
+/// Resolves each wire view against the same validated account table.
+fn outer_instructions<'a>(
+    decoded: &DecodedRpcTransaction<'a>,
+) -> Result<Vec<ResolvedInstruction<'a>>, Error> {
     let instructions = match &decoded.source.transaction {
         TransactionView::Binary(_) => decoded
             .transaction
@@ -50,17 +69,7 @@ pub(super) fn outer<'a>(
         TransactionView::Accounts(_) => return Err(Error::AccountsOnly),
     };
 
-    Ok(instructions
-        .into_iter()
-        .enumerate()
-        .map(|(index, instruction)| TracedInstruction {
-            instruction,
-            trace: InstructionTrace::Outer {
-                index,
-                stack_height: outer_depth(decoded, index),
-            },
-        })
-        .collect())
+    Ok(instructions)
 }
 
 fn outer_depth(decoded: &DecodedRpcTransaction<'_>, index: usize) -> Presence<Option<u32>> {
@@ -159,6 +168,7 @@ pub(super) fn inner<'a>(
     )
 }
 
+/// Rejects duplicate or out-of-range groups before preserving their trace positions.
 pub(super) fn inner_groups<'a>(
     meta: Option<&'a rpc::TransactionMeta>,
     accounts: &[AccountMeta],
@@ -225,6 +235,7 @@ fn inner_instruction<'a>(
     Ok((instruction, height))
 }
 
+/// Interleaves each outer instruction with its recorded inner group in wire order.
 pub(super) fn walk<'a>(
     decoded: &DecodedRpcTransaction<'a>,
 ) -> Result<Vec<TracedInstruction<'a>>, Error> {

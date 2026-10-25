@@ -36,6 +36,7 @@ pub(super) struct Fixture {
     pub task: JoinHandle<Result<()>>,
 }
 
+/// Owns both the configured service and its peer so cancellation remains observable.
 pub(super) async fn create(mode: &'static str) -> Result<Fixture> {
     let listener = TcpListener::bind("127.0.0.1:0").await?;
     let port = listener.local_addr()?.port();

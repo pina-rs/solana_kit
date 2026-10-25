@@ -14,60 +14,13 @@ impl Endpoint {
     /// # Errors
     /// Rejects credentials, fragments, whitespace, invalid ports and authorities.
     pub fn parse(text: &str) -> Result<Self, &'static str> {
-        if !text.is_ascii()
-            || text.bytes().any(|byte| byte <= 32 || byte == 127)
-            || text.contains(['#', '@', '\\'])
-        {
-            return Err("invalid endpoint characters");
-        }
-        let (secure, rest) = if let Some(rest) = text.strip_prefix("https://") {
-            (true, rest)
-        } else if let Some(rest) = text.strip_prefix("http://") {
-            (false, rest)
-        } else {
-            return Err("explicit http or https scheme required");
-        };
-
+        validate_characters(text)?;
+        let (secure, rest) = scheme(text)?;
         let split = rest.find(['/', '?']).unwrap_or(rest.len());
         let authority = &rest[..split];
         let suffix = &rest[split..];
-        let (host, port) = if authority.starts_with('[') {
-            let end = authority.find(']').ok_or("invalid IPv6 authority")?;
-            authority[1..end]
-                .parse::<std::net::Ipv6Addr>()
-                .map_err(|_| "invalid IPv6")?;
-            let port = authority[end + 1..].strip_prefix(':');
+        validate_authority(authority)?;
 
-            if end + 1 != authority.len() && port.is_none() {
-                return Err("invalid IPv6 port separator");
-            }
-
-            (&authority[..=end], port)
-        } else {
-            let (host, port) = authority
-                .split_once(':')
-                .map_or((authority, None), |(host, port)| (host, Some(port)));
-
-            if !host
-                .bytes()
-                .all(|byte| byte.is_ascii_alphanumeric() || matches!(byte, b'.' | b'-'))
-            {
-                return Err("invalid DNS or IPv4 host");
-            }
-            (host, port)
-        };
-
-        if host.is_empty() {
-            return Err("empty host");
-        }
-
-        if let Some(port) = port
-            && (port.is_empty()
-                || !port.bytes().all(|byte| byte.is_ascii_digit())
-                || port.parse::<u16>().is_err())
-        {
-            return Err("invalid port");
-        }
         let path = if suffix.is_empty() {
             "/".into()
         } else if suffix.starts_with('?') {
@@ -82,6 +35,86 @@ impl Endpoint {
             path,
         })
     }
+}
+
+/// Rejects URL syntax that could smuggle credentials or alter HTTP framing.
+fn validate_characters(text: &str) -> Result<(), &'static str> {
+    if !text.is_ascii()
+        || text.bytes().any(|byte| byte <= b' ' || byte == b'\x7f')
+        || text.contains(['#', '@', '\\'])
+    {
+        return Err("invalid endpoint characters");
+    }
+
+    Ok(())
+}
+
+/// Requires an explicit transport instead of guessing a scheme from the host.
+fn scheme(text: &str) -> Result<(bool, &str), &'static str> {
+    if let Some(rest) = text.strip_prefix("https://") {
+        return Ok((true, rest));
+    }
+
+    text.strip_prefix("http://")
+        .map(|rest| (false, rest))
+        .ok_or("explicit http or https scheme required")
+}
+
+/// Bracketed IPv6 and conservative DNS names share the same explicit port rules.
+fn validate_authority(authority: &str) -> Result<(), &'static str> {
+    let (host, port) = if authority.starts_with('[') {
+        ipv6_authority(authority)?
+    } else {
+        let (host, port) = authority
+            .split_once(':')
+            .map_or((authority, None), |(host, port)| (host, Some(port)));
+
+        if !host
+            .bytes()
+            .all(|byte| byte.is_ascii_alphanumeric() || matches!(byte, b'.' | b'-'))
+        {
+            return Err("invalid DNS or IPv4 host");
+        }
+
+        (host, port)
+    };
+
+    if host.is_empty() {
+        return Err("empty host");
+    }
+
+    if let Some(port) = port {
+        validate_port(port)?;
+    }
+
+    Ok(())
+}
+
+/// Separates IPv6 colons from the optional port separator without losing brackets.
+fn ipv6_authority(authority: &str) -> Result<(&str, Option<&str>), &'static str> {
+    let end = authority.find(']').ok_or("invalid IPv6 authority")?;
+    authority[1..end]
+        .parse::<std::net::Ipv6Addr>()
+        .map_err(|_| "invalid IPv6")?;
+    let port = authority[end + 1..].strip_prefix(':');
+
+    if end + 1 != authority.len() && port.is_none() {
+        return Err("invalid IPv6 port separator");
+    }
+
+    Ok((&authority[..=end], port))
+}
+
+/// Rejects signs and empty ports even when the integer parser would accept them.
+fn validate_port(port: &str) -> Result<(), &'static str> {
+    if port.is_empty()
+        || !port.bytes().all(|byte| byte.is_ascii_digit())
+        || port.parse::<u16>().is_err()
+    {
+        return Err("invalid port");
+    }
+
+    Ok(())
 }
 
 #[cfg(test)]

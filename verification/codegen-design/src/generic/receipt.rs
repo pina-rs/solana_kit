@@ -2,6 +2,8 @@
 use crate::schema::Error;
 use std::{fs, path::Path};
 
+const COMPUTE_BUDGET_DECLARATIONS: usize = 84;
+
 pub(super) fn run() -> Result<(), Error> {
     let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
     let input = fs::read_to_string(root.join("docs/parity/capabilities.tsv"))?;
@@ -24,7 +26,7 @@ pub(super) fn run() -> Result<(), Error> {
         count += 1;
     }
 
-    if count != 84 {
+    if count != COMPUTE_BUDGET_DECLARATIONS {
         return Err("expected exact84 Compute Budget IDs".into());
     }
 
@@ -32,6 +34,7 @@ pub(super) fn run() -> Result<(), Error> {
     Ok(())
 }
 
+/// Exact data and list-helper evidence remain bounded rather than claiming renderer parity.
 fn disposition(symbol: &str) -> (&'static str, &'static str, &'static str) {
     if symbol.ends_with(".discriminator") || symbol.ends_with("InstructionData.new") {
         return (

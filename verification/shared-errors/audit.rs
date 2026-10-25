@@ -79,6 +79,7 @@ fn verify_sources(rows: &[&str], source: &Path) {
     }
 }
 
+/// Foundational error owners precede per-module mappings with narrower contracts.
 fn contract(path: &str) -> (&'static str, &'static str, &'static str) {
     if path.ends_with("codes.dart") || path.ends_with("messages.dart") {
         return (
@@ -112,6 +113,11 @@ fn contract(path: &str) -> (&'static str, &'static str, &'static str) {
         );
     }
 
+    module_contract(path)
+}
+
+/// Each remaining defining file has an explicit adjudication; unknown owners fail.
+fn module_contract(path: &str) -> (&'static str, &'static str, &'static str) {
     let file = path.rsplit('/').next().expect("defining file");
 
     let (api, residual) = match file {

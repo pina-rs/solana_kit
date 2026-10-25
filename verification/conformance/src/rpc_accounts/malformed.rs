@@ -9,6 +9,12 @@ pub(super) fn boundaries() -> Result<(), &'static str> {
 }
 
 fn accounts_and_cardinality() -> Result<(), &'static str> {
+    malformed_account_fields()?;
+    cardinality()
+}
+
+/// Invalid wire tags and metadata fail before account snapshots can be constructed.
+fn malformed_account_fields() -> Result<(), &'static str> {
     for data in [
         r#"["AB==","base64"]"#,
         r#"["AQI=","base64"]"#,
@@ -44,6 +50,11 @@ fn accounts_and_cardinality() -> Result<(), &'static str> {
         )?;
     }
 
+    Ok(())
+}
+
+/// Multiple-account positions and keyed program identities must retain cardinality.
+fn cardinality() -> Result<(), &'static str> {
     for value in ["[]", "[null,null]"] {
         require(
             call(
@@ -131,6 +142,12 @@ fn token_fields() -> Result<(), &'static str> {
 }
 
 fn request_boundaries() -> Result<(), &'static str> {
+    account_request_limits()?;
+    slice_and_filter_limits()
+}
+
+/// Exact maximum counts succeed while oversized counts and filters fail locally.
+fn account_request_limits() -> Result<(), &'static str> {
     require(
         Memcmp::new(0, vec![0; 128], FilterEncoding::Base58).is_ok()
             && Memcmp::new(0, vec![0; 129], FilterEncoding::Base64).is_err()
@@ -159,6 +176,11 @@ fn request_boundaries() -> Result<(), &'static str> {
         ),
         "101 accounts accepted",
     )?;
+    Ok(())
+}
+
+/// Slice incompatibilities and per-program filter limits remain distinct rejections.
+fn slice_and_filter_limits() -> Result<(), &'static str> {
     for config in [
         AccountConfig {
             encoding: Some(AccountEncoding::JsonParsed),

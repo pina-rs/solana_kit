@@ -96,6 +96,7 @@ impl<C: Encoder<T>, T> Encoder<[T]> for ItemSentinel<'_, C> {
 }
 
 impl<C: Decoder<T>, T> Decoder<Vec<T>> for ItemSentinel<'_, C> {
+    /// Checks the terminator before decoding and requires progress to bound traversal.
     fn read(&self, reader: &mut Reader<'_>) -> Result<Vec<T>, Error> {
         let mut values = Vec::new();
 

@@ -97,6 +97,12 @@ pub fn boundaries() -> Result<(), &'static str> {
         return Err("opaque error data changed");
     }
 
+    opaque_limits(limits)?;
+    typed_failures()
+}
+
+/// Opaque values still consume the same bounded body and nesting budgets.
+fn opaque_limits(limits: Limits) -> Result<(), &'static str> {
     if !matches!(
         execute(
             OPAQUE,
@@ -113,6 +119,11 @@ pub fn boundaries() -> Result<(), &'static str> {
         return Err("opaque body/depth budget ignored");
     }
 
+    Ok(())
+}
+
+/// Exact JSON preservation never bypasses duplicate-key or typed schema checks.
+fn typed_failures() -> Result<(), &'static str> {
     let duplicate =
         r#"{"jsonrpc":"2.0","id":1,"error":{"code":-1,"message":"bad","data":{"a":1,"\u0061":2}}}"#;
     let schema = r#"{"jsonrpc":"2.0","id":1,"result":{"context":{"slot":9},"value":1e400}}"#;
@@ -152,6 +163,7 @@ impl Future for LocalExchange {
         if let Some(request) = this.request.take() {
             this.held.borrow_mut().push(request.body);
             cx.waker().wake_by_ref();
+
             return Poll::Pending;
         }
 
@@ -162,6 +174,7 @@ impl Future for LocalExchange {
         } else {
             BODY.replace("\"id\":1", "\"id\":2")
         };
+
         Poll::Ready(Ok(Reply {
             status: 200,
             body: body.into_bytes(),

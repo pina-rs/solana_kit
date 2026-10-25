@@ -3,16 +3,14 @@ mod corpus;
 use crate::{generic, schema::Error};
 use serde_json::Value;
 use std::{fs, path::Path, process::Command};
-const TOOL_VERSION: &str = "monostyle 0.3.26";
+const TOOL_VERSION: &str = "monostyle 0.3.27";
 const FLOOR: f64 = 90.0;
 
 /// Fail closed on tool identity, missing inventory and either quality floor.
 pub(crate) fn run() -> Result<(), Error> {
     let version = Command::new("monostyle").arg("--version").output()?;
 
-    if !version.status.success() || String::from_utf8(version.stdout)?.trim() != TOOL_VERSION {
-        return Err("generated style requires monostyle 0.3.26".into());
-    }
+    require_version(version.status.success(), &version.stdout)?;
 
     let root = Path::new(env!("CARGO_MANIFEST_DIR"))
         .join("../..")
@@ -53,6 +51,15 @@ pub(crate) fn run() -> Result<(), Error> {
         "scored all {} generated sources with {TOOL_VERSION}",
         outputs.len()
     );
+    Ok(())
+}
+
+/// Tool failure or a different parser stops before creating generated output.
+fn require_version(success: bool, output: &[u8]) -> Result<(), Error> {
+    if !success || std::str::from_utf8(output)?.trim() != TOOL_VERSION {
+        return Err(format!("generated style requires {TOOL_VERSION}").into());
+    }
+
     Ok(())
 }
 
@@ -97,4 +104,25 @@ fn score(file: &Value, metric: &str) -> Result<f64, Error> {
     }
 
     Ok(value)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::require_version;
+
+    #[test]
+    fn accepts_only_the_successful_reviewed_parser_identity() {
+        assert!(require_version(true, b"monostyle 0.3.27\n").is_ok());
+        assert!(require_version(false, b"monostyle 0.3.27").is_err());
+
+        for output in [
+            b"monostyle 0.3.26".as_slice(),
+            b"monostyle 0.3.28",
+            b"monostyle 0.3.27 extra",
+            b"",
+            b"\xff",
+        ] {
+            assert!(require_version(true, output).is_err());
+        }
+    }
 }

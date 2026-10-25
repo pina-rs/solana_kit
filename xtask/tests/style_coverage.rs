@@ -124,7 +124,7 @@ impl Drop for Repository {
 }
 
 #[test]
-#[ignore = "requires monostyle 0.3.26; executed explicitly by the style CI job"]
+#[ignore = "requires monostyle 0.3.27; executed explicitly by the style CI job"]
 fn authored_files_cannot_escape_the_actual_analyzer() {
     let repository = Repository::new();
     fs::create_dir(repository.0.join("target")).expect("ignored cache directory");

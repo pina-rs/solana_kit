@@ -134,6 +134,7 @@ fn digest(bytes: &[u8]) -> String {
         .unwrap()
         .to_owned()
 }
+/// Exact parser contracts precede broader family mappings to retain their limits.
 fn adjudicate(symbol: &str) -> (&'static str, &'static str, &'static str) {
     if symbol == "assertAccountDecoded" || symbol == "assertMaybeAccountDecoded" {
         return (
@@ -170,6 +171,11 @@ fn adjudicate(symbol: &str) -> (&'static str, &'static str, &'static str) {
         );
     }
 
+    account_operations(symbol)
+}
+
+/// Operation families distinguish strict fetch bounds from language adaptations.
+fn account_operations(symbol: &str) -> (&'static str, &'static str, &'static str) {
     if symbol.contains("fetch")
         || symbol.contains("SolanaAccountClient")
         || symbol == "createSolanaAccountClient"

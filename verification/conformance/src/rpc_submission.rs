@@ -14,6 +14,14 @@ use solana_kit_core::Address;
 use std::{format, vec};
 
 pub(crate) fn operations() -> Result<(), &'static str> {
+    fee_and_airdrop()?;
+    statuses()?;
+    submissions()?;
+    failures()
+}
+
+/// Fees and airdrop signatures preserve their distinct exact request options.
+fn fee_and_airdrop() -> Result<(), &'static str> {
     let fee = call(
         FeeForMessage(
             &[0, 1, 2],
@@ -44,7 +52,11 @@ pub(crate) fn operations() -> Result<(), &'static str> {
         &format!(r#""{SIG}""#),
     )
     .map_err(|_| "airdrop failed")?;
-    require(airdrop == signature(), "airdrop signature changed")?;
+    require(airdrop == signature(), "airdrop signature changed")
+}
+
+/// Positional statuses retain null slots and typed instruction-error details.
+fn statuses() -> Result<(), &'static str> {
     let signatures = [signature(), signature()];
     let failure = r#"{"InstructionError":[255,{"Custom":4294967295}]}"#;
     let result = format!(
@@ -84,7 +96,11 @@ pub(crate) fn operations() -> Result<(), &'static str> {
                 ))
             ),
         "typed execution failure changed",
-    )?;
+    )
+}
+
+/// Submission treats wire bytes as opaque while validating response signatures.
+fn submissions() -> Result<(), &'static str> {
     let result = format!(r#""{SIG}""#);
     let sent = call(
         SendTransaction {
@@ -122,8 +138,7 @@ pub(crate) fn operations() -> Result<(), &'static str> {
         &result,
     )
     .map_err(|_| "opaque 4096-byte submission rejected")?;
-    require(sent == signature(), "opaque submission signature changed")?;
-    failures()
+    require(sent == signature(), "opaque submission signature changed")
 }
 
 fn failures() -> Result<(), &'static str> {
@@ -168,6 +183,11 @@ fn failures() -> Result<(), &'static str> {
             "malformed known failure accepted",
         )?;
     }
+    remote_preflight()
+}
+
+/// RPC preflight errors preserve raw numeric data rather than losing their cause.
+fn remote_preflight() -> Result<(), &'static str> {
     let response =
         r#"{"jsonrpc":"2.0","id":1,"error":{"code":-32002,"message":"preflight","data":1e400}}"#;
     let error = framed(

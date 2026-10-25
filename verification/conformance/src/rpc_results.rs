@@ -19,6 +19,7 @@ pub(super) fn binary_entry(version: &str) -> String {
     )
 }
 
+/// Historical omissions and recognized versions succeed; malformed versions still fail.
 pub(crate) fn full_results() -> Result<(), &'static str> {
     let config = TransactionReadConfig {
         encoding: Some(TransactionEncoding::Base64),
@@ -50,29 +51,8 @@ pub(crate) fn full_results() -> Result<(), &'static str> {
             "transaction bytes changed",
         )?;
     }
-    let block_config = BlockConfig {
-        encoding: Some(TransactionEncoding::Base64),
-        rewards: Some(false),
-        max_supported_transaction_version: Some(1),
-        ..Default::default()
-    };
-    let result = format!(
-        concat!(
-            r#"{{"blockhash":"{0}","previousBlockhash":"{0}","parentSlot":{1},"#,
-            r#""blockTime":null,"blockHeight":null,"transactions":[{{"#,
-            r#""transaction":["AAE=","base64"],"meta":null}}]}}"#
-        ),
-        KEY, MAX
-    );
-    let block = call(
-        Block(42, Some(block_config)),
-        "getBlock",
-        r#"[42,{"encoding":"base64","maxSupportedTransactionVersion":1,"rewards":false}]"#,
-        &result,
-    )
-    .map_err(|_| "historical block failed")?
-    .ok_or("block missing")?;
-    require(block.parent_slot == u64::MAX, "block parent narrowed")?;
+
+    historical_block()?;
 
     for version in [r#","version":2"#, r#","version":null"#, r#","version":"1""#] {
         require(
@@ -88,6 +68,34 @@ pub(crate) fn full_results() -> Result<(), &'static str> {
     }
 
     parsed_numbers()
+}
+
+/// Historical block metadata remains exact even when transaction versions are absent.
+fn historical_block() -> Result<(), &'static str> {
+    const BLOCK_SLOT: u64 = 42;
+    let block_config = BlockConfig {
+        encoding: Some(TransactionEncoding::Base64),
+        rewards: Some(false),
+        max_supported_transaction_version: Some(1),
+        ..Default::default()
+    };
+    let result = format!(
+        concat!(
+            r#"{{"blockhash":"{0}","previousBlockhash":"{0}","parentSlot":{1},"#,
+            r#""blockTime":null,"blockHeight":null,"transactions":[{{"#,
+            r#""transaction":["AAE=","base64"],"meta":null}}]}}"#
+        ),
+        KEY, MAX
+    );
+    let block = call(
+        Block(BLOCK_SLOT, Some(block_config)),
+        "getBlock",
+        r#"[42,{"encoding":"base64","maxSupportedTransactionVersion":1,"rewards":false}]"#,
+        &result,
+    )
+    .map_err(|_| "historical block failed")?
+    .ok_or("block missing")?;
+    require(block.parent_slot == u64::MAX, "block parent narrowed")
 }
 
 fn parsed_numbers() -> Result<(), &'static str> {
@@ -113,6 +121,7 @@ fn parsed_numbers() -> Result<(), &'static str> {
     )
     .map_err(|_| "parsed instruction failed")?
     .ok_or("parsed transaction missing")?;
+
     let TransactionView::JsonParsed(value) = value.details.transaction else {
         return Err("parsed transaction variant changed");
     };
@@ -123,6 +132,15 @@ fn parsed_numbers() -> Result<(), &'static str> {
         instruction.parsed.get() == exact,
         "parsed exact JSON changed",
     )?;
+    token_annotations(&result, &params, config)
+}
+
+/// Extreme UI annotations remain exact numbers, while synthetic number objects fail.
+fn token_annotations(
+    result: &str,
+    params: &str,
+    config: TransactionReadConfig,
+) -> Result<(), &'static str> {
     let metadata = format!(
         concat!(
             r#"{{"err":null,"status":{{"Ok":null}},"fee":0,"preBalances":[],"postBalances":[],"#,
@@ -135,7 +153,7 @@ fn parsed_numbers() -> Result<(), &'static str> {
     call(
         Transaction(signature(), Some(config)),
         "getTransaction",
-        &params,
+        params,
         &result,
     )
     .map_err(|_| "extreme token annotation failed")?;
@@ -144,7 +162,7 @@ fn parsed_numbers() -> Result<(), &'static str> {
         call(
             Transaction(signature(), Some(config)),
             "getTransaction",
-            &params,
+            params,
             &synthetic,
         )
         .is_err(),

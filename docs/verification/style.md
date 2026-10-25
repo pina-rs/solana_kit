@@ -1,12 +1,20 @@
 # Per-file style verification
 
-Run `cargo xtask style` after installing `monostyle` with
-`cargo install monostyle --version 0.3.26 --locked`. The command verifies that
-exact version, obtains tracked and nonignored new files from Git, and executes a fresh JSON analysis with
+Install the reviewed Monostyle 0.3.27 parser revision, then run the style gate:
+
+```sh
+cargo install monostyle --locked \
+  --git https://github.com/ifiokjr/monostyle \
+  --rev 8da21273398c2a9c56f2f9ba99effadd217633ce
+cargo xtask style
+```
+
+The command verifies that exact version, obtains tracked and nonignored new files from Git,
+and executes a fresh JSON analysis with
 `--include-generated --fail-under 90`, and retains its report at
 `target/style-evidence/report.json`. CI runs the same command.
 
-Files are passed explicitly: monostyle 0.3.26's directory discovery silently
+Files are passed explicitly: directory discovery observed with monostyle 0.3.26 silently
 omits `src/bin` and other built-in directory names even with `--no-ignore`.
 Git inventory retains every tracked file even when its path matches ignore
 rules, including Rust source under `src/target` or `.monochange/local`.
