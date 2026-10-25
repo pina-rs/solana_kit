@@ -1,5 +1,6 @@
 //! The generated host owns this service through AppService and ClosingApp.
 mod install_error;
+mod mailbox;
 mod storage;
 pub use install_error::WalletInstallError;
 #[cfg(all(test, unix))]
@@ -35,7 +36,7 @@ pub struct WalletService {
     interpreter: HostIdentity,
     bridge: BridgeIdentity,
     plugin: PluginId,
-    sender: mpsc::Sender<worker::Command>,
+    mailbox: mailbox::Mailbox,
     shared: Arc<worker::Shared>,
     thread: Option<JoinHandle<()>>,
     pending: BTreeMap<CallId, (u64, u32)>,
@@ -87,7 +88,7 @@ impl WalletService {
             interpreter: host.identity(),
             bridge: host.plugins().identity(),
             plugin,
-            sender,
+            mailbox: mailbox::Mailbox::new(sender),
             shared,
             thread: Some(thread),
             pending: BTreeMap::new(),
@@ -181,6 +182,7 @@ impl WalletService {
     }
 
     fn invalidate(&mut self, host: &mut WasmHost<HeadlessBackend>) -> Result<(), Error> {
+        self.mailbox.clear();
         self.shared.cancel();
         self.lease = None;
         let cancelled = std::mem::take(&mut self.pending);
@@ -242,12 +244,8 @@ impl WalletService {
         let method = request.method.0;
         let epoch = self.shared.epoch();
 
-        if self
-            .sender
-            .try_send(worker::Command { request, epoch })
-            .is_err()
-        {
-            return finish(host, call, Err(Error::Busy));
+        if let Err(error) = self.mailbox.send(worker::Command { request, epoch }) {
+            return finish(host, call, Err(error));
         }
 
         self.calls = self.calls.saturating_add(1);
@@ -299,6 +297,7 @@ impl WalletService {
         self.cancellations(host, incoming.cancelled, &mut work)?;
         self.deliver(host)?;
         self.requests(host, incoming.requests, &mut work)?;
+        self.mailbox.flush(context)?;
         Ok(work)
     }
 
@@ -344,6 +343,7 @@ impl AppService for WalletService {
     }
 
     fn close(mut self: Box<Self>) -> ServiceClose {
+        self.mailbox.clear();
         self.pending.clear();
         self.shared.stop();
         let shared = Arc::clone(&self.shared);

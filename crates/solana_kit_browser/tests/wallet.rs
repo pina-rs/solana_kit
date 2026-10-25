@@ -17,7 +17,6 @@ use solana_kit_wallet::ui::{PanelAction, PanelState};
 use solana_kit_wallet::{Wallet, WalletErrorCode, WalletRegistry};
 use std::{
     error::Error,
-    future::Future,
     pin::Pin,
     rc::Rc,
     sync::Arc,

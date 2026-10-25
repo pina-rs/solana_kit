@@ -5,10 +5,7 @@ use solana_kit_client::{
     methods::Commitment,
     subscriptions::SignatureInfo,
 };
-use solana_kit_core::{
-    Address, Signature,
-    instruction::{AccountMeta, AccountRole, Instruction},
-};
+use solana_kit_core::{AccountMeta, AccountRole, Address, Instruction, Signature};
 use solana_kit_signers::TransactionSendingSigner;
 use std::future::{Ready, pending, ready};
 
@@ -129,9 +126,7 @@ fn secondary_transaction(payer: &Keypair, wallet: Address) -> Transaction {
     Transaction::new(message).sign(payer).unwrap()
 }
 
-#[wasm_bindgen_test]
-async fn secondary_wallet_returns_only_primary_identifier_to_confirmation() {
-    let harness = Harness::new();
+async fn connected_controller(harness: &Harness) -> WalletController {
     let discovery = harness.discovery();
     let controller = WalletController::new(discovery.clone(), "solana:localnet".into()).unwrap();
     controller
@@ -139,11 +134,19 @@ async fn secondary_wallet_returns_only_primary_identifier_to_confirmation() {
         .unwrap()
         .await
         .unwrap();
+    controller
+}
+
+#[wasm_bindgen_test]
+async fn secondary_wallet_returns_only_primary_identifier_to_confirmation() {
+    let harness = Harness::new();
+    let controller = connected_controller(&harness).await;
     let wallet = controller.signer().unwrap();
     let payer = Keypair::from_seed(&[31; 32]);
     let transaction = secondary_transaction(&payer, wallet.address());
     let primary = payer.sign(transaction.message().bytes());
     let secondary = harness.keypair.sign(transaction.message().bytes());
+
     assert_ne!(primary, secondary);
 
     let identifier =
@@ -168,11 +171,19 @@ async fn secondary_wallet_returns_only_primary_identifier_to_confirmation() {
             .code(),
         WalletErrorCode::InvalidResponse
     );
-    harness.runtime(
-        "submissionSignature",
-        &Uint8Array::from(primary.as_bytes().as_slice()),
-    );
+}
+
+#[wasm_bindgen_test]
+async fn submission_supplies_missing_payer_and_rejects_a_mismatched_payer_signature() {
+    let harness = Harness::new();
+    let controller = connected_controller(&harness).await;
+    let wallet = controller.signer().unwrap();
+    let payer = Keypair::from_seed(&[31; 32]);
+    let transaction = secondary_transaction(&payer, wallet.address());
+    let primary = payer.sign(transaction.message().bytes());
+    let secondary = harness.keypair.sign(transaction.message().bytes());
     let unsigned = Transaction::new(transaction.message().clone());
+
     assert_eq!(
         TransactionSendingSigner::<WalletFailure>::send_transaction(&wallet, &unsigned)
             .await
