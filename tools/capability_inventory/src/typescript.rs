@@ -81,6 +81,11 @@ fn collect(node: Node<'_>, source: &str, parent: Option<&str>, output: &mut Pars
 
         return;
     };
+    // Private identifiers have a distinct syntax kind; quoted # names remain public.
+    if name.kind() == "private_property_identifier" {
+        return;
+    }
+
     let name = text(name, source);
 
     if text(node, source).starts_with("private ") || text(node, source).starts_with("protected ") {

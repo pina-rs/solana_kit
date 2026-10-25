@@ -122,3 +122,38 @@ fn rejects_missing_source_rows_and_reference_checkout() {
     let absent = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("Cargo.toml");
     assert!(crate::verify_pin(&absent).is_err());
 }
+
+/// Private syntax never exports members, even when public names also contain a hash.
+#[test]
+fn typescript_excludes_private_identifiers_but_keeps_public_hash_names() {
+    let source = r##"
+        export class Example {
+            #field: string = "";
+            static #staticField: number = 0;
+            #method(): void {}
+            get #accessor(): string { return this.#field; }
+            private hidden(): void {}
+            protected guarded(): void {}
+            visible(): void { class Local { leaked(): void {} } }
+            ["#computed"](): void {}
+            "#quoted": string = "";
+        }
+    "##;
+    let parsed = typescript::parse(source).expect("valid private and public names");
+    let names: Vec<_> = parsed
+        .declarations
+        .iter()
+        .map(|item| item.symbol.as_str())
+        .collect();
+
+    assert!(parsed.warnings.is_empty(), "{:?}", parsed.warnings);
+    assert_eq!(
+        names,
+        [
+            "Example",
+            "Example.visible",
+            "Example.[\"#computed\"]",
+            "Example.\"#quoted\""
+        ]
+    );
+}
