@@ -15,7 +15,7 @@ mod wire;
 use alloc::vec::Vec;
 use core::fmt;
 
-use crate::{Address, Hash, Instruction, Signature};
+use crate::{Address, Hash, Instruction, InstructionAccount, InstructionWithAccounts, Signature};
 
 /// Maximum legacy/v0 transaction packet size in bytes.
 pub const PACKET_SIZE: usize = 1232;
@@ -157,6 +157,27 @@ impl Message {
         payer: Address,
         lifetime: Lifetime,
         instructions: &[Instruction],
+        tables: &[LookupTable],
+    ) -> Result<Self, Error> {
+        let config = (version == Version::V1).then(V1Config::default);
+        compile::compile(version, payer, lifetime, instructions, tables, config)
+    }
+
+    /// Compiles heterogeneous ordinary and lookup-origin instruction accounts.
+    ///
+    /// Uses the same compiler and snapshot selection as [`Self::compile`]. Exact
+    /// hints require version zero and a matching table/index/address snapshot.
+    /// Conflicting origins or hints for merged signer, payer or invoked-program
+    /// accounts are rejected; an invalid hint never falls back to static storage.
+    ///
+    /// # Errors
+    /// Returns [`Error::InvalidLookup`] for an invalid explicit origin, alongside
+    /// every ordinary compilation failure documented by [`Self::compile`].
+    pub fn compile_with_lookup_accounts(
+        version: Version,
+        payer: Address,
+        lifetime: Lifetime,
+        instructions: &[InstructionWithAccounts<InstructionAccount>],
         tables: &[LookupTable],
     ) -> Result<Self, Error> {
         let config = (version == Version::V1).then(V1Config::default);
@@ -382,7 +403,8 @@ pub enum Error {
     InvalidNonceAdvance,
     /// An invoked program is writable or is also the payer.
     WritableProgram,
-    /// Lookup snapshots disagree, duplicate a table, or exceed 256 entries.
+    /// A lookup hint conflicts, lacks a matching snapshot, requires static
+    /// privileges, or uses an unsupported version; snapshots duplicate or exceed bounds.
     InvalidLookup,
     /// Version-one configuration has an unknown mask, half priority pair, or invalid heap.
     InvalidConfig,

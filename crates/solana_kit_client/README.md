@@ -24,6 +24,34 @@ Compressed bytes remain encoded; parsed program payloads retain exact JSON.
 Raw token amounts parse decimal strings directly to u64, independently of display
 values. The original full-base64 AccountInfo contract remains available.
 
+Sysvar fetches compose the existing public account fetch and core decoder. This
+preserves the requested address, node context and complete account metadata while
+checking owner, size, trailing bytes and caller-selected decoding limits:
+
+```rust
+use solana_kit_client::{Client, Transport, methods::{Contextual, ReadConfig}};
+use solana_kit_core::{accounts::Account, codecs::Limits,
+    sysvars::{Clock, SysvarCodec, CLOCK_ADDRESS, OWNER_ADDRESS}};
+
+# async fn example<T: Transport>(client: &Client<T>)
+#     -> Result<Contextual<Account<Clock>>, Box<dyn std::error::Error>> {
+let Contextual { context, value } = client
+    .fetch_encoded_account(CLOCK_ADDRESS, ReadConfig::default()).await?;
+let value = value.require()?.decode(
+    &SysvarCodec::<Clock>::NEW, OWNER_ADDRESS, Limits::new(40, 0),
+)?;
+let clock = Contextual { context, value };
+# Ok(clock)
+# }
+```
+
+For variable-length sysvars, select `SysvarCodec::<SlotHashes>::NEW` with
+`SLOT_HASHES_ADDRESS` and an explicit entry budget. Missing accounts remain
+`AccountError::Missing`, and transport/remote errors retain their existing causes
+and data. The maintained Clock/SlotHashes memory-transport callers execute in the 354-case
+portable suite on native Rust, sandboxed Chrome, both WASI previews and the
+production LeptosKit interpreter. Ordinary native callers also pass on Rust 1.89.
+
 Address history defaults to signature pages capped at 1000 entries. Explicit full
 pages retain their 100-entry cap and strict version negotiation. Transaction and
 block reads preserve historical missing-metadata version omission. Submission

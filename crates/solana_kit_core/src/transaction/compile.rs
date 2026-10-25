@@ -2,7 +2,7 @@
 
 use alloc::{collections::BTreeMap, vec::Vec};
 
-use crate::{AccountRole, Address, Instruction};
+use crate::{AccountRole, Address, InstructionAccount, InstructionWithAccounts};
 
 use super::{
     CompiledInstruction, Error, Header, Lifetime, Lookup, LookupTable, Message, PACKET_SIZE,
@@ -18,21 +18,30 @@ const MAX_ACCOUNTS: usize = 256;
 struct Entry {
     role: AccountRole,
     invoked: bool,
+    origin: Option<(Address, u8)>,
 }
 
 // Compilation merges privileges before selecting lookups so signers and invoked
 // programs cannot accidentally move out of the static account partition.
-pub(super) fn compile(
+pub(super) fn compile<A: Copy + Into<InstructionAccount>>(
     version: Version,
     payer: Address,
     lifetime: Lifetime,
-    instructions: &[Instruction],
+    instructions: &[InstructionWithAccounts<A>],
     tables: &[LookupTable],
     config: Option<V1Config>,
 ) -> Result<Message, Error> {
     match lifetime {
         Lifetime::Unresolved(_) => return Err(Error::UnresolvedLifetime),
-        Lifetime::DurableNonce(nonce) => nonce.validate_instructions(instructions)?,
+        Lifetime::DurableNonce(nonce) => {
+            if instructions
+                .first()
+                .and_then(super::NonceAdvance::recognize_accounts)
+                != Some(nonce.advance())
+            {
+                return Err(Error::InvalidNonceAdvance);
+            }
+        }
         Lifetime::Blockhash { .. } => {}
     }
 
@@ -51,7 +60,7 @@ pub(super) fn compile(
     let mut static_entries = Vec::new();
     let mut loaded = Vec::new();
 
-    partition(accounts, &tables, &mut static_entries, &mut loaded);
+    partition(accounts, version, &tables, &mut static_entries, &mut loaded)?;
 
     static_entries.sort_by_key(|(address, role)| {
         (
@@ -92,28 +101,65 @@ pub(super) fn compile(
 
 fn partition(
     accounts: BTreeMap<Address, Entry>,
+    version: Version,
     tables: &[&LookupTable],
     static_entries: &mut Vec<(Address, AccountRole)>,
     loaded: &mut Vec<(Address, AccountRole, Address, u8)>,
-) {
+) -> Result<(), Error> {
     for (address, entry) in accounts {
-        if let Some((table, index)) = lookup(address, entry, tables) {
+        let selected = match entry.origin {
+            Some(origin) => Some(validate_origin(address, entry, version, origin, tables)?),
+            None => lookup(address, entry, tables),
+        };
+
+        if let Some((table, index)) = selected {
             loaded.push((address, entry.role, table, index));
         } else {
             static_entries.push((address, entry.role));
         }
     }
+
+    Ok(())
+}
+
+fn validate_origin(
+    address: Address,
+    entry: Entry,
+    version: Version,
+    origin: (Address, u8),
+    tables: &[&LookupTable],
+) -> Result<(Address, u8), Error> {
+    if version != Version::V0 || entry.role.is_signer() || entry.invoked {
+        return Err(Error::InvalidLookup);
+    }
+
+    let table = tables
+        .iter()
+        .find(|table| table.address == origin.0)
+        .ok_or(Error::InvalidLookup)?;
+
+    if table.addresses.get(usize::from(origin.1)) != Some(&address) {
+        return Err(Error::InvalidLookup);
+    }
+
+    Ok(origin)
 }
 
 // Privileges merge before partitioning so a later signer/writable use cannot
 // accidentally remain a readonly lookup entry. Bound input before cloning data.
-fn collect_accounts(
+fn collect_accounts<A: Copy + Into<InstructionAccount>>(
     payer: Address,
-    instructions: &[Instruction],
+    instructions: &[InstructionWithAccounts<A>],
     version: Version,
 ) -> Result<BTreeMap<Address, Entry>, Error> {
     let mut accounts = BTreeMap::new();
-    insert(&mut accounts, payer, AccountRole::WritableSigner, false)?;
+    insert(
+        &mut accounts,
+        payer,
+        AccountRole::WritableSigner,
+        false,
+        None,
+    )?;
 
     for instruction in instructions {
         if instruction.data.len() > wire::packet_limit(version)
@@ -127,10 +173,19 @@ fn collect_accounts(
             instruction.program_address,
             AccountRole::Readonly,
             true,
+            None,
         )?;
 
         for account in &instruction.accounts {
-            insert(&mut accounts, account.address, account.role, false)?;
+            let account = (*account).into();
+            let meta = account.account_meta();
+            let origin = match account {
+                InstructionAccount::Account(_) => None,
+                InstructionAccount::Lookup(lookup) => {
+                    Some((lookup.lookup_table_address, lookup.address_index))
+                }
+            };
+            insert(&mut accounts, meta.address, meta.role, false, origin)?;
         }
     }
 
@@ -142,8 +197,19 @@ fn insert(
     address: Address,
     role: AccountRole,
     invoked: bool,
+    origin: Option<(Address, u8)>,
 ) -> Result<(), Error> {
-    let entry = accounts.entry(address).or_insert(Entry { role, invoked });
+    let entry = accounts.entry(address).or_insert(Entry {
+        role,
+        invoked,
+        origin,
+    });
+
+    if origin.is_some() && entry.origin.is_some() && origin != entry.origin {
+        return Err(Error::InvalidLookup);
+    }
+
+    entry.origin = entry.origin.or(origin);
     entry.role = entry.role.merge(role);
     entry.invoked |= invoked;
 
@@ -203,8 +269,8 @@ fn header(entries: &[(Address, AccountRole)]) -> Result<Header, Error> {
     })
 }
 
-fn compile_instructions(
-    instructions: &[Instruction],
+fn compile_instructions<A: Copy + Into<InstructionAccount>>(
+    instructions: &[InstructionWithAccounts<A>],
     ordered: &[Address],
 ) -> Result<Vec<CompiledInstruction>, Error> {
     let index = |address: Address| {
@@ -222,7 +288,7 @@ fn compile_instructions(
                 accounts: instruction
                     .accounts
                     .iter()
-                    .map(|account| index(account.address))
+                    .map(|account| index((*account).into().account_meta().address))
                     .collect::<Result<_, _>>()?,
                 data: instruction.data.clone(),
             })

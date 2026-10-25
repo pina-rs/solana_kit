@@ -1,6 +1,6 @@
 //! Real native, Chrome, WASI, and upstream LeptosKit executions.
 
-use crate::process::{capture, cargo, success};
+use crate::process::{capture, cargo, success, target_dir};
 use anyhow::{Context, Result, ensure};
 use std::process::Command;
 
@@ -99,14 +99,19 @@ pub(crate) fn wasi() -> Result<()> {
     )?;
 
     for target in ["wasm32-wasip1", "wasm32-wasip2"] {
-        let artifact = format!("target/{target}/debug/solana_kit_conformance.wasm");
+        let artifact = target_dir()
+            .join(target)
+            .join("debug/solana_kit_conformance.wasm");
         suite(
-            Command::new(&host).args(["run", &artifact]),
+            Command::new(&host).arg("run").arg(&artifact),
             &format!("{target}-success"),
             false,
         )?;
         suite(
-            Command::new(&host).args(["run", &artifact, "--corrupt-fixture"]),
+            Command::new(&host)
+                .arg("run")
+                .arg(&artifact)
+                .arg("--corrupt-fixture"),
             &format!("{target}-corruption"),
             true,
         )?;
@@ -131,15 +136,19 @@ pub(crate) fn leptoskit() -> Result<()> {
     )?;
     crate::gates::guest()?;
     success(
-        cargo().args([
-            "run",
-            "--locked",
-            "--release",
-            "--manifest-path",
-            "verification/leptoskit/Cargo.toml",
-            "--",
-            "target/wasm32-unknown-unknown/release/solana_kit_conformance_guest.wasm",
-        ]),
+        cargo()
+            .args([
+                "run",
+                "--locked",
+                "--release",
+                "--manifest-path",
+                "verification/leptoskit/Cargo.toml",
+                "--",
+            ])
+            .arg(
+                target_dir()
+                    .join("wasm32-unknown-unknown/release/solana_kit_conformance_guest.wasm"),
+            ),
         "leptoskit",
     )?;
     Ok(())

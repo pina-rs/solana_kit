@@ -1,6 +1,24 @@
 //! Value-free format declarations, independent of operation budgets and cursors.
 
 use super::Error;
+use alloc::vec::Vec;
+
+/// Keep the complete declaration list so unknown classes cannot hide a known
+/// subtotal's overflow. Metadata collection reserves one entry per schema field.
+pub(super) fn sum_sizes(
+    sizes: impl ExactSizeIterator<Item = Result<Size, Error>>,
+) -> Result<Size, Error> {
+    let mut values = Vec::new();
+    values
+        .try_reserve_exact(sizes.len())
+        .map_err(|_| Error::AllocationFailed)?;
+
+    for size in sizes {
+        values.push(size?);
+    }
+
+    Size::checked_sum(&values)
+}
 
 /// A format declaration for one encoder or decoder implementation.
 ///

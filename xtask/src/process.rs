@@ -1,11 +1,19 @@
 //! Command execution and raw evidence capture shared by the runtime journeys.
 
 use anyhow::{Context, Result, ensure};
-use std::process::{Command, Output};
+use std::{
+    path::PathBuf,
+    process::{Command, Output},
+};
 
 /// Uses Cargo from the selected toolchain rather than guessing a PATH executable.
 pub(crate) fn cargo() -> Command {
     Command::new(std::env::var_os("CARGO").unwrap_or_else(|| "cargo".into()))
+}
+
+/// Resolves generated artifacts and evidence through Cargo's selected target directory.
+pub(crate) fn target_dir() -> PathBuf {
+    std::env::var_os("CARGO_TARGET_DIR").map_or_else(|| "target".into(), PathBuf::from)
 }
 
 /// Saves both streams and the actual exit status before checking expectations.
@@ -14,8 +22,8 @@ pub(crate) fn capture(command: &mut Command, label: &str) -> Result<Output> {
     let output = command
         .output()
         .with_context(|| format!("execute {command:?}"))?;
-    let directory = std::path::Path::new("target/runtime-evidence");
-    std::fs::create_dir_all(directory)?;
+    let directory = target_dir().join("runtime-evidence");
+    std::fs::create_dir_all(&directory)?;
 
     std::fs::write(directory.join(format!("{label}.stdout")), &output.stdout)?;
     std::fs::write(directory.join(format!("{label}.stderr")), &output.stderr)?;

@@ -13,6 +13,8 @@ description = "Portable Solana values, instructions, and deterministic cryptogra
 default = []
 crypto = ["dep:sha2", "dep:curve25519-dalek", "dep:ed25519-dalek"]
 fixed-points = ["dep:num-bigint", "dep:num-traits"]
+bigint-codecs = ["dep:num-bigint"]
+keccak = ["dep:sha3"]
 text-codecs = ["dep:base64"]
 
 [dependencies]
@@ -23,3 +25,4 @@ ed25519-dalek = { version = "2.2.0", default-features = false, features = ["zero
 num-bigint = { version = "0.4.6", default-features = false, optional = true }
 num-traits = { version = "0.2.19", default-features = false, optional = true }
 sha2 = { version = "0.10.9", default-features = false, optional = true }
+sha3 = { version = "=0.10.8", default-features = false, optional = true }

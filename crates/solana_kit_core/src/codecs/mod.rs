@@ -34,9 +34,14 @@
 //! by the caller's concrete codec types. Remainder codecs belong at the end of
 //! their enclosing frame. UTF-8 preserves both nulls and a leading BOM.
 
+#[cfg(feature = "bigint-codecs")]
+mod big_number;
+mod collections;
+mod contextual;
 mod count_prefix;
 mod cursor;
 mod delimiters;
+mod dynamic_tuple;
 mod framing;
 mod item_sentinel;
 mod mapping;
@@ -46,25 +51,37 @@ mod offsets;
 mod options;
 mod pair_error;
 mod radix;
+mod record;
+mod selected;
 mod sequences;
 mod size;
 mod structured;
 mod text;
 mod transforms;
+mod utf16_radix;
 mod wide_text;
 
+#[cfg(feature = "bigint-codecs")]
+pub use big_number::BigNumber;
+pub use collections::{OrderedMapCodec, OrderedSetCodec};
+pub use contextual::Contextual;
 pub use count_prefix::OptionalCount;
 pub use cursor::{Limits, Reader, Writer};
 pub use delimiters::{Padded, Sentinel};
+pub use dynamic_tuple::{TupleDecoder, TupleEncoder};
 pub use framing::{ByteSizePrefix, FixedSize, FrameConsumption, Resized, Reverse};
 pub use item_sentinel::{ItemSentinel, Termination};
 pub use mapping::{Checked, Mapped, Paired};
 pub use nullable::{Absence, Boolean, Nullable};
+#[cfg(feature = "bigint-codecs")]
+pub use num_bigint::{BigInt, BigUint};
 pub use numbers::{Endian, Int256, Number, ShortU16, Uint256, ensure_number_range};
 pub use offsets::{Offset, OffsetScope};
 pub use options::OptionCodec;
 pub use pair_error::PairError;
 pub use radix::{BaseX, BaseXReslice};
+pub use record::{RecordDecoder, RecordEncoder};
+pub use selected::{UnionDecoder, UnionEncoder};
 pub use sequences::{Bool, Bytes, Count, FixedBytes, Sequence, Tuple, Utf8};
 pub use size::Size;
 pub use structured::{BitArray, Choice, Counted, Dependent, Either, Literal, OwnedSequence, Unit};
@@ -72,6 +89,7 @@ pub use structured::{BitArray, Choice, Counted, Dependent, Either, Literal, Owne
 pub use text::Base64;
 pub use text::{Base16, Utf8Config, pad_null_characters, remove_null_characters};
 pub use transforms::{Affix, Constant, SizePrefix, SizePrefix64};
+pub use utf16_radix::{Utf16BaseX, Utf16BaseXReslice};
 
 use alloc::vec::Vec;
 use core::fmt;

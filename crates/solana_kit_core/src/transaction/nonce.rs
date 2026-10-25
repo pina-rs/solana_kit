@@ -2,7 +2,10 @@
 
 use alloc::vec::Vec;
 
-use crate::{AccountMeta, AccountRole, Address, Hash, Instruction};
+use crate::{
+    AccountMeta, AccountRole, Address, Hash, Instruction, InstructionAccount,
+    InstructionWithAccounts,
+};
 
 use super::{Error, Message};
 
@@ -48,9 +51,19 @@ impl NonceAdvance {
     /// Recognizes the pinned Dart acceptance set, including a writable authority.
     #[must_use]
     pub fn recognize(instruction: &Instruction) -> Option<Self> {
+        Self::recognize_accounts(instruction)
+    }
+
+    /// The compiler also recognizes heterogeneous instruction account inputs.
+    pub(super) fn recognize_accounts<A: Copy + Into<InstructionAccount>>(
+        instruction: &InstructionWithAccounts<A>,
+    ) -> Option<Self> {
         let [nonce, sysvar, authority] = instruction.accounts.as_slice() else {
             return None;
         };
+        let nonce = (*nonce).into().account_meta();
+        let sysvar = (*sysvar).into().account_meta();
+        let authority = (*authority).into().account_meta();
 
         (instruction.program_address == SYSTEM_PROGRAM
             && instruction.data == ADVANCE_DATA

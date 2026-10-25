@@ -1,20 +1,17 @@
 //! Closed import and normal/build dependency policies for the deterministic layer.
 
-use crate::process::{cargo, success};
+use crate::process::{cargo, success, target_dir};
 use anyhow::{Context, Result, bail, ensure};
 use std::{collections::BTreeSet, path::Path};
 use wasmparser::{Parser, Payload};
 
-const GUEST: &str = "target/wasm32-unknown-unknown/release/solana_kit_conformance_guest.wasm";
-const FEATURES: [&str; 8] = [
-    "",
+const GUEST: &str = "wasm32-unknown-unknown/release/solana_kit_conformance_guest.wasm";
+const FEATURES: [&str; 5] = [
     "crypto",
     "fixed-points",
-    "crypto,fixed-points",
     "text-codecs",
-    "crypto,text-codecs",
-    "fixed-points,text-codecs",
-    "crypto,fixed-points,text-codecs",
+    "bigint-codecs",
+    "keccak",
 ];
 const ALLOWED_IMPORTS: &[(&str, &str)] = &[
     ("leptoskit", "node_create"),
@@ -51,7 +48,29 @@ fn imports(bytes: &[u8]) -> Result<()> {
 
 /// Checks the actual guest artifact and fails if it has not been built.
 pub(crate) fn guest() -> Result<()> {
-    imports(&std::fs::read(GUEST).context("build the Rust guest before checking imports")?)
+    imports(
+        &std::fs::read(target_dir().join(GUEST))
+            .context("build the Rust guest before checking imports")?,
+    )
+}
+
+/// Every independent optional core capability participates in graph selection.
+fn feature_selections() -> Vec<String> {
+    (0..(1_usize << FEATURES.len()))
+        .map(|mask| {
+            FEATURES
+                .iter()
+                .enumerate()
+                .filter_map(|(index, name)| (mask & (1 << index) != 0).then_some(*name))
+                .collect::<Vec<_>>()
+                .join(",")
+        })
+        .collect()
+}
+
+/// Both numeric capabilities select the same audited arbitrary-integer dependency.
+fn numeric_features(features: &str) -> bool {
+    features.contains("fixed-points") || features.contains("bigint-codecs")
 }
 
 /// Exposes the production import gate for externally generated negative artifacts.
@@ -98,11 +117,11 @@ fn dependency_graphs() -> Result<()> {
         Some("wasm32-wasip1"),
         Some("wasm32-wasip2"),
     ] {
-        for features in FEATURES {
-            dependency_graph(target, features, "normal,build")?;
+        for features in feature_selections() {
+            dependency_graph(target, &features, "normal,build")?;
 
-            if features.contains("fixed-points") {
-                dependency_graph(target, features, "normal")?;
+            if numeric_features(&features) {
+                dependency_graph(target, &features, "normal")?;
             }
         }
     }
@@ -145,7 +164,7 @@ fn dependency_graph(target: Option<&str>, features: &str, edges: &str) -> Result
     let tree = String::from_utf8(output.stdout)?;
     let allowed = dependency_policy(features);
 
-    if features.contains("fixed-points") {
+    if numeric_features(features) {
         ensure!(
             packages(&tree).contains("autocfg") == (edges == "normal,build"),
             "autocfg must be build-only in the fixed-point closure"
@@ -163,7 +182,7 @@ fn dependency_policy(features: &str) -> String {
         "solana_kit_core\nbs58\n".to_owned()
     };
 
-    if features.contains("fixed-points") {
+    if numeric_features(features) {
         allowed.push_str(include_str!("../policy/fixed-points.txt"));
     }
 
@@ -171,14 +190,19 @@ fn dependency_policy(features: &str) -> String {
         allowed.push_str("base64\n");
     }
 
+    if features.contains("keccak") {
+        allowed.push_str("sha3\nkeccak\ncpufeatures\nlibc\ndigest\nblock-buffer\ncrypto-common\n");
+        allowed.push_str("generic-array\ntypenum\nversion_check\n");
+    }
+
     allowed
 }
 
 /// Executes observable controls against exactly the same production checkers.
 fn negative_controls() -> Result<()> {
-    let directory = Path::new("target/runtime-evidence");
+    let directory = target_dir().join("runtime-evidence");
     let bytes = wat::parse_str(include_str!("../fixtures/forbidden-import.wat"))?;
-    std::fs::create_dir_all(directory)?;
+    std::fs::create_dir_all(&directory)?;
     std::fs::write(directory.join("forbidden-import.wasm"), &bytes)?;
 
     match imports(&bytes) {
@@ -189,17 +213,17 @@ fn negative_controls() -> Result<()> {
         _ => bail!("forbidden import negative control was not rejected correctly"),
     }
 
-    for features in FEATURES {
+    for features in feature_selections() {
         reject_dependency(
             include_str!("../fixtures/forbidden-dependency.txt"),
-            features,
+            &features,
             "tokio",
         )?;
 
         if !features.contains("text-codecs") {
-            let leaked = format!("{}base64\n", dependency_policy(features));
+            let leaked = format!("{}base64\n", dependency_policy(&features));
 
-            reject_dependency(&leaked, features, "base64")?;
+            reject_dependency(&leaked, &features, "base64")?;
         }
     }
 
