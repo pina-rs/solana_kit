@@ -1,0 +1,29 @@
+[package]
+name = "solana_kit_remaining_programs_portable"
+version = "0.0.0"
+edition = "2024"
+publish = false
+
+[workspace]
+members = ["guest", "host"]
+
+[dependencies]
+solana_kit_attestation_service = { path = "../../crates/solana_kit_attestation_service", features = ["pda"] }
+solana_kit_core = { path = "../../crates/solana_kit_core" }
+solana_kit_squads = { path = "../../crates/solana_kit_squads", features = ["pda"] }
+solana_kit_subscriptions = { path = "../../crates/solana_kit_subscriptions", features = ["pda"] }
+
+[features]
+default = ["pda"]
+pda = []
+corrupt = []
+
+[target.'cfg(target_arch = "wasm32")'.dev-dependencies]
+wasm-bindgen = "=0.2.128"
+wasm-bindgen-test = "=0.3.78"
+
+[profile.release]
+strip = "none"
+
+[profile.release.build-override]
+strip = "none"

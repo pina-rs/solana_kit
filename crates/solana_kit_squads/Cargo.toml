@@ -1,0 +1,21 @@
+[package]
+name = "solana_kit_squads"
+version = "0.1.0"
+authors.workspace = true
+edition.workspace = true
+license = "Unlicense AND MIT"
+publish = false
+readme = "README.md"
+repository = "https://github.com/pina-rs/solana_kit/tree/main/crates/solana_kit_squads"
+rust-version.workspace = true
+description = "Portable Squads V4 multisig clients for off-chain applications"
+
+[features]
+default = []
+pda = ["solana_kit_core/crypto"]
+
+[dependencies]
+solana_kit_core.workspace = true
+
+[dev-dependencies]
+solana_kit_core = { workspace = true, features = ["crypto"] }

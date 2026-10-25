@@ -8,8 +8,8 @@ use std::{
 type Error = Box<dyn std::error::Error>;
 type Rows = BTreeMap<String, Vec<String>>;
 const ORIGINAL_COLUMNS: usize = 14;
-const DECLARATIONS: usize = 5501;
-const PACKAGES: [&str; 8] = [
+const DECLARATIONS: usize = 7295;
+const PACKAGES: [&str; 11] = [
     "solana_kit_address_lookup_table",
     "solana_kit_config",
     "solana_kit_stake",
@@ -18,12 +18,16 @@ const PACKAGES: [&str; 8] = [
     "solana_kit_mpl_core",
     "solana_kit_mpl_token_metadata",
     "solana_kit_mpl_bubblegum",
+    "solana_kit_attestation_service",
+    "solana_kit_squads",
+    "solana_kit_subscriptions",
 ];
 const CANONICAL: &str = include_str!("../../../../docs/parity/capabilities.tsv");
-const RECEIPTS: [&str; 3] = [
+const RECEIPTS: [&str; 4] = [
     include_str!("../../../../docs/parity/alt-config.tsv"),
     include_str!("../../../../docs/parity/stake-loader.tsv"),
     include_str!("../../../../docs/parity/metaplex-source.tsv"),
+    include_str!("../../../../docs/parity/remaining-programs-source.tsv"),
 ];
 const DART_LICENSE: &str = "dd0836fdc750ca3bc8f8ffab6b1b8fc7feac918ac41af286da46cd10cedd1b25";
 const UPSTREAM_LICENSE: &str = "a6cba85bc92e0cff7a450b1d873c0eaa2e9fc96bf472df0247a26bec77bf3ff9";
@@ -36,7 +40,7 @@ fn main() -> Result<(), Error> {
     let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
     audit(&root, Path::new(&reference))?;
     println!(
-        "PASS 5501 exact original rows, defining sources and all retained licenses; statuses unchanged"
+        "PASS 7295 exact original rows, defining sources and all retained licenses; statuses unchanged"
     );
     Ok(())
 }
@@ -148,6 +152,9 @@ fn upstream_license(package: &str) -> Option<&'static str> {
         "solana_kit_spl_account_compression" => {
             Some("d8ddd6435eae4d5e7df65248f19a347fcf67e2d454d0826cb418a33648e2dd54")
         }
+        "solana_kit_subscriptions" => {
+            Some("d046ef4e0ba8c5e6b2fb07455193682996c74e0ee44001bcdc4e5929de58a7dd")
+        }
         "solana_kit_address_lookup_table"
         | "solana_kit_config"
         | "solana_kit_stake"
@@ -171,7 +178,7 @@ mod tests {
 
     #[test]
     fn complete_membership_and_original_rows_are_required() {
-        assert_eq!(validate(&RECEIPTS).unwrap().len(), 5501);
+        assert_eq!(validate(&RECEIPTS).unwrap().len(), 7295);
         assert!(validate(&RECEIPTS[..1]).is_err());
         let mut duplicated = RECEIPTS.to_vec();
         duplicated.push(RECEIPTS[0]);

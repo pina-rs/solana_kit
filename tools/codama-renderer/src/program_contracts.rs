@@ -1,6 +1,7 @@
 //! Maintains the portable registry from exact public contract entrypoints.
 use crate::{generate, schema::Error};
 use std::{fs, path::Path};
+use syn::parse::Parser;
 
 const INPUTS: &[(&str, &str, &str)] = &[
     (
@@ -97,15 +98,22 @@ fn item_entrypoints(items: &[syn::Item]) -> Result<Vec<String>, Error> {
             syn::Item::Fn(function) => {
                 names.extend(function_name(function)?);
             }
+
             syn::Item::Macro(item) if item.mac.path.is_ident("case") => {
                 names.push(case_name(&item.mac)?);
             }
+
+            syn::Item::Macro(item) if item.mac.path.is_ident("cases") => {
+                names.extend(assigned_cases(&item.mac)?);
+            }
+
             syn::Item::Mod(syn::ItemMod {
                 content: Some((_, items)),
                 ..
             }) => {
                 names.extend(item_entrypoints(items)?);
             }
+
             _ => {}
         }
     }
@@ -138,10 +146,37 @@ fn case_name(item: &syn::Macro) -> Result<String, Error> {
         return Err("contract case name required".into());
     };
 
-    if !matches!(tokens.next(), Some(proc_macro2::TokenTree::Punct(comma)) if comma.as_char() == ',')
-    {
+    let delimiter = tokens.next();
+
+    if !matches!(delimiter, Some(proc_macro2::TokenTree::Punct(comma)) if comma.as_char() == ',') {
         return Err("contract case arguments required".into());
     }
+
+    Ok(name.to_string())
+}
+
+/// Squads names every emitted behavior owner with a literal fixture index.
+fn assigned_cases(item: &syn::Macro) -> Result<Vec<String>, Error> {
+    let parser = |input: syn::parse::ParseStream<'_>| {
+        syn::punctuated::Punctuated::<String, syn::Token![,]>::parse_terminated_with(
+            input,
+            assigned_case,
+        )
+    };
+    let names = parser.parse2(item.tokens.clone())?;
+
+    if names.is_empty() {
+        return Err("contract cases must name at least one body".into());
+    }
+
+    Ok(names.into_iter().collect())
+}
+
+/// Expressions and noninteger indices cannot silently reduce portable coverage.
+fn assigned_case(input: syn::parse::ParseStream<'_>) -> syn::Result<String> {
+    let name = input.parse::<syn::Ident>()?;
+    input.parse::<syn::Token![=]>()?;
+    input.parse::<syn::LitInt>()?.base10_parse::<usize>()?;
 
     Ok(name.to_string())
 }
@@ -179,5 +214,23 @@ mod tests {
         assert!(entrypoints("case!(123, Data);").is_err());
         assert!(entrypoints("pub fn value() -> usize { 1 }").is_err());
         assert!(entrypoints("pub async fn pending() {}").is_err());
+    }
+
+    #[test]
+    fn indexed_macro_owners_preserve_names_and_reject_unexecutable_cases() {
+        assert_eq!(
+            entrypoints("cases!(first = 0, second = 1,);").unwrap(),
+            ["first", "second"]
+        );
+
+        for source in [
+            "cases!();",
+            "cases!(first = compute());",
+            "cases!(first = -1);",
+            "cases!(first = 0 second = 1);",
+            "cases!(first = 0, 1 = second);",
+        ] {
+            assert!(entrypoints(source).is_err(), "{source}");
+        }
     }
 }

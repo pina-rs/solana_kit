@@ -66,7 +66,7 @@ pub(crate) fn generate_compression(output: &std::path::Path) -> Result<(), Error
 
 /// Complete account/event/default projection through the common typed renderer.
 pub(crate) fn generate_subscriptions(output: &std::path::Path) -> Result<(), Error> {
-    let source = generic::render_complete_program(
+    let source = generic::render_prefixed_events(
         &subscriptions()?,
         &generic::Policy {
             name: "subscriptions",

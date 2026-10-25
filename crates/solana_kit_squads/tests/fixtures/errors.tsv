@@ -1,0 +1,45 @@
+6000	Found multiple members with the same pubkey
+6001	Members array is empty
+6002	Too many members, can be up to 65535
+6003	Invalid threshold, must be between 1 and number of members with Vote permission
+6004	Attempted to perform an unauthorized action
+6005	Provided pubkey is not a member of multisig
+6006	TransactionMessage is malformed.
+6007	Proposal is stale
+6008	Invalid proposal status
+6009	Invalid transaction index
+6010	Member already approved the transaction
+6011	Member already rejected the transaction
+6012	Member already cancelled the transaction
+6013	Wrong number of accounts provided
+6014	Invalid account provided
+6015	Cannot remove last member
+6016	Members don't include any voters
+6017	Members don't include any proposers
+6018	Members don't include any executors
+6019	`stale_transaction_index` must be <= `transaction_index`
+6020	Instruction not supported for controlled multisig
+6021	Proposal time lock has not been released
+6022	Config transaction must have at least one action
+6023	Missing account
+6024	Invalid mint
+6025	Invalid destination
+6026	Spending limit exceeded
+6027	Decimals don't match the mint
+6028	Member has unknown permission
+6029	Account is protected, it cannot be passed into a CPI as writable
+6030	Time lock exceeds the maximum allowed (90 days)
+6031	Account is not owned by Multisig program
+6032	Rent reclamation is disabled for this multisig
+6033	Invalid rent collector address
+6034	Proposal is for another multisig
+6035	Transaction is for another multisig
+6036	Transaction doesn't match proposal
+6037	Transaction is not last in batch
+6038	Batch is not empty
+6039	Invalid SpendingLimit amount
+6040	Invalid Instruction Arguments
+6041	Final message buffer hash doesnt match the expected hash
+6042	Final buffer size cannot exceed 4000 bytes
+6043	Final buffer size mismatch
+6044	multisig_create has been deprecated. Use multisig_create_v2 instead.

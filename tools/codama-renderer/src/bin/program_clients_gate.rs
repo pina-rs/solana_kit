@@ -3,7 +3,7 @@
 use std::{collections::BTreeSet, error::Error, path::Path, process::Command};
 
 type Result<T> = std::result::Result<T, Box<dyn Error>>;
-const CLIENTS: [&str; 8] = [
+const CLIENTS: [&str; 11] = [
     "solana_kit_address_lookup_table",
     "solana_kit_config",
     "solana_kit_stake",
@@ -12,12 +12,18 @@ const CLIENTS: [&str; 8] = [
     "solana_kit_mpl_core",
     "solana_kit_mpl_token_metadata",
     "solana_kit_mpl_bubblegum",
+    "solana_kit_attestation_service",
+    "solana_kit_squads",
+    "solana_kit_subscriptions",
 ];
-const PDA_CLIENTS: [&str; 4] = [
+const PDA_CLIENTS: [&str; 7] = [
     "solana_kit_address_lookup_table",
     "solana_kit_mpl_core",
     "solana_kit_mpl_token_metadata",
     "solana_kit_mpl_bubblegum",
+    "solana_kit_attestation_service",
+    "solana_kit_squads",
+    "solana_kit_subscriptions",
 ];
 const TARGETS: [Option<&str>; 4] = [
     None,

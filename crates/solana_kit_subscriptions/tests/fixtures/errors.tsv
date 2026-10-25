@@ -1,0 +1,78 @@
+100	notSigner	Account must be a signer
+101	invalidAddress	Invalid account address
+102	invalidEscrowPda	Invalid escrow PDA derivation
+103	invalidSubscriptionAuthorityPda	Invalid subscription-authority PDA derivation
+104	notSystemProgram	Expected system program
+105	invalidTokenProgram	Token Program does not match other accounts
+106	invalidToken2022MintAccountData	Invalid Token-2022 mint account data
+107	invalidToken2022TokenAccountData	Invalid Token-2022 token account data
+108	invalidAssociatedTokenAccountDerivedAddress	Invalid associated token account address
+109	invalidTokenSplMintAccountData	Invalid SPL Token mint account data
+110	invalidTokenSplTokenAccountData	Invalid SPL Token account data
+111	invalidAccountData	Invalid account data
+112	invalidInstructionData	Invalid instruction data
+113	notEnoughAccountKeys	Not enough account keys provided
+114	invalidInstruction	Invalid instruction
+115	arithmeticOverflow	Arithmetic Overflow
+116	arithmeticUnderflow	Arithmetic Underflow
+117	invalidAccountDiscriminator	Invalid account discriminator
+118	mintHasConfidentialTransfer	Mint has ConfidentialTransfer extension
+119	mintHasNonTransferable	Mint has NonTransferable extension
+120	mintHasPermanentDelegate	Mint has PermanentDelegate extension
+121	mintHasTransferHook	Mint has TransferHook extension
+122	mintHasTransferFee	Mint has TransferFee extension
+123	mintHasMintCloseAuthority	Mint has MintCloseAuthority extension
+124	mintHasPausable	Mint has Pausable extension
+125	mintMismatch	Token mint mismatch
+126	invalidDelegatePda	Invalid delegation PDA derivation
+127	invalidHeaderData	Invalid header data
+128	delegationExpired	Delegation has expired
+129	invalidAmount	Invalid amount specified
+130	unauthorized	Caller not authorized for this action
+131	accountNotWritable	Account must be writable
+132	ataOwnerMismatch	Token account owner does not match expected
+133	delegationVersionMismatch	Delegation header version is not compatible
+134	migrationRequired	Account requires explicit migration
+135	delegationAlreadyExists	Delegation account already exists
+136	staleSubscriptionAuthority	Delegation init_id does not match current SubscriptionAuthority
+137	transferHookTooManyAccounts	Too many transfer hook accounts provided
+300	amountExceedsLimit	Transfer amount exceeds delegation limit
+301	fixedDelegationExpiryInPast	Expiry time specified is less than current time
+302	fixedDelegationAmountZero	zero amount specified
+400	amountExceedsPeriodLimit	Transfer amount exceeds period limit
+401	periodNotElapsed	Period has not elapsed yet
+402	invalidPeriodLength	Invalid Period length
+403	invalidPayerData	Payer provided does not match delegation
+404	recurringDelegationStartTimeInPast	Past start time specified
+405	recurringDelegationStartTimeGreaterThanExpiry	start time specified is greater than expiry
+406	recurringDelegationAmountZero	zero amount specified
+407	delegationNotStarted	Delegation period has not started yet
+408	recurringDelegationStartOnLandingRequiresExpiry	start_ts of 0 (start on landing) requires a non-zero expiry
+500	planSunset	Plan is in sunset status
+501	planExpired	Plan has expired
+502	invalidPlanPda	Invalid Plan PDA derivation
+503	invalidSubscriptionPda	Invalid subscription PDA derivation
+504	notPlanOwner	Caller is not the plan owner
+505	subscriptionPlanMismatch	Subscription does not belong to this plan
+506	unauthorizedDestination	Destination not in plan whitelist
+507	invalidNumDestinations	No valid destinations provided
+508	subscriptionCancelled	Subscription cancelled and past valid period
+509	subscriptionAlreadyCancelled	Subscription already cancelled
+510	subscriptionNotCancelled	Subscription is not cancelled
+511	invalidEndTs	End timestamp must be zero or in the future
+512	invalidPlanStatus	Invalid plan status value
+513	planImmutableAfterSunset	Plan cannot be updated after sunset
+514	sunsetRequiresEndTs	Sunset requires a non-zero end timestamp
+515	planNotExpired	Plan must be expired to delete
+516	planClosed	Plan account has been closed
+517	alreadySubscribed	Already subscribed to this plan
+518	planAlreadyExists	Plan account already exists
+519	planTermsMismatch	Subscription plan terms do not match the current plan
+520	planEndTsCannotExtend	A finite plan end timestamp can only be shortened, not removed or extended
+521	staleSubscriptionApproval	Subscription approval does not match the current subscription
+522	stalePlanApproval	Plan update approval does not match the current plan state
+600	invalidEventAuthority	Invalid event authority PDA
+601	invalidEventData	Invalid event data
+602	invalidEventTag	Invalid event tag prefix
+603	invalidEventDiscriminator	Unknown event discriminator
+604	invalidSelfProgram	Self program account does not match this program

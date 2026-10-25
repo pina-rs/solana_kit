@@ -19,6 +19,11 @@ The handwritten `solana_kit_memo` and `solana_kit_associated_token_account`
 clients add bounded Memo text/signers and canonical ATA instructions with optional
 PDA derivation. Their [runtime receipt](docs/verification/memo-ata-runtime.md)
 retains the explicit package-parity limits.
+The Attestation Service, Squads V4 and recurring Subscriptions clients provide
+portable program types, bounded account/event codecs, strict instruction builders
+and optional PDA/default resolution. Their
+[verification contract](docs/verification/remaining-program-clients.md) links the
+shared original behavior owners, source scope and remaining acceptance work.
 `solana_kit_client` adds typed balance, latest-blockhash and full-base64
 account reads, all nineteen node metadata operations and all eight economics
 operations, nine account and token operations and richer accountInfo,

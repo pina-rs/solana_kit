@@ -186,3 +186,18 @@ publish = { enabled = false }
 path = "crates/solana_kit_mpl_bubblegum"
 type = "cargo"
 publish = { enabled = false }
+
+[package.solana_kit_attestation_service]
+path = "crates/solana_kit_attestation_service"
+type = "cargo"
+publish = { enabled = false }
+
+[package.solana_kit_squads]
+path = "crates/solana_kit_squads"
+type = "cargo"
+publish = { enabled = false }
+
+[package.solana_kit_subscriptions]
+path = "crates/solana_kit_subscriptions"
+type = "cargo"
+publish = { enabled = false }

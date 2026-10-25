@@ -1,0 +1,305 @@
+name: Attestation Squads and recurring Subscriptions clients
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+env:
+  CARGO_HTTP_USER_AGENT: solana-kit-verification
+  GIT_HTTP_USER_AGENT: solana-kit-verification
+  CARGO_INCREMENTAL: "0"
+  PROGRAM_MANIFEST: verification/remaining-programs-portable/Cargo.toml
+  PROGRAM_PACKAGE: solana_kit_remaining_programs_portable
+
+jobs:
+  native-programs:
+    runs-on: "ubuntu-24.04"
+
+    strategy:
+      matrix:
+        rust: ["1.89.0", "1.99.1"]
+
+    env:
+      RUST_TOOLCHAIN: ${{ matrix.rust }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Install the selected native compiler
+        run: rustup toolchain install "$RUST_TOOLCHAIN" --profile minimal
+
+      - name: Execute every public native contract
+        run: |
+          set -euo pipefail
+          cargo "+$RUST_TOOLCHAIN" test --locked --all-features \
+            -p solana_kit_attestation_service -p solana_kit_squads \
+            -p solana_kit_subscriptions
+          cargo "+$RUST_TOOLCHAIN" run --locked --manifest-path "$PROGRAM_MANIFEST" \
+            --package "$PROGRAM_PACKAGE"
+
+  portable-programs:
+    runs-on: "ubuntu-24.04"
+    timeout-minutes: 40
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: openbudgetfun/solana_kit
+          ref: 0138bb956d2d81ccc0c56edc602401c0df2f2b46
+          path: reference
+          persist-credentials: false
+
+      - name: Install the compiler and browser runner
+        run: |
+          set -euo pipefail
+          rustup toolchain install 1.99.1 --profile minimal --component rustfmt --component clippy \
+            --target wasm32-unknown-unknown,wasm32-wasip1,wasm32-wasip2
+          cargo +1.99.1 install wasm-bindgen-cli --version 0.2.128 --locked
+
+      - name: Prepare checksum-pinned runtime hosts
+        run: |
+          set -euo pipefail
+          hosts="$RUNNER_TEMP/program-hosts"
+          mkdir "$hosts"
+          release=https://github.com/bytecodealliance/wasmtime/releases/download/v50.0.0
+          chrome=https://storage.googleapis.com/chrome-for-testing-public/155.0.8059.84/linux64
+
+          curl --fail --location --silent --show-error --user-agent solana-kit-verification \
+            "$release/wasmtime-v50.0.0-x86_64-linux.tar.xz" --output "$hosts/wasmtime.tar.xz"
+          curl --fail --location --silent --show-error --user-agent solana-kit-verification \
+            "$chrome/chrome-linux64.zip" --output "$hosts/chrome.zip"
+          curl --fail --location --silent --show-error --user-agent solana-kit-verification \
+            "$chrome/chromedriver-linux64.zip" --output "$hosts/driver.zip"
+
+          printf '%s  %s\n' 77c19ee0437991f9ac7837b9c269d9c7076744f85dad263fea5214cc2723c7ff \
+            "$hosts/wasmtime.tar.xz" | sha256sum --check --strict
+          printf '%s  %s\n' cf0f049892dea22e6a6db26d47ed0d7776b7158edcbec4634086633df8bafcbc \
+            "$hosts/chrome.zip" | sha256sum --check --strict
+          printf '%s  %s\n' 4fe2433044363e5233d642e70fa50278b471bda08032d922402c8bd7c6d743fd \
+            "$hosts/driver.zip" | sha256sum --check --strict
+
+          tar -xf "$hosts/wasmtime.tar.xz" --strip-components=1 -C "$hosts"
+          unzip -q "$hosts/chrome.zip" -d "$hosts"
+          unzip -q "$hosts/driver.zip" -d "$hosts"
+
+          printf 'WASMTIME=%s/wasmtime\nCHROME=%s/chrome-linux64/chrome\n' \
+            "$hosts" "$hosts" >> "$GITHUB_ENV"
+          printf 'CHROMEDRIVER=%s/chromedriver-linux64/chromedriver\n' \
+            "$hosts" >> "$GITHUB_ENV"
+
+          jq -n --arg binary "$hosts/chrome-linux64/chrome" \
+            '{"goog:chromeOptions": {binary: $binary, args: ["--no-sandbox"]}}' \
+            > "$RUNNER_TEMP/program-webdriver.json"
+          printf 'WASM_BINDGEN_TEST_WEBDRIVER_JSON=%s/program-webdriver.json\n' \
+            "$RUNNER_TEMP" >> "$GITHUB_ENV"
+
+      - name: Verify exact registry regeneration and native output
+        run: |
+          set -euo pipefail
+          for input in attestation:solana_kit_attestation_service squads:solana_kit_squads \
+            subscriptions:solana_kit_subscriptions; do
+            command="${input%%:*}"
+            package="${input#*:}"
+            cargo +1.99.1 run --locked --manifest-path tools/codama-renderer/Cargo.toml \
+              --features verification --bin solana_kit_codegen -- "$command-generate" \
+              "crates/$package/src/generated.rs"
+          done
+
+          cargo +1.99.1 run --locked --manifest-path tools/codama-renderer/Cargo.toml \
+            --features verification --bin solana_kit_codegen -- remaining-contracts
+
+          cargo +1.99.1 test --locked --manifest-path tools/codama-renderer/Cargo.toml \
+            --features verification --lib contracts::tests
+          cargo +1.99.1 test --locked --manifest-path tools/codama-renderer/Cargo.toml \
+            --features verification --lib generic::account_prefix::tests
+          cargo +1.99.1 test --locked --manifest-path tools/codama-renderer/Cargo.toml \
+            --features verification --bin program_clients_audit
+
+          git diff --exit-code -- verification/remaining-programs-portable/src/registry.rs \
+            verification/remaining-programs-portable/report.txt \
+            crates/solana_kit_attestation_service/src/generated.rs \
+            crates/solana_kit_squads/src/generated.rs \
+            crates/solana_kit_subscriptions/src/generated.rs
+
+          cargo +1.99.1 run --locked --manifest-path tools/codama-renderer/Cargo.toml \
+            --features verification --bin program_clients_audit -- "$GITHUB_WORKSPACE/reference"
+
+          cargo +1.99.1 run --locked --quiet --manifest-path "$PROGRAM_MANIFEST" \
+            --package "$PROGRAM_PACKAGE" > "$RUNNER_TEMP/program-native.txt"
+
+      - name: Compare all Attestation and Squads contracts to pinned external oracles
+        run: |
+          set -euo pipefail
+          oracles="$RUNNER_TEMP/program-oracles"
+          mkdir "$oracles"
+          curl --fail --location --silent --show-error --user-agent solana-kit-verification \
+            https://raw.githubusercontent.com/solana-foundation/solana-attestation-service/5b64cf09843d62ca800f7d73f8438ad3505de70e/idl/solana_attestation_service.json \
+            --output "$oracles/attestation.json"
+          curl --fail --location --silent --show-error --user-agent solana-kit-verification \
+            https://raw.githubusercontent.com/Squads-Protocol/v4/af94153ff77a28b6effe46b9c94baaa93742b48c/sdk/multisig/idl/squads_multisig_program.json \
+            --output "$oracles/squads.json"
+          printf '%s  %s\n' 924728c7b8327b5770ef63c34c804430d0a1953adcf96873bcee1f4f4ccb4a75 \
+            "$oracles/attestation.json" | sha256sum --check --strict
+          printf '%s  %s\n' cb9a0a29040ec3853a5105c547ffc608bb0e3175d78dacf30d463aff939f9b9b \
+            "$oracles/squads.json" | sha256sum --check --strict
+          for program in attestation squads; do
+            cargo +1.99.1 run --locked --manifest-path tools/codama-renderer/Cargo.toml \
+              --features verification --bin solana_kit_codegen -- \
+              "$program-primary-audit" "$oracles/$program.json"
+            cp "$oracles/$program.json" "$oracles/$program-changed.json"
+            printf '\n' >> "$oracles/$program-changed.json"
+            if cargo +1.99.1 run --locked --manifest-path tools/codama-renderer/Cargo.toml \
+              --features verification --bin solana_kit_codegen -- \
+              "$program-primary-audit" "$oracles/$program-changed.json" \
+              > "$oracles/$program-negative.txt" 2>&1; then
+              echo "changed primary oracle unexpectedly passed" >&2
+              exit 1
+            fi
+
+            case "$program" in
+              attestation) grep -F 'private primary IDL pin drift' "$oracles/$program-negative.txt" ;;
+              squads)
+                grep -F 'Squads primary oracle does not match the immutable input pin' \
+                  "$oracles/$program-negative.txt" ;;
+            esac
+          done
+
+      - name: Execute every original contract in Chrome
+        env:
+          WASM_BINDGEN_USE_BROWSER: "1"
+        run: |
+          set -euo pipefail
+          cargo +1.99.1 test --locked --manifest-path "$PROGRAM_MANIFEST" \
+            --package "$PROGRAM_PACKAGE" --target wasm32-unknown-unknown -- --nocapture
+
+      - name: Observe deliberate corruption in the real browser
+        env:
+          WASM_BINDGEN_USE_BROWSER: "1"
+        run: |
+          set -euo pipefail
+          if CARGO_TARGET_DIR="$RUNNER_TEMP/program-corrupt" cargo +1.99.1 test --locked \
+            --manifest-path "$PROGRAM_MANIFEST" --package "$PROGRAM_PACKAGE" \
+            --features corrupt --target wasm32-unknown-unknown -- --nocapture \
+            > "$RUNNER_TEMP/corrupt-browser.txt" 2>&1; then
+            echo "intentional browser corruption unexpectedly passed" >&2
+            exit 1
+          fi
+
+          grep -F 'intentional portable contract corruption' "$RUNNER_TEMP/corrupt-browser.txt"
+
+      - name: Execute both WASI previews and compare complete named streams
+        run: |
+          set -euo pipefail
+          for target in wasm32-wasip1 wasm32-wasip2; do
+            cargo +1.99.1 build --locked --manifest-path "$PROGRAM_MANIFEST" \
+              --package "$PROGRAM_PACKAGE" --target "$target" --message-format=json \
+              > "$RUNNER_TEMP/program-wasi.jsonl"
+
+            component="$(jq -sre --arg name "$PROGRAM_PACKAGE" '
+              [.[] | select(.reason == "compiler-artifact" and .target.name == $name and
+                (.target.kind | index("bin")) != null) | .filenames[] |
+                select(endswith(".wasm"))] |
+              if length == 1 then .[0] else error("expected one program component") end
+            ' "$RUNNER_TEMP/program-wasi.jsonl")"
+
+            "$WASMTIME" "$component" > "$RUNNER_TEMP/program-$target.txt"
+            cmp "$RUNNER_TEMP/program-native.txt" "$RUNNER_TEMP/program-$target.txt"
+          done
+
+      - name: Build and inspect the real interpreted guest
+        run: |
+          set -euo pipefail
+          cargo +1.99.1 build --locked --manifest-path "$PROGRAM_MANIFEST" \
+            --package solana_kit_remaining_programs_guest --target wasm32-unknown-unknown \
+            --message-format=json > "$RUNNER_TEMP/program-guest.jsonl"
+
+          guest="$(jq -sre '
+            [.[] | select(.reason == "compiler-artifact" and
+              .target.name == "solana_kit_remaining_programs_guest") | .filenames[] |
+              select(endswith(".wasm"))] |
+            if length == 1 then .[0] else error("expected one program guest") end
+          ' "$RUNNER_TEMP/program-guest.jsonl")"
+
+          cargo +1.99.1 xtask imports "$guest"
+          printf 'PROGRAM_GUEST=%s\n' "$guest" >> "$GITHUB_ENV"
+
+      - name: Execute all contracts through production LeptosKit with fuel control
+        run: |
+          cargo +1.99.1 run --locked --manifest-path "$PROGRAM_MANIFEST" \
+            --package solana_kit_remaining_programs_host -- "$PROGRAM_GUEST"
+
+      - name: Reject intentional corruption in native and both WASI previews
+        run: |
+          set -euo pipefail
+          for target in native wasm32-wasip1 wasm32-wasip2; do
+            arguments=()
+            if [ "$target" != native ]; then arguments+=(--target "$target"); fi
+
+            CARGO_TARGET_DIR="$RUNNER_TEMP/program-corrupt" cargo +1.99.1 build --locked \
+              --manifest-path "$PROGRAM_MANIFEST" --package "$PROGRAM_PACKAGE" \
+              --features corrupt "${arguments[@]}" --message-format=json \
+              > "$RUNNER_TEMP/program-corrupt.jsonl"
+
+            artifact="$(jq -sre --arg name "$PROGRAM_PACKAGE" --arg target "$target" '
+              [.[] | select(.reason == "compiler-artifact" and .target.name == $name and
+                (.target.kind | index("bin")) != null) |
+                if $target == "native" then .executable else
+                  .filenames[] | select(endswith(".wasm")) end |
+                select(. != null)] |
+              if length == 1 then .[0] else error("expected one corruption artifact") end
+            ' "$RUNNER_TEMP/program-corrupt.jsonl")"
+
+            runner=()
+            if [ "$target" != native ]; then runner+=("$WASMTIME"); fi
+
+            if "${runner[@]}" "$artifact" > "$RUNNER_TEMP/corrupt-$target.txt" 2>&1; then
+              echo "intentional corruption unexpectedly passed" >&2
+              exit 1
+            fi
+
+            grep -F 'intentional portable contract corruption' "$RUNNER_TEMP/corrupt-$target.txt"
+          done
+
+      - name: Reject interpreted-guest corruption before commit
+        run: |
+          set -euo pipefail
+          CARGO_TARGET_DIR="$RUNNER_TEMP/program-corrupt" cargo +1.99.1 build --locked \
+            --manifest-path "$PROGRAM_MANIFEST" --package solana_kit_remaining_programs_guest \
+            --features solana_kit_remaining_programs_portable/corrupt \
+            --target wasm32-unknown-unknown --message-format=json \
+            > "$RUNNER_TEMP/program-corrupt-guest.jsonl"
+
+          guest="$(jq -sre '
+            [.[] | select(.reason == "compiler-artifact" and
+              .target.name == "solana_kit_remaining_programs_guest") | .filenames[] |
+              select(endswith(".wasm"))] |
+            if length == 1 then .[0] else error("expected one corrupt guest") end
+          ' "$RUNNER_TEMP/program-corrupt-guest.jsonl")"
+
+          cargo +1.99.1 run --locked --manifest-path "$PROGRAM_MANIFEST" \
+            --package solana_kit_remaining_programs_host -- "$guest" --expect-corrupt
+
+      - name: Verify minimal normal and build dependencies on every target
+        run: |
+          set -euo pipefail
+          cargo +1.99.1 fetch --locked
+          cargo +1.99.1 run --locked --manifest-path tools/codama-renderer/Cargo.toml \
+            --features verification --bin program_clients_gate
+
+      - name: Check formatting and strict native client linting
+        run: |
+          set -euo pipefail
+          cargo +1.99.1 fmt --all --check
+          cargo +1.99.1 fmt --manifest-path "$PROGRAM_MANIFEST" --all --check
+          cargo +1.99.1 clippy --locked --all-targets --all-features \
+            -p solana_kit_attestation_service -p solana_kit_squads \
+            -p solana_kit_subscriptions -- -D warnings
