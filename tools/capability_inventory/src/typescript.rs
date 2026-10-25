@@ -62,6 +62,7 @@ fn exported(node: Node<'_>, source: &str, output: &mut Parsed) {
     }
 }
 
+/// Lexical wrappers recurse without becoming declarations of their own.
 fn collect(node: Node<'_>, source: &str, parent: Option<&str>, output: &mut Parsed) {
     if node.kind() == "lexical_declaration" {
         for child in node.named_children(&mut node.walk()) {
@@ -94,6 +95,11 @@ fn collect(node: Node<'_>, source: &str, parent: Option<&str>, output: &mut Pars
         line: node.start_position().row + 1,
     });
 
+    collect_members(node, source, name, output);
+}
+
+/// Only class and interface bodies expose members; function locals stay private.
+fn collect_members(node: Node<'_>, source: &str, name: &str, output: &mut Parsed) {
     if let Some(body) = node
         .child_by_field_name("body")
         .filter(|body| matches!(body.kind(), "class_body" | "interface_body"))

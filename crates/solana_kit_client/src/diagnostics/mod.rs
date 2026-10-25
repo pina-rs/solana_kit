@@ -86,6 +86,7 @@ pub fn transaction_error(json: &str) -> Result<Diagnostic, Error> {
         .map_err(Error::DiagnosticContext)
 }
 
+/// Preserves variant-specific fields without inventing context for unit failures.
 fn execution_context(
     error: &KnownTransactionFailure,
     context: &mut Context,

@@ -66,6 +66,7 @@ fn generate(inventory: &str) -> Result<String> {
     Ok(output)
 }
 
+/// Paths choose the bounded contract; the final branch preserves unmatched evidence.
 fn mapping(path: &str) -> (&'static str, &'static str, &'static str) {
     let core = "crates/solana_kit_core/tests/plans.rs";
     let client = "crates/solana_kit_client/tests/plans.rs";
@@ -117,6 +118,14 @@ fn mapping(path: &str) -> (&'static str, &'static str, &'static str) {
             "caller supplies signing implementation; no heterogeneous signer list or network defaults",
         );
     }
+
+    remaining_mapping(path)
+}
+
+/// Less common planning modules retain their own evidence and limitations.
+fn remaining_mapping(path: &str) -> (&'static str, &'static str, &'static str) {
+    let core = "crates/solana_kit_core/tests/plans.rs";
+    let client = "crates/solana_kit_client/tests/plans.rs";
 
     if path.contains("transaction_plan_errors") {
         return (

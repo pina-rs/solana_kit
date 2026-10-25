@@ -90,6 +90,7 @@ fn exact() -> Result<(), &'static str> {
     let wire = transaction.encode(true).map_err(|_| "wire rejected")?;
     let expected = Signature::from_bytes([7; 64]);
     let (client, requests) = client(Some(expected));
+
     let config = SendConfig {
         max_retries: Some(u64::MAX),
         min_context_slot: Some(u64::MAX),
@@ -121,6 +122,7 @@ fn exact() -> Result<(), &'static str> {
         "exact signed request or options changed",
     )
 }
+/// A mismatched signature must prevent observation and every later excluded send.
 fn excluded() -> Result<(), &'static str> {
     let transaction = transaction()?;
     let (client, requests) = client(Some(Signature::from_bytes([8; 64])));
@@ -137,14 +139,18 @@ fn excluded() -> Result<(), &'static str> {
         observer,
         core::future::pending(),
     ))?;
-    require(
-        matches!(mismatch, Err(WaitError::Outcome(Failure::ReportedSignatureMismatch { expected, actual })) if expected == Signature::from_bytes([7;64]) && *actual == Signature::from_bytes([8;64])),
-        "foreign reported signature accepted",
-    )?;
+    let rejected = match mismatch {
+        Err(WaitError::Outcome(Failure::ReportedSignatureMismatch { expected, actual })) => {
+            expected == Signature::from_bytes([7; 64]) && *actual == Signature::from_bytes([8; 64])
+        }
+        _ => false,
+    };
+    require(rejected, "foreign reported signature accepted")?;
     require(
         observed.get() == 0 && requests.borrow().len() == 1,
         "foreign signature started observation",
     )?;
+
     let cancelled = super::finish(send_and_confirm(
         &client,
         &transaction,
@@ -159,6 +165,7 @@ fn excluded() -> Result<(), &'static str> {
             && observed.get() == 0,
         "pre-cancel caused effects",
     )?;
+
     let received =
         Transaction::decode(&transaction.encode(true).map_err(|_| "wire encode failed")?)
             .map_err(|_| "wire decode failed")?;
@@ -178,10 +185,22 @@ fn excluded() -> Result<(), &'static str> {
             && observed.get() == 0,
         "unresolved lifetime caused effects",
     )?;
-    let (failed, failed_requests) = self::client(None);
+    transport_failure(&transaction, &observed)
+}
+
+/// Transport failure must retain the single attempted send without starting a watch.
+fn transport_failure(
+    transaction: &Transaction,
+    observed: &core::cell::Cell<usize>,
+) -> Result<(), &'static str> {
+    let (failed, failed_requests) = client(None);
+    let observer = |signature| {
+        observed.set(observed.get() + 1);
+        Complete(signature)
+    };
     let failure = super::finish(send_and_confirm(
         &failed,
-        &transaction,
+        transaction,
         SendConfig::default(),
         Policy::default(),
         observer,

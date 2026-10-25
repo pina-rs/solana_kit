@@ -113,6 +113,7 @@ impl<C: Encoder<T>, P: Encoder<bool>, T> Encoder<Option<T>> for Nullable<'_, C, 
 }
 
 impl<C: Decoder<T>, P: Decoder<bool>, T> Decoder<Option<T>> for Nullable<'_, C, P> {
+    /// Present fixed-width values stay framed; absent constants are still validated.
     fn read(&self, reader: &mut Reader<'_>) -> Result<Option<T>, Error> {
         let present = match &self.prefix {
             Some(prefix) => prefix.read(reader)?,

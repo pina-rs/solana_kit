@@ -22,6 +22,7 @@ fn source_hash(path: &Path) -> Result<String, Failure> {
         .to_owned())
 }
 
+/// Separates program-specific evidence without promoting partial constructor parity.
 fn contract(symbol: &str, memo: bool) -> (&'static str, &'static str, &'static str) {
     if memo {
         return memo_contract(symbol);

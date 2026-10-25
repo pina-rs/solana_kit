@@ -31,6 +31,29 @@ fn render_layouts(root: &Value, policy: &Policy<'_>, tlv_accounts: bool) -> Resu
     super::data_nodes::validate(root)?;
     let normalized = super::normalize_input(root)?;
     let root = &normalized;
+    let node = data_program(root, policy)?;
+
+    for error in parse::array(node, "errors")? {
+        parse::program_error(error)?;
+
+        if !tlv_accounts {
+            return Err("unsupported data projection errors".into());
+        }
+    }
+
+    let mut definitions = Vec::new();
+
+    for node in parse::array(node, "definedTypes")? {
+        super::data_shapes::definition(node, &mut definitions)?;
+    }
+
+    let mut records = account_records(node, tlv_accounts)?;
+    instruction_records(node, &mut records)?;
+    output(records, definitions, policy, tlv_accounts)
+}
+
+/// Both schema identity and selected program identity must match before projection.
+fn data_program<'a>(root: &'a Value, policy: &Policy<'_>) -> Result<&'a Value, Error> {
     parse::keys(
         root,
         &[
@@ -72,22 +95,15 @@ fn render_layouts(root: &Value, policy: &Policy<'_>, tlv_accounts: bool) -> Resu
     {
         return Err("untrusted data program or unsupported errors".into());
     }
+
+    Ok(node)
+}
+
+/// TLV accounts retain extension tails, while plain records keep their discriminators.
+fn account_records(program: &Value, tlv_accounts: bool) -> Result<Vec<Record>, Error> {
     let mut records = Vec::new();
-    let mut definitions = Vec::new();
 
-    for error in parse::array(node, "errors")? {
-        parse::program_error(error)?;
-
-        if !tlv_accounts {
-            return Err("unsupported data projection errors".into());
-        }
-    }
-
-    for node in parse::array(node, "definedTypes")? {
-        super::data_shapes::definition(node, &mut definitions)?;
-    }
-
-    for node in parse::array(node, "accounts")? {
+    for node in parse::array(program, "accounts")? {
         parse::keys(
             node,
             &[
@@ -127,7 +143,12 @@ fn render_layouts(root: &Value, policy: &Policy<'_>, tlv_accounts: bool) -> Resu
         });
     }
 
-    let instructions = parse::array(node, "instructions")?;
+    Ok(records)
+}
+
+/// Instruction tags must be unique and prefix-free before any output is emitted.
+fn instruction_records(program: &Value, records: &mut Vec<Record>) -> Result<(), Error> {
+    let instructions = parse::array(program, "instructions")?;
     let mut tags = BTreeSet::new();
 
     for node in instructions {
@@ -166,6 +187,11 @@ fn render_layouts(root: &Value, policy: &Policy<'_>, tlv_accounts: bool) -> Resu
         records.push(record);
     }
 
+    validate_tag_prefixes(&tags)
+}
+
+/// Prefix collisions would make dispatch depend on arbitrary declaration order.
+fn validate_tag_prefixes(tags: &BTreeSet<Option<Vec<u8>>>) -> Result<(), Error> {
     for a in tags.iter().flatten() {
         for b in tags.iter().flatten() {
             if a != b && a.starts_with(b) {
@@ -174,7 +200,7 @@ fn render_layouts(root: &Value, policy: &Policy<'_>, tlv_accounts: bool) -> Resu
         }
     }
 
-    output(records, definitions, policy, tlv_accounts)
+    Ok(())
 }
 
 fn record(node: &Value, nodes: &[Value], kind: &str) -> Result<Record, Error> {
@@ -225,25 +251,12 @@ pub(super) fn fields(nodes: &[Value], kind: &str) -> Result<Vec<Field>, Error> {
 
 fn output(
     records: Vec<Record>,
-    mut definitions: Vec<Definition>,
+    definitions: Vec<Definition>,
     policy: &Policy<'_>,
     dispatch: bool,
 ) -> Result<String, Error> {
     let original_count = definitions.len();
-    let mut name = policy.name.to_owned();
-    name[0..1].make_ascii_uppercase();
-    definitions.extend(records.iter().map(|record| Definition {
-        name: record.name.clone(),
-        shape: Shape::Struct(record.fields.clone()),
-    }));
-    let program = Program {
-        name,
-        address: policy.address,
-        definitions,
-        instructions: Vec::new(),
-        accounts: Vec::new(),
-        errors: Vec::new(),
-    };
+    let program = output_program(&records, definitions, policy);
 
     super::layout::validate_data(&program)?;
     let required = super::imports::collect(&program);
@@ -281,6 +294,28 @@ fn output(
 
     emit::imports(&mut out, &required);
     Ok(out)
+}
+
+/// The private layout graph combines definitions and account/instruction records.
+fn output_program(
+    records: &[Record],
+    mut definitions: Vec<Definition>,
+    policy: &Policy<'_>,
+) -> Program {
+    let mut name = policy.name.to_owned();
+    name[0..1].make_ascii_uppercase();
+    definitions.extend(records.iter().map(|record| Definition {
+        name: record.name.clone(),
+        shape: Shape::Struct(record.fields.clone()),
+    }));
+    Program {
+        name,
+        address: policy.address,
+        definitions,
+        instructions: Vec::new(),
+        accounts: Vec::new(),
+        errors: Vec::new(),
+    }
 }
 
 fn declaration(definition: &Definition, program: &Program) -> Result<String, Error> {

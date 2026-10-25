@@ -19,13 +19,22 @@ impl Encoder<()> for Sum {
 
 /// Empty and zero identities preserve the declared format class.
 pub fn kinds_and_identities() {
-    use Size::{Fixed, Unknown, Variable};
+    use Size::Fixed;
 
     assert_eq!(Size::checked_sum(&[]), Ok(Fixed(0)));
     assert_eq!(Size::choice(&[]), Fixed(0));
     assert_eq!(Size::checked_sum(&[Fixed(0), Fixed(2)]), Ok(Fixed(2)));
     assert_eq!(Size::choice(&[Fixed(2)]), Fixed(2));
     assert_eq!(Size::choice(&[Fixed(2), Fixed(2)]), Fixed(2));
+
+    choice_classes();
+    repetition_and_accessors();
+}
+
+/// Choice metadata retains variable and unknown classes even at zero width.
+fn choice_classes() {
+    use Size::{Fixed, Unknown, Variable};
+
     assert_eq!(
         Size::choice(&[Fixed(2), Fixed(3)]),
         Variable { max: Some(3) }
@@ -48,6 +57,11 @@ pub fn kinds_and_identities() {
         Ok(Variable { max: None })
     );
     assert_eq!(Size::checked_sum(&[Unknown, Fixed(3)]), Ok(Unknown));
+}
+
+/// Repetition preserves class identity and accessors never promise unknown bounds.
+fn repetition_and_accessors() {
+    use Size::{Fixed, Unknown, Variable};
 
     for size in [
         Unknown,

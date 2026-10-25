@@ -68,6 +68,7 @@ impl<Progress, Failure, Preflight> FailureReport<'_, Progress, Failure, Prefligh
 impl<Progress, Failure: fmt::Display, Preflight> fmt::Display
     for FailureReport<'_, Progress, Failure, Preflight>
 {
+    /// Keeps single failures concise while indexing failures in a transaction batch.
     fn fmt(&self, output: &mut fmt::Formatter<'_>) -> fmt::Result {
         let multiple = self.result.flatten().len() != 1;
 

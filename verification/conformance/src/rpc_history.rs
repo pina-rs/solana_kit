@@ -57,6 +57,14 @@ pub(crate) fn queries() -> Result<(), &'static str> {
         "latest block height narrowed",
     )?;
 
+    block_times()?;
+    block_ranges()?;
+    signature_history()?;
+    malformed()
+}
+
+/// Signed minimum timestamps and null responses stay distinct from commitment stake.
+fn block_times() -> Result<(), &'static str> {
     let time = call(
         BlockTime(u64::MAX),
         "getBlockTime",
@@ -82,8 +90,11 @@ pub(crate) fn queries() -> Result<(), &'static str> {
     require(
         commitment.commitment.is_none() && commitment.total_stake == u64::MAX,
         "stake changed",
-    )?;
+    )
+}
 
+/// Block-range ordering and exact slot limits survive the same public client path.
+fn block_ranges() -> Result<(), &'static str> {
     let slots = call(
         Blocks {
             start: 2,
@@ -121,7 +132,11 @@ pub(crate) fn queries() -> Result<(), &'static str> {
             .map_err(|_| "minimum slot failed")?
             == 0,
         "minimum slot changed",
-    )?;
+    )
+}
+
+/// Signature pages preserve positions and full-width metadata under explicit filters.
+fn signature_history() -> Result<(), &'static str> {
     let config = SignaturesConfig {
         before: Some(signature()),
         until: Some(signature()),
@@ -152,8 +167,7 @@ pub(crate) fn queries() -> Result<(), &'static str> {
             && values[0].block_time == Some(i64::MIN)
             && values[0].transaction_index == Presence::Present(u32::MAX),
         "signature history changed",
-    )?;
-    malformed()
+    )
 }
 
 fn malformed() -> Result<(), &'static str> {
@@ -181,6 +195,11 @@ fn malformed() -> Result<(), &'static str> {
         )?;
     }
 
+    required_history_fields()
+}
+
+/// Omitting any required member must fail instead of inventing nullable defaults.
+fn required_history_fields() -> Result<(), &'static str> {
     let params = format!(r#"["{KEY}"]"#);
 
     for field in [

@@ -163,7 +163,11 @@ fn instruction(node: &Value, accounts: &[Account]) -> Result<Instruction, Error>
     })
 }
 
-pub(super) fn program(root: &Value, policy: &Policy<'_>) -> Result<Program, Error> {
+/// Validates the selected schema identity before constructing its private layout graph.
+fn selected_program<'a>(
+    root: &'a Value,
+    policy: &Policy<'_>,
+) -> Result<(&'a Value, solana_kit_core::Address), Error> {
     keys(
         root,
         &[
@@ -215,6 +219,12 @@ pub(super) fn program(root: &Value, policy: &Policy<'_>) -> Result<Program, Erro
 
     empty(node, "pdas")?;
 
+    Ok((node, address))
+}
+
+/// Definitions and instructions resolve only after the selected program is trusted.
+pub(super) fn program(root: &Value, policy: &Policy<'_>) -> Result<Program, Error> {
+    let (node, address) = selected_program(root, policy)?;
     let definitions = array(node, "definedTypes")?
         .iter()
         .map(definition)
@@ -274,7 +284,8 @@ fn account(node: &Value) -> Result<Account, Error> {
 }
 
 pub(super) fn program_error(node: &Value) -> Result<ProgramError, Error> {
-    keys(node, &["kind", "name", "code", "message", "docs"])?;
+    const ERROR_FIELDS: &[&str] = &["kind", "name", "code", "message", "docs"];
+    keys(node, ERROR_FIELDS)?;
 
     if node["kind"] != "errorNode" {
         return Err("unexpected error kind".into());
@@ -342,14 +353,18 @@ fn discriminator(node: &Value) -> Result<u8, Error> {
         ],
     )?;
     keys(&first["defaultValue"], &["kind", "number"])?;
+    let expected_discriminator = serde_json::json!([{
+        "kind": "fieldDiscriminatorNode",
+        "name": "discriminator",
+        "offset": 0
+    }]);
 
     if first["kind"] != "instructionArgumentNode"
         || first["name"] != "discriminator"
         || first["type"] != u8_type()
         || first["defaultValue"]["kind"] != "numberValueNode"
         || first["defaultValueStrategy"] != "omitted"
-        || node["discriminators"]
-            != serde_json::json!([{"kind":"fieldDiscriminatorNode","name":"discriminator","offset":0}])
+        || node["discriminators"] != expected_discriminator
     {
         return Err("unsupported explicit discriminator".into());
     }

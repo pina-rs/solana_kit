@@ -195,6 +195,7 @@ impl<C, T> Decoder<Vec<T>> for Sequence<C>
 where
     C: Decoder<T>,
 {
+    /// Known counts claim capacity first; remainder decoding must consume each item.
     fn read(&self, reader: &mut Reader<'_>) -> Result<Vec<T>, Error> {
         let count = match self.count {
             Count::U32 => Some(

@@ -110,6 +110,7 @@ impl<C, T> Decoder<Option<T>> for OptionCodec<C>
 where
     C: Decoder<T>,
 {
+    /// Validates the tag before decoding and rejects zero-width remainder payloads.
     fn read(&self, reader: &mut Reader<'_>) -> Result<Option<T>, Error> {
         let tag = match self.layout {
             Layout::ByteTag => u32::from(Number::<u8>::LE.read(reader)?),

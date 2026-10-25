@@ -41,44 +41,53 @@ fn address_pages() -> Result<(), &'static str> {
         ),
     ] {
         for count in [0, 1, 100, 101, 1000, 1001] {
-            let entries = vec![entry(); count].join(",");
-            let result = format!(
-                r#"{{"data":[{entries}],"paginationToken":"18446744073709551615:4294967295"}}"#
-            );
-            let value = call_with_limits(
-                TransactionsForAddress(Address::from_bytes([0; 32]), config.clone()),
-                "getTransactionsForAddress",
-                &params,
-                &result,
-                Limits {
-                    bytes: PAGE_BYTES,
-                    depth: 32,
-                },
-            );
-
-            if count > 1000 {
-                require(value.is_err(), "default signature cap exceeded")?;
-                continue;
-            }
-
-            let page = value.map_err(|_| "default signature page failed")?;
-            let AddressTransactions::Signatures(values) = page.data else {
-                return Err("default selected full transactions");
-            };
-            require(
-                values.len() == count && page.pagination_token.is_some(),
-                "signature page truncated",
-            )?;
-
-            if let Some(first) = values.first() {
-                require(
-                    first.slot == u64::MAX
-                        && first.transaction_index == Presence::Present(u32::MAX),
-                    "signature position narrowed",
-                )?;
-            }
+            address_page(config.clone(), &params, count)?;
         }
     }
+
+    Ok(())
+}
+
+/// Every default spelling preserves pagination and the same strict signature cap.
+fn address_page(
+    config: Option<AddressHistoryConfig>,
+    params: &str,
+    count: usize,
+) -> Result<(), &'static str> {
+    let entries = vec![entry(); count].join(",");
+    let result =
+        format!(r#"{{"data":[{entries}],"paginationToken":"18446744073709551615:4294967295"}}"#);
+    let value = call_with_limits(
+        TransactionsForAddress(Address::from_bytes([0; 32]), config),
+        "getTransactionsForAddress",
+        params,
+        &result,
+        Limits {
+            bytes: PAGE_BYTES,
+            depth: 32,
+        },
+    );
+
+    if count > 1000 {
+        return require(value.is_err(), "default signature cap exceeded");
+    }
+
+    let page = value.map_err(|_| "default signature page failed")?;
+    let AddressTransactions::Signatures(values) = page.data else {
+        return Err("default selected full transactions");
+    };
+    require(
+        values.len() == count && page.pagination_token.is_some(),
+        "signature page truncated",
+    )?;
+
+    if let Some(first) = values.first() {
+        require(
+            first.slot == u64::MAX && first.transaction_index == Presence::Present(u32::MAX),
+            "signature position narrowed",
+        )?;
+    }
+
     Ok(())
 }
 
@@ -178,6 +187,15 @@ fn simulation() -> Result<(), &'static str> {
         "simulation accounts changed",
     )?;
 
+    simulation_failures(&result, &params, &config)
+}
+
+/// Incoming scalar rejection and conflicting outgoing options exercise separate boundaries.
+fn simulation_failures(
+    result: &str,
+    params: &str,
+    config: &SimulationConfig,
+) -> Result<(), &'static str> {
     for invalid in [
         r#"{"$serde_json::private::Number":"18446744073709551615"}"#,
         "\"1\"",
@@ -193,7 +211,7 @@ fn simulation() -> Result<(), &'static str> {
                     config: config.clone(),
                 },
                 "simulateTransaction",
-                &params,
+                params,
                 &bad,
             )
             .is_err(),

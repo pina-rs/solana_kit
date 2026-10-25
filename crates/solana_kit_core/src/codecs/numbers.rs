@@ -119,36 +119,43 @@ macro_rules! number {
     )+};
 }
 
-number!(u8, i8, u16, i16, u32, i32, u64, i64, u128, i128, f32, f64,);
+number!(u8, i8);
+number!(u16, i16);
+number!(u32, i32);
+number!(u64, i64);
+number!(u128, i128);
+number!(f32, f64);
+
+const WIDE_BYTES: usize = 32;
 
 /// Defines a Kit-owned 256-bit wire value without exposing another SDK's types.
 macro_rules! wide {
     ($name:ident, $description:literal) => {
         #[doc = $description]
         #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
-        pub struct $name([u8; 32]);
+        pub struct $name([u8; WIDE_BYTES]);
 
         impl $name {
             /// Constructs the exact little-endian representation.
             #[must_use]
-            pub const fn from_le_bytes(bytes: [u8; 32]) -> Self {
+            pub const fn from_le_bytes(bytes: [u8; WIDE_BYTES]) -> Self {
                 Self(bytes)
             }
 
             /// Returns the exact little-endian representation.
             #[must_use]
-            pub const fn to_le_bytes(self) -> [u8; 32] {
+            pub const fn to_le_bytes(self) -> [u8; WIDE_BYTES] {
                 self.0
             }
         }
 
         impl Encoder<$name> for Number<$name> {
             fn encode_size(&self) -> Result<Size, Error> {
-                Ok(Size::Fixed(32))
+                Ok(Size::Fixed(WIDE_BYTES))
             }
 
             fn encoded_len(&self, _: &$name) -> Result<usize, Error> {
-                Ok(32)
+                Ok(WIDE_BYTES)
             }
 
             fn write(&self, value: &$name, writer: &mut Writer<'_>) -> Result<(), Error> {
@@ -159,11 +166,14 @@ macro_rules! wide {
 
         impl Decoder<$name> for Number<$name> {
             fn decode_size(&self) -> Result<Size, Error> {
-                Ok(Size::Fixed(32))
+                Ok(Size::Fixed(WIDE_BYTES))
             }
 
             fn read(&self, reader: &mut Reader<'_>) -> Result<$name, Error> {
-                let bytes: [u8; 32] = reader.take(32)?.try_into().map_err(|_| Error::Truncated)?;
+                let bytes: [u8; WIDE_BYTES] = reader
+                    .take(WIDE_BYTES)?
+                    .try_into()
+                    .map_err(|_| Error::Truncated)?;
 
                 Ok($name(self.endian.order(bytes)))
             }
@@ -225,6 +235,7 @@ impl Decoder<u16> for ShortU16 {
         Ok(Size::Variable { max: Some(3) })
     }
 
+    /// Rejects redundant zero groups and overflow before accepting a terminator.
     fn read(&self, reader: &mut Reader<'_>) -> Result<u16, Error> {
         let mut value = 0u16;
 

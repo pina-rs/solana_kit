@@ -82,6 +82,7 @@ impl Coder<'_> {
             let decoder = Coder::new(self.idl, limits);
             let mut reader = decoder.reader(&payload)?;
             strip(&mut reader, &entry.discriminator, self.limits.max_bytes)?;
+
             let data = decode::defined(
                 self.idl,
                 self.definition(&entry.name)?,
@@ -142,6 +143,7 @@ fn add_cost(left: usize, right: usize) -> Result<usize, Error> {
     left.checked_add(right).ok_or(Error::Limit)
 }
 
+/// Discards inconsistent provenance rather than attributing later data to a caller.
 fn update_stack<'a>(
     log: &'a str,
     programs: &mut Vec<&'a str>,
@@ -152,21 +154,7 @@ fn update_stack<'a>(
     };
 
     if let Some((program, depth)) = invocation(line) {
-        if depth == 1 {
-            programs.clear();
-        }
-
-        if depth != programs.len() + 1 {
-            programs.clear();
-
-            return Ok(true);
-        }
-
-        if programs.len() >= max_depth {
-            return Err(Error::Limit);
-        }
-
-        programs.push(program);
+        enter_invocation(program, depth, programs, max_depth)?;
 
         return Ok(true);
     }
@@ -182,6 +170,32 @@ fn update_stack<'a>(
     }
 
     Ok(false)
+}
+
+/// A fresh root resets the stack; missing intermediate calls invalidate it.
+fn enter_invocation<'a>(
+    program: &'a str,
+    depth: usize,
+    programs: &mut Vec<&'a str>,
+    max_depth: usize,
+) -> Result<(), Error> {
+    if depth == 1 {
+        programs.clear();
+    }
+
+    if depth != programs.len() + 1 {
+        programs.clear();
+
+        return Ok(());
+    }
+
+    if programs.len() >= max_depth {
+        return Err(Error::Limit);
+    }
+
+    programs.push(program);
+
+    Ok(())
 }
 
 fn invocation(line: &str) -> Option<(&str, usize)> {

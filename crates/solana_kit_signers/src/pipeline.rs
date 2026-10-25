@@ -158,6 +158,7 @@ fn validate_sending_slots<S: Signer>(
     Ok(())
 }
 
+/// Repeated borrows are harmless, but distinct owners cannot claim one address.
 fn deduplicate<'a, S: Signer>(
     signers: &[&'a SignerCapability<'a, S>],
 ) -> Result<Vec<&'a SignerCapability<'a, S>>, Error> {
