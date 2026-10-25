@@ -4,8 +4,11 @@ use leptoskit_bridge::Bytes;
 use solana_kit_core::{Address, Signature, crypto::verify};
 use std::{
     fs,
+    sync::atomic::{AtomicU64, Ordering},
     time::{Duration, SystemTime, UNIX_EPOCH},
 };
+
+static SANDBOX_SEQUENCE: AtomicU64 = AtomicU64::new(0);
 
 pub(super) const WASM: &[u8] = br#"(module
  (memory (export "memory") 1)
@@ -26,11 +29,37 @@ impl Sandbox {
             .duration_since(UNIX_EPOCH)
             .unwrap()
             .as_nanos();
-        let path =
-            std::env::temp_dir().join(format!("solana-wallet-{}-{nonce}", std::process::id()));
+        let sequence = SANDBOX_SEQUENCE.fetch_add(1, Ordering::Relaxed);
+        let path = std::env::temp_dir().join(format!(
+            "solana-wallet-{}-{nonce}-{sequence}",
+            std::process::id()
+        ));
         fs::create_dir(&path).unwrap();
         Self(path.canonicalize().unwrap())
     }
+}
+
+#[test]
+fn concurrent_sandboxes_own_distinct_directories_until_their_owners_drop() {
+    let barrier = Arc::new(std::sync::Barrier::new(8));
+    let threads: Vec<_> = (0..8)
+        .map(|_| {
+            let barrier = Arc::clone(&barrier);
+            std::thread::spawn(move || {
+                barrier.wait();
+                Sandbox::new()
+            })
+        })
+        .collect();
+    let sandboxes: Vec<_> = threads
+        .into_iter()
+        .map(|thread| thread.join().unwrap())
+        .collect();
+    let paths: BTreeSet<_> = sandboxes.iter().map(|sandbox| sandbox.0.clone()).collect();
+    assert_eq!(paths.len(), 8);
+    assert!(paths.iter().all(|path| path.is_dir()));
+    drop(sandboxes);
+    assert!(paths.iter().all(|path| !path.exists()));
 }
 
 impl Drop for Sandbox {
