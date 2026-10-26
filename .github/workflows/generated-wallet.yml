@@ -137,7 +137,9 @@ jobs:
           persist-credentials: false
 
       - name: Install the pinned compiler
-        run: rustup toolchain install 1.99.1 --profile minimal --target wasm32-unknown-unknown
+        run: |
+          rustup toolchain install 1.99.1 --profile minimal \
+            --component clippy --target wasm32-unknown-unknown
 
       - name: Verify the generated app toolchains
         run: |
