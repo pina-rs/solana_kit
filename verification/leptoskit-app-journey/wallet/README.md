@@ -29,6 +29,11 @@ Android action/scheme visibility queries. Normal Git dependencies give every
 framework package the same Rust source identity. Cargo patch and replace tables
 are rejected.
 
+`prepare-wallet-rpc` instead selects the private [composed runtime](../runtime/README.md)
+for local-wallet HTTP, WebSocket and timer journeys. It retains the generated
+hosts and existing approval controls. The original runtime remains the fixture
+for Android external wallet availability and Intent dispatch.
+
 Use the CLI built from that verified framework source:
 
 ```sh
