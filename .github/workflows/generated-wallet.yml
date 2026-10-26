@@ -95,6 +95,7 @@ jobs:
       - name: Compile the generated wallet guest
         run: |
           set -euo pipefail
+
           for fixture in wallet wallet-rpc; do
             app="$RUNNER_TEMP/$fixture-app"
             cargo +1.99.1 build --locked --manifest-path "$app/Cargo.toml" \
@@ -117,8 +118,11 @@ jobs:
 
   generated-wallet-macos:
     runs-on: "macos-15"
+    timeout-minutes: 45
     env:
       DEVELOPER_DIR: /Applications/Xcode_26.2.app/Contents/Developer
+      npm_config_user_agent: solana-kit-verification
+      npm_config_audit: "false"
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -163,3 +167,96 @@ jobs:
           "$cli" migrate --check --file "$app/leptoskit.toml"
           cd "$app"
           "$cli" build --platform macos
+
+      - name: Build and lint the installed application controller
+        run: |
+          set -euo pipefail
+          manifest=sdk/verification/leptoskit-app-journey/installed/Cargo.toml
+          cargo +1.99.1 clippy --locked --manifest-path "$manifest" --all-targets -- -D warnings
+          cargo +1.99.1 build --locked --manifest-path "$manifest" \
+            --message-format=json > "$RUNNER_TEMP/installed-controller.jsonl"
+
+      - name: Install the pinned native UI driver and validator
+        run: |
+          set -euo pipefail
+          npm ci --prefix framework/setup/native-ui
+          sudo automationmodetool enable-automationmode-without-authentication
+
+          case "$(uname -m)" in
+            arm64)
+              target=aarch64-apple-darwin
+              digest=7552be74cd4eee431de953b8f0761ef3c14bde40c4eadc9d0254d37254144dbd
+              ;;
+            x86_64)
+              target=x86_64-apple-darwin
+              digest=88ce81f9b6713f56fae403ccde06e47204746a2d057f4b1d721ce94f1f2328f7
+              ;;
+            *) echo 'Unsupported validator host architecture' >&2; exit 1 ;;
+          esac
+
+          archive="$RUNNER_TEMP/validator.tar.bz2"
+          curl --fail --location --user-agent solana-kit-verification \
+            "https://github.com/anza-xyz/agave/releases/download/v4.2.0/solana-release-$target.tar.bz2" \
+            --output "$archive"
+          printf '%s  %s\n' "$digest" "$archive" | shasum -a 256 --check
+
+          mkdir "$RUNNER_TEMP/validator"
+          tar -xjf "$archive" -C "$RUNNER_TEMP/validator"
+          rm "$archive"
+
+      - name: Drive the installed generated app against its owned fresh validator
+        run: |
+          set -euo pipefail
+          controller="$(jq -sre '[.[] | select(.reason == "compiler-artifact" and
+            .target.name == "solana_kit_installed_wallet_journey") |
+            .executable | select(. != null)] |
+            if length == 1 then .[0] else error("expected one installed controller") end' \
+            "$RUNNER_TEMP/installed-controller.jsonl")"
+
+          validator="$RUNNER_TEMP/validator/solana-release/bin/solana-test-validator"
+          "$validator" --version
+          driver_port=14731
+          if lsof -nP -iTCP:"$driver_port" -sTCP:LISTEN; then
+            echo 'Dedicated UI driver port is already occupied' >&2
+            exit 1
+          fi
+          (
+            cd framework/setup/native-ui
+            exec env -u APPIUM_HOME node node_modules/appium/build/lib/main.js \
+              --address 127.0.0.1 --port "$driver_port" --use-drivers mac2 --log-no-colors
+          ) > "$RUNNER_TEMP/installed-appium.log" 2>&1 &
+          server=$!
+          cleanup() {
+            kill "$server" 2>/dev/null || true
+            wait "$server" 2>/dev/null || true
+          }
+          trap cleanup EXIT
+          deadline=$((SECONDS + 60))
+          until curl --fail --silent --noproxy '*' --user-agent solana-kit-verification \
+            "http://127.0.0.1:$driver_port/status" | jq -e '.value.ready == true' >/dev/null; do
+            kill -0 "$server"
+            if [ "$SECONDS" -ge "$deadline" ]; then
+              echo 'Owned native UI driver startup timed out' >&2
+              exit 1
+            fi
+            sleep 0.1
+          done
+          kill -0 "$server"
+
+          env -u HTTP_PROXY -u HTTPS_PROXY -u ALL_PROXY \
+            -u http_proxy -u https_proxy -u all_proxy \
+            "$controller" "http://127.0.0.1:$driver_port" \
+            "$RUNNER_TEMP/wallet-rpc-app/.leptoskit/macos/App.app" \
+            "$HOME/Library/Application Support/com.leptoskit.solanawalletapp" \
+            "$RUNNER_TEMP/installed-wallet-run" "$validator"
+
+      - name: Retain actual installed app evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+
+        with:
+          name: generated-wallet-installed-macos
+          path: |
+            ${{ runner.temp }}/installed-wallet-run/native-ui
+            ${{ runner.temp }}/installed-wallet-run/validator.log
+            ${{ runner.temp }}/installed-appium.log
