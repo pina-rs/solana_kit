@@ -10,52 +10,10 @@ pub use payment::{checkout_failures, new_subscription};
 #[cfg(feature = "crypto")]
 pub use secret::signed_authentication;
 
-use solana_kit_client::{Reply, TransportError};
+use super::payment_support::{Replay, body, client, reply};
+use solana_kit_client::Reply;
 use solana_kit_core::Address;
 use solana_kit_helius::{SensitiveString, auth::*, service::*};
-use std::{
-    cell::RefCell,
-    collections::VecDeque,
-    future::{Ready, ready},
-    rc::Rc,
-};
-
-type Trace = Rc<RefCell<Vec<ServiceRequest>>>;
-
-struct Replay {
-    replies: RefCell<VecDeque<Reply>>,
-    requests: Trace,
-}
-
-impl ServiceTransport<Service> for Replay {
-    type Exchange<'a> = Ready<Result<Reply, TransportError>>;
-
-    fn exchange(&self, request: ServiceRequest) -> Self::Exchange<'_> {
-        assert_eq!(request.service, Service::Developer);
-        self.requests.borrow_mut().push(request);
-        ready(Ok(self
-            .replies
-            .borrow_mut()
-            .pop_front()
-            .expect("scripted exchange")))
-    }
-}
-
-fn client(replies: Vec<Reply>) -> (ServiceClient<Replay>, Trace) {
-    let requests = Rc::new(RefCell::new(Vec::new()));
-    let transport = Replay {
-        replies: RefCell::new(replies.into()),
-        requests: Rc::clone(&requests),
-    };
-    (ServiceClient::new(transport, Budgets::default()), requests)
-}
-
-fn reply(body: &str) -> Reply {
-    Reply {
-        status: 200,
-        body: body.as_bytes().to_vec(),
-    }
-}
 
 fn request(plan: Plan) -> SignupRequest {
     SignupRequest::new(
@@ -91,8 +49,4 @@ fn project(plan: &str, start: &str, end: &str) -> String {
         }
     }])
     .to_string()
-}
-
-fn body(request: &ServiceRequest) -> serde_json::Value {
-    serde_json::from_slice(request.body.as_deref().expect("JSON request")).expect("object body")
 }

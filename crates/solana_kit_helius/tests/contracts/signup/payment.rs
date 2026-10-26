@@ -134,7 +134,10 @@ fn host_failures() {
         invalid.payment_host = Some(host.into());
         let (result, calls) = execute(invalid, vec![reply("[]")]);
         assert!(
-            matches!(result, Err(SignupError::InvalidPaymentHost)),
+            matches!(
+                result,
+                Err(SignupError::Payment(PaymentError::InvalidPaymentHost))
+            ),
             "{host}"
         );
         assert_eq!(calls.len(), 1);
@@ -144,11 +147,17 @@ fn host_failures() {
 fn amount_failures() {
     let zero = PREVIEW.replace("\"dueToday\":4900", "\"dueToday\":0");
     let (result, calls) = execute(options(), replies(&zero, INTENT));
-    assert!(matches!(result, Err(SignupError::ZeroAmount)));
+    assert!(matches!(
+        result,
+        Err(SignupError::Payment(PaymentError::ZeroAmount))
+    ));
     assert_eq!(calls.len(), 3);
     let zero = INTENT.replace("\"amount\":4900", "\"amount\":0");
     let (result, _) = execute(options(), replies(PREVIEW, &zero));
-    assert!(matches!(result, Err(SignupError::ZeroAmount)));
+    assert!(matches!(
+        result,
+        Err(SignupError::Payment(PaymentError::ZeroAmount))
+    ));
 }
 
 fn preview_failure() {

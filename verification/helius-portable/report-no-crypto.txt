@@ -21,6 +21,11 @@ PASS signup-existing
 PASS signup-billing
 PASS signup-payment
 PASS signup-failures
+PASS payment-plan-upgrade
+PASS payment-explicit-price
+PASS payment-rejection
+PASS payment-renewal
+PASS payment-cancellation
 PASS staking-preparation
 PASS wallet-and-enhanced-routes
 PASS oauth-and-developer-routes
@@ -35,4 +40,4 @@ PASS nested-asset
 PASS enhanced-models
 PASS transfer-models
 PASS payment-terms
-PASS all 37 Helius contract groups
+PASS all 42 Helius contract groups

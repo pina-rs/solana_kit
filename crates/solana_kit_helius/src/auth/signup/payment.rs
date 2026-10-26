@@ -1,67 +1,39 @@
-//! New subscriptions prepare one explicit checkout without signing or sending funds.
+//! New subscriptions validate contact data before using the shared checkout flow.
 
-use super::{ContactField, SignupError, urls};
+use super::{ContactField, SignupError};
 use crate::{
     SensitiveString,
     auth::{
-        AuthenticatedIdentity, BillingPeriod, PaymentLink, Plan, SignupRequest,
-        checkout::{CheckoutInitializeRequest, CheckoutPreviewRequest, resolve_price_id},
+        AuthenticatedIdentity, CreatePaymentRequest, PaymentLink, PaymentPrice, SignupRequest,
+        create_payment,
     },
     service::{Service, ServiceClient, ServiceTransport},
 };
 
-/// Freeze one provider price before preview and initialization so both refer to the same offer.
+/// Signup alone requires contact data; checkout mechanics have one maintained implementation.
 pub(super) async fn prepare<T: ServiceTransport<Service>>(
     client: &ServiceClient<T>,
     identity: &AuthenticatedIdentity,
     request: &SignupRequest,
 ) -> Result<PaymentLink, SignupError> {
     contact(request)?;
-    let host = urls::payment_host(request.payment_host.as_deref())?;
-    let price_id = resolve_price_id(client, request.plan, request.period).await?;
-    let preview = client
-        .call(CheckoutPreviewRequest {
-            price_id: price_id.clone(),
-            ref_id: identity.ref_id.clone(),
-            coupon_code: request.coupon_code.clone(),
-            qty: None,
-        })
-        .await?;
+    let mut payment = CreatePaymentRequest::new(
+        &identity.ref_id,
+        PaymentPrice::Plan {
+            plan: request.plan,
+            period: request.period,
+        },
+    );
+    payment.email = request.email.clone();
+    payment.first_name = request.first_name.clone();
+    payment.last_name = request.last_name.clone();
+    payment.wallet_address = Some(identity.wallet_address);
+    payment.coupon_code = request.coupon_code.clone();
+    payment.payment_host = request.payment_host.clone();
 
-    if preview.due_today == 0 {
-        return Err(SignupError::ZeroAmount);
-    }
-
-    let intent = client
-        .call(CheckoutInitializeRequest {
-            price_id,
-            ref_id: identity.ref_id.clone(),
-            email: request.email.clone(),
-            first_name: request.first_name.clone(),
-            last_name: request.last_name.clone(),
-            wallet_address: Some(identity.wallet_address.to_string()),
-            coupon_code: request.coupon_code.clone(),
-            qty: None,
-        })
-        .await?;
-
-    if intent.amount == 0 {
-        return Err(SignupError::ZeroAmount);
-    }
-
-    let payment_url = urls::build_payment_url(&intent.id, Some(host))?;
-
-    Ok(PaymentLink {
-        kind: "payment_required".into(),
-        payment_intent_id: intent.id.clone(),
-        amount_cents: intent.amount,
-        destination_wallet: intent.destination_wallet,
-        memo: intent.id,
-        expires_at: intent.expires_at,
-        payment_url,
-        solana_pay_url: intent.solana_pay_url,
-        plan_name: plan_name(request.plan, request.period),
-    })
+    create_payment(client, payment)
+        .await
+        .map_err(SignupError::from)
 }
 
 fn contact(request: &SignupRequest) -> Result<(), SignupError> {
@@ -83,23 +55,4 @@ fn blank(value: &SensitiveString) -> bool {
         .expose()
         .trim_matches(|character: char| character.is_whitespace() || character == '\u{feff}')
         .is_empty()
-}
-
-fn plan_name(plan: Plan, period: BillingPeriod) -> String {
-    if plan == Plan::Agent {
-        return "Agent Plan".into();
-    }
-
-    let name = match plan {
-        Plan::Agent => "Agent",
-        Plan::Developer => "Developer",
-        Plan::Business => "Business",
-        Plan::Professional => "Professional",
-    };
-    let period = match period {
-        BillingPeriod::Monthly => "Monthly",
-        BillingPeriod::Yearly => "Yearly",
-    };
-
-    format!("{name} ({period})")
 }

@@ -14,5 +14,6 @@ solana_kit_helius_portable = { path = "..", default-features = false }
 [features]
 default = ["crypto", "signup"]
 crypto = ["solana_kit_helius_portable/crypto"]
-signup = ["solana_kit_helius_portable/signup"]
+checkout = ["solana_kit_helius_portable/checkout"]
+signup = ["checkout", "solana_kit_helius_portable/signup"]
 unexpected-panic = []

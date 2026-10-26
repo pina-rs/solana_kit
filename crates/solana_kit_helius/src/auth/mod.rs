@@ -8,10 +8,20 @@ mod plans;
 mod results;
 #[cfg(feature = "signup")]
 mod signup;
+#[cfg(feature = "checkout")]
+mod urls;
+/// Prepare an existing project's plan change: pass its project ID as `ref_id`.
+/// The provider decides upgrade eligibility; this alias shares the checkout implementation.
+#[cfg(feature = "checkout")]
+pub use checkout::create_payment as upgrade_plan;
+#[cfg(feature = "checkout")]
+pub use checkout::{CreatePaymentRequest, PaymentError, PaymentPrice, create_payment, pay_renewal};
 pub use plans::{BillingPeriod, InvalidPlan, Plan, PlanInfo};
 pub use results::*;
 #[cfg(feature = "signup")]
-pub use signup::{ContactField, SignupError, auth_signup, build_endpoints, build_payment_url};
+pub use signup::{ContactField, SignupError, auth_signup};
+#[cfg(feature = "checkout")]
+pub use urls::{build_endpoints, build_payment_url};
 mod payment_terms;
 pub use payment_terms::{
     PaymentTermsError, PaymentTransfer, TREASURY, USDC_MINT_DEVNET, USDC_MINT_MAINNET,

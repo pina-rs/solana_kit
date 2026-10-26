@@ -21,10 +21,19 @@ factory binds the actual returned JWT to its approved Developer service adapter.
 Project keys remain separate from bearer tokens. Payment approval and submission
 remain with the application.
 
-The `signup` feature adds fundamental HTTP URI and date parsing dependencies;
-ordinary protocol clients keep their original dependency graph. Billing windows
+The `signup` feature composes `checkout` with date parsing; ordinary protocol
+clients keep their original dependency graph. Billing windows
 require timestamps with explicit RFC3339 offsets. Preview errors propagate, zero
 totals are rejected, and no payment-host environment variable is read.
+
+Enable `checkout` for `auth::create_payment`, `auth::upgrade_plan` and
+`auth::pay_renewal`. Select a named plan or one exact price through `PaymentPrice`.
+An upgrade uses the existing project ID as `CreatePaymentRequest::ref_id`.
+A renewal reads one matching pending intent and returns its existing terms.
+All three prepare unsigned links; none signs, sends or automatically retries a payment.
+Preview failures propagate through `PaymentError`. Signup retains these failures
+through `SignupError::Payment` or its original typed service cause.
+Checkout adds HTTP URI and percent encoding dependencies without a date parser.
 
 REST adapters implement the shared `solana_kit_client::rest::Transport<Service>`
 contract, reexported as `ServiceTransport<Service>`.

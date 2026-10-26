@@ -39,21 +39,21 @@ Preconfirmation is an untrusted early signal, not transaction confirmation.
 ## Verification scope
 
 The maintained runner imports the original public contract bodies. The base
-registry retains 33 groups, or 35 with cryptography. Optional signup adds four
-groups, and encoded-key signup adds one more: the expanded suites contain 37
-non-crypto or 40 crypto groups. Four fixed report manifests guard names and counts.
-Four native multi-thread tests require concrete REST, staking preparation,
-stake-discovery and unified-signup futures to retain `Send`. The signup test is
-feature-gated. Local `Rc` exchanges exercise local futures without a universal
-`Send` requirement.
+registry retains 33 groups, or 35 with cryptography. Checkout expands these to
+38 or 40 groups; signup expands them to 42 or 45. Six fixed report manifests guard
+names and counts. Six native multi-thread tests require
+concrete REST, staking preparation, stake-discovery, unified-signup, checkout and
+renewal futures to retain `Send`. Orchestration tests are feature-gated. Local
+`Rc` exchanges exercise local futures without a universal `Send` requirement.
 
 The base suites passed native Rust, Chrome, both WASI previews and the production
 LeptosKit interpreter in [the foundation PR](https://github.com/pina-rs/solana_kit/pull/76).
 All 47 checks and 22 workflow runs passed, including intended corruption, fuel
-exhaustion and unrelated-panic controls. The expanded signup suites pass local
-native execution; their exact-source browser, WASI and interpreter execution
-remains required on this change's CI. Generated installed desktop, Android and
-iOS application journeys remain part of the wider implementation goal.
+exhaustion and unrelated-panic controls. The signup suites also passed these hosts
+in [the signup PR](https://github.com/pina-rs/solana_kit/pull/78). The expanded
+payment suites pass local native execution; their exact-source browser, WASI and
+interpreter execution remains required on this change's CI. Generated installed
+desktop, Android and iOS application journeys remain part of the wider goal.
 
 The canonical [capability ledger](capabilities.tsv) retains all 1,790 Helius
 declarations. They remain pending. The provenance audit checks all 52 distinct
@@ -90,11 +90,51 @@ opaque intent IDs and query keys, and never reads payment-host environment value
 One resolved price is reused instead of repeating configuration discovery.
 These are explicit hardening and ownership choices.
 
-HTTP URI, percent encoding and parsing-only date dependencies are optional with
-`signup`. The original default and crypto dependency graphs remain separate from
-signup's graph. CI checks all four combinations on every target, including
-injected-Tokio rejection. Signup with payment, renewal and upgrade orchestration,
-and full declaration-level coverage remain unfinished. No live provider call is exercised.
+HTTP URI and percent encoding dependencies are optional with `checkout`.
+`signup` composes it with parsing-only date dependencies. The original default and
+crypto graphs remain separate. CI checks all six combinations on every target, including
+injected-Tokio rejection. Signup with payment submission and provisioning, and full
+declaration-level coverage remain unfinished. No live provider call is exercised.
+
+## Checkout creation, upgrades and renewals
+
+The `checkout` feature exposes `auth::create_payment`, which accepts
+`CreatePaymentRequest` with one `PaymentPrice`.
+A named plan resolves one configured price; an explicit identifier bypasses
+configuration discovery. Preview and initialization receive that same identifier,
+reference, optional coupon and positive quantity. Contact fields are redacted and
+optional for these flows. New-account signup retains its required contact checks
+before using this shared implementation.
+
+`auth::upgrade_plan` is the same operation with an existing project ID as `ref_id`.
+It leaves upgrade eligibility with the provider. `auth::pay_renewal` reads exactly
+one existing intent and requires its returned identity to match and its status to
+be `pending`. It initializes nothing. Both return unsigned `PaymentLink` values;
+approval, transaction construction, signing and submission remain caller-owned.
+
+`PaymentError` distinguishes input, zero-total, intent-state and service failures.
+Signup wraps payment-input failures in `SignupError::Payment`; original service
+errors retain `SignupError::Service`. Payment URL construction uses `PaymentError`
+as well. These APIs remain part of the unpublished implementation.
+
+The pinned `createPayment`, `upgradePlan` and `payRenewal` sources define this
+scope. Rust represents price alternatives with an enum and positive quantities
+with `NonZeroU64`. It deliberately rejects mismatched renewal identities and zero
+initialized totals, propagates preview failures, and reuses one resolved price.
+Empty and dot-segment intent IDs cannot navigate outside the intended payment path.
+It does not repeat the reference's potentially inconsistent price discovery or
+broad error catch. Low-level checkout operations remain available for explicit
+application policies.
+
+Five shared groups exercise all plan/period pairs, explicit-price forwarding,
+exact amounts above the JavaScript safe-integer boundary, renewal rejection,
+provider error custody and actual suspended-exchange cancellation. Each runtime
+executes those original bodies. Cancellation during initialization releases the
+local exchange; it cannot undo a request already accepted by the provider. The
+caller must reconcile an uncertain intent before choosing another initialization.
+Checkout-only configurations execute without the signup date parser, with and
+without cryptography, through the same browser, WASI and production interpreter paths.
+These current-source portable executions remain required on this change's CI.
 
 ## Provider contract review
 

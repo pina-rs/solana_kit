@@ -3,15 +3,13 @@
 mod authenticate;
 mod error;
 mod payment;
-mod urls;
 
 pub use error::{ContactField, SignupError};
-pub use urls::{build_endpoints, build_payment_url};
 
 use super::{
     AuthenticatedIdentity, BillingPeriod, DeveloperCreateApiKey, DeveloperGetProject,
     DeveloperListProjects, DeveloperProjectSummary, Plan, ProvisionedProject, SignupRequest,
-    SignupResult,
+    SignupResult, build_endpoints,
 };
 use crate::{
     SensitiveString,

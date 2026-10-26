@@ -14,7 +14,8 @@ description = "Portable typed Helius APIs for off-chain Solana applications"
 [features]
 default = []
 crypto = ["solana_kit_core/crypto", "dep:zeroize"]
-signup = ["dep:http", "dep:percent-encoding", "dep:time"]
+checkout = ["dep:http", "dep:percent-encoding"]
+signup = ["checkout", "dep:time"]
 
 [dependencies]
 base64 = { version = "0.22.1", default-features = false, features = ["alloc"] }

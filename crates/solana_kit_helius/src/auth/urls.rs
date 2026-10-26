@@ -1,6 +1,6 @@
 //! Returned links encode opaque values and never resolve ambient host settings.
 
-use super::SignupError;
+use super::checkout::PaymentError;
 use crate::{SensitiveString, auth::SignupEndpoints};
 use percent_encoding::{AsciiSet, NON_ALPHANUMERIC, utf8_percent_encode};
 
@@ -28,12 +28,12 @@ pub fn build_endpoints(api_key: &SensitiveString) -> SignupEndpoints {
 /// Builds a hosted link from an explicit ASCII HTTP(S) base, without environment reads.
 ///
 /// # Errors
-/// Rejects credentials, queries, fragments, invalid authorities and empty intent IDs.
-pub fn build_payment_url(intent: &str, host: Option<&str>) -> Result<String, SignupError> {
+/// Rejects credentials, queries, fragments, invalid authorities and empty/dot-segment intent IDs.
+pub fn build_payment_url(intent: &str, host: Option<&str>) -> Result<String, PaymentError> {
     let host = payment_host(host)?;
 
-    if intent.is_empty() {
-        return Err(SignupError::InvalidPaymentIntent);
+    if intent.is_empty() || matches!(intent, "." | "..") {
+        return Err(PaymentError::InvalidPaymentIntent);
     }
 
     Ok(format!(
@@ -43,15 +43,15 @@ pub fn build_payment_url(intent: &str, host: Option<&str>) -> Result<String, Sig
 }
 
 /// A parsed URI still needs explicit port and credential checks before becoming a payment base.
-pub(super) fn payment_host(host: Option<&str>) -> Result<&str, SignupError> {
+pub(super) fn payment_host(host: Option<&str>) -> Result<&str, PaymentError> {
     let host = host
         .filter(|value| !value.is_empty())
         .unwrap_or(PAYMENT_HOST);
     let host = host.strip_suffix('/').unwrap_or(host);
     let uri = host
         .parse::<http::Uri>()
-        .map_err(|_| SignupError::InvalidPaymentHost)?;
-    let authority = uri.authority().ok_or(SignupError::InvalidPaymentHost)?;
+        .map_err(|_| PaymentError::InvalidPaymentHost)?;
+    let authority = uri.authority().ok_or(PaymentError::InvalidPaymentHost)?;
 
     if !matches!(uri.scheme_str(), Some("http" | "https"))
         || authority.host().is_empty()
@@ -59,7 +59,7 @@ pub(super) fn payment_host(host: Option<&str>) -> Result<&str, SignupError> {
         || uri.query().is_some()
         || host.contains(['#', '\\'])
     {
-        return Err(SignupError::InvalidPaymentHost);
+        return Err(PaymentError::InvalidPaymentHost);
     }
 
     let port = &authority.as_str()[authority.host().len()..];
@@ -71,7 +71,7 @@ pub(super) fn payment_host(host: Option<&str>) -> Result<&str, SignupError> {
                 && value.parse::<u16>().is_ok()
         })
     {
-        return Err(SignupError::InvalidPaymentHost);
+        return Err(PaymentError::InvalidPaymentHost);
     }
 
     Ok(host)

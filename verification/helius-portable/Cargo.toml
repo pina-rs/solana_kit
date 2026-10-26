@@ -11,7 +11,8 @@ members = ["guest"]
 [features]
 default = ["crypto", "signup"]
 crypto = ["solana_kit_helius/crypto"]
-signup = ["solana_kit_helius/signup"]
+checkout = ["solana_kit_helius/checkout"]
+signup = ["checkout", "solana_kit_helius/signup"]
 corrupt = []
 
 [dependencies]
@@ -35,6 +36,10 @@ wasm-bindgen-test = "=0.3.78"
 [[test]]
 name = "native_future"
 path = "../../crates/solana_kit_helius/tests/native_future.rs"
+
+[[test]]
+name = "native_payment"
+path = "../../crates/solana_kit_helius/tests/native_payment.rs"
 
 [profile.release]
 strip = "none"
