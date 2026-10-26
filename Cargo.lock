@@ -1652,7 +1652,7 @@ dependencies = [
 name = "solana_kit_helius"
 version = "0.1.0"
 dependencies = [
- "base64",
+ "base64 0.22.1",
  "futures",
  "serde",
  "serde_json",
