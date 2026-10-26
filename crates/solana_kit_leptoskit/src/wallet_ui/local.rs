@@ -134,7 +134,11 @@ pub fn local_wallet_panel(
     }
 
     if let Some(address) = address {
-        view = view.child(Element::text(address).id("wallet_local.account"));
+        view = view.child(
+            Element::text(address)
+                .id("wallet_local.account")
+                .aria_label("Local wallet address"),
+        );
 
         for (label, action) in [
             ("Review signature", LocalWalletAction::Review),
