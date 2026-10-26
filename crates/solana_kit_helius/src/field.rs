@@ -3,20 +3,15 @@
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
 /// A response field that distinguishes absence, explicit null and a typed value.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub enum Field<T> {
     /// The object did not contain this field.
+    #[default]
     Missing,
     /// The object contained JSON null.
     Null,
     /// The object contained a valid non-null value.
     Value(T),
-}
-
-impl<T> Default for Field<T> {
-    fn default() -> Self {
-        Self::Missing
-    }
 }
 
 impl<T> Field<T> {

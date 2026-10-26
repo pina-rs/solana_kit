@@ -23,12 +23,6 @@ pub const TIP_ACCOUNTS: [&str; 10] = [
     "4TQLFNWK8AovT1gFvda5jfw2oJeRMKEmw7aH6MGBJ3or",
 ];
 
-impl Default for SenderRegion {
-    fn default() -> Self {
-        Self::Default
-    }
-}
-
 impl SenderRegion {
     /// Returns the pinned source origin. Regional HTTP requires explicit adapter policy.
     pub const fn origin(self) -> &'static str {

@@ -1,11 +1,15 @@
 //! Closed provider string enums reject unknown wire values.
 
 macro_rules! string_enum {
-    ($doc:literal, $name:ident { $($variant:ident => $wire:literal),+ $(,)? }) => {
+    ($(#[$attribute:meta])* $doc:literal, $name:ident {
+        $($(#[$variant_attribute:meta])* $variant:ident => $wire:literal),+ $(,)?
+    }) => {
+        $(#[$attribute])*
         #[doc = $doc]
         #[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
         pub enum $name {
-            $(#[doc = concat!("The `", $wire, "` wire value.")]
+            $($(#[$variant_attribute])*
+            #[doc = concat!("The `", $wire, "` wire value.")]
             #[serde(rename = $wire)]
             $variant,)+
         }
@@ -184,8 +188,10 @@ string_enum!(
     }
 );
 string_enum!(
+    #[derive(Default)]
     "The pinned Sender region key; endpoint policy remains caller-owned.",
     SenderRegion {
+        #[default]
         Default => "Default",
         UsSlc => "US_SLC",
         UsEast => "US_EAST",
