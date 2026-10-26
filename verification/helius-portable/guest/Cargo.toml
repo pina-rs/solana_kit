@@ -12,6 +12,7 @@ serde_json = "=1.0.154"
 solana_kit_helius_portable = { path = "..", default-features = false }
 
 [features]
-default = ["crypto"]
+default = ["crypto", "signup"]
 crypto = ["solana_kit_helius_portable/crypto"]
+signup = ["solana_kit_helius_portable/signup"]
 unexpected-panic = []

@@ -80,7 +80,7 @@ model!(
 /// Explicit signup authentication. No missing credential branch can be constructed.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum SignupAuthentication {
-    /// Caller-provided encoded signing key. Signing stays local.
+    /// Caller-provided Base64-encoded 64-byte seed/public key. Signing stays local.
     SecretKey(SensitiveString),
     /// Caller-provided already authenticated identity.
     Authenticated {

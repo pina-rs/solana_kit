@@ -13,6 +13,19 @@ queries, webhooks, authentication, staking preparation and transaction submissio
 Optional `crypto` enables caller-key authentication signing. Runtime libraries,
 ambient credentials and automatic submission retries are excluded.
 
+Enable `signup` for `auth::auth_signup`. It checks the first developer project,
+reuses or creates a project key, or prepares hosted checkout for a new subscription.
+Pre-authenticated callers need no cryptography. Combine `signup` with `crypto`
+for encoded-key authentication, supplying Unix milliseconds explicitly. A caller
+factory binds the actual returned JWT to its approved Developer service adapter.
+Project keys remain separate from bearer tokens. Payment approval and submission
+remain with the application.
+
+The `signup` feature adds fundamental HTTP URI and date parsing dependencies;
+ordinary protocol clients keep their original dependency graph. Billing windows
+require timestamps with explicit RFC3339 offsets. Preview errors propagate, zero
+totals are rejected, and no payment-host environment variable is read.
+
 REST adapters implement the shared `solana_kit_client::rest::Transport<Service>`
 contract, reexported as `ServiceTransport<Service>`.
 
@@ -49,6 +62,6 @@ async fn load<T: ServiceTransport<Service>>(services: &ServiceClient<T>) -> Resu
 }
 ```
 
-This draft remains unpublished. Source coverage and the pending runtime matrix
+This draft remains unpublished. Source coverage and the runtime evidence
 are recorded in `docs/parity/helius.md` in the repository. The pinned Dart API
 defines the porting scope; live provider compatibility needs separate evidence.

@@ -14,6 +14,8 @@ pub mod service;
 pub mod sharing;
 #[cfg(feature = "crypto")]
 pub mod signing;
+#[cfg(feature = "signup")]
+pub mod signup;
 pub mod staking;
 pub mod subscriptions;
 pub mod v2;
@@ -74,6 +76,16 @@ pub const CASES: &[(&str, fn())] = &[
         subscriptions::binary_failure_and_replacement,
     ),
     ("auth-routes", rest_catalog::auth_routes),
+    #[cfg(feature = "signup")]
+    ("signup-existing", signup::existing_projects),
+    #[cfg(feature = "signup")]
+    ("signup-billing", signup::billing_windows),
+    #[cfg(feature = "signup")]
+    ("signup-payment", signup::new_subscription),
+    #[cfg(feature = "signup")]
+    ("signup-failures", signup::checkout_failures),
+    #[cfg(all(feature = "crypto", feature = "signup"))]
+    ("signup-signing", signup::signed_authentication),
     ("staking-preparation", staking::preparation),
     (
         "wallet-and-enhanced-routes",

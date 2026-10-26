@@ -1,0 +1,8 @@
+bytes v1.11.1
+deranged v0.5.9
+http v1.5.0
+num-conv v0.1.0
+percent-encoding v2.3.2
+powerfmt v0.2.1
+time v0.3.44
+time-core v0.1.6

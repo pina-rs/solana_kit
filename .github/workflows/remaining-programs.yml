@@ -355,13 +355,13 @@ jobs:
             --package "$package" > "$RUNNER_TEMP/helius-native.txt"
           cmp verification/helius-portable/report.txt "$RUNNER_TEMP/helius-native.txt"
           cargo +1.99.1 run --locked --quiet --manifest-path "$manifest" \
-            --package "$package" --no-default-features > "$RUNNER_TEMP/helius-no-crypto.txt"
+            --package "$package" --no-default-features --features signup > "$RUNNER_TEMP/helius-no-crypto.txt"
           cmp verification/helius-portable/report-no-crypto.txt \
             "$RUNNER_TEMP/helius-no-crypto.txt"
           cargo +1.99.1 test --locked --manifest-path "$manifest" \
             --package "$package" --lib --target wasm32-unknown-unknown -- --nocapture
           cargo +1.99.1 test --locked --manifest-path "$manifest" \
-            --package "$package" --no-default-features --lib \
+            --package "$package" --no-default-features --features signup --lib \
             --target wasm32-unknown-unknown -- --nocapture
           if cargo +1.99.1 test --locked --manifest-path "$manifest" \
             --package "$package" --lib --features corrupt \
@@ -387,7 +387,7 @@ jobs:
                 features=()
                 expected="$RUNNER_TEMP/helius-native.txt"
                 if [ "$mode" = no-crypto ]; then
-                  features+=(--no-default-features)
+                  features+=(--no-default-features --features signup)
                   expected="$RUNNER_TEMP/helius-no-crypto.txt"
                 fi
 
@@ -438,7 +438,7 @@ jobs:
             features=()
             report=verification/helius-portable/report.txt
             if [ "$mode" = no-crypto ]; then
-              features+=(--no-default-features)
+              features+=(--no-default-features --features signup)
               report=verification/helius-portable/report-no-crypto.txt
             fi
 
@@ -496,37 +496,51 @@ jobs:
           (cd reference && sha256sum --check --strict "$RUNNER_TEMP/helius-source.sha256")
           cmp crates/solana_kit_helius/MIT-DART.txt reference/LICENSE
 
-      - name: Check Helius default and crypto normal-build graphs on every target
+      - name: Check all Helius feature graphs on every target
         run: |
           set -euo pipefail
-          expected="$RUNNER_TEMP/helius-default-closure.txt"
-          cat xtask/policy/client.txt xtask/policy/helius.txt | sort -u > "$expected"
+          base_expected="$RUNNER_TEMP/helius-default-closure.txt"
+          cat xtask/policy/client.txt xtask/policy/helius.txt | sort -u > "$base_expected"
+          signup_expected="$RUNNER_TEMP/helius-signup-closure.txt"
+          cat "$base_expected" xtask/policy/helius-signup.txt | sort -u > "$signup_expected"
           allowed="$RUNNER_TEMP/helius-crypto-names.txt"
-          { awk '{print $1}' "$expected"; cat xtask/policy/crypto.txt; } | sort -u > "$allowed"
 
           check_tree() {
             case "$mode" in
-              default) cmp "$expected" "$1" ;;
-              crypto)
+              default|signup) cmp "$expected" "$1" ;;
+              crypto|signup-crypto)
                 awk 'NR==FNR {allowed[$1]=1; next}
                   !($1 in allowed) {print "unexpected Helius dependency: " $0 > "/dev/stderr"; exit 1}' \
                   "$allowed" "$1"
                 ;;
+              *) return 1 ;;
             esac
           }
 
           for target in native wasm32-unknown-unknown wasm32-wasip1 wasm32-wasip2; do
-            for mode in default crypto; do
+            for mode in default crypto signup signup-crypto; do
               arguments=()
+              expected="$base_expected"
               if [ "$target" != native ]; then arguments+=(--target "$target"); fi
-              if [ "$mode" = crypto ]; then arguments+=(--features crypto); fi
+              case "$mode" in
+                crypto) arguments+=(--features crypto) ;;
+                signup)
+                  arguments+=(--features signup)
+                  expected="$signup_expected"
+                  ;;
+                signup-crypto)
+                  arguments+=(--features "signup,crypto")
+                  expected="$signup_expected"
+                  ;;
+              esac
+              { awk '{print $1}' "$expected"; cat xtask/policy/crypto.txt; } | sort -u > "$allowed"
               cargo +1.99.1 tree --locked -p solana_kit_helius --no-default-features \
                 -e normal,build --prefix none --format '{p}' --no-dedupe "${arguments[@]}" \
                 > "$RUNNER_TEMP/helius-raw-tree.txt"
               sed 's/ (.*//' "$RUNNER_TEMP/helius-raw-tree.txt" | sort -u \
                 > "$RUNNER_TEMP/helius-tree.txt"
               check_tree "$RUNNER_TEMP/helius-tree.txt"
-              if [ "$mode" = crypto ]; then
+              if [ "$mode" = crypto ] || [ "$mode" = signup-crypto ]; then
                 grep -F 'ed25519-dalek v2.2.0' "$RUNNER_TEMP/helius-tree.txt"
               fi
               cp "$RUNNER_TEMP/helius-tree.txt" "$RUNNER_TEMP/helius-injected-tree.txt"

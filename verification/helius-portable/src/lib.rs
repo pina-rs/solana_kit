@@ -8,18 +8,32 @@ pub mod contracts;
 pub const CORRUPTION_MARKER: &str = include_str!("../corruption.txt");
 
 /// Exact full named stream required before a guest may commit success.
-#[cfg(feature = "crypto")]
+#[cfg(all(feature = "crypto", feature = "signup"))]
 pub const REPORT: &str = include_str!("../report.txt");
 /// Exact non-signing named stream when cryptography is excluded.
-#[cfg(not(feature = "crypto"))]
+#[cfg(all(not(feature = "crypto"), feature = "signup"))]
 pub const REPORT: &str = include_str!("../report-no-crypto.txt");
 
+/// Exact original contract stream without signing or signup orchestration.
+#[cfg(all(not(feature = "crypto"), not(feature = "signup")))]
+pub const REPORT: &str = include_str!("../report-base.txt");
+/// Exact original signing contract stream without signup orchestration.
+#[cfg(all(feature = "crypto", not(feature = "signup")))]
+pub const REPORT: &str = include_str!("../report-base-crypto.txt");
+
 /// Number of independently listed contract groups in this feature configuration.
-#[cfg(feature = "crypto")]
-pub const COUNT: usize = 35;
+#[cfg(all(feature = "crypto", feature = "signup"))]
+pub const COUNT: usize = 40;
 /// Number of non-signing contract groups when cryptography is excluded.
-#[cfg(not(feature = "crypto"))]
+#[cfg(all(not(feature = "crypto"), feature = "signup"))]
+pub const COUNT: usize = 37;
+
+/// Original non-signing contract count when signup orchestration is absent.
+#[cfg(all(not(feature = "crypto"), not(feature = "signup")))]
 pub const COUNT: usize = 33;
+/// Original signing contract count when signup orchestration is absent.
+#[cfg(all(feature = "crypto", not(feature = "signup")))]
+pub const COUNT: usize = 35;
 
 /// Runs every maintained public assertion before reporting completion.
 pub fn run() -> usize {
