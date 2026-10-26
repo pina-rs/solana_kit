@@ -1,5 +1,6 @@
 //! Signup failures retain typed service causes and never format credentials.
 
+use crate::auth::checkout::PaymentError;
 use crate::service;
 
 /// Contact field required before a new subscription can initialize checkout.
@@ -24,12 +25,8 @@ pub enum SignupError {
     CryptoUnavailable,
     /// A new subscription is missing one required contact field.
     MissingContact(ContactField),
-    /// The explicit payment host is not an accepted HTTP(S) base URL.
-    InvalidPaymentHost,
-    /// The provider preview or initialized checkout requires no payment.
-    ZeroAmount,
-    /// The initialized payment intent has an empty identity.
-    InvalidPaymentIntent,
+    /// Unsigned checkout input or provider lifecycle failure.
+    Payment(PaymentError),
     /// The original bounded service, schema, capability or transport failure.
     Service(service::Error),
 }
@@ -44,7 +41,17 @@ impl std::error::Error for SignupError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match self {
             Self::Service(error) => Some(error),
+            Self::Payment(error) => Some(error),
             _ => None,
+        }
+    }
+}
+
+impl From<PaymentError> for SignupError {
+    fn from(error: PaymentError) -> Self {
+        match error {
+            PaymentError::Service(error) => Self::Service(error),
+            error => Self::Payment(error),
         }
     }
 }

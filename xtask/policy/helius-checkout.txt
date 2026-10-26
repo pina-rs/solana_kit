@@ -1,0 +1,3 @@
+bytes v1.11.1
+http v1.5.0
+percent-encoding v2.3.2

@@ -1,8 +1,16 @@
 //! Direct checkout calls remain separate from payment approval and transaction submission.
 
 mod models;
+#[cfg(feature = "checkout")]
+mod payment;
+#[cfg(feature = "checkout")]
+mod payment_models;
 mod polling;
 pub use models::*;
+#[cfg(feature = "checkout")]
+pub use payment::{create_payment, pay_renewal};
+#[cfg(feature = "checkout")]
+pub use payment_models::{CreatePaymentRequest, PaymentError, PaymentPrice};
 pub use polling::{PollError, PollOutcome, PollPolicy, poll_until_terminal};
 
 use super::{BillingPeriod, Plan};

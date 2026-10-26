@@ -349,20 +349,59 @@ jobs:
           package=solana_kit_helius_portable
           cargo +1.99.1 fmt --manifest-path "$manifest" --all --check
 
+          for mode in crypto no-crypto checkout checkout-crypto base base-crypto; do
+            features=()
+            report=verification/helius-portable/report.txt
+            case "$mode" in
+              crypto) stream="$RUNNER_TEMP/helius-native.txt" ;;
+              no-crypto)
+                features+=(--no-default-features --features signup)
+                report=verification/helius-portable/report-no-crypto.txt
+                stream="$RUNNER_TEMP/helius-no-crypto.txt"
+                ;;
+              checkout)
+                features+=(--no-default-features --features checkout)
+                report=verification/helius-portable/report-checkout-no-crypto.txt
+                stream="$RUNNER_TEMP/helius-checkout.txt"
+                ;;
+              checkout-crypto)
+                features+=(--no-default-features --features "checkout,crypto")
+                report=verification/helius-portable/report-checkout.txt
+                stream="$RUNNER_TEMP/helius-checkout-crypto.txt"
+                ;;
+              base)
+                features+=(--no-default-features)
+                report=verification/helius-portable/report-base.txt
+                stream="$RUNNER_TEMP/helius-base.txt"
+                ;;
+              base-crypto)
+                features+=(--no-default-features --features crypto)
+                report=verification/helius-portable/report-base-crypto.txt
+                stream="$RUNNER_TEMP/helius-base-crypto.txt"
+                ;;
+              *) exit 1 ;;
+            esac
+            cargo +1.99.1 test --locked --manifest-path "$manifest" \
+              --package "$package" "${features[@]}" --test native_future --test native_payment
+            cargo +1.99.1 run --locked --quiet --manifest-path "$manifest" \
+              --package "$package" "${features[@]}" > "$stream"
+            cmp "$report" "$stream"
+          done
           cargo +1.99.1 clippy --locked --all-targets --all-features \
             -p solana_kit_helius -- -D warnings
-          cargo +1.99.1 run --locked --quiet --manifest-path "$manifest" \
-            --package "$package" > "$RUNNER_TEMP/helius-native.txt"
-          cmp verification/helius-portable/report.txt "$RUNNER_TEMP/helius-native.txt"
-          cargo +1.99.1 run --locked --quiet --manifest-path "$manifest" \
-            --package "$package" --no-default-features --features signup > "$RUNNER_TEMP/helius-no-crypto.txt"
-          cmp verification/helius-portable/report-no-crypto.txt \
-            "$RUNNER_TEMP/helius-no-crypto.txt"
-          cargo +1.99.1 test --locked --manifest-path "$manifest" \
-            --package "$package" --lib --target wasm32-unknown-unknown -- --nocapture
-          cargo +1.99.1 test --locked --manifest-path "$manifest" \
-            --package "$package" --no-default-features --features signup --lib \
-            --target wasm32-unknown-unknown -- --nocapture
+          for mode in crypto no-crypto checkout checkout-crypto; do
+            features=()
+            case "$mode" in
+              crypto) ;;
+              no-crypto) features+=(--no-default-features --features signup) ;;
+              checkout) features+=(--no-default-features --features checkout) ;;
+              checkout-crypto) features+=(--no-default-features --features "checkout,crypto") ;;
+              *) exit 1 ;;
+            esac
+            cargo +1.99.1 test --locked --manifest-path "$manifest" \
+              --package "$package" "${features[@]}" --lib \
+              --target wasm32-unknown-unknown -- --nocapture
+          done
           if cargo +1.99.1 test --locked --manifest-path "$manifest" \
             --package "$package" --lib --features corrupt \
             --target wasm32-unknown-unknown -- --nocapture \
@@ -383,13 +422,25 @@ jobs:
             if [ "$target" != native ]; then arguments+=(--target "$target"); fi
 
             if [ "$target" != native ]; then
-              for mode in crypto no-crypto; do
+              for mode in crypto no-crypto checkout checkout-crypto; do
                 features=()
                 expected="$RUNNER_TEMP/helius-native.txt"
-                if [ "$mode" = no-crypto ]; then
-                  features+=(--no-default-features --features signup)
-                  expected="$RUNNER_TEMP/helius-no-crypto.txt"
-                fi
+                case "$mode" in
+                  crypto) ;;
+                  no-crypto)
+                    features+=(--no-default-features --features signup)
+                    expected="$RUNNER_TEMP/helius-no-crypto.txt"
+                    ;;
+                  checkout)
+                    features+=(--no-default-features --features checkout)
+                    expected="$RUNNER_TEMP/helius-checkout.txt"
+                    ;;
+                  checkout-crypto)
+                    features+=(--no-default-features --features "checkout,crypto")
+                    expected="$RUNNER_TEMP/helius-checkout-crypto.txt"
+                    ;;
+                  *) exit 1 ;;
+                esac
 
                 cargo +1.99.1 build --locked --manifest-path "$manifest" \
                   --package "$package" "${arguments[@]}" "${features[@]}" \
@@ -434,13 +485,25 @@ jobs:
           set -euo pipefail
           manifest=verification/helius-portable/Cargo.toml
           package=solana_kit_helius_guest
-          for mode in crypto no-crypto; do
+          for mode in crypto no-crypto checkout checkout-crypto; do
             features=()
             report=verification/helius-portable/report.txt
-            if [ "$mode" = no-crypto ]; then
-              features+=(--no-default-features --features signup)
-              report=verification/helius-portable/report-no-crypto.txt
-            fi
+            case "$mode" in
+              crypto) ;;
+              no-crypto)
+                features+=(--no-default-features --features signup)
+                report=verification/helius-portable/report-no-crypto.txt
+                ;;
+              checkout)
+                features+=(--no-default-features --features checkout)
+                report=verification/helius-portable/report-checkout-no-crypto.txt
+                ;;
+              checkout-crypto)
+                features+=(--no-default-features --features "checkout,crypto")
+                report=verification/helius-portable/report-checkout.txt
+                ;;
+              *) exit 1 ;;
+            esac
 
             cargo +1.99.1 build --locked --manifest-path "$manifest" \
               --package "$package" "${features[@]}" --target wasm32-unknown-unknown \
@@ -501,14 +564,16 @@ jobs:
           set -euo pipefail
           base_expected="$RUNNER_TEMP/helius-default-closure.txt"
           cat xtask/policy/client.txt xtask/policy/helius.txt | sort -u > "$base_expected"
+          checkout_expected="$RUNNER_TEMP/helius-checkout-closure.txt"
+          cat "$base_expected" xtask/policy/helius-checkout.txt | sort -u > "$checkout_expected"
           signup_expected="$RUNNER_TEMP/helius-signup-closure.txt"
-          cat "$base_expected" xtask/policy/helius-signup.txt | sort -u > "$signup_expected"
+          cat "$checkout_expected" xtask/policy/helius-signup.txt | sort -u > "$signup_expected"
           allowed="$RUNNER_TEMP/helius-crypto-names.txt"
 
           check_tree() {
             case "$mode" in
-              default|signup) cmp "$expected" "$1" ;;
-              crypto|signup-crypto)
+              default|checkout|signup) cmp "$expected" "$1" ;;
+              crypto|checkout-crypto|signup-crypto)
                 awk 'NR==FNR {allowed[$1]=1; next}
                   !($1 in allowed) {print "unexpected Helius dependency: " $0 > "/dev/stderr"; exit 1}' \
                   "$allowed" "$1"
@@ -518,12 +583,20 @@ jobs:
           }
 
           for target in native wasm32-unknown-unknown wasm32-wasip1 wasm32-wasip2; do
-            for mode in default crypto signup signup-crypto; do
+            for mode in default crypto checkout checkout-crypto signup signup-crypto; do
               arguments=()
               expected="$base_expected"
               if [ "$target" != native ]; then arguments+=(--target "$target"); fi
               case "$mode" in
                 crypto) arguments+=(--features crypto) ;;
+                checkout)
+                  arguments+=(--features checkout)
+                  expected="$checkout_expected"
+                  ;;
+                checkout-crypto)
+                  arguments+=(--features "checkout,crypto")
+                  expected="$checkout_expected"
+                  ;;
                 signup)
                   arguments+=(--features signup)
                   expected="$signup_expected"
@@ -540,7 +613,7 @@ jobs:
               sed 's/ (.*//' "$RUNNER_TEMP/helius-raw-tree.txt" | sort -u \
                 > "$RUNNER_TEMP/helius-tree.txt"
               check_tree "$RUNNER_TEMP/helius-tree.txt"
-              if [ "$mode" = crypto ] || [ "$mode" = signup-crypto ]; then
+              if [[ "$mode" = *crypto && "$mode" != no-crypto ]]; then
                 grep -F 'ed25519-dalek v2.2.0' "$RUNNER_TEMP/helius-tree.txt"
               fi
               cp "$RUNNER_TEMP/helius-tree.txt" "$RUNNER_TEMP/helius-injected-tree.txt"

@@ -5,7 +5,11 @@ pub mod das;
 pub mod enhanced;
 pub mod nested_models;
 pub mod pagination;
+#[cfg(feature = "checkout")]
+mod payment_support;
 pub mod payment_terms;
+#[cfg(feature = "checkout")]
+pub mod payments;
 pub mod rest_catalog;
 pub mod rpc;
 pub mod sender;
@@ -86,6 +90,16 @@ pub const CASES: &[(&str, fn())] = &[
     ("signup-failures", signup::checkout_failures),
     #[cfg(all(feature = "crypto", feature = "signup"))]
     ("signup-signing", signup::signed_authentication),
+    #[cfg(feature = "checkout")]
+    ("payment-plan-upgrade", payments::plan_upgrades),
+    #[cfg(feature = "checkout")]
+    ("payment-explicit-price", payments::explicit_prices),
+    #[cfg(feature = "checkout")]
+    ("payment-rejection", payments::payment_failures),
+    #[cfg(feature = "checkout")]
+    ("payment-renewal", payments::existing_intents),
+    #[cfg(feature = "checkout")]
+    ("payment-cancellation", payments::dropped_preparation),
     ("staking-preparation", staking::preparation),
     (
         "wallet-and-enhanced-routes",

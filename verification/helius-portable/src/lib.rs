@@ -14,25 +14,47 @@ pub const REPORT: &str = include_str!("../report.txt");
 #[cfg(all(not(feature = "crypto"), feature = "signup"))]
 pub const REPORT: &str = include_str!("../report-no-crypto.txt");
 
-/// Exact original contract stream without signing or signup orchestration.
-#[cfg(all(not(feature = "crypto"), not(feature = "signup")))]
+/// Checkout-only stream without the signup date parser.
+#[cfg(all(not(feature = "crypto"), feature = "checkout", not(feature = "signup")))]
+pub const REPORT: &str = include_str!("../report-checkout-no-crypto.txt");
+/// Checkout and signing stream without unified signup.
+#[cfg(all(feature = "crypto", feature = "checkout", not(feature = "signup")))]
+pub const REPORT: &str = include_str!("../report-checkout.txt");
+
+/// Exact original contract stream without signing or checkout orchestration.
+#[cfg(all(
+    not(feature = "crypto"),
+    not(feature = "signup"),
+    not(feature = "checkout")
+))]
 pub const REPORT: &str = include_str!("../report-base.txt");
 /// Exact original signing contract stream without signup orchestration.
-#[cfg(all(feature = "crypto", not(feature = "signup")))]
+#[cfg(all(feature = "crypto", not(feature = "signup"), not(feature = "checkout")))]
 pub const REPORT: &str = include_str!("../report-base-crypto.txt");
 
 /// Number of independently listed contract groups in this feature configuration.
 #[cfg(all(feature = "crypto", feature = "signup"))]
-pub const COUNT: usize = 40;
+pub const COUNT: usize = 45;
 /// Number of non-signing contract groups when cryptography is excluded.
 #[cfg(all(not(feature = "crypto"), feature = "signup"))]
-pub const COUNT: usize = 37;
+pub const COUNT: usize = 42;
 
-/// Original non-signing contract count when signup orchestration is absent.
-#[cfg(all(not(feature = "crypto"), not(feature = "signup")))]
+/// Checkout-only count without cryptography or signup.
+#[cfg(all(not(feature = "crypto"), feature = "checkout", not(feature = "signup")))]
+pub const COUNT: usize = 38;
+/// Checkout and cryptography count without signup.
+#[cfg(all(feature = "crypto", feature = "checkout", not(feature = "signup")))]
+pub const COUNT: usize = 40;
+
+/// Original non-signing contract count when checkout orchestration is absent.
+#[cfg(all(
+    not(feature = "crypto"),
+    not(feature = "signup"),
+    not(feature = "checkout")
+))]
 pub const COUNT: usize = 33;
 /// Original signing contract count when signup orchestration is absent.
-#[cfg(all(feature = "crypto", not(feature = "signup")))]
+#[cfg(all(feature = "crypto", not(feature = "signup"), not(feature = "checkout")))]
 pub const COUNT: usize = 35;
 
 /// Runs every maintained public assertion before reporting completion.
