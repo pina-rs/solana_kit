@@ -1,7 +1,7 @@
 # Installed generated wallet journey
 
 This private controller drives an application produced by the public LeptosKit
-generator through Appium's native macOS driver. It selects the ordinary composed
+generator through Appium's native macOS and iOS drivers. It selects the ordinary composed
 runtime using `prepare-wallet-rpc`. No generated platform host is replaced or
 patched. This package is never published or reserved on crates.io.
 
@@ -25,14 +25,26 @@ generated application and starting the pinned Mac2 driver:
 
 ```sh
 cargo run --locked --manifest-path "$SDK/verification/leptoskit-app-journey/installed/Cargo.toml" -- \
-  http://127.0.0.1:14731 "$PROJECT/.leptoskit/macos/App.app" \
+  macos http://127.0.0.1:14731 "$PROJECT/.leptoskit/macos/App.app" \
   "$HOME/Library/Application Support/com.leptoskit.solanawalletapp" \
   "$RUN_DIRECTORY" "$VALIDATOR_BINARY"
 ```
 
+The iOS CI journey creates its own simulator, builds the ordinary generated
+application with `leptoskit native build ios-simulator`, and installs that bundle.
+It queries the installed application's container and passes its new
+`Library/Application Support` directory to the controller. Launch uses the bundle
+identifier and explicit simulator ID, preserving the configuration written before
+launch. The iOS session explicitly starts and terminates only its tested app while
+preserving that configuration, as described by the
+[XCUITest lifecycle capabilities](https://appium.github.io/appium-xcuitest-driver/latest/reference/capabilities/).
+The wallet, native UI actions and independent ledger checks are shared
+with the macOS journey. CI shuts down and deletes only the simulator it created.
+No simulator or generated mobile build is created on the development machine.
+
 Both the run directory and application data directory must be absent initially.
-The generated host uses the bundle-scoped Application Support directory shown
-above. The controller removes the owned application data and ledger after closing
+The generated macOS host uses the bundle-scoped Application Support directory shown
+above; iOS uses its installed sandbox directly. The controller removes the owned application data and ledger after closing
 the native session and joining the validator. CI
 retains only the native screenshot/accessibility report and process logs; it
 never uploads ledger keypairs. The driver quits only the tested application.
@@ -40,7 +52,7 @@ never uploads ledger keypairs. The driver quits only the tested application.
 The workflow pins Agave 4.2.0 archives and checks their SHA-256 digests before
 execution. The native driver dependencies and framework revision are also pinned.
 Compilation, Clippy and protocol tests do not establish installed OS acceptance;
-the actual CI journey must pass. Android, iOS, subscription controls, cancellation
+the actual CI journey must pass for each platform. Android, subscription controls, cancellation
 and app relaunch/persistence journeys remain separate acceptance work.
 
 This is exclusively off-chain client verification. Use Pina or official Solana

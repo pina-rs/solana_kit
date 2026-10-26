@@ -116,9 +116,20 @@ jobs:
             --manifest-path sdk/verification/leptoskit-app-journey/runtime/Cargo.toml \
             --features generated-wallet-tests --test generated_wallet -- --test-threads=1
 
-  generated-wallet-macos:
+  generated-wallet-apple:
+    name: generated-wallet-${{ matrix.platform }}
     runs-on: "macos-15"
-    timeout-minutes: 45
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: macos
+            native-target: macos
+            driver: mac2
+          - platform: ios
+            native-target: ios-simulator
+            driver: xcuitest
     env:
       DEVELOPER_DIR: /Applications/Xcode_26.2.app/Contents/Developer
       npm_config_user_agent: solana-kit-verification
@@ -141,6 +152,17 @@ jobs:
           rustup toolchain install 1.99.1 --profile minimal \
             --component clippy --target wasm32-unknown-unknown
 
+      - name: Install the iOS simulator compiler target
+        if: matrix.platform == 'ios'
+        run: |
+          set -euo pipefail
+          case "$(uname -m)" in
+            arm64) target=aarch64-apple-ios-sim ;;
+            x86_64) target=x86_64-apple-ios ;;
+            *) echo 'Unsupported simulator host architecture' >&2; exit 1 ;;
+          esac
+          rustup target add --toolchain 1.99.1 "$target"
+
       - name: Verify the generated app toolchains
         run: |
           cargo --version
@@ -154,7 +176,7 @@ jobs:
           cargo +1.99.1 build --locked --manifest-path framework/Cargo.toml \
             -p leptoskit_cli --bin leptoskit --message-format=json > "$RUNNER_TEMP/cli.jsonl"
 
-      - name: Build the actual generated macOS app and composed registrant
+      - name: Build the actual generated Apple app and composed registrant
         run: |
           set -euo pipefail
           cli="$(jq -sre '[.[] | select(.reason == "compiler-artifact" and
@@ -163,17 +185,19 @@ jobs:
             if length == 1 then .[0] else error("expected one public CLI") end' \
             "$RUNNER_TEMP/cli.jsonl")"
           app="$RUNNER_TEMP/wallet-rpc-app"
-          "$cli" new "$app" --name solana_wallet_app --platform native --native-target macos
+          "$cli" new "$app" --name solana_wallet_app --platform native \
+            --native-target "${{ matrix.platform }}"
           cargo +1.99.1 run --locked --manifest-path sdk/Cargo.toml \
             --package solana_kit_xtask -- prepare-wallet-rpc "$app"
           "$cli" migrate --check --file "$app/leptoskit.toml"
           cd "$app"
-          "$cli" build --platform macos
+          "$cli" native build "${{ matrix.native-target }}"
 
       - name: Build and lint the installed application controller
         run: |
           set -euo pipefail
           manifest=sdk/verification/leptoskit-app-journey/installed/Cargo.toml
+          cargo +1.99.1 test --locked --manifest-path "$manifest" --all-targets
           cargo +1.99.1 clippy --locked --manifest-path "$manifest" --all-targets -- -D warnings
           cargo +1.99.1 build --locked --manifest-path "$manifest" \
             --message-format=json > "$RUNNER_TEMP/installed-controller.jsonl"
@@ -206,6 +230,37 @@ jobs:
           tar -xjf "$archive" -C "$RUNNER_TEMP/validator"
           rm "$archive"
 
+      - name: Create and install on an owned fresh iOS simulator
+        if: matrix.platform == 'ios'
+        run: |
+          set -euo pipefail
+          read -r runtime device_type < <(xcrun simctl list runtimes available --json | jq -er '
+            [.runtimes[] | select(.platform == "iOS" and .isAvailable)] |
+            sort_by(.version | split(".") | map(tonumber)) | last |
+            "\(.identifier) \([.supportedDeviceTypes[] |
+              select(.name | test("^iPhone [0-9]+$"))] |
+              sort_by(.name | ltrimstr("iPhone ") | tonumber) | last | .identifier)"')
+          test "$runtime" != null
+          test "$device_type" != null
+          device="$(xcrun simctl create 'Solana Kit installed wallet' "$device_type" "$runtime")"
+          printf '%s\n' "$device" > "$RUNNER_TEMP/wallet-ios-device"
+          xcrun simctl boot "$device"
+          deadline=$((SECONDS + 900))
+          xcrun simctl bootstatus "$device" -b &
+          boot=$!
+          while kill -0 "$boot" 2>/dev/null; do
+            if [ "$SECONDS" -ge "$deadline" ]; then
+              kill "$boot"
+              wait "$boot" || true
+              echo 'Owned simulator boot deadline' >&2
+              exit 1
+            fi
+            sleep 2
+          done
+          wait "$boot"
+          bundle="$RUNNER_TEMP/wallet-rpc-app/.leptoskit/ios/build/Build/Products/Debug-iphonesimulator/App.app"
+          xcrun simctl install "$device" "$bundle"
+
       - name: Drive the installed generated app against its owned fresh validator
         run: |
           set -euo pipefail
@@ -225,7 +280,8 @@ jobs:
           (
             cd framework/setup/native-ui
             exec env -u APPIUM_HOME node node_modules/appium/build/lib/main.js \
-              --address 127.0.0.1 --port "$driver_port" --use-drivers mac2 --log-no-colors
+              --address 127.0.0.1 --port "$driver_port" \
+              --use-drivers "${{ matrix.driver }}" --log-no-colors
           ) > "$RUNNER_TEMP/installed-appium.log" 2>&1 &
           server=$!
           cleanup() {
@@ -245,19 +301,43 @@ jobs:
           done
           kill -0 "$server"
 
+          arguments=(macos "http://127.0.0.1:$driver_port"
+            "$RUNNER_TEMP/wallet-rpc-app/.leptoskit/macos/App.app"
+            "$HOME/Library/Application Support/com.leptoskit.solanawalletapp"
+            "$RUNNER_TEMP/installed-wallet-run" "$validator")
+          if [ '${{ matrix.platform }}' = ios ]; then
+            device="$(cat "$RUNNER_TEMP/wallet-ios-device")"
+            bundle="$RUNNER_TEMP/wallet-rpc-app/.leptoskit/ios/build/Build/Products/Debug-iphonesimulator/App.app"
+            identifier="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$bundle/Info.plist")"
+            container="$(xcrun simctl get_app_container "$device" "$identifier" data)"
+            arguments=(ios "http://127.0.0.1:$driver_port" "$identifier"
+              "$container/Library/Application Support" "$RUNNER_TEMP/installed-wallet-run"
+              "$validator" "$device")
+          fi
+
           env -u HTTP_PROXY -u HTTPS_PROXY -u ALL_PROXY \
             -u http_proxy -u https_proxy -u all_proxy \
-            "$controller" "http://127.0.0.1:$driver_port" \
-            "$RUNNER_TEMP/wallet-rpc-app/.leptoskit/macos/App.app" \
-            "$HOME/Library/Application Support/com.leptoskit.solanawalletapp" \
-            "$RUNNER_TEMP/installed-wallet-run" "$validator"
+            "$controller" "${arguments[@]}"
+
+      - name: Shut down and delete only the owned simulator
+        if: always() && matrix.platform == 'ios'
+        run: |
+          set -euo pipefail
+          marker="$RUNNER_TEMP/wallet-ios-device"
+          if [ -f "$marker" ]; then
+            device="$(cat "$marker")"
+            status=0
+            xcrun simctl shutdown "$device" || status=$?
+            xcrun simctl delete "$device" || status=$?
+            exit "$status"
+          fi
 
       - name: Retain actual installed app evidence
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
 
         with:
-          name: generated-wallet-installed-macos
+          name: generated-wallet-installed-${{ matrix.platform }}
           path: |
             ${{ runner.temp }}/installed-wallet-run/native-ui
             ${{ runner.temp }}/installed-wallet-run/validator.log
