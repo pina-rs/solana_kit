@@ -6,19 +6,26 @@ use leptoskit::native::Element;
 use solana_kit_leptoskit::wallet_ui::{local_wallet_channel, local_wallet_panel};
 use std::cell::RefCell;
 
+type AppError = Box<dyn std::error::Error>;
+
 thread_local! {
     static POOL: RefCell<LocalPool> = RefCell::new(LocalPool::new());
     static VIEW: RefCell<Option<Element>> = const { RefCell::new(None) };
-    static FAILURE: RefCell<Option<solana_kit_leptoskit::WalletSessionError>> = const { RefCell::new(None) };
+    static FAILURE: RefCell<Option<AppError>> = const { RefCell::new(None) };
 }
 
 /// Retains the actual failure for the app's observer; no peer data is logged.
-fn failed(error: solana_kit_leptoskit::WalletSessionError) {
-    FAILURE.with_borrow_mut(|failure| *failure = Some(error));
+fn failed(error: impl Into<AppError>) {
+    FAILURE.with_borrow_mut(|failure| *failure = Some(error.into()));
 }
 
 fn show(element: Element, status: &str) {
     let element = element.child(Element::text(status).id("wallet_fixture.status"));
+    let element = Element::scroll_view()
+        .id("wallet_fixture.scroll")
+        .aria_label("Solana wallet application")
+        .class("w-full h-full")
+        .child(element);
     VIEW.with_borrow_mut(|view| *view = Some(element));
 }
 

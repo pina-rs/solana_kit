@@ -31,7 +31,22 @@ are rejected.
 
 `prepare-wallet-rpc` instead selects the private [composed runtime](../runtime/README.md)
 for local-wallet HTTP, WebSocket and timer journeys. It retains the generated
-hosts and existing approval controls. The original runtime remains the fixture
+hosts and existing approval controls. Its local-wallet panel adds balance reads
+and an explicit review for a one-million-lamport transfer to a public test
+recipient on the host's local validator. The controller freezes the message,
+verifies the host-produced signature, submits once, reconciles typed status and
+lifetime observations, then checks the recipient balance independently. Rejection
+does not submit. Cancellation after submission preserves its uncertain outcome
+and signature. Ordinary RPC failures retain the selected key; cancellation
+disposes it. A host without RPC shows that capability as unavailable.
+
+The application owns one bounded RPC action queue per selected wallet. Old
+callbacks cannot reach a replacement wallet. The complete panel scrolls so its
+actions and long transaction receipts remain reachable on smaller surfaces.
+The guest sources are ordinary Rust files under `guest/`; the quality gate scores
+them directly before they are copied into the generated workspace.
+
+The original runtime remains the fixture
 for Android external wallet availability and Intent dispatch.
 
 Use the CLI built from that verified framework source:
@@ -52,8 +67,8 @@ sections and fails on unknown template shapes or existing source overrides.
 Repeated preparation preserves every generated file byte for byte. Source
 preparation does not establish guest compilation or an installed application run.
 
-The fixture supplies a wallet-selection and approval entry point. Full D1–D9,
-A1–A9 and I1–I9 still require real RPC funding, transactions, confirmation,
-subscriptions, rejection/cancellation and replacement/unload evidence through the
-existing client transport owners. This source is exclusively an off-chain client;
+These source flows do not establish installed application acceptance. Full D1–D9,
+A1–A9 and I1–I9 still require actual RPC funding, transactions, confirmation,
+subscription controls, rejection/cancellation and replacement/unload evidence
+through the existing client transport owners. This source is exclusively an off-chain client;
 on-chain applications use Pina or official Solana program libraries.

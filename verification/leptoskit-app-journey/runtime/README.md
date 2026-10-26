@@ -35,12 +35,25 @@ native I/O. Close aborts and joins HTTP, socket and timer jobs and the wallet
 worker, then drops the runtime outside its entered context. The actual
 interpreter remains owned by LeptosKit's closing application throughout cleanup.
 
-The fixture retains the existing generated guest and its local-wallet approval
-controls. This runtime selection does not install Android's external wallet
+The fixture's generated guest offers balance reads and an explicitly approved
+local-validator SOL transfer through the typed SDK client. Compilation and
+headless service tests do not establish an installed application journey.
+This runtime selection does not install Android's external wallet
 Intent capability; the original `prepare-wallet` selection continues to exercise
-that capability. RPC transfer and subscription buttons and installed desktop,
+that capability. Subscription controls and installed desktop,
 Android and iOS journeys remain separate acceptance work. A native runtime test
 or a generated guest build does not prove those journeys.
 
 This is exclusively off-chain client verification. On-chain programs use Pina or
 official Solana program libraries.
+
+The `generated-wallet-tests` feature enables a separate protocol integration
+test. It requires `GENERATED_WALLET_WASM` to name the actual compiled public-generator
+guest and fails when that artifact is absent. It drives real guest controls
+through production wasmi and the same native service installer, using default
+fuel limits. A bounded loopback peer checks rejection, stale approval, actual TCP
+cancellation, RPC error recovery and a single approved submission. Its legacy
+wire oracle and signature verifier are independent of the SDK's transaction
+builder. The peer's acknowledgements, status and balance effects are explicit
+protocol fixtures. They do not establish validator execution or installed OS UI
+acceptance.
