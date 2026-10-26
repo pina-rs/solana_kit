@@ -38,26 +38,63 @@ Preconfirmation is an untrusted early signal, not transaction confirmation.
 
 ## Verification scope
 
-The maintained runner imports the original public contract bodies. Its default
-registry contains 35 named groups, including two optional signing groups; the
-non-crypto registry contains 33. Fixed report manifests guard names and counts.
-Three native multi-thread tests require concrete REST, staking preparation and
-stake-discovery futures to retain `Send`. Local `Rc` exchanges exercise
-cancellation without a universal `Send` requirement.
+The maintained runner imports the original public contract bodies. The base
+registry retains 33 groups, or 35 with cryptography. Optional signup adds four
+groups, and encoded-key signup adds one more: the expanded suites contain 37
+non-crypto or 40 crypto groups. Four fixed report manifests guard names and counts.
+Four native multi-thread tests require concrete REST, staking preparation,
+stake-discovery and unified-signup futures to retain `Send`. The signup test is
+feature-gated. Local `Rc` exchanges exercise local futures without a universal
+`Send` requirement.
 
-The CI recipe runs those bodies in native Rust, Chrome, WASI Preview 1 and
-Preview 2, then in the production LeptosKit interpreter. It includes intended
-corruption, fuel exhaustion and unrelated-panic controls. A recipe is not an
-execution receipt: browser, WASI runtime and interpreter acceptance remains
-pending until the exact source passes CI. Generated installed desktop, Android
-and iOS application journeys remain part of the wider implementation goal.
+The base suites passed native Rust, Chrome, both WASI previews and the production
+LeptosKit interpreter in [the foundation PR](https://github.com/pina-rs/solana_kit/pull/76).
+All 47 checks and 22 workflow runs passed, including intended corruption, fuel
+exhaustion and unrelated-panic controls. The expanded signup suites pass local
+native execution; their exact-source browser, WASI and interpreter execution
+remains required on this change's CI. Generated installed desktop, Android and
+iOS application journeys remain part of the wider implementation goal.
 
 The canonical [capability ledger](capabilities.tsv) retains all 1,790 Helius
 declarations. They remain pending. The provenance audit checks all 52 distinct
 defining source files against the immutable hashes. Neither those hashes nor
-35 contract groups establish declaration-by-declaration behavioral parity.
+the contract groups establish declaration-by-declaration behavioral parity.
 Paid-service credentials are not required for deterministic tests; no live
 provider verification or normal registry release is claimed.
+
+## Unified signup
+
+The opt-in `signup` feature authenticates a caller or accepts a pre-authenticated
+identity. A fallible caller factory binds the resulting developer JWT exactly
+once to an approved service adapter. An API key is never reused as a bearer JWT.
+The encoded-key path accepts standard, URL-safe, unpadded and percent-escaped
+Base64, validates both key halves and erases temporary key buffers before I/O.
+It requires `crypto`; pre-authenticated signup does not.
+
+The first existing project controls the result. Matching subscriptions reuse
+the first key or create exactly one key when the successful key list is empty.
+Other plans return an explicit upgrade outcome. New subscriptions require contact
+data, freeze one configured price, preview it and initialize one hosted checkout.
+The result supplies unsigned payment terms; it never signs or submits funds.
+
+Twelve boundary fixtures execute the pinned Dart billing helper independently.
+Rust preserves its whole-hour monthly and yearly comparisons for explicit-offset
+RFC3339 timestamps. Agent plans bypass duration matching, as the reference does.
+Offset-free dates and normalized invalid calendar values are not accepted through
+host-local timezone behavior. They fail the existing-plan match instead.
+
+The Rust flow deliberately propagates preview transport, HTTP and schema errors
+instead of adopting the reference's broad catch. It rejects zero preview and
+initialized totals, validates explicit payment bases before checkout, encodes
+opaque intent IDs and query keys, and never reads payment-host environment values.
+One resolved price is reused instead of repeating configuration discovery.
+These are explicit hardening and ownership choices.
+
+HTTP URI, percent encoding and parsing-only date dependencies are optional with
+`signup`. The original default and crypto dependency graphs remain separate from
+signup's graph. CI checks all four combinations on every target, including
+injected-Tokio rejection. Signup with payment, renewal and upgrade orchestration,
+and full declaration-level coverage remain unfinished. No live provider call is exercised.
 
 ## Provider contract review
 

@@ -12,6 +12,60 @@ use std::{
 
 const CODEC_BUDGET: usize = 4096;
 
+#[cfg(feature = "signup")]
+struct SignupNative;
+
+#[cfg(feature = "signup")]
+impl ServiceTransport<Service> for SignupNative {
+    type Exchange<'a> = Ready<Result<Reply, TransportError>>;
+
+    /// Strict routes make unexpected provisioning requests fail instead of returning empty success.
+    fn exchange(&self, request: ServiceRequest) -> Self::Exchange<'_> {
+        let body = if request.path_segments == ["projects"] {
+            concat!(
+                r#"[{"id":"project","subscription":{"plan":"agent_v4","#,
+                r#""billingPeriodStart":"ignored","billingPeriodEnd":"ignored"}}]"#,
+            )
+        } else if request.path_segments == ["projects", "project"] {
+            r#"{"apiKeys":[{"keyId":"fixture-key"}]}"#
+        } else {
+            panic!("unexpected signup operation");
+        };
+
+        ready(Ok(Reply {
+            status: 200,
+            body: body.as_bytes().to_vec(),
+        }))
+    }
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+#[cfg(feature = "signup")]
+async fn unified_signup_retains_send_on_native_executor() {
+    use solana_kit_helius::{SensitiveString, auth::*};
+
+    let result = tokio::spawn(async move {
+        let bootstrap = ServiceClient::new(SignupNative, Budgets::default());
+        let request = SignupRequest::new(
+            SignupAuthentication::Authenticated {
+                jwt: SensitiveString::new("fixture-jwt"),
+                ref_id: "reference".into(),
+                wallet_address: solana_kit_core::Address::from_bytes([1; 32]),
+            },
+            Plan::Agent,
+        );
+        auth_signup(&bootstrap, request, 0, |jwt| {
+            assert_eq!(jwt.expose(), "fixture-jwt");
+            Ok(ServiceClient::new(SignupNative, Budgets::default()))
+        })
+        .await
+    })
+    .await
+    .expect("native task joined")
+    .expect("signup completed");
+    assert!(matches!(result, SignupResult::AlreadySubscribed { .. }));
+}
+
 struct Native {
     exchanges: Arc<AtomicUsize>,
 }

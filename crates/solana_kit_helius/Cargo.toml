@@ -13,16 +13,21 @@ description = "Portable typed Helius APIs for off-chain Solana applications"
 
 [features]
 default = []
-crypto = ["solana_kit_core/crypto"]
+crypto = ["solana_kit_core/crypto", "dep:zeroize"]
+signup = ["dep:http", "dep:percent-encoding", "dep:time"]
 
 [dependencies]
 base64 = { version = "0.22.1", default-features = false, features = ["alloc"] }
+http = { version = "1.5.0", default-features = false, features = ["std"], optional = true }
+percent-encoding = { version = "2.3.2", default-features = false, features = ["alloc"], optional = true }
 serde = { version = "1.0.229", features = ["derive"] }
 serde_json = { version = "1.0.154", features = ["arbitrary_precision", "raw_value"] }
 solana_kit_client.workspace = true
 solana_kit_core.workspace = true
 solana_kit_stake.workspace = true
 solana_kit_system.workspace = true
+time = { version = "=0.3.44", default-features = false, features = ["parsing"], optional = true }
+zeroize = { version = "1.9.1", default-features = false, optional = true }
 
 [dev-dependencies]
 futures = "=0.3.31"

@@ -17,6 +17,10 @@ PASS provider-subscribe-uncertainty
 PASS binary-provider-broadcast
 PASS binary-provider-replacement
 PASS auth-routes
+PASS signup-existing
+PASS signup-billing
+PASS signup-payment
+PASS signup-failures
 PASS staking-preparation
 PASS wallet-and-enhanced-routes
 PASS oauth-and-developer-routes
@@ -31,4 +35,4 @@ PASS nested-asset
 PASS enhanced-models
 PASS transfer-models
 PASS payment-terms
-PASS all 33 Helius contract groups
+PASS all 37 Helius contract groups

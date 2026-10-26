@@ -6,8 +6,12 @@ mod developer;
 pub use developer::*;
 mod plans;
 mod results;
+#[cfg(feature = "signup")]
+mod signup;
 pub use plans::{BillingPeriod, InvalidPlan, Plan, PlanInfo};
 pub use results::*;
+#[cfg(feature = "signup")]
+pub use signup::{ContactField, SignupError, auth_signup, build_endpoints, build_payment_url};
 mod payment_terms;
 pub use payment_terms::{
     PaymentTermsError, PaymentTransfer, TREASURY, USDC_MINT_DEVNET, USDC_MINT_MAINNET,
