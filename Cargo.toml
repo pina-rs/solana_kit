@@ -41,6 +41,7 @@ exclude = [
   "verification/core-contracts-portable",
   "verification/durable-nonce",
   "verification/leptoskit",
+  "verification/leptoskit-app-journey/runtime",
   "verification/wallet-consumer",
   "verification/wallet-runtime",
   "verification/signer-capabilities",

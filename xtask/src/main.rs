@@ -29,6 +29,9 @@ fn main() -> Result<()> {
         Command::PrepareWallet(path) => {
             generated_wallet::run(&path).map_err(anyhow::Error::from_boxed)
         }
+        Command::PrepareWalletRpc(path) => {
+            generated_wallet::run_rpc(&path).map_err(anyhow::Error::from_boxed)
+        }
         Command::Style(root) => style::run(root.as_deref()),
         Command::StyleReport(path) => style::check_report(&path),
         Command::Native => runtimes::native(),

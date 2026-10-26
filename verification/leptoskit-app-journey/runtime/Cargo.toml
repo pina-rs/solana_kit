@@ -1,0 +1,30 @@
+[package]
+name = "solana_kit_app_journey_runtime"
+version = "0.0.0"
+edition = "2024"
+rust-version = "1.89"
+license = "Unlicense"
+publish = false
+description = "Private generated application verification runtime"
+
+[workspace]
+
+[dependencies]
+leptoskit_bridge = { version = "=0.1.0", git = "https://github.com/ifiokjr/leptoskit", rev = "25b1861ddc729a8f3b70117cd0c48e06659c9697" }
+leptoskit_bridge_ffi = { version = "=0.1.0", git = "https://github.com/ifiokjr/leptoskit", rev = "25b1861ddc729a8f3b70117cd0c48e06659c9697", features = ["app"] }
+leptoskit_native = { version = "=0.1.0", git = "https://github.com/ifiokjr/leptoskit", rev = "25b1861ddc729a8f3b70117cd0c48e06659c9697" }
+leptoskit_wasm = { version = "=0.1.0", git = "https://github.com/ifiokjr/leptoskit", rev = "25b1861ddc729a8f3b70117cd0c48e06659c9697" }
+serde = { version = "=1.0.229", features = ["derive"] }
+serde_json = "=1.0.154"
+solana_kit_leptoskit = { path = "../../../crates/solana_kit_leptoskit", features = ["wallet-host"] }
+solana_kit_native = { path = "../../../crates/solana_kit_native" }
+tokio = { version = "=1.54.1", features = ["rt-multi-thread", "time"] }
+
+[dev-dependencies]
+futures = { version = "=0.3.34", default-features = false, features = ["executor", "std"] }
+tokio = { version = "=1.54.1", features = ["net", "io-util"] }
+wat = "=1.262.0"
+
+[package.metadata.leptoskit.runtime]
+name = "solana-journey"
+rust-service-factory = "from_app_dirs"

@@ -48,6 +48,7 @@ fn file_commands_require_one_path() {
         "package-report",
         "registry-fixture",
         "prepare-wallet",
+        "prepare-wallet-rpc",
     ] {
         assert!(parse_command(&[name]).is_err(), "{name}");
         assert!(parse_command(&[name, "fixture"]).is_ok(), "{name}");
@@ -71,6 +72,16 @@ fn preparation_paths_resolve_against_the_caller() {
     let Command::PrepareWallet(project) = parse_command(&["prepare-wallet", "wallet app"]).unwrap()
     else {
         panic!("expected preparation command");
+    };
+    assert_eq!(project, caller.join("wallet app"));
+}
+
+#[test]
+fn rpc_preparation_paths_resolve_against_the_caller() {
+    let caller = std::env::current_dir().unwrap();
+    let command = parse_command(&["prepare-wallet-rpc", "wallet app"]).unwrap();
+    let Command::PrepareWalletRpc(project) = command else {
+        panic!("expected composed runtime preparation command");
     };
     assert_eq!(project, caller.join("wallet app"));
 }

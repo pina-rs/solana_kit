@@ -12,6 +12,7 @@ env:
   CARGO_HTTP_USER_AGENT: solana-kit-verification
   GIT_HTTP_USER_AGENT: solana-kit-verification
   CARGO_INCREMENTAL: "0"
+  RUSTUP_TOOLCHAIN: "1.99.1"
   LEPTOSKIT_REVISION: 25b1861ddc729a8f3b70117cd0c48e06659c9697
   LEPTOSKIT_SOURCE: https://github.com/ifiokjr/leptoskit
 
@@ -32,7 +33,9 @@ jobs:
           persist-credentials: false
 
       - name: Install the pinned compiler
-        run: rustup toolchain install 1.99.1 --profile minimal --target wasm32-unknown-unknown
+        run: |
+          rustup toolchain install 1.99.1 --profile minimal \
+            --component clippy --target wasm32-unknown-unknown
 
       - name: Build the public generator
         run: |
@@ -46,6 +49,13 @@ jobs:
           cargo +1.99.1 test --locked --manifest-path sdk/Cargo.toml \
             --package solana_kit_xtask generated_wallet::
 
+      - name: Execute and lint the composed native runtime
+        run: |
+          set -euo pipefail
+          manifest=sdk/verification/leptoskit-app-journey/runtime/Cargo.toml
+          cargo +1.99.1 test --locked --manifest-path "$manifest" --all-targets
+          cargo +1.99.1 clippy --locked --manifest-path "$manifest" --all-targets -- -D warnings
+
       - name: Generate and adapt the ordinary wallet consumer
         run: |
           set -euo pipefail
@@ -54,32 +64,88 @@ jobs:
             .executable | select(. != null)] |
             if length == 1 then .[0] else error("expected one public CLI") end' \
             "$RUNNER_TEMP/cli.jsonl")"
-          app="$RUNNER_TEMP/wallet-app"
-          "$cli" new "$app" --name solana_wallet_app --platform native --native-target macos
-          cargo +1.99.1 run --locked --manifest-path sdk/Cargo.toml \
-            --package solana_kit_xtask -- prepare-wallet "$app"
+          for fixture in wallet wallet-rpc; do
+            app="$RUNNER_TEMP/$fixture-app"
+            "$cli" new "$app" --name solana_wallet_app --platform native --native-target macos
+            cargo +1.99.1 run --locked --manifest-path sdk/Cargo.toml \
+              --package solana_kit_xtask -- "prepare-$fixture" "$app"
+            "$cli" migrate --check --file "$app/leptoskit.toml"
+          done
 
       - name: Verify repeatable preparation and ordinary dependency sources
         run: |
           set -euo pipefail
-          app="$RUNNER_TEMP/wallet-app"
-          find "$app" -type f -print0 | sort -z | xargs -0 sha256sum \
-            > "$RUNNER_TEMP/generated.sha256"
-          cargo +1.99.1 run --locked --manifest-path sdk/Cargo.toml \
-            --package solana_kit_xtask -- prepare-wallet "$app"
-          sha256sum --check "$RUNNER_TEMP/generated.sha256"
+          for fixture in wallet wallet-rpc; do
+            app="$RUNNER_TEMP/$fixture-app"
+            find "$app" -type f -print0 | sort -z | xargs -0 sha256sum \
+              > "$RUNNER_TEMP/$fixture-generated.sha256"
+            cargo +1.99.1 run --locked --manifest-path sdk/Cargo.toml \
+              --package solana_kit_xtask -- "prepare-$fixture" "$app"
+            sha256sum --check "$RUNNER_TEMP/$fixture-generated.sha256"
 
-          cargo +1.99.1 metadata --manifest-path "$app/Cargo.toml" --format-version 1 \
-            > "$RUNNER_TEMP/consumer-metadata.json"
-          jq -e --arg revision "$LEPTOSKIT_REVISION" --arg source "$LEPTOSKIT_SOURCE" '
-            [.packages[] | select(.name | startswith("leptoskit")) | .source] |
-            unique == ["git+\($source)?rev=\($revision)#\($revision)"]
-          ' "$RUNNER_TEMP/consumer-metadata.json"
+            cargo +1.99.1 metadata --manifest-path "$app/Cargo.toml" --format-version 1 \
+              > "$RUNNER_TEMP/$fixture-consumer-metadata.json"
+            jq -e --arg revision "$LEPTOSKIT_REVISION" --arg source "$LEPTOSKIT_SOURCE" '
+              [.packages[] | select(.name | startswith("leptoskit")) | .source] |
+              unique == ["git+\($source)?rev=\($revision)#\($revision)"]
+            ' "$RUNNER_TEMP/$fixture-consumer-metadata.json"
+          done
 
       - name: Compile the generated wallet guest
         run: |
           set -euo pipefail
-          app="$RUNNER_TEMP/wallet-app"
-          cargo +1.99.1 build --locked --manifest-path "$app/Cargo.toml" \
-            -p solana_wallet_app_app --no-default-features --features native \
-            --target wasm32-unknown-unknown
+          for fixture in wallet wallet-rpc; do
+            app="$RUNNER_TEMP/$fixture-app"
+            cargo +1.99.1 build --locked --manifest-path "$app/Cargo.toml" \
+              -p solana_wallet_app_app --no-default-features --features native \
+              --target wasm32-unknown-unknown
+          done
+
+  generated-wallet-macos:
+    runs-on: "macos-15"
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_26.2.app/Contents/Developer
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          path: sdk
+          persist-credentials: false
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: ifiokjr/leptoskit
+          ref: ${{ env.LEPTOSKIT_REVISION }}
+          path: framework
+          persist-credentials: false
+
+      - name: Install the pinned compiler
+        run: rustup toolchain install 1.99.1 --profile minimal --target wasm32-unknown-unknown
+
+      - name: Verify the generated app toolchains
+        run: |
+          cargo --version
+          rustc --version
+          xcrun swift --version
+          xcodebuild -version
+
+      - name: Build the public generator
+        run: |
+          set -euo pipefail
+          cargo +1.99.1 build --locked --manifest-path framework/Cargo.toml \
+            -p leptoskit_cli --bin leptoskit --message-format=json > "$RUNNER_TEMP/cli.jsonl"
+
+      - name: Build the actual generated macOS app and composed registrant
+        run: |
+          set -euo pipefail
+          cli="$(jq -sre '[.[] | select(.reason == "compiler-artifact" and
+            .target.name == "leptoskit" and (.target.kind | index("bin")) != null) |
+            .executable | select(. != null)] |
+            if length == 1 then .[0] else error("expected one public CLI") end' \
+            "$RUNNER_TEMP/cli.jsonl")"
+          app="$RUNNER_TEMP/wallet-rpc-app"
+          "$cli" new "$app" --name solana_wallet_app --platform native --native-target macos
+          cargo +1.99.1 run --locked --manifest-path sdk/Cargo.toml \
+            --package solana_kit_xtask -- prepare-wallet-rpc "$app"
+          "$cli" migrate --check --file "$app/leptoskit.toml"
+          cd "$app"
+          "$cli" build --platform macos

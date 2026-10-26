@@ -1,6 +1,8 @@
 //! Adds wallet source to a real public-generator workspace, retaining its hosts.
 #[path = "framework.rs"]
 mod framework;
+#[path = "native_config.rs"]
+mod native_config;
 use std::{
     error::Error,
     fs,
@@ -11,39 +13,67 @@ type Result<T> = std::result::Result<T, Box<dyn Error + Send + Sync>>;
 /// Gather and validate every expected generated member before changing files.
 /// A new public template must fail visibly rather than receiving partial hooks.
 pub(crate) fn run(project: &Path) -> Result<()> {
+    prepare(project, NativeRuntime::Wallet)
+}
+
+/// Selects one composed Rust service for local-wallet RPC verification.
+pub(crate) fn run_rpc(project: &Path) -> Result<()> {
+    prepare(project, NativeRuntime::Journey)
+}
+
+#[derive(Clone, Copy)]
+enum NativeRuntime {
+    Wallet,
+    Journey,
+}
+
+impl NativeRuntime {
+    fn plugin(self) -> &'static str {
+        match self {
+            Self::Wallet => "solana-wallet",
+            Self::Journey => "solana-journey",
+        }
+    }
+
+    fn dependency(self, sdk: &Path) -> String {
+        match self {
+            Self::Wallet => format!(
+                "solana_kit_leptoskit = {{ path = {:?}, features = [\"wallet-host\"] }}\n",
+                sdk.join("crates/solana_kit_leptoskit")
+            ),
+            Self::Journey => format!(
+                "solana_kit_app_journey_runtime = {{ path = {:?} }}\n",
+                sdk.join("verification/leptoskit-app-journey/runtime")
+            ),
+        }
+    }
+}
+
+fn prepare(project: &Path, runtime: NativeRuntime) -> Result<()> {
     let sdk = fs::canonicalize(".")?;
     framework::verify_sdk(&sdk)?;
     let project = fs::canonicalize(project)?;
-    let edits = plan(&sdk, &project)?;
+    let edits = plan(&sdk, &project, runtime)?;
     write(&project, edits)
 }
 
 /// Hold every edit until the generated guest, hosts and dependency shapes agree.
 /// A changed template must fail before any member receives a partial adaptation.
-fn plan(sdk: &Path, project: &Path) -> Result<Vec<(PathBuf, String)>> {
+fn plan(sdk: &Path, project: &Path, runtime: NativeRuntime) -> Result<Vec<(PathBuf, String)>> {
     let app = project.join("solana_wallet_app_app");
     let mut edits = guest(sdk, &app)?;
 
     for platform in ["macos", "android", "ios", "windows", "linux"] {
         let path = project.join(platform).join("Cargo.toml");
         let contents = fs::read_to_string(&path)?;
-        let dependency = format!(
-            "solana_kit_leptoskit = {{ path = {:?}, features = [\"wallet-host\"] }}\n",
-            sdk.join("crates/solana_kit_leptoskit")
-        );
+        let dependency = runtime.dependency(sdk);
         let section = format!("target.'cfg(target_os = {platform:?})'.dependencies");
         edits.push((path, dependency_entry(&contents, &dependency, &section)?));
     }
 
     let config = project.join("leptoskit.toml");
     let contents = fs::read_to_string(&config)?;
-    let source = contents.replace("plugins = []", "plugins = [\"solana-wallet\"]");
-
-    if !source.contains("plugins = [\"solana-wallet\"]") {
-        return Err("expected the generated empty native plugin selection".into());
-    }
-
-    edits.push((config, source));
+    edits.push((config, native_config::select(&contents, runtime.plugin())?));
 
     for member in [".", "solana_wallet_app_backend", "solana_wallet_app_shared"] {
         let path = project.join(member).join("Cargo.toml");
