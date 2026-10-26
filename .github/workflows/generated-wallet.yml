@@ -245,6 +245,8 @@ jobs:
           device="$(xcrun simctl create 'Solana Kit installed wallet' "$device_type" "$runtime")"
           printf '%s\n' "$device" > "$RUNNER_TEMP/wallet-ios-device"
           xcrun simctl boot "$device"
+          open -Fn -a "$DEVELOPER_DIR/Applications/Simulator.app" \
+            --args -CurrentDeviceUDID "$device"
           deadline=$((SECONDS + 900))
           xcrun simctl bootstatus "$device" -b &
           boot=$!
