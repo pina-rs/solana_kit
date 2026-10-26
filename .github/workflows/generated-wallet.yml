@@ -12,6 +12,7 @@ env:
   CARGO_HTTP_USER_AGENT: solana-kit-verification
   GIT_HTTP_USER_AGENT: solana-kit-verification
   CARGO_INCREMENTAL: "0"
+  RUSTUP_TOOLCHAIN: "1.99.1"
   LEPTOSKIT_REVISION: 25b1861ddc729a8f3b70117cd0c48e06659c9697
   LEPTOSKIT_SOURCE: https://github.com/ifiokjr/leptoskit
 
