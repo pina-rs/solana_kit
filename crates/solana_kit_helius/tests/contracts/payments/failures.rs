@@ -18,10 +18,12 @@ fn invalid_inputs() {
     let mut host = request();
     host.payment_host = Some("https://user@host".into());
 
-    assert!(matches!(
-        rejected(reference),
-        PaymentError::InvalidReference
-    ));
+    let error = rejected(reference);
+    assert_eq!(
+        error.to_string(),
+        "Helius payment preparation failed: payment reference or project ID is empty"
+    );
+    assert!(matches!(error, PaymentError::InvalidReference));
     assert!(matches!(rejected(price), PaymentError::InvalidPrice));
     assert!(matches!(rejected(host), PaymentError::InvalidPaymentHost));
 }
@@ -50,6 +52,7 @@ fn provider_failures() {
     let error =
         futures::executor::block_on(create_payment(&client, request())).expect_err("preview");
     assert!(!format!("{error:?} {error}").contains("private-provider-body"));
+    assert!(error.to_string().contains("503"));
     assert!(std::error::Error::source(&error).is_some());
     let PaymentError::Service(Error::Http { status, body }) = error else {
         panic!("original HTTP cause")

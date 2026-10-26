@@ -88,7 +88,25 @@ pub enum PaymentError {
 
 impl core::fmt::Display for PaymentError {
     fn fmt(&self, formatter: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        write!(formatter, "Helius payment preparation failed: {self:?}")
+        formatter.write_str("Helius payment preparation failed: ")?;
+
+        match self {
+            Self::InvalidReference => {
+                formatter.write_str("payment reference or project ID is empty")
+            }
+            Self::InvalidPrice => formatter.write_str("explicit price identifier is empty"),
+            Self::InvalidPaymentHost => formatter.write_str(
+                "payment host must be an HTTP(S) base without credentials, query or fragment",
+            ),
+            Self::ZeroAmount => formatter.write_str("checkout total is zero"),
+            Self::InvalidPaymentIntent => {
+                formatter.write_str("payment intent identifier is empty or a dot segment")
+            }
+            Self::IntentMismatch => formatter
+                .write_str("fetched payment intent does not match the requested identifier"),
+            Self::NotPending => formatter.write_str("payment intent is not pending"),
+            Self::Service(error) => write!(formatter, "{error}"),
+        }
     }
 }
 
