@@ -201,7 +201,7 @@ pub(crate) fn render(root: &Value, policy: &Policy<'_>) -> Result<String, Error>
     emit::program(&parse::program(&normalize_input(root)?, policy)?)
 }
 
-#[cfg(feature = "verification")]
+#[cfg(all(test, feature = "verification"))]
 pub(crate) fn render_complete_program(root: &Value, policy: &Policy<'_>) -> Result<String, Error> {
     codama_program::render(root, policy)
 }
@@ -210,6 +210,12 @@ pub(crate) fn render_complete_program(root: &Value, policy: &Policy<'_>) -> Resu
 #[cfg(feature = "verification")]
 pub(crate) fn render_prefixed_program(root: &Value, policy: &Policy<'_>) -> Result<String, Error> {
     account_prefix::render(root, policy)
+}
+
+/// Explicit framing for private event tables whose account layouts are already complete.
+#[cfg(feature = "verification")]
+pub(crate) fn render_prefixed_events(root: &Value, policy: &Policy<'_>) -> Result<String, Error> {
+    account_prefix::render_events(root, policy)
 }
 
 #[cfg(feature = "verification")]

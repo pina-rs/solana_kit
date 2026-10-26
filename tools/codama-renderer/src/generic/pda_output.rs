@@ -92,13 +92,13 @@ fn accounts(
     output.push_str(&format!("}}\n#[cfg(feature=\"pda\")]\nimpl {name}Accounts{{\n/// Resolves the complete checked default graph, preserving explicit overrides.\npub fn resolve(&self,program:Address)->Result<Vec<AccountMeta>,DefaultError>{{\n"));
     resolve(&mut output, &instruction.roles, recipes, &selected)?;
     let count = instruction.roles.len();
-    output.push_str(&format!("let mut accounts=Vec::new();\naccounts.try_reserve_exact({count}).map_err(|_|DefaultError::Codec(Error::AllocationFailed))?;\n"));
+    output.push_str(&format!("const ACCOUNT_COUNT:usize={count};\n\nlet mut accounts=Vec::new();\naccounts.try_reserve_exact(ACCOUNT_COUNT).map_err(|_|DefaultError::Codec(Error::AllocationFailed))?;\n\n"));
     output.push_str(&push_roles(instruction));
     output.push_str("Ok(accounts)\n}\n");
     let build = if extended {
-        "let accounts=self.resolve(program)?;\nOk(data.instruction_with_program(program,&accounts,limits)?)"
+        "let accounts=self.resolve(program)?;\n\nOk(data.instruction_with_program(program,&accounts,limits)?)"
     } else {
-        "let mut instruction=data.instruction(limits)?;\ninstruction.program_address=program;\nOk(instruction)"
+        "let mut instruction=data.instruction(limits)?;\ninstruction.program_address=program;\n\nOk(instruction)"
     };
 
     output.push_str(&format!("/// Builds the canonical invocation with resolved defaults and caller limits.\npub fn instruction(&self,data:&{name},limits:Limits)->Result<Instruction,DefaultError>{{self.instruction_with_program(PROGRAM,data,limits)}}\n/// Builds with an explicit program and derives every PDA against that program.\npub fn instruction_with_program(&self,program:Address,data:&{name},limits:Limits)->Result<Instruction,DefaultError>{{{build}}}\n}}\n"));
@@ -150,7 +150,7 @@ fn push_roles(instruction: &super::Instruction) -> String {
     let mut output = String::new();
 
     if instruction.omit_optional && instruction.roles.iter().any(|role| role.optional) {
-        output.push_str("let mut _omitted = false;\n");
+        output.push_str("let mut _omitted = false;\n\n");
     }
 
     for (index, role) in instruction.roles.iter().enumerate() {
@@ -162,7 +162,7 @@ fn push_roles(instruction: &super::Instruction) -> String {
         );
 
         if !role.optional {
-            output.push_str(&format!("accounts.push({value});\n"));
+            output.push_str(&format!("accounts.push({value});\n\n"));
             continue;
         }
 
@@ -175,12 +175,12 @@ fn push_roles(instruction: &super::Instruction) -> String {
 fn optional_role(binding: &str, value: &str, omit: bool) -> String {
     if omit {
         return format!(
-            "if let Some({binding})={binding}{{if _omitted{{return Err(DefaultError::Codec(Error::InvalidValue));}}accounts.push({value});}}else{{_omitted=true;}}\n"
+            "if let Some({binding})={binding}{{if _omitted{{return Err(DefaultError::Codec(Error::InvalidValue));}}\n\naccounts.push({value});}}else{{_omitted=true;}}\n\n"
         );
     }
 
     format!(
-        "accounts.push(match {binding}{{Some({binding})=>{value},None=>AccountMeta{{address:program,role:AccountRole::Readonly}}}});\n"
+        "accounts.push(match {binding}{{Some({binding})=>{value},None=>AccountMeta{{address:program,role:AccountRole::Readonly}}}});\n\n"
     )
 }
 
@@ -196,7 +196,7 @@ fn resolve(
 ) -> Result<(), Error> {
     let mut ready = BTreeSet::new();
     let mut pending: Vec<_> = roles.iter().enumerate().collect();
-    output.push_str("let _ = program;\n");
+    output.push_str("let _ = program;\n\n");
 
     while !pending.is_empty() {
         let before = pending.len();
@@ -213,7 +213,7 @@ fn resolve(
                 continue;
             };
 
-            output.push_str(&format!("let {}={expression};\n", binding(index)));
+            output.push_str(&format!("let {}={expression};\n\n", binding(index)));
             ready.insert(role.name.clone());
         }
 

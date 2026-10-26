@@ -1,0 +1,18 @@
+[package]
+name = "solana_kit_attestation_service"
+version = "0.1.0"
+authors.workspace = true
+edition.workspace = true
+license = "Unlicense AND MIT"
+publish = false
+readme = "README.md"
+repository = "https://github.com/pina-rs/solana_kit/tree/main/crates/solana_kit_attestation_service"
+rust-version.workspace = true
+description = "Portable Solana Attestation Service client for off-chain applications"
+
+[dependencies]
+solana_kit_core.workspace = true
+
+[features]
+default = []
+pda = ["solana_kit_core/crypto"]

@@ -1493,6 +1493,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "solana_kit_attestation_service"
+version = "0.1.0"
+dependencies = [
+ "solana_kit_core",
+]
+
+[[package]]
 name = "solana_kit_browser"
 version = "0.1.0"
 dependencies = [
@@ -1736,11 +1743,25 @@ dependencies = [
 ]
 
 [[package]]
+name = "solana_kit_squads"
+version = "0.1.0"
+dependencies = [
+ "solana_kit_core",
+]
+
+[[package]]
 name = "solana_kit_stake"
 version = "0.1.0"
 dependencies = [
  "solana_kit_core",
  "solana_kit_system",
+]
+
+[[package]]
+name = "solana_kit_subscriptions"
+version = "0.1.0"
+dependencies = [
+ "solana_kit_core",
 ]
 
 [[package]]

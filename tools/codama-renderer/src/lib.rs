@@ -29,6 +29,8 @@ mod metaplex_contracts;
 mod program_contracts;
 #[cfg(feature = "verification")]
 mod program_preparation;
+#[cfg(feature = "verification")]
+mod remaining_contracts;
 
 mod generic;
 #[cfg(feature = "verification")]
@@ -129,6 +131,7 @@ fn run_foundation_audit(arguments: &[String]) -> Result<(), Box<dyn std::error::
     match arguments.get(1).map(String::as_str) {
         Some("program-contracts") => program_contracts::run(),
         Some("metaplex-contracts") => metaplex_contracts::run(),
+        Some("remaining-contracts") => remaining_contracts::run(),
         Some("inputs") => inputs::audit(),
         Some("alt-config-receipt") => alt_config_receipt::run(),
         Some("alt-config") => alt_config::run(),
