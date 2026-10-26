@@ -191,6 +191,19 @@ fn actual_guest_reads_rejects_stale_approval_and_cancels_real_pending_http() {
     app.text("Request cancelled; wallet disconnected");
     app.text("Create local wallet");
     app.wait(|_| peer.cancelled());
+    app.tap("Create local wallet");
+    app.text("Local wallet connected; not saved automatically");
+    assert_ne!(app.account(), account);
+    app.tap("Review signature");
+    app.text("Approve local wallet signature");
+    assert_eq!(
+        app.host
+            .dispatch(old_approval, &NativeEvent::Press)
+            .unwrap(),
+        EventOutcome::Unhandled
+    );
+    app.tap("Approve signature");
+    app.text("Signature independently verified");
     app.close();
     peer.close().unwrap();
 }

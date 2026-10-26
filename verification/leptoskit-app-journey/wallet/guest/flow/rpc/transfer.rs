@@ -35,7 +35,7 @@ pub(super) async fn run(
 ) -> Result<(GuestLocalWallet, String), AppError> {
     let prepared = match bounded(prepare(client, wallet.address()), actions).await {
         Ok(prepared) => prepared,
-        Err(error) => return retain(wallet, error),
+        Err(error) => return retain(wallet, error).await,
     };
 
     let payer = wallet.address();
@@ -45,7 +45,7 @@ pub(super) async fn run(
 
     match approval::request(&purpose, message, generation, actions, commands).await {
         Decision::Reject => return Ok((wallet, "Transfer rejected; nothing submitted".into())),
-        Decision::Cancel => return Err(Error::Cancelled.into()),
+        Decision::Cancel => return retain(wallet, Error::Cancelled.into()).await,
         Decision::Approve => {}
     }
 
@@ -79,10 +79,10 @@ async fn approved(
         actions,
     )
     .await;
-    finish(wallet, signature, result)
+    finish(wallet, signature, result).await
 }
 
-fn finish(
+async fn finish(
     wallet: GuestLocalWallet,
     signature: solana_kit_core::Signature,
     result: Result<u64, AppError>,
@@ -90,9 +90,11 @@ fn finish(
     let after = match result {
         Ok(after) => after,
         Err(source) if cancelled(&source) => {
+            wallet.close().await?;
+
             return Err(Error::Submitted { signature, source }.into());
         }
-        Err(source) => return retain(wallet, Error::Submitted { signature, source }.into()),
+        Err(source) => return retain(wallet, Error::Submitted { signature, source }.into()).await,
     };
 
     Ok((

@@ -1,4 +1,8 @@
 //! Independent legacy/System wire facts, followed by explicit protocol fixtures.
+#[cfg(test)]
+#[path = "transaction_checks.rs"]
+mod tests;
+
 use base64::{Engine, engine::general_purpose::STANDARD};
 use ed25519_dalek::{Signature, VerifyingKey};
 use serde_json::{Value, json};

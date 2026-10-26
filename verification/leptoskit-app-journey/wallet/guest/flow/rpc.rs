@@ -18,6 +18,7 @@ use solana_kit_leptoskit::{GuestHttp, GuestLocalWallet, wallet_ui::local_wallet_
 use std::future::Future;
 
 type Rpc = Client<GuestHttp>;
+const REQUEST_TIMEOUT_MILLIS: u64 = 30_000;
 
 struct Connected {
     wallet: GuestLocalWallet,
@@ -88,6 +89,8 @@ async fn update(
         Intent::Wallet(action @ (Action::Save | Action::Backup)) => {
             let Some(result) = local::save(&mut connected.wallet, action, actions, commands).await
             else {
+                connected.wallet.close().await?;
+
                 return Ok(None);
             };
             connected.status = result?.into();
@@ -135,7 +138,7 @@ async fn rpc_action(
     match action {
         RpcAction::Balance => match bounded(balance(client, wallet.address()), actions).await {
             Ok(result) => Ok((wallet, format!("Balance: {result} lamports"))),
-            Err(error) => retain(wallet, error),
+            Err(error) => retain(wallet, error).await,
         },
         RpcAction::Transfer => {
             *generation = generation.checked_add(1).ok_or(Error::Generation)?;
@@ -148,11 +151,13 @@ fn cancelled(error: &AppError) -> bool {
     matches!(error.downcast_ref::<Error>(), Some(Error::Cancelled))
 }
 
-fn retain(
+async fn retain(
     wallet: GuestLocalWallet,
     error: AppError,
 ) -> Result<(GuestLocalWallet, String), AppError> {
     if cancelled(&error) {
+        wallet.close().await?;
+
         return Err(error);
     }
 
@@ -184,7 +189,8 @@ async fn bounded<T, E: Into<AppError>>(
     operation: impl Future<Output = Result<T, E>>,
     actions: &mut LocalWalletEvents,
 ) -> Result<T, AppError> {
-    let pending = futures::future::select(Box::pin(sleep(30_000)), Box::pin(operation));
+    let pending =
+        futures::future::select(Box::pin(sleep(REQUEST_TIMEOUT_MILLIS)), Box::pin(operation));
 
     match super::cancellable(pending, actions).await {
         Some(Either::Right((result, _))) => result.map_err(Into::into),
