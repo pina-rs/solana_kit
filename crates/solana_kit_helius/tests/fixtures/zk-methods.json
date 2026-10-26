@@ -1,0 +1,126 @@
+[
+  {
+    "method": "getCompressedAccount", "params": {"hash": "h"},
+    "result": {"context": {"slot": 18446744073709551615}, "value": {
+      "hash": "h", "owner": "o", "lamports": 18446744073709551615,
+      "leafIndex": 1, "slotCreated": 2, "tree": "t", "seq": 3,
+      "address": "a", "data": {"discriminator": 18446744073709551615, "data": "AA==", "dataHash": "dh"}
+    }}
+  },
+  {
+    "method": "getCompressedAccountProof", "params": {"hash": "h"},
+    "result": {"context": {"slot": 1}, "value": {
+      "hash": "h", "root": "r", "proof": ["p"], "leafIndex": 4294967295,
+      "merkleTree": "t", "rootSeq": 18446744073709551615
+    }}
+  },
+  {
+    "method": "getCompressedAccountsByOwner",
+    "params": {"owner": "o", "cursor": "c", "limit": 1, "dataSlice": {"offset": 0, "length": 1}, "filters": [{"memcmp": {"offset": 0, "bytes": "x"}}]},
+    "result": {"context": {"slot": 1}, "value": {"items": [
+      {"hash": "h", "owner": "o", "lamports": 1, "leafIndex": 1, "slotCreated": 2, "tree": "t"}
+    ], "cursor": null}}
+  },
+  {"method": "getCompressedBalance", "params": {"hash": "h"}, "result": {"context": {"slot": 1}, "value": 18446744073709551615}},
+  {"method": "getCompressedBalanceByOwner", "params": {"owner": "o"}, "result": {"context": {"slot": 1}, "value": 0}},
+  {
+    "method": "getCompressedMintTokenHolders", "params": {"mint": "m"},
+    "result": {"context": {"slot": 1}, "value": {"items": [{"owner": "o", "balance": 18446744073709551615}]}}
+  },
+  {"method": "getCompressedTokenAccountBalance", "params": {"address": "a"}, "result": {"context": {"slot": 1}, "value": {"amount": 18446744073709551615}}},
+  {
+    "method": "getCompressedTokenAccountsByDelegate", "params": {"delegate": "d", "mint": "m"},
+    "result": {"context": {"slot": 1}, "value": {"items": [{
+      "account": {"hash": "h", "owner": "o", "lamports": 1, "leafIndex": 1, "slotCreated": 2, "tree": "t"},
+      "tokenData": {"amount": 18446744073709551615, "mint": "m", "owner": "o", "delegate": "d", "state": "frozen", "tlv": "AA=="}
+    }]}}
+  },
+  {
+    "method": "getCompressedTokenAccountsByOwner", "params": {"owner": "o"},
+    "result": {"context": {"slot": 1}, "value": {"items": [{
+      "account": {"hash": "h", "owner": "o", "lamports": 1, "leafIndex": 1, "slotCreated": 2, "tree": "t"},
+      "tokenData": {"amount": 1, "mint": "m", "owner": "o", "state": "initialized"}
+    }], "cursor": "next"}}
+  },
+  {
+    "method": "getCompressedTokenBalancesByOwner", "params": {"owner": "o"},
+    "result": {"context": {"slot": 1}, "value": {"token_balances": [{"mint": "m", "balance": 18446744073709551615}], "cursor": null}}
+  },
+  {
+    "method": "getCompressedTokenBalancesByOwnerV2", "params": {"owner": "o"},
+    "result": {"context": {"slot": 1}, "value": {"items": [{"mint": "m", "balance": 18446744073709551615}]}}
+  },
+  {
+    "method": "getCompressionSignaturesForAccount", "params": {"hash": "h"},
+    "result": {"context": {"slot": 1}, "value": {"items": [{"signature": "s", "slot": 18446744073709551615, "blockTime": -1}]}}
+  },
+  {
+    "method": "getCompressionSignaturesForAddress", "params": {"address": "a"},
+    "result": {"context": {"slot": 1}, "value": {"items": [{"signature": "s", "slot": 1, "blockTime": -1}], "cursor": "next"}}
+  },
+  {
+    "method": "getCompressionSignaturesForOwner", "params": {"owner": "o"},
+    "result": {"context": {"slot": 1}, "value": {"items": [{"signature": "s", "slot": 1, "blockTime": -1}], "cursor": null}}
+  },
+  {
+    "method": "getCompressionSignaturesForTokenOwner", "params": {"owner": "o"},
+    "result": {"context": {"slot": 1}, "value": {"items": [{"signature": "s", "slot": 1, "blockTime": -1}]}}
+  },
+  {
+    "method": "getLatestCompressionSignatures", "params": {"limit": 1},
+    "result": {"context": {"slot": 1}, "value": {"items": [{"signature": "s", "slot": 1, "blockTime": -1}], "cursor": null}}
+  },
+  {
+    "method": "getLatestNonVotingSignatures", "params": {"cursor": "c"},
+    "result": {"context": {"slot": 1}, "value": {"items": [
+      {"signature": "s", "slot": 1, "blockTime": -1, "error": "failure"},
+      {"signature": "t", "slot": 2, "blockTime": 0, "error": null}
+    ]}}
+  },
+  {
+    "method": "getMultipleCompressedAccountProofs", "params": ["h"],
+    "result": {"context": {"slot": 1}, "value": [
+      {"hash": "h", "root": "r", "proof": ["p"], "leafIndex": 1, "merkleTree": "t", "rootSeq": 2}
+    ]}
+  },
+  {
+    "method": "getMultipleCompressedAccounts", "params": {"hashes": ["missing", "h"]},
+    "result": {"context": {"slot": 1}, "value": {"items": [null,
+      {"hash": "h", "owner": "o", "lamports": 1, "leafIndex": 1, "slotCreated": 2, "tree": "t", "address": null, "data": null, "seq": null}
+    ]}}
+  },
+  {
+    "method": "getMultipleNewAddressProofs", "params": ["a"],
+    "result": {"context": {"slot": 1}, "value": [{
+      "address": "a", "root": "r", "proof": ["p"], "lowerRangeAddress": "lo", "higherRangeAddress": "hi",
+      "nextIndex": 1, "lowElementLeafIndex": 0, "merkleTree": "t", "rootSeq": 18446744073709551615
+    }]}
+  },
+  {
+    "method": "getMultipleNewAddressProofsV2", "params": [{"address": "a", "tree": "t"}],
+    "result": {"context": {"slot": 1}, "value": [{
+      "address": "a", "root": "r", "proof": ["p"], "lowerRangeAddress": "lo", "higherRangeAddress": "hi",
+      "nextIndex": 1, "lowElementLeafIndex": 0, "merkleTree": "t", "rootSeq": 2
+    }]}
+  },
+  {
+    "method": "getSignaturesForAsset", "params": {"id": "a", "page": 1, "limit": 1},
+    "result": {"total": 1, "limit": 1, "items": [["s", "Transfer"]]}
+  },
+  {
+    "method": "getTransactionWithCompressionInfo", "params": {"signature": "s"},
+    "result": {"transaction": null, "compression_info": {"closedAccounts": [], "openedAccounts": [{
+      "account": {"hash": "h", "owner": "o", "lamports": 1, "leafIndex": 1, "slotCreated": 2, "tree": "t"},
+      "optionalTokenData": {"amount": 1, "mint": "m", "owner": "o", "state": "initialized"}
+    }]}}
+  },
+  {
+    "method": "getValidityProof", "params": {"hashes": ["h"], "newAddressesWithTrees": [{"address": "a", "tree": "t"}]},
+    "result": {"context": {"slot": 1}, "value": {
+      "compressedProof": {"a": [0, 255], "b": [1, 2], "c": [3]},
+      "rootIndices": [18446744073709551615, 0], "roots": ["r", "r2"], "leafIndices": [4294967295, 0], "leaves": ["h", "a"], "merkleTrees": ["t", "t"]
+    }}
+  },
+  {"method": "getIndexerHealth", "params": {}, "result": "ok"},
+  {"method": "getIndexerSlot", "params": {}, "result": 18446744073709551615}
+]

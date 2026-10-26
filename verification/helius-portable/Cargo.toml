@@ -1,0 +1,42 @@
+[package]
+name = "solana_kit_helius_portable"
+version = "0.0.0"
+edition = "2024"
+publish = false
+rust-version = "1.89"
+
+[workspace]
+members = ["guest"]
+
+[features]
+default = ["crypto"]
+crypto = ["solana_kit_helius/crypto"]
+corrupt = []
+
+[dependencies]
+base64 = { version = "=0.22.1", default-features = false, features = ["alloc"] }
+solana_kit_stake = { path = "../../crates/solana_kit_stake" }
+solana_kit_system = { path = "../../crates/solana_kit_system" }
+futures = { version = "=0.3.31", default-features = false, features = ["executor"] }
+serde = "=1.0.229"
+serde_json = { version = "=1.0.154", features = ["arbitrary_precision", "raw_value"] }
+solana_kit_client = { path = "../../crates/solana_kit_client" }
+solana_kit_core = { path = "../../crates/solana_kit_core" }
+solana_kit_helius = { path = "../../crates/solana_kit_helius" }
+
+[target.'cfg(not(target_arch = "wasm32"))'.dev-dependencies]
+tokio = { version = "=1.54.1", features = ["rt-multi-thread", "macros"] }
+
+[target.'cfg(target_arch = "wasm32")'.dev-dependencies]
+wasm-bindgen = "=0.2.128"
+wasm-bindgen-test = "=0.3.78"
+
+[[test]]
+name = "native_future"
+path = "../../crates/solana_kit_helius/tests/native_future.rs"
+
+[profile.release]
+strip = "none"
+
+[profile.release.build-override]
+strip = "none"

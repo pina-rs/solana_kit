@@ -1,0 +1,22 @@
+{
+  "signature": "s",
+  "type": "TRANSFER",
+  "source": "SYSTEM_PROGRAM",
+  "fee": 5000,
+  "feePayer": "11111111111111111111111111111111",
+  "slot": 18446744073709551615,
+  "timestamp": -1,
+  "description": null,
+  "nativeTransfers": [{"fromUserAccount": null, "toUserAccount": "b", "amount": 18446744073709551615}],
+  "tokenTransfers": [
+    {"fromUserAccount": "a", "toUserAccount": "b", "fromTokenAccount": "ta", "toTokenAccount": null, "mint": "m", "tokenAmount": 9007199254740993.125, "tokenStandard": "Fungible"},
+    {"mint": "m", "tokenAmount": "9007199254740993.125", "decimals": 6}
+  ],
+  "accountData": [{
+    "account": "a", "nativeBalanceChange": -5000, "nativeTokenBalance": 1,
+    "tokenBalanceChanges": [{"mint": "m", "rawTokenAmount": {"tokenAmount": "-18446744073709551615", "decimals": 6}, "userAccount": "a", "tokenAccount": "ta"}]
+  }],
+  "instructions": [{"programId": "p", "accounts": ["a"], "data": "d", "programName": "SYSTEM_PROGRAM", "innerInstructions": [{"programId": "q", "innerInstructions": [{"programId": "r", "parsed": {"amount": "1"}}]}]}],
+  "transactionError": null,
+  "events": {"unknown": null}
+}

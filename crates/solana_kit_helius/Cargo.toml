@@ -1,0 +1,31 @@
+[package]
+name = "solana_kit_helius"
+version = "0.1.0"
+authors.workspace = true
+edition.workspace = true
+include = ["src/**", "tests/**", "README.md", "LICENSE", "THIRD_PARTY_NOTICES.md", "MIT-DART.txt", "MIT-HELIUS.txt"]
+license = "Unlicense AND MIT"
+publish = false
+readme = "README.md"
+repository = "https://github.com/pina-rs/solana_kit/tree/main/crates/solana_kit_helius"
+rust-version.workspace = true
+description = "Portable typed Helius APIs for off-chain Solana applications"
+
+[features]
+default = []
+crypto = ["solana_kit_core/crypto"]
+
+[dependencies]
+base64 = { version = "0.22.1", default-features = false, features = ["alloc"] }
+serde = { version = "1.0.229", features = ["derive"] }
+serde_json = { version = "1.0.154", features = ["arbitrary_precision", "raw_value"] }
+solana_kit_client.workspace = true
+solana_kit_core.workspace = true
+solana_kit_stake.workspace = true
+solana_kit_system.workspace = true
+
+[dev-dependencies]
+futures = "=0.3.31"
+
+[target.'cfg(not(target_arch = "wasm32"))'.dev-dependencies]
+tokio = { version = "=1.54.1", features = ["rt-multi-thread", "macros"] }

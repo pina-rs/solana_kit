@@ -1,4 +1,4 @@
-name: Attestation Squads and recurring Subscriptions clients
+name: Program clients and Helius integration
 
 on:
   pull_request:
@@ -38,9 +38,13 @@ jobs:
           set -euo pipefail
           cargo "+$RUST_TOOLCHAIN" test --locked --all-features \
             -p solana_kit_attestation_service -p solana_kit_squads \
-            -p solana_kit_subscriptions
+            -p solana_kit_subscriptions -p solana_kit_helius
           cargo "+$RUST_TOOLCHAIN" run --locked --manifest-path "$PROGRAM_MANIFEST" \
             --package "$PROGRAM_PACKAGE"
+
+          cargo "+$RUST_TOOLCHAIN" run --locked \
+            --manifest-path verification/helius-portable/Cargo.toml \
+            --package solana_kit_helius_portable
 
   portable-programs:
     runs-on: "ubuntu-24.04"
@@ -141,11 +145,18 @@ jobs:
           set -euo pipefail
           oracles="$RUNNER_TEMP/program-oracles"
           mkdir "$oracles"
+          raw=https://raw.githubusercontent.com
+          attestation="$raw/solana-foundation/solana-attestation-service"
+          attestation_revision=5b64cf09843d62ca800f7d73f8438ad3505de70e
+          squads="$raw/Squads-Protocol/v4"
+          squads_revision=af94153ff77a28b6effe46b9c94baaa93742b48c
+
           curl --fail --location --silent --show-error --user-agent solana-kit-verification \
-            https://raw.githubusercontent.com/solana-foundation/solana-attestation-service/5b64cf09843d62ca800f7d73f8438ad3505de70e/idl/solana_attestation_service.json \
+            "$attestation/$attestation_revision/idl/solana_attestation_service.json" \
             --output "$oracles/attestation.json"
+
           curl --fail --location --silent --show-error --user-agent solana-kit-verification \
-            https://raw.githubusercontent.com/Squads-Protocol/v4/af94153ff77a28b6effe46b9c94baaa93742b48c/sdk/multisig/idl/squads_multisig_program.json \
+            "$squads/$squads_revision/sdk/multisig/idl/squads_multisig_program.json" \
             --output "$oracles/squads.json"
           printf '%s  %s\n' 924728c7b8327b5770ef63c34c804430d0a1953adcf96873bcee1f4f4ccb4a75 \
             "$oracles/attestation.json" | sha256sum --check --strict
@@ -328,3 +339,204 @@ jobs:
           cargo +1.99.1 clippy --locked --all-targets --all-features \
             -p solana_kit_attestation_service -p solana_kit_squads \
             -p solana_kit_subscriptions -- -D warnings
+
+      - name: Execute Helius contracts in native Rust and the real browser
+        env:
+          WASM_BINDGEN_USE_BROWSER: "1"
+        run: |
+          set -euo pipefail
+          manifest=verification/helius-portable/Cargo.toml
+          package=solana_kit_helius_portable
+          cargo +1.99.1 fmt --manifest-path "$manifest" --all --check
+
+          cargo +1.99.1 clippy --locked --all-targets --all-features \
+            -p solana_kit_helius -- -D warnings
+          cargo +1.99.1 run --locked --quiet --manifest-path "$manifest" \
+            --package "$package" > "$RUNNER_TEMP/helius-native.txt"
+          cmp verification/helius-portable/report.txt "$RUNNER_TEMP/helius-native.txt"
+          cargo +1.99.1 run --locked --quiet --manifest-path "$manifest" \
+            --package "$package" --no-default-features > "$RUNNER_TEMP/helius-no-crypto.txt"
+          cmp verification/helius-portable/report-no-crypto.txt \
+            "$RUNNER_TEMP/helius-no-crypto.txt"
+          cargo +1.99.1 test --locked --manifest-path "$manifest" \
+            --package "$package" --lib --target wasm32-unknown-unknown -- --nocapture
+          cargo +1.99.1 test --locked --manifest-path "$manifest" \
+            --package "$package" --no-default-features --lib \
+            --target wasm32-unknown-unknown -- --nocapture
+          if cargo +1.99.1 test --locked --manifest-path "$manifest" \
+            --package "$package" --lib --features corrupt \
+            --target wasm32-unknown-unknown -- --nocapture \
+            > "$RUNNER_TEMP/helius-corrupt-browser.txt" 2>&1; then
+            echo "intentional Helius browser corruption unexpectedly passed" >&2
+            exit 1
+          fi
+          grep -F 'intentional portable contract corruption' \
+            "$RUNNER_TEMP/helius-corrupt-browser.txt"
+
+      - name: Execute Helius in both WASI previews with corruption controls
+        run: |
+          set -euo pipefail
+          manifest=verification/helius-portable/Cargo.toml
+          package=solana_kit_helius_portable
+          for target in native wasm32-wasip1 wasm32-wasip2; do
+            arguments=()
+            if [ "$target" != native ]; then arguments+=(--target "$target"); fi
+
+            if [ "$target" != native ]; then
+              for mode in crypto no-crypto; do
+                features=()
+                expected="$RUNNER_TEMP/helius-native.txt"
+                if [ "$mode" = no-crypto ]; then
+                  features+=(--no-default-features)
+                  expected="$RUNNER_TEMP/helius-no-crypto.txt"
+                fi
+
+                cargo +1.99.1 build --locked --manifest-path "$manifest" \
+                  --package "$package" "${arguments[@]}" "${features[@]}" \
+                  --message-format=json > "$RUNNER_TEMP/helius-wasi.jsonl"
+                component="$(jq -sre --arg name "$package" '
+                  [.[] | select(.reason == "compiler-artifact" and .target.name == $name and
+                    (.target.kind | index("bin")) != null) | .filenames[] |
+                    select(endswith(".wasm"))] |
+                  if length == 1 then .[0] else error("expected one Helius component") end
+                ' "$RUNNER_TEMP/helius-wasi.jsonl")"
+                "$WASMTIME" "$component" > "$RUNNER_TEMP/helius-$target-$mode.txt"
+                cmp "$expected" "$RUNNER_TEMP/helius-$target-$mode.txt"
+                cat "$RUNNER_TEMP/helius-$target-$mode.txt"
+              done
+            fi
+
+            CARGO_TARGET_DIR="$RUNNER_TEMP/program-corrupt" cargo +1.99.1 build --locked \
+              --manifest-path "$manifest" --package "$package" --features corrupt \
+              "${arguments[@]}" --message-format=json > "$RUNNER_TEMP/helius-negative.jsonl"
+            executable="$(jq -sre --arg name "$package" --arg target "$target" '
+              [.[] | select(.reason == "compiler-artifact" and .target.name == $name and
+                (.target.kind | index("bin")) != null) |
+                if $target == "native" then .executable else
+                  .filenames[] | select(endswith(".wasm")) end |
+                select(. != null)] |
+              if length == 1 then .[0]
+              else error("expected one Helius negative executable") end
+            ' "$RUNNER_TEMP/helius-negative.jsonl")"
+
+            runner=()
+            if [ "$target" != native ]; then runner=("$WASMTIME"); fi
+            if "${runner[@]}" "$executable" > "$RUNNER_TEMP/helius-corrupt-$target.txt" 2>&1; then
+              echo "intentional Helius corruption unexpectedly succeeded: $target" >&2
+              exit 1
+            fi
+            grep -F 'intentional portable contract corruption' \
+              "$RUNNER_TEMP/helius-corrupt-$target.txt"
+          done
+
+      - name: Execute Helius through production LeptosKit and reject unrelated panics
+        run: |
+          set -euo pipefail
+          manifest=verification/helius-portable/Cargo.toml
+          package=solana_kit_helius_guest
+          for mode in crypto no-crypto; do
+            features=()
+            report=verification/helius-portable/report.txt
+            if [ "$mode" = no-crypto ]; then
+              features+=(--no-default-features)
+              report=verification/helius-portable/report-no-crypto.txt
+            fi
+
+            cargo +1.99.1 build --locked --manifest-path "$manifest" \
+              --package "$package" "${features[@]}" --target wasm32-unknown-unknown \
+              --message-format=json > "$RUNNER_TEMP/helius-guest.jsonl"
+            guest="$(jq -sre --arg name "$package" '
+              [.[] | select(.reason == "compiler-artifact" and .target.name == $name) |
+                .filenames[] | select(endswith(".wasm"))] |
+              if length == 1 then .[0] else error("expected one Helius guest") end
+            ' "$RUNNER_TEMP/helius-guest.jsonl")"
+            cargo +1.99.1 xtask imports "$guest"
+            cargo +1.99.1 run --locked --manifest-path "$PROGRAM_MANIFEST" \
+              --package solana_kit_remaining_programs_host -- "$guest" --expected-report "$report"
+
+            for control in solana_kit_helius_portable/corrupt unexpected-panic; do
+              CARGO_TARGET_DIR="$RUNNER_TEMP/program-corrupt" cargo +1.99.1 build --locked \
+                --manifest-path "$manifest" --package "$package" "${features[@]}" \
+                --features "$control" --target wasm32-unknown-unknown --message-format=json \
+                > "$RUNNER_TEMP/helius-guest-control.jsonl"
+              guest="$(jq -sre --arg name "$package" '
+                [.[] | select(.reason == "compiler-artifact" and .target.name == $name) |
+                  .filenames[] | select(endswith(".wasm"))] |
+                if length == 1 then .[0] else error("expected one Helius control guest") end
+              ' "$RUNNER_TEMP/helius-guest-control.jsonl")"
+              if [ "$control" = solana_kit_helius_portable/corrupt ]; then
+                cargo +1.99.1 xtask imports "$guest"
+                cargo +1.99.1 run --locked --manifest-path "$PROGRAM_MANIFEST" \
+                  --package solana_kit_remaining_programs_host -- "$guest" --expect-corrupt \
+                  2>&1 | tee "$RUNNER_TEMP/helius-marked-wasmi.txt"
+                grep -F 'intentional portable contract corruption' \
+                  "$RUNNER_TEMP/helius-marked-wasmi.txt"
+              else
+                if cargo +1.99.1 run --locked --manifest-path "$PROGRAM_MANIFEST" \
+                  --package solana_kit_remaining_programs_host -- "$guest" --expect-corrupt \
+                  > "$RUNNER_TEMP/helius-unrelated-wasmi.txt" 2>&1; then
+                  echo "unrelated Helius panic falsely confirmed corruption" >&2
+                  exit 1
+                fi
+                grep -F 'corruption trap marker missing' "$RUNNER_TEMP/helius-unrelated-wasmi.txt"
+              fi
+            done
+          done
+
+      - name: Authenticate all Helius declaration source owners
+        run: |
+          set -euo pipefail
+          awk -F '\t' '$2=="solana_kit_helius" {
+            if (NF!=14 || $3 !~ /^packages\/solana_kit_helius\// ||
+              $3 ~ /(^|\/)\.\.($|\/)/) exit 1;
+            print $13 "  " $3; count++
+          } END {if(count!=1790) exit 1}' docs/parity/capabilities.tsv |
+            sort -u > "$RUNNER_TEMP/helius-source.sha256"
+          test "$(wc -l < "$RUNNER_TEMP/helius-source.sha256")" -eq 52
+          (cd reference && sha256sum --check --strict "$RUNNER_TEMP/helius-source.sha256")
+          cmp crates/solana_kit_helius/MIT-DART.txt reference/LICENSE
+
+      - name: Check Helius default and crypto normal-build graphs on every target
+        run: |
+          set -euo pipefail
+          expected="$RUNNER_TEMP/helius-default-closure.txt"
+          cat xtask/policy/client.txt xtask/policy/helius.txt | sort -u > "$expected"
+          allowed="$RUNNER_TEMP/helius-crypto-names.txt"
+          { awk '{print $1}' "$expected"; cat xtask/policy/crypto.txt; } | sort -u > "$allowed"
+
+          check_tree() {
+            case "$mode" in
+              default) cmp "$expected" "$1" ;;
+              crypto)
+                awk 'NR==FNR {allowed[$1]=1; next}
+                  !($1 in allowed) {print "unexpected Helius dependency: " $0 > "/dev/stderr"; exit 1}' \
+                  "$allowed" "$1"
+                ;;
+            esac
+          }
+
+          for target in native wasm32-unknown-unknown wasm32-wasip1 wasm32-wasip2; do
+            for mode in default crypto; do
+              arguments=()
+              if [ "$target" != native ]; then arguments+=(--target "$target"); fi
+              if [ "$mode" = crypto ]; then arguments+=(--features crypto); fi
+              cargo +1.99.1 tree --locked -p solana_kit_helius --no-default-features \
+                -e normal,build --prefix none --format '{p}' --no-dedupe "${arguments[@]}" \
+                > "$RUNNER_TEMP/helius-raw-tree.txt"
+              sed 's/ (.*//' "$RUNNER_TEMP/helius-raw-tree.txt" | sort -u \
+                > "$RUNNER_TEMP/helius-tree.txt"
+              check_tree "$RUNNER_TEMP/helius-tree.txt"
+              if [ "$mode" = crypto ]; then
+                grep -F 'ed25519-dalek v2.2.0' "$RUNNER_TEMP/helius-tree.txt"
+              fi
+              cp "$RUNNER_TEMP/helius-tree.txt" "$RUNNER_TEMP/helius-injected-tree.txt"
+              printf 'tokio v1.54.1\n' >> "$RUNNER_TEMP/helius-injected-tree.txt"
+              if check_tree "$RUNNER_TEMP/helius-injected-tree.txt" \
+                > "$RUNNER_TEMP/helius-graph-negative.txt" 2>&1; then
+                echo "Helius graph policy accepted injected Tokio" >&2
+                exit 1
+              fi
+              printf 'PASS Helius %s %s normal/build graph and injected-Tokio rejection\n' \
+                "$target" "$mode"
+            done
+          done

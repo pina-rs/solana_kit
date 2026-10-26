@@ -33,17 +33,25 @@ fn main() -> Result<()> {
         return Ok(());
     }
 
+    let expected_report = match std::env::args().nth(2).as_deref() {
+        None => include_str!("../../report.txt").to_owned(),
+        Some("--expected-report") => {
+            let report = std::env::args_os()
+                .nth(3)
+                .context("expected report path required")?;
+            std::fs::read_to_string(report)?
+        }
+        Some(_) => bail!("expected --expect-corrupt or --expected-report <path>"),
+    };
+
     host.start(WIDTH, HEIGHT)?;
     ensure!(host.commits() == 1, "guest did not commit exactly once");
     let root = host.surface().root().context("missing report node")?;
     ensure!(
-        host.surface().props(root).text.as_deref() == Some(include_str!("../../report.txt")),
+        host.surface().props(root).text.as_deref() == Some(expected_report.as_str()),
         "incomplete report"
     );
-    println!(
-        "{}; actual wasmi; one-fuel rejection",
-        include_str!("../../report.txt")
-    );
+    println!("{}; actual wasmi; one-fuel rejection", expected_report);
 
     Ok(())
 }
