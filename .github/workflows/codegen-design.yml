@@ -13,7 +13,6 @@ jobs:
     runs-on: "ubuntu-24.04"
     timeout-minutes: 10
     env:
-      SOLANA_KIT_CODEGEN_CONSUMER_TARGET: ${{ runner.temp }}/generated-codegen-consumers
       RUST_TEST_THREADS: "1"
 
     steps:
@@ -50,8 +49,11 @@ jobs:
 
       - name: Run private generator regression tests
         shell: bash
-        run: cargo +1.99.1 test --locked --manifest-path tools/codama-renderer/Cargo.toml \
-          --features verification
+        env:
+          SOLANA_KIT_CODEGEN_CONSUMER_TARGET: ${{ runner.temp }}/generated-codegen-consumers
+        run: |
+          cargo +1.99.1 test --locked --manifest-path tools/codama-renderer/Cargo.toml \
+            --features verification
 
       - name: "Execute all Token-2022 oracle rows"
         shell: bash
