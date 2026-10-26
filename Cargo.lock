@@ -1649,6 +1649,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "solana_kit_helius"
+version = "0.1.0"
+dependencies = [
+ "base64 0.22.1",
+ "futures",
+ "serde",
+ "serde_json",
+ "solana_kit_client",
+ "solana_kit_core",
+ "solana_kit_stake",
+ "solana_kit_system",
+ "tokio",
+]
+
+[[package]]
 name = "solana_kit_leptoskit"
 version = "0.1.0"
 dependencies = [

@@ -1,0 +1,26 @@
+{
+  "id": "asset",
+  "last_indexed_slot": 18446744073709551615,
+  "interface": "V1_NFT",
+  "content": {
+    "$schema": "https://example.invalid/schema",
+    "json_uri": "https://example.invalid/asset.json",
+    "files": [{"uri": "ipfs:asset", "cdn_uri": "https://example.invalid/asset", "mime": "image/png", "quality": {"schema": "image"}, "contexts": ["wallet-default", "future-context"]}],
+    "metadata": {"name": "Asset", "symbol": "A", "description": "literal fixture", "attributes": [{"trait_type": "rank", "value": 9007199254740993}], "token_standard": "nonFungible"},
+    "links": {"external": null, "other": [1, true]}
+  },
+  "authorities": [{"address": "authority", "scopes": ["full", "royalty"]}],
+  "compression": {"eligible": true, "compressed": false, "data_hash": "d", "creator_hash": "c", "asset_hash": "a", "tree": "t", "seq": 18446744073709551615, "leaf_id": 9007199254740993},
+  "grouping": [{"group_key": "collection", "group_value": "collection-address", "verified": false, "collection_metadata": {"name": "Collection", "symbol": "C", "image": "ipfs:image", "description": "collection", "external_url": null}}],
+  "royalty": {"royalty_model": "creators", "target": null, "percent": 0.0125, "basis_points": 125, "primary_sale_happened": false, "locked": true},
+  "creators": [{"address": "creator", "share": 100, "verified": true}],
+  "ownership": {"frozen": false, "delegated": true, "delegate": null, "ownership_model": "single", "owner": "owner"},
+  "supply": {"print_max_supply": 18446744073709551615, "print_current_supply": 1, "edition_nonce": 0},
+  "mutable": true,
+  "burnt": false,
+  "uses": {"use_method": "Multiple", "remaining": 9007199254740993, "total": 18446744073709551615},
+  "inscription": {"order": 1, "size": 9007199254740993, "contentType": "text/plain", "encoding": "base64", "validationHash": "untrusted", "inscriptionDataAccount": "inscription-account", "authority": null},
+  "spl20": {"future": {"counter": 18446744073709551615}},
+  "token_info": {"symbol": "A", "balance": 9007199254740993, "supply": 18446744073709551615, "decimals": 9, "token_program": "program", "associated_token_address": "ata", "mint_authority": null, "freeze_authority": "freeze", "price_info": {"price_per_token": 9007199254740993.125, "total_price": 18014398509481986.25, "currency": "USD"}},
+  "mint_extensions": {"future": {"counter": 18446744073709551615}}
+}

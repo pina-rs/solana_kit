@@ -11,6 +11,7 @@ members = [
   "crates/solana_kit_compute_budget",
   "crates/solana_kit_config",
   "crates/solana_kit_core",
+  "crates/solana_kit_helius",
   "crates/solana_kit_leptoskit",
   "crates/solana_kit_loader",
   "crates/solana_kit_memo",
@@ -61,4 +62,5 @@ solana_kit_client = { version = "0.1.0", path = "crates/solana_kit_client" }
 solana_kit_core = { version = "0.1.0", path = "crates/solana_kit_core", default-features = false }
 solana_kit_native = { version = "0.1.0", path = "crates/solana_kit_native" }
 solana_kit_system = { version = "0.1.0", path = "crates/solana_kit_system" }
+solana_kit_stake = { version = "0.1.0", path = "crates/solana_kit_stake" }
 solana_kit_wallet = { version = "0.1.0", path = "crates/solana_kit_wallet" }

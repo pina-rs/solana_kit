@@ -1,0 +1,64 @@
+[
+  {
+    "method": "getAsset",
+    "params": {"id": "asset", "options": {"showFungible": false, "showUnverifiedCollections": true, "showCollectionMetadata": true, "showInscription": true}},
+    "result": {"id": "asset", "last_indexed_slot": 18446744073709551615, "burnt": null}
+  },
+  {
+    "method": "getAssetBatch",
+    "params": {"ids": ["a", "b"], "options": {"showFungible": true}},
+    "result": [{"id": "a"}, {"id": "b"}]
+  },
+  {
+    "method": "getAssetProof",
+    "params": {"id": "asset"},
+    "result": {"last_indexed_slot": 9007199254740993, "root": "r", "proof": ["p"], "node_index": 18446744073709551615, "leaf": "l", "tree_id": "t", "burnt": false}
+  },
+  {
+    "method": "getAssetProofBatch",
+    "params": {"ids": ["a"]},
+    "result": {"a": {"last_indexed_slot": 9, "root": "r", "proof": [], "node_index": 1, "leaf": "l", "tree_id": "t", "burnt": null}}
+  },
+  {
+    "method": "getAssetsByAuthority",
+    "params": {"authorityAddress": "a", "page": 1, "limit": 1, "before": "b", "after": "a", "sortBy": {"sortBy": "recent_action", "sortDirection": "desc"}, "options": {"showUnverifiedCollections": true, "showCollectionMetadata": true, "showGrandTotal": true, "showInscription": true, "showRawData": true, "showFungible": true, "requireFullIndex": true, "showSystemMetadata": true, "showZeroBalance": false, "showClosedAccounts": false, "showNativeBalance": true}},
+    "result": {"total": 1, "limit": 1, "page": 1, "items": [{"id": "a"}], "last_indexed_slot": 18446744073709551615, "grand_total": 9007199254740993, "cursor": "next", "nativeBalance": {"lamports": 18446744073709551615, "price_per_sol": 9007199254740993.125, "total_price": 18014398509481986.25}}
+  },
+  {
+    "method": "getAssetsByCreator",
+    "params": {"creatorAddress": "a", "onlyVerified": false, "before": "b", "sortBy": {"sortBy": "created", "sortDirection": "asc"}, "options": {"showGrandTotal": false}},
+    "result": {"total": 1, "limit": 1, "items": [{"id": "a"}], "cursor": null}
+  },
+  {
+    "method": "getAssetsByGroup",
+    "params": {"groupKey": "collection", "groupValue": "c", "after": "a", "sortBy": {"sortBy": "updated", "sortDirection": "desc"}, "options": {"showCollectionMetadata": true}},
+    "result": {"total": 1, "limit": 1, "page": 1, "items": [{"id": "a"}]}
+  },
+  {
+    "method": "getAssetsByOwner",
+    "params": {"ownerAddress": "a", "page": 1, "limit": 1, "sortBy": {"sortBy": "id", "sortDirection": "asc"}, "options": {"showNativeBalance": true}, "displayOptions": {"showCollectionMetadata": false}},
+    "result": {"total": 0, "limit": 1, "items": [], "nativeBalance": null}
+  },
+  {
+    "method": "getNftEditions",
+    "params": {"mint": "m", "page": 1, "limit": 1},
+    "result": {"last_indexed_slot": 18446744073709551615, "total": 1, "limit": 1, "page": 1, "master_edition_address": "master", "supply": 9007199254740993, "max_supply": 0, "editions": [{"mint": "m", "edition_address": "edition", "edition": 18446744073709551615, "burnt": false}, {"mint": null, "edition_address": null, "edition": null, "burnt": null}]}
+  },
+  {
+    "method": "getSignaturesForAsset",
+    "params": {"id": "a", "page": 1, "limit": 1, "before": "s", "after": "t"},
+    "result": {"last_indexed_slot": 18446744073709551615, "total": 1, "limit": 1, "page": 1, "before": "s", "after": null, "items": [["s", "Transfer"]]}
+  },
+  {
+    "method": "getTokenAccounts",
+    "params": {"owner": "a", "mint": "m", "page": 1, "limit": 1, "cursor": "next", "before": "b", "after": "a", "options": {"showZeroBalance": false}},
+    "result": {"last_indexed_slot": 9007199254740993, "total": 1, "limit": 1, "page": 1, "cursor": null, "token_accounts": [{"address": "a", "mint": "m", "owner": "o", "amount": 18446744073709551615, "delegated_amount": 9007199254740993, "frozen": false, "burnt": true, "token_extensions": {"future": {"counter": 18446744073709551615}}}, {"amount": null, "token_extensions": null}]}
+  },
+  {
+    "method": "searchAssets",
+    "params": {
+      "ownerAddress": "owner", "creatorAddress": "creator", "grouping": ["collection", "c"], "tokenType": "future-type", "creatorVerified": false, "authorityAddress": "authority", "ownerType": "single", "tree": "tree", "delegate": "delegate", "supply": 18446744073709551615, "supplyMint": "mint", "interface": "V1_NFT", "royaltyTargetType": "creators", "royaltyTarget": "target", "royaltyAmount": 100, "compressed": false, "compressible": true, "frozen": false, "burnt": true, "jsonUri": "u", "page": 1, "limit": 1, "cursor": "next", "sortBy": {"sortBy": "none", "sortDirection": "desc"}, "options": {"showInscription": true}, "before": "b", "after": "a"
+    },
+    "result": {"total": 1, "limit": 1, "page": 1, "items": [{"id": "a"}], "grand_total": null}
+  }
+]

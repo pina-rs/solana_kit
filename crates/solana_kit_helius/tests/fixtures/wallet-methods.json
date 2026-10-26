@@ -1,0 +1,50 @@
+[
+  {
+    "name": "identity", "verb": "GET", "path": ["v1", "wallet", "a/b?c", "identity"], "query": [],
+    "params": {"wallet": "a/b?c"},
+    "result": {"address": "a/b?c", "type": "exchange", "name": "Exchange", "category": "exchange", "tags": ["known", "future-tag"]}
+  },
+  {
+    "name": "batch-identity", "verb": "POST", "path": ["v1", "wallet", "batch-identity"], "query": [],
+    "params": {"addresses": ["a"]},
+    "result": [{"address": "a", "type": "protocol", "name": "Protocol", "category": "protocol", "tags": []}]
+  },
+  {
+    "name": "balances", "verb": "GET", "path": ["v1", "wallet", "a", "balances"], "query": [["page", "1"], ["limit", "100"], ["showZeroBalance", "false"], ["showNative", "true"], ["showNfts", "true"]],
+    "params": {"wallet": "a", "page": 1, "limit": 100, "showZeroBalance": false, "showNative": true, "showNfts": true},
+    "result": {
+      "balances": [
+        {"mint": "m", "symbol": null, "name": null, "balance": 9007199254740993.125, "decimals": 9, "pricePerToken": null, "usdValue": null, "logoUri": null, "tokenProgram": "spl-token"},
+        {"mint": "n", "symbol": "N", "name": "Token", "balance": 0, "decimals": 6, "pricePerToken": 0.000001, "usdValue": 0, "logoUri": "ipfs:logo", "tokenProgram": "token-2022"}
+      ],
+      "nfts": [{"mint": "nft", "name": null, "imageUri": null, "collectionName": null, "collectionAddress": null, "compressed": true}],
+      "totalUsdValue": 9007199254740993.125, "pagination": {"page": 1, "limit": 100, "hasMore": true}
+    }
+  },
+  {
+    "name": "history", "verb": "GET", "path": ["v1", "wallet", "a", "history"], "query": [["limit", "100"], ["before", "b"], ["after", "a"], ["type", "SWAP"], ["tokenAccounts", "balanceChanged"]],
+    "params": {"wallet": "a", "limit": 100, "before": "b", "after": "a", "type": "SWAP", "tokenAccounts": "balanceChanged"},
+    "result": {
+      "data": [{"signature": "s", "timestamp": null, "slot": 18446744073709551615, "fee": 0.000005, "feePayer": "payer", "error": null, "balanceChanges": [{"mint": "SOL", "amount": -0.125, "decimals": 9}, {"mint": "m", "amount": 9007199254740993.125, "decimals": 6}]}],
+      "pagination": {"hasMore": true, "nextCursor": "next"}
+    }
+  },
+  {
+    "name": "transfers", "verb": "GET", "path": ["v1", "wallet", "a", "transfers"], "query": [["limit", "100"], ["cursor", "cursor&x"]],
+    "params": {"wallet": "a", "limit": 100, "cursor": "cursor&x"},
+    "result": {
+      "data": [{"signature": "s", "timestamp": -1, "direction": "out", "counterparty": "b", "mint": "m", "symbol": null, "amount": 9007199254740993.125, "amountRaw": "9007199254740993125000000", "decimals": 9}],
+      "pagination": {"hasMore": false, "nextCursor": null}
+    }
+  },
+  {
+    "name": "balance-at", "verb": "GET", "path": ["v1", "wallet", "a", "balance-at"], "query": [["mint", "m"], ["slot", "18446744073709551615"]],
+    "params": {"wallet": "a", "mint": "m", "slot": 18446744073709551615},
+    "result": {"wallet": "a", "mint": "m", "isNative": false, "balance": "0", "balanceRaw": "0", "decimals": 6, "requested": {"time": null, "slot": 18446744073709551615, "datetime": null}, "asOf": null}
+  },
+  {
+    "name": "funded-by", "verb": "GET", "path": ["v1", "wallet", "a", "funded-by"], "query": [],
+    "params": {"wallet": "a"},
+    "result": {"funder": "f", "funderName": null, "funderType": "exchange", "mint": "m", "symbol": "SOL", "amount": 9007199254740993.125, "amountRaw": "9007199254740993125000000", "decimals": 9, "signature": "s", "timestamp": -1, "date": "1969-12-31T23:59:59Z", "slot": 18446744073709551615, "explorerUrl": "https://example.invalid/transaction/s"}
+  }
+]
