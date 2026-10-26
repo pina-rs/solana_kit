@@ -103,6 +103,8 @@ jobs:
 
   generated-wallet-macos:
     runs-on: "macos-15"
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_26.2.app/Contents/Developer
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -118,6 +120,13 @@ jobs:
 
       - name: Install the pinned compiler
         run: rustup toolchain install 1.99.1 --profile minimal --target wasm32-unknown-unknown
+
+      - name: Verify the generated app toolchains
+        run: |
+          cargo --version
+          rustc --version
+          xcrun swift --version
+          xcodebuild -version
 
       - name: Build the public generator
         run: |
