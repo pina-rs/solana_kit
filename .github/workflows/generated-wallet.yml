@@ -68,6 +68,7 @@ jobs:
             "$cli" new "$app" --name solana_wallet_app --platform native --native-target macos
             cargo +1.99.1 run --locked --manifest-path sdk/Cargo.toml \
               --package solana_kit_xtask -- "prepare-$fixture" "$app"
+            "$cli" migrate --check --file "$app/leptoskit.toml"
           done
 
       - name: Verify repeatable preparation and ordinary dependency sources
@@ -135,5 +136,6 @@ jobs:
           "$cli" new "$app" --name solana_wallet_app --platform native --native-target macos
           cargo +1.99.1 run --locked --manifest-path sdk/Cargo.toml \
             --package solana_kit_xtask -- prepare-wallet-rpc "$app"
+          "$cli" migrate --check --file "$app/leptoskit.toml"
           cd "$app"
           "$cli" build --platform macos

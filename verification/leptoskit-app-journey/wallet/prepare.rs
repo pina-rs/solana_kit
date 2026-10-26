@@ -1,6 +1,8 @@
 //! Adds wallet source to a real public-generator workspace, retaining its hosts.
 #[path = "framework.rs"]
 mod framework;
+#[path = "native_config.rs"]
+mod native_config;
 use std::{
     error::Error,
     fs,
@@ -71,14 +73,7 @@ fn plan(sdk: &Path, project: &Path, runtime: NativeRuntime) -> Result<Vec<(PathB
 
     let config = project.join("leptoskit.toml");
     let contents = fs::read_to_string(&config)?;
-    let selected = format!("plugins = [{:?}]", runtime.plugin());
-    let source = contents.replace("plugins = []", &selected);
-
-    if !source.contains(&selected) {
-        return Err("expected the generated empty native plugin selection".into());
-    }
-
-    edits.push((config, source));
+    edits.push((config, native_config::select(&contents, runtime.plugin())?));
 
     for member in [".", "solana_wallet_app_backend", "solana_wallet_app_shared"] {
         let path = project.join(member).join("Cargo.toml");
