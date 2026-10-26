@@ -7,61 +7,7 @@ use super::{
 use solana_kit_core::crypto::verify;
 use solana_kit_leptoskit::{GuestLocalWallet, WalletSessionError, wallet_ui::local_wallet_panel};
 
-/// Each operation owns its cancellation path; a rejected review keeps the key,
-/// while cancellation drops the selected wallet and its pending native lease.
-pub(super) async fn run(
-    mut wallet: GuestLocalWallet,
-    actions: &mut LocalWalletEvents,
-    commands: &LocalWalletCommands,
-    generation: &mut u64,
-) -> Result<(), WalletSessionError> {
-    let address = wallet.address().to_string();
-    show(
-        local_wallet_panel(Some(&address), false, false, commands),
-        "Local wallet connected; not saved automatically",
-    );
-
-    while let Ok(action) = actions.next_action().await {
-        if action == Action::Cancel {
-            return Ok(());
-        }
-
-        if action == Action::Disconnect {
-            show(
-                local_wallet_panel(Some(&address), true, false, commands),
-                "Disconnecting wallet",
-            );
-
-            return cancellable(wallet.close(), actions).await.unwrap_or(Ok(()));
-        }
-
-        *generation = generation
-            .checked_add(1)
-            .ok_or(WalletSessionError::Malformed)?;
-
-        let result = match action {
-            Action::Review => {
-                let (next, status) = sign(wallet, *generation, actions, commands).await?;
-                wallet = next;
-                Some(Ok(status))
-            }
-            Action::Save | Action::Backup => save(&mut wallet, action, actions, commands).await,
-            _ => continue,
-        };
-
-        let Some(status) = result else {
-            return Ok(());
-        };
-        show(
-            local_wallet_panel(Some(&address), false, false, commands),
-            status?,
-        );
-    }
-
-    wallet.close().await
-}
-
-async fn save(
+pub(super) async fn save(
     wallet: &mut GuestLocalWallet,
     action: Action,
     actions: &mut LocalWalletEvents,
@@ -87,7 +33,7 @@ async fn save(
     result.map(|result| result.map(|_| status))
 }
 
-async fn sign(
+pub(super) async fn sign(
     wallet: GuestLocalWallet,
     generation: u64,
     actions: &mut LocalWalletEvents,
@@ -98,7 +44,15 @@ async fn sign(
         wallet.address()
     );
 
-    match approval::request(message.as_bytes(), generation, actions, commands).await {
+    match approval::request(
+        "Sign this message for the generated app",
+        message.as_bytes(),
+        generation,
+        actions,
+        commands,
+    )
+    .await
+    {
         Decision::Reject => return Ok((wallet, "Signature rejected")),
         Decision::Cancel => {
             return Err(WalletSessionError::Bridge(

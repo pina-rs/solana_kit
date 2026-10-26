@@ -54,7 +54,8 @@ jobs:
           set -euo pipefail
           manifest=sdk/verification/leptoskit-app-journey/runtime/Cargo.toml
           cargo +1.99.1 test --locked --manifest-path "$manifest" --all-targets
-          cargo +1.99.1 clippy --locked --manifest-path "$manifest" --all-targets -- -D warnings
+          cargo +1.99.1 clippy --locked --manifest-path "$manifest" \
+            --all-targets --features generated-wallet-tests -- -D warnings
 
       - name: Generate and adapt the ordinary wallet consumer
         run: |
@@ -98,8 +99,21 @@ jobs:
             app="$RUNNER_TEMP/$fixture-app"
             cargo +1.99.1 build --locked --manifest-path "$app/Cargo.toml" \
               -p solana_wallet_app_app --no-default-features --features native \
-              --target wasm32-unknown-unknown
+              --target wasm32-unknown-unknown --message-format=json \
+              > "$RUNNER_TEMP/$fixture-guest.jsonl"
           done
+
+      - name: Execute the generated guest controls through production wasmi
+        run: |
+          set -euo pipefail
+          guest="$(jq -sre '[.[] | select(.reason == "compiler-artifact" and
+            .target.name == "solana_wallet_app_app") | .filenames[] |
+            select(endswith(".wasm"))] |
+            if length == 1 then .[0] else error("expected one actual generated guest") end' \
+            "$RUNNER_TEMP/wallet-rpc-guest.jsonl")"
+          GENERATED_WALLET_WASM="$guest" cargo +1.99.1 test --locked \
+            --manifest-path sdk/verification/leptoskit-app-journey/runtime/Cargo.toml \
+            --features generated-wallet-tests --test generated_wallet -- --test-threads=1
 
   generated-wallet-macos:
     runs-on: "macos-15"

@@ -170,11 +170,16 @@ fn guest(sdk: &Path, app: &Path) -> Result<Vec<(PathBuf, String)>> {
     let templates = sdk.join("verification/leptoskit-app-journey/wallet");
 
     for (template, destination) in [
-        ("app.rs.txt", "mod.rs"),
-        ("flow.rs.txt", "flow.rs"),
-        ("local.rs.txt", "flow/local.rs"),
-        ("mobile.rs.txt", "flow/mobile.rs"),
-        ("approval.rs.txt", "flow/approval.rs"),
+        ("guest/mod.rs", "mod.rs"),
+        ("guest/flow.rs", "flow.rs"),
+        ("guest/flow/local.rs", "flow/local.rs"),
+        ("guest/flow/mobile.rs", "flow/mobile.rs"),
+        ("guest/flow/approval.rs", "flow/approval.rs"),
+        ("guest/flow/rpc.rs", "flow/rpc.rs"),
+        ("guest/flow/rpc/panel.rs", "flow/rpc/panel.rs"),
+        ("guest/flow/rpc/transfer.rs", "flow/rpc/transfer.rs"),
+        ("guest/flow/rpc/submission.rs", "flow/rpc/submission.rs"),
+        ("guest/flow/rpc/error.rs", "flow/rpc/error.rs"),
     ] {
         edits.push((
             app.join("src/wallet_fixture").join(destination),
@@ -197,10 +202,14 @@ fn guest_dependencies(sdk: &Path) -> Vec<String> {
     let adapter = sdk.join("crates/solana_kit_leptoskit");
     let core = sdk.join("crates/solana_kit_core");
     let wallet = sdk.join("crates/solana_kit_wallet");
+    let client = sdk.join("crates/solana_kit_client");
+    let system = sdk.join("crates/solana_kit_system");
     vec![
         format!("solana_kit_leptoskit = {{ path = {adapter:?}, features = [\"wallet-session\", \"wallet-ui\"] }}\n"),
         format!("solana_kit_core = {{ path = {core:?}, features = [\"crypto\"] }}\n"),
         format!("solana_kit_wallet = {{ path = {wallet:?}, features = [\"mwa\"] }}\n"),
+        format!("solana_kit_client = {{ path = {client:?}, features = [\"confirmation-factories\"] }}\n"),
+        format!("solana_kit_system = {{ path = {system:?} }}\n"),
         format!("leptoskit_bridge = {{ version = \"=0.1.0\", git = \"https://github.com/ifiokjr/leptoskit\", rev = {:?}, features = [\"guest\"] }}\n", framework::REVISION),
         "futures = { version = \"=0.3.34\", default-features = false, features = [\"executor\", \"std\"] }\n".into(),
         "base64 = \"=0.22.1\"\n".into(),

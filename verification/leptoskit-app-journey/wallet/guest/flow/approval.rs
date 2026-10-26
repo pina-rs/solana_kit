@@ -11,6 +11,7 @@ pub(super) enum Decision {
 /// Ignore stale button generations while keeping rejection distinct from
 /// cancellation, which disposes the selected owner instead of reusing its key.
 pub(super) async fn request(
+    purpose: &str,
     message: &[u8],
     generation: u64,
     actions: &mut LocalWalletEvents,
@@ -18,7 +19,7 @@ pub(super) async fn request(
 ) -> Decision {
     let review = LocalSigningReview {
         generation,
-        purpose: "Sign this message for the generated app",
+        purpose,
         message,
     };
     show(

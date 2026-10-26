@@ -2,8 +2,9 @@
 mod approval;
 mod local;
 mod mobile;
+mod rpc;
 
-use super::{failed, show};
+use super::{AppError, failed, show};
 use leptoskit_bridge::{Error, Event, guest::Events};
 use solana_kit_leptoskit::wallet_ui::{
     LocalWalletAction as Action, LocalWalletCommands, LocalWalletEvents, local_wallet_panel,
@@ -16,6 +17,8 @@ use std::{collections::VecDeque, future::Future, task::Poll};
 const EVENT_LIMIT: usize = 64;
 const ACTION_BUDGET: usize = 32;
 
+/// Keep the event receiver and non-reused review sequence across wallet
+/// replacement. A selection owns its key until completion or cancellation.
 pub(super) async fn run(
     mut events: Events,
     mut actions: LocalWalletEvents,
@@ -54,16 +57,27 @@ pub(super) async fn run(
         // This fixture has no other event consumers; finish each selection's queue.
         unrelated.clear();
 
-        let status = match result {
-            Ok(()) => "Choose a wallet",
-            Err(WalletSessionError::Bridge(Error::Cancelled)) => "Wallet request cancelled",
-            Err(error) => {
-                failed(error);
-                "Wallet request failed; select a wallet to retry"
-            }
-        };
+        let status = result_status(result);
+        show(local_wallet_panel(None, false, android, &commands), &status);
+    }
+}
 
-        show(local_wallet_panel(None, false, android, &commands), status);
+fn result_status(result: Result<(), AppError>) -> String {
+    match result {
+        Ok(()) => "Choose a wallet".to_owned(),
+        Err(error)
+            if matches!(
+                error.downcast_ref::<WalletSessionError>(),
+                Some(WalletSessionError::Bridge(Error::Cancelled))
+            ) =>
+        {
+            "Wallet request cancelled".to_owned()
+        }
+        Err(error) => {
+            let status = error.to_string();
+            failed(error);
+            status
+        }
     }
 }
 
@@ -92,7 +106,7 @@ async fn select(
     actions: &mut LocalWalletEvents,
     commands: &LocalWalletCommands,
     generation: &mut u64,
-) -> Result<(), WalletSessionError> {
+) -> Result<(), AppError> {
     let route = |event: Event| {
         if unrelated.len() == EVENT_LIMIT {
             return Err(Error::Busy);
@@ -109,7 +123,7 @@ async fn select(
                 return Ok(());
             };
 
-            local::run(wallet?, actions, commands, generation).await
+            rpc::run(wallet?, actions, commands, generation).await
         }
 
         Action::Android if android => {
@@ -118,7 +132,9 @@ async fn select(
                 return Ok(());
             };
 
-            mobile::run(wallet?, actions, commands, generation).await
+            mobile::run(wallet?, actions, commands, generation)
+                .await
+                .map_err(Into::into)
         }
 
         _ => Ok(()),

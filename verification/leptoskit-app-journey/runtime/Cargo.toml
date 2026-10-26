@@ -9,6 +9,13 @@ description = "Private generated application verification runtime"
 
 [workspace]
 
+[features]
+generated-wallet-tests = []
+
+[[test]]
+name = "generated_wallet"
+required-features = ["generated-wallet-tests"]
+
 [dependencies]
 leptoskit_bridge = { version = "=0.1.0", git = "https://github.com/ifiokjr/leptoskit", rev = "25b1861ddc729a8f3b70117cd0c48e06659c9697" }
 leptoskit_bridge_ffi = { version = "=0.1.0", git = "https://github.com/ifiokjr/leptoskit", rev = "25b1861ddc729a8f3b70117cd0c48e06659c9697", features = ["app"] }
@@ -21,7 +28,11 @@ solana_kit_native = { path = "../../../crates/solana_kit_native" }
 tokio = { version = "=1.54.1", features = ["rt-multi-thread", "time"] }
 
 [dev-dependencies]
+base64 = "=0.22.1"
+bs58 = "=0.5.1"
+ed25519-dalek = { version = "=2.2.0", default-features = false, features = ["std"] }
 futures = { version = "=0.3.34", default-features = false, features = ["executor", "std"] }
+leptoskit_yoga = { version = "=0.1.0", git = "https://github.com/ifiokjr/leptoskit", rev = "25b1861ddc729a8f3b70117cd0c48e06659c9697" }
 tokio = { version = "=1.54.1", features = ["net", "io-util"] }
 wat = "=1.262.0"
 
