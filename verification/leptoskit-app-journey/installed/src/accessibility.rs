@@ -38,7 +38,13 @@ fn parse(xml: &str, identifier: &str) -> Result<String> {
         }
     }
 
-    require(values.len() == 1, "native public value must be unambiguous")?;
+    require(
+        values.len() == 1,
+        format!(
+            "expected one native public value for {identifier:?}, found {}",
+            values.len()
+        ),
+    )?;
     Ok(values.remove(0))
 }
 

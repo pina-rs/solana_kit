@@ -14,6 +14,7 @@ const AMOUNT: u64 = 1_000_000;
 const ADDRESS_BYTES: usize = 32;
 const SIGNATURE_BYTES: usize = 64;
 const MINIMUM_COLORS: usize = 32;
+const LOCAL_ACCOUNT: &str = "Local wallet address";
 const OBSERVE: Duration = Duration::from_secs(30);
 const INTERVAL: Duration = Duration::from_millis(100);
 
@@ -60,9 +61,9 @@ fn fresh_wallet(tester: &mut NativeTester) -> Result<String> {
         "Local wallet connected; not saved automatically",
     ))?;
     tester.checkpoint("Fresh native wallet in the generated app")?;
-    let account = accessibility::value(tester, "wallet_local.account")?;
+    let account = accessibility::value(tester, LOCAL_ACCOUNT)?;
     public_bytes(&account, ADDRESS_BYTES)?;
-    tester.expect_text(&Locator::accessibility_id("wallet_local.account"), &account)?;
+    tester.expect_text(&Locator::accessibility_id(LOCAL_ACCOUNT), &account)?;
     Ok(account)
 }
 
