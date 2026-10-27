@@ -364,4 +364,7 @@ explicit-backup-consume-export-capability: Ok(())
 pyth-upstream-wire-composition: Ok(())
 pyth-preserved-signature-reduction: Ok(())
 pyth-bounded-forward-compatible-wire: Ok(())
-solana-kit-core-v39: 359/359 cases passed
+pyth-legacy-account-fields-and-staleness: Ok(())
+pyth-receiver-borsh-verification-variants: Ok(())
+pyth-account-limits-and-truncation: Ok(())
+solana-kit-core-v40: 362/362 cases passed

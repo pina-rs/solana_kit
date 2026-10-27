@@ -1,10 +1,12 @@
-//! Execute the same public Pyth wire APIs in every maintained portability host.
+//! Execute public Pyth wire and account APIs in every maintained portability host.
 use crate::{CaseResult, case};
 use solana_kit_core::codecs::{Error, Limits};
 use solana_kit_pyth::{
-    DEFAULT_REDUCED_GUARDIAN_SET_SIZE, EMITTER_CHAIN_PYTHNET, get_guardian_set_index,
-    get_vaa_signature_count, parse_accumulator_update_data, parse_pyth_price_feed_message,
-    parse_pyth_wormhole_message, parse_wormhole_vaa, trim_vaa_signatures,
+    DEFAULT_REDUCED_GUARDIAN_SET_SIZE, EMITTER_CHAIN_PYTHNET, PythPriceStatus,
+    PythVerificationLevel, decode_price_update_v2_account, decode_pyth_price_account,
+    get_guardian_set_index, get_vaa_signature_count, parse_accumulator_update_data,
+    parse_pyth_price_feed_message, parse_pyth_wormhole_message, parse_wormhole_vaa,
+    trim_vaa_signatures,
 };
 
 const DATA: &[u8] =
@@ -12,17 +14,35 @@ const DATA: &[u8] =
 const ITEM_LIMIT: usize = 64;
 const GUARDIANS: usize = 13;
 
+const LEGACY: &[u8] =
+    include_bytes!("../../../crates/solana_kit_pyth/tests/fixtures/legacy-price.bin");
+const FULL: &[u8] =
+    include_bytes!("../../../crates/solana_kit_pyth/tests/fixtures/price-update-full.bin");
+const PARTIAL: &[u8] =
+    include_bytes!("../../../crates/solana_kit_pyth/tests/fixtures/price-update-partial.bin");
+const STALE_CONTEXT_SLOT: u64 = 1026;
+const VERIFICATION_OFFSET: usize = 40;
+const FIXTURE_EMA_PRICE: i64 = 555;
+const FIXTURE_EMA_CONFIDENCE_NUMERATOR: i64 = 77;
+const FIXTURE_SIGNATURES: u8 = 5;
+
 const FIXTURE_SLOT: u64 = 208_075_477;
 const FIXTURE_RING_SIZE: u32 = 10_000;
 const FIXTURE_PRICE: i64 = 960_310_184;
 const FIXTURE_CONFIDENCE: u64 = 11_022_234;
 const FIXTURE_EXPONENT: i32 = -8;
 
-pub(crate) fn cases() -> [CaseResult; 3] {
+pub(crate) fn cases() -> [CaseResult; 6] {
     [
         case("pyth-upstream-wire-composition", composition()),
         case("pyth-preserved-signature-reduction", signatures()),
         case("pyth-bounded-forward-compatible-wire", boundaries()),
+        case("pyth-legacy-account-fields-and-staleness", legacy_account()),
+        case(
+            "pyth-receiver-borsh-verification-variants",
+            receiver_accounts(),
+        ),
+        case("pyth-account-limits-and-truncation", account_boundaries()),
     ]
 }
 
@@ -121,6 +141,72 @@ fn boundaries() -> Result<(), &'static str> {
 
     if parse_accumulator_update_data(&future, limits(&future)) != Err(Error::InvalidDiscriminator) {
         return Err("Unknown Pyth proof variant was accepted");
+    }
+
+    Ok(())
+}
+
+/// Compare decoded fields and derived status with the pinned Dart fixture.
+/// The stored trading status must survive the caller's stale read context.
+fn legacy_account() -> Result<(), &'static str> {
+    let account = decode_pyth_price_account(LEGACY, Some(STALE_CONTEXT_SLOT), limits(LEGACY))
+        .map_err(|_| "Legacy price account")?;
+
+    if account.status != PythPriceStatus::Unknown
+        || account.aggregate.status != PythPriceStatus::Trading
+        || account.price_components.len() != 2
+        || account.ema_price.value_component != FIXTURE_EMA_PRICE
+        || account.ema_confidence.numerator != FIXTURE_EMA_CONFIDENCE_NUMERATOR
+    {
+        return Err("Legacy fields or derived staleness differ");
+    }
+
+    if account.price_components[0].publisher.to_bytes() != [0xee; 32]
+        || account.price_components[1].publisher.to_bytes() != [0xef; 32]
+        || account.price_components[1].latest.price_component != 3
+    {
+        return Err("Legacy publisher order or samples differ");
+    }
+
+    Ok(())
+}
+
+fn receiver_accounts() -> Result<(), &'static str> {
+    let full = decode_price_update_v2_account(FULL, Limits::new(FULL.len(), 0))
+        .map_err(|_| "Compact full verification account")?;
+    let partial = decode_price_update_v2_account(PARTIAL, Limits::new(PARTIAL.len(), 0))
+        .map_err(|_| "Partial verification account")?;
+
+    if full.price_message != partial.price_message
+        || full.price_message.confidence != u64::MAX
+        || full.price_message.ema_conf != u64::MAX
+        || full.price_message.price != 3_000_123_456_789
+        || full.price_message.ema_price != -2_999_000_000
+        || full.verification_level != PythVerificationLevel::Full
+        || partial.verification_level.num_signatures() != Some(FIXTURE_SIGNATURES)
+    {
+        return Err("Receiver verification variants or exact integer fields differ");
+    }
+
+    Ok(())
+}
+
+fn account_boundaries() -> Result<(), &'static str> {
+    if decode_pyth_price_account(LEGACY, None, Limits::new(LEGACY.len(), 1))
+        != Err(Error::LimitExceeded)
+        || decode_price_update_v2_account(&FULL[..FULL.len() - 1], limits(FULL))
+            != Err(Error::Truncated)
+    {
+        return Err("Account item limit or truncated prefix was accepted");
+    }
+
+    let mut invalid = PARTIAL.to_vec();
+    invalid[VERIFICATION_OFFSET] = 2;
+
+    if decode_price_update_v2_account(&invalid, limits(&invalid))
+        != Err(Error::InvalidDiscriminator)
+    {
+        return Err("Unknown receiver verification variant was accepted");
     }
 
     Ok(())
