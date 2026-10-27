@@ -75,10 +75,20 @@ not acquire a universal Send requirement.
 Four appended shared groups exercise these GET futures in the same portable
 registry, advancing it to v42 with 370 cases. Every earlier case and the sole
 corrupt-hash control remain. Each runtime must execute that expanded registry
-before its cell is accepted. Native test fixtures perform no host I/O.
+before its cell is accepted. Those shared conformance fixtures perform no host I/O.
 
 Provider roots, headers and authentication use the existing approved transport
-adapter policies. Actual native, browser, WASI and interpreted-host network
-composition for this new client still requires its own evidence. Receiver posting
+adapter policies. Six native TCP tests compose the public Hermes client with
+`NativeRest`, `NativeHttp` and a Tokio monotonic clock. They cover all three GET
+routes, an explicit provider root and query, repeated encoded IDs, synthetic
+authentication headers, exact integer results, a byte-identical transient retry,
+bounded permanent errors, diagnostic redaction, malformed JSON, body limits and
+socket closure when the operation is dropped. One operation runs in a Tokio
+`Send` task. These tests use local fixture peers, not a live provider.
+
+Native-only development dependencies supply this coverage without changing
+Pyth's production or Wasm dependency graphs. A separate native REST regression
+covers a bodyless GET without an implicit content type. Browser, WASI and
+interpreted-host network composition still require their own evidence. Receiver posting
 builders and PDA helpers are covered in [their separate parity record](pyth-receiver-instructions.md).
 This does not complete Pyth or the full ecosystem.

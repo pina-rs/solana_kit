@@ -1785,6 +1785,8 @@ dependencies = [
  "serde_json",
  "solana_kit_client",
  "solana_kit_core",
+ "solana_kit_native",
+ "tokio",
 ]
 
 [[package]]

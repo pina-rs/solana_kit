@@ -25,3 +25,7 @@ solana_kit_core.workspace = true
 
 [dev-dependencies]
 hex-literal = "1.0.0"
+
+[target.'cfg(not(target_family = "wasm"))'.dev-dependencies]
+solana_kit_native.workspace = true
+tokio = { version = "=1.54.1", features = ["rt-multi-thread", "sync", "macros", "net", "time", "io-util"] }

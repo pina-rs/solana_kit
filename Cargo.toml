@@ -63,6 +63,6 @@ solana_kit_browser = { version = "0.1.0", path = "crates/solana_kit_browser" }
 solana_kit_client = { version = "0.1.0", path = "crates/solana_kit_client" }
 solana_kit_core = { version = "0.1.0", path = "crates/solana_kit_core", default-features = false }
 solana_kit_native = { version = "0.1.0", path = "crates/solana_kit_native" }
-solana_kit_system = { version = "0.1.0", path = "crates/solana_kit_system" }
 solana_kit_stake = { version = "0.1.0", path = "crates/solana_kit_stake" }
+solana_kit_system = { version = "0.1.0", path = "crates/solana_kit_system" }
 solana_kit_wallet = { version = "0.1.0", path = "crates/solana_kit_wallet" }
