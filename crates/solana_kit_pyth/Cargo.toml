@@ -1,0 +1,18 @@
+[package]
+name = "solana_kit_pyth"
+version = "0.1.0"
+authors.workspace = true
+edition.workspace = true
+include = ["src/**", "README.md", "LICENSE", "MIT-DART.txt", "THIRD_PARTY_NOTICES.md"]
+license = "Unlicense AND MIT"
+publish = false
+readme = "README.md"
+repository = "https://github.com/pina-rs/solana_kit/tree/main/crates/solana_kit_pyth"
+rust-version.workspace = true
+description = "Portable Pyth price and Wormhole wire clients for off-chain applications"
+
+[dependencies]
+solana_kit_core.workspace = true
+
+[dev-dependencies]
+hex-literal = "1.0.0"

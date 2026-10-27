@@ -19,6 +19,7 @@ members = [
   "crates/solana_kit_mpl_core",
   "crates/solana_kit_mpl_token_metadata",
   "crates/solana_kit_native",
+  "crates/solana_kit_pyth",
   "crates/solana_kit_signers",
   "crates/solana_kit_squads",
   "crates/solana_kit_stake",
