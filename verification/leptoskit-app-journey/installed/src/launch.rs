@@ -1,11 +1,15 @@
 //! Select a desktop bundle or an already-installed app on an explicit simulator.
-use crate::{Error, Result, require, rpc};
+use crate::{Error, Result, android, require, rpc, validator::Validator};
 use leptoskit_testing::native::{Application, Options, Platform};
-use std::{ffi::OsString, path::PathBuf};
+use std::{
+    ffi::OsString,
+    fs,
+    path::{Path, PathBuf},
+};
 
 const DRIVER_STARTUP_SECONDS: u64 = 900;
 const UI_WAIT_SECONDS: u64 = 30;
-const USAGE: &str = "usage: installed_wallet <macos|ios> <loopback-driver> <application> <fresh-app-data> <fresh-run-directory> <validator-binary> [<ios-device> <prebuilt-wda-directory>]";
+const USAGE: &str = "usage: installed_wallet <macos|ios|android> <loopback-driver> <application> <fresh-config-directory> <fresh-run-directory> <validator-binary> [<device> <prebuilt-wda-directory|adb-binary>]";
 
 enum Target {
     Macos(String),
@@ -13,6 +17,11 @@ enum Target {
         identifier: String,
         device: String,
         wda: String,
+    },
+    Android {
+        identifier: String,
+        device: String,
+        adb: PathBuf,
     },
 }
 
@@ -54,6 +63,15 @@ impl Launch {
                 device: text(device)?,
                 wda: text(&PathBuf::from(wda).canonicalize()?.into_os_string())?,
             },
+            (Some("android"), [device, adb]) => {
+                let identifier = text(app)?;
+                android::validate_package(&identifier)?;
+                Target::Android {
+                    identifier,
+                    device: text(device)?,
+                    adb: PathBuf::from(adb).canonicalize()?,
+                }
+            }
             _ => return Err(Error::Configuration(USAGE.into())),
         };
 
@@ -66,6 +84,29 @@ impl Launch {
         })
     }
 
+    pub(crate) fn configure(&self, node: &Validator, data: &Path) -> Result<()> {
+        let host = if matches!(&self.target, Target::Android { .. }) {
+            "10.0.2.2"
+        } else {
+            "127.0.0.1"
+        };
+
+        let bytes = serde_json::to_vec(&node.guest_endpoints(host))?;
+        fs::write(data.join("journey.json"), &bytes)?;
+
+        if let Target::Android {
+            identifier,
+            device,
+            adb,
+        } = &self.target
+        {
+            android::configure(adb, device, identifier, &bytes)?;
+        }
+
+        Ok(())
+    }
+
+    /// Reuse installed mobile apps so their prelaunch RPC configuration survives the session.
     pub(crate) fn options(&self) -> Options {
         let (platform, application, device) = match &self.target {
             Target::Macos(path) => (Platform::Macos, Application::Path(path.clone()), None),
@@ -76,11 +117,19 @@ impl Launch {
                 Application::Identifier(identifier.clone()),
                 Some(device.clone()),
             ),
+            Target::Android {
+                identifier, device, ..
+            } => (
+                Platform::Android,
+                Application::Identifier(identifier.clone()),
+                Some(device.clone()),
+            ),
         };
+
         let mut options = Options::new(&self.driver, platform, application);
         options.device = device;
 
-        if platform == Platform::Ios {
+        if matches!(platform, Platform::Ios | Platform::Android) {
             for capability in ["appium:forceAppLaunch", "appium:shouldTerminateApp"] {
                 options.capabilities.insert(capability.into(), true.into());
             }
@@ -96,6 +145,12 @@ impl Launch {
             options
                 .capabilities
                 .insert("appium:showXcodeLog".into(), true.into());
+        }
+
+        if platform == Platform::Android {
+            options
+                .capabilities
+                .insert("appium:appActivity".into(), ".MainActivity".into());
         }
 
         options.artifacts = self.directory.join("native-ui");
@@ -139,9 +194,10 @@ mod tests {
     fn ios_launch_uses_the_installed_identity_without_reinstalling_its_data() {
         let launch = Launch::parse(&mobile()).unwrap();
         let options = launch.options();
+        let expected_identifier = "com.leptoskit.solanawalletapp";
         assert!(matches!(options.platform, Platform::Ios));
         assert!(
-            matches!(options.application, Application::Identifier(ref id) if id == "com.leptoskit.solanawalletapp")
+            matches!(options.application, Application::Identifier(ref id) if id == expected_identifier)
         );
         assert_eq!(options.device.as_deref(), Some("explicit-simulator"));
         assert_eq!(options.capabilities["appium:shouldTerminateApp"], true);

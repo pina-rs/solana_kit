@@ -50,11 +50,13 @@ fn parse(xml: &str, identifier: &str) -> Result<String> {
 
 fn labelled_value(element: &BytesStart<'_>, identifier: &str) -> Result<Option<String>> {
     let attributes = attributes(element)?;
-    let selected = ["name", "identifier", "resource-id"].iter().any(|key| {
-        attributes
-            .get(*key)
-            .is_some_and(|value| value == identifier)
-    });
+    let selected = ["name", "identifier", "resource-id", "content-desc"]
+        .iter()
+        .any(|key| {
+            attributes
+                .get(*key)
+                .is_some_and(|value| value == identifier)
+        });
 
     if !selected {
         return Ok(None);
@@ -81,4 +83,25 @@ fn attributes(element: &BytesStart<'_>) -> Result<BTreeMap<String, String>> {
     }
 
     Ok(values)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn android_capture_reads_the_named_public_value_and_rejects_duplicates() {
+        let control = r#"<android.widget.TextView text="public account" content-desc="Local wallet address"/>"#;
+        assert_eq!(
+            parse(control, "Local wallet address").unwrap(),
+            "public account"
+        );
+        assert!(
+            parse(
+                &format!("<hierarchy>{control}{control}</hierarchy>"),
+                "Local wallet address"
+            )
+            .is_err()
+        );
+    }
 }

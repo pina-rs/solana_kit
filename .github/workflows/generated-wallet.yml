@@ -386,3 +386,118 @@ jobs:
             ${{ runner.temp }}/installed-appium.log
             ${{ runner.temp }}/installed-wda.log
             ${{ runner.temp }}/installed-ios-app.log
+
+  generated-wallet-android:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 75
+    env:
+      CARGO_BUILD_JOBS: "2"
+      CARGO_PROFILE_DEV_DEBUG: "0"
+      CARGO_PROFILE_TEST_DEBUG: "0"
+      NDK_VERSION: 27.1.12297006
+      npm_config_user_agent: solana-kit-verification
+      npm_config_audit: "false"
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          path: sdk
+          persist-credentials: false
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: ifiokjr/leptoskit
+          ref: ${{ env.LEPTOSKIT_REVISION }}
+          path: framework
+          persist-credentials: false
+
+      - uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Install the pinned compiler and Android targets
+        run: |
+          set -euo pipefail
+          rustup toolchain install 1.99.1 --profile minimal \
+            --component clippy --target wasm32-unknown-unknown
+          rustup target add --toolchain 1.99.1 x86_64-linux-android
+
+      - name: Install the generated Android host toolchains
+        run: |
+          set -euo pipefail
+          bash framework/setup/scripts/android_sdk_install.sh "ndk;$NDK_VERSION" \
+            "platforms;android-35" "build-tools;36.0.0" "build-tools;37.0.0" \
+            "cmake;3.22.1" emulator "system-images;android-35;default;x86_64" platform-tools
+          printf 'ANDROID_NDK_HOME=%s/ndk/%s\n' "$ANDROID_HOME" "$NDK_VERSION" >> "$GITHUB_ENV"
+
+      - name: Build the public generator and installed controller
+        run: |
+          set -euo pipefail
+          cargo +1.99.1 build --locked --manifest-path framework/Cargo.toml \
+            -p leptoskit_cli --bin leptoskit --message-format=json > "$RUNNER_TEMP/cli.jsonl"
+          manifest=sdk/verification/leptoskit-app-journey/installed/Cargo.toml
+          cargo +1.99.1 test --locked --manifest-path "$manifest" --all-targets
+          cargo +1.99.1 clippy --locked --manifest-path "$manifest" --all-targets -- -D warnings
+          cargo +1.99.1 build --locked --manifest-path "$manifest" \
+            --message-format=json > "$RUNNER_TEMP/installed-controller.jsonl"
+
+      - name: Build the ordinary generated Android app and composed runtime
+        run: |
+          set -euo pipefail
+          cli="$(jq -sre '[.[] | select(.reason == "compiler-artifact" and
+            .target.name == "leptoskit" and (.target.kind | index("bin")) != null) |
+            .executable | select(. != null)] |
+            if length == 1 then .[0] else error("expected one public CLI") end' \
+            "$RUNNER_TEMP/cli.jsonl")"
+          app="$RUNNER_TEMP/wallet-rpc-app"
+          "$cli" new "$app" --name solana_wallet_app --platform native --native-target android
+          cargo +1.99.1 run --locked --manifest-path sdk/Cargo.toml \
+            --package solana_kit_xtask -- prepare-wallet-rpc "$app"
+          "$cli" migrate --check --file "$app/leptoskit.toml"
+          cd "$app"
+          "$cli" native build android-x86_64
+
+      - name: Install the pinned Android UI driver and validator
+        run: |
+          set -euo pipefail
+          npm ci --prefix framework/setup/native-ui
+          archive="$RUNNER_TEMP/validator.tar.bz2"
+          curl --fail --location --user-agent solana-kit-verification \
+            https://github.com/anza-xyz/agave/releases/download/v4.2.0/solana-release-x86_64-unknown-linux-gnu.tar.bz2 \
+            --output "$archive"
+          printf '%s  %s\n' \
+            1f5eb13bcf3694dbd3cf634602aee5edcf8eab519acac75778391c979c3002b0 "$archive" \
+            | sha256sum --check
+          mkdir "$RUNNER_TEMP/validator"
+          tar -xjf "$archive" -C "$RUNNER_TEMP/validator"
+          rm "$archive"
+
+      - name: Enable the owned emulator accelerator
+        run: |
+          set -euo pipefail
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' \
+            | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Drive the installed generated Android app on a fresh emulator
+        uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # v2
+        with:
+          api-level: 35
+          target: default
+          arch: x86_64
+          avd-name: solana-kit-wallet
+          force-avd-creation: true
+          disable-animations: true
+          emulator-options: -no-snapshot -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          script: bash sdk/verification/leptoskit-app-journey/installed/run_android.sh
+
+      - name: Retain actual Android app evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: generated-wallet-installed-android
+          path: |
+            ${{ runner.temp }}/installed-wallet-run/native-ui
+            ${{ runner.temp }}/installed-wallet-run/validator.log
+            ${{ runner.temp }}/installed-appium.log
