@@ -2,7 +2,7 @@
 use super::Result;
 use std::{fs, path::Path};
 
-pub(super) const REVISION: &str = "386e1cd81737fd6ddffdd763a1a5d2c96d8c0d6d";
+pub(super) const REVISION: &str = "e9e0bbb4ac35e70d656b5d4c4b4e87795822028b";
 const SOURCE: &str = "https://github.com/ifiokjr/leptoskit";
 const VERSION: &str = "{ version = \"=0.1.0\"";
 const SDK_FRAMEWORK_DECLARATIONS: usize = 5;

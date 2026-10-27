@@ -13,7 +13,7 @@ env:
   GIT_HTTP_USER_AGENT: solana-kit-verification
   CARGO_INCREMENTAL: "0"
   RUSTUP_TOOLCHAIN: "1.99.1"
-  LEPTOSKIT_REVISION: 386e1cd81737fd6ddffdd763a1a5d2c96d8c0d6d
+  LEPTOSKIT_REVISION: e9e0bbb4ac35e70d656b5d4c4b4e87795822028b
   LEPTOSKIT_SOURCE: https://github.com/ifiokjr/leptoskit
 
 jobs:
@@ -200,6 +200,11 @@ jobs:
           "$cli" migrate --check --file "$app/leptoskit.toml"
           cd "$app"
           "$cli" native build "${{ matrix.native-target }}"
+
+          if [ '${{ matrix.platform }}' = ios ]; then
+            printf 'native_guest_wasm_bytes=%s\n' "$(wc -c < .leptoskit/ios/bundle/app.wasm)"
+            printf 'store_container_bytes=%s\n' "$(wc -c < .leptoskit/ios/mobile/app.lkb)"
+          fi
 
       - name: Build and lint the installed application controller
         run: |
