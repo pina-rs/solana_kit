@@ -9,7 +9,7 @@ publish = false
 
 [dependencies]
 anyhow = "1.0"
-leptoskit_wasm = { git = "https://github.com/ifiokjr/leptoskit", rev = "71eabc78daac558b1381bdbacfff182f69fc7846" }
+leptoskit_wasm = { git = "https://github.com/ifiokjr/leptoskit", rev = "7437097c52aa68a3401bd378764e051ed4c9165a" }
 serde_json = "1.0"
 solana_kit_conformance = { path = "../conformance" }
 wasmi = { version = "=2.0.0", features = ["portable-dispatch"] }

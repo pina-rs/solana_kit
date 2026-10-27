@@ -13,7 +13,7 @@ env:
   GIT_HTTP_USER_AGENT: solana-kit-verification
   CARGO_INCREMENTAL: "0"
   RUSTUP_TOOLCHAIN: "1.99.1"
-  LEPTOSKIT_REVISION: 71eabc78daac558b1381bdbacfff182f69fc7846
+  LEPTOSKIT_REVISION: 7437097c52aa68a3401bd378764e051ed4c9165a
   LEPTOSKIT_SOURCE: https://github.com/ifiokjr/leptoskit
 
 jobs:
