@@ -42,6 +42,7 @@ mod plan_cases;
 mod pyth;
 mod pyth_hermes;
 mod pyth_http;
+mod pyth_receiver;
 mod registry;
 /// Portable public RPC protocol fixtures without network I/O.
 pub mod rpc;
@@ -74,9 +75,9 @@ pub mod system_client;
 use alloc::vec::Vec;
 
 /// Integrated core contract suite; execution receipts identify actual hosts.
-pub const SUITE_ID: &str = "solana-kit-core-v42";
+pub const SUITE_ID: &str = "solana-kit-core-v43";
 /// Exact current registrants, including all preserved and appended contract groups.
-pub const EXPECTED_CASE_COUNT: usize = 370;
+pub const EXPECTED_CASE_COUNT: usize = 373;
 
 /// Selects authentic fixtures or the intentionally incorrect hash oracle.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -178,6 +179,7 @@ pub fn run(mode: FixtureMode) -> Report {
     cases.extend(pyth::cases());
     cases.extend(pyth_hermes::cases());
     cases.extend(pyth_http::cases());
+    cases.extend(pyth_receiver::cases());
 
     Report {
         suite_id: SUITE_ID,

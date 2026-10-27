@@ -13,14 +13,22 @@ pub mod hermes;
 
 mod account_types;
 mod accumulator;
+mod instructions;
 mod legacy;
 mod messages;
+#[cfg(feature = "crypto")]
+mod pda;
+mod program;
 mod receiver;
 mod vaa;
 
 pub use account_types::*;
 pub use accumulator::*;
+pub use instructions::*;
 pub use legacy::*;
 pub use messages::*;
+#[cfg(feature = "crypto")]
+pub use pda::*;
+pub use program::*;
 pub use receiver::*;
 pub use vaa::*;

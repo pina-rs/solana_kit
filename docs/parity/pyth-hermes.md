@@ -79,6 +79,6 @@ before its cell is accepted. Native test fixtures perform no host I/O.
 
 Provider roots, headers and authentication use the existing approved transport
 adapter policies. Actual native, browser, WASI and interpreted-host network
-composition for this new client still requires its own evidence. Pyth instruction
-builders and PDA helpers also remain open. This does not complete Pyth or the
-full ecosystem.
+composition for this new client still requires its own evidence. Receiver posting
+builders and PDA helpers are covered in [their separate parity record](pyth-receiver-instructions.md).
+This does not complete Pyth or the full ecosystem.

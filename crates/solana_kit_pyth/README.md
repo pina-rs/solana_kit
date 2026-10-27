@@ -108,5 +108,53 @@ application adapter policy. Bind the Hermes `Service` slot to an approved
 provider root is `hermes::DEFAULT_BASE_URL`; self-hosted path prefixes are
 preserved by the shared request-target encoder. No ambient secrets are resolved.
 Actual host-network composition evidence for this client remains follow-up work.
-Pyth instruction builders and PDA helpers also remain open. This slice does not
-establish full Pyth or ecosystem parity.
+This slice does not establish full Pyth or ecosystem parity.
+
+## Receiver instructions
+
+`ReceiverInstruction` builds `post_update` and `post_update_atomic` with their
+exact Anchor discriminators, Borsh parameters and seven positional account roles.
+`ReceiverAccounts::new` uses the standard receiver program and the payer as write
+authority. Its public fields support explicit program and authority overrides.
+The encoded-VAA and guardian-set accounts have distinct variant fields.
+Duplicate account positions remain intact, including a payer reused as authority.
+
+```rust
+use solana_kit_core::{Address, Instruction, codecs::{Error, Limits}};
+use solana_kit_pyth::{
+    MerklePriceUpdate, PostUpdateParams, ReceiverAccounts, ReceiverInstruction,
+};
+
+fn posted(
+    accounts: ReceiverAccounts,
+    encoded_vaa: Address,
+    update: &MerklePriceUpdate<'_>,
+) -> Result<Instruction, Error> {
+    ReceiverInstruction::PostUpdate {
+        accounts,
+        encoded_vaa,
+        params: PostUpdateParams::new(update),
+    }
+    .instruction(Limits::new(4096, 64))
+}
+```
+
+Parameters borrow the original VAA, message and fixed-width proof hashes.
+Their `encode` methods return Borsh parameters without the discriminator.
+Instruction encoding includes it. The byte limit covers the complete encoded
+data; the item limit counts proof hashes plus seven instruction accounts.
+Both limits precede output allocation. These builders authenticate no account,
+guardian signature, Merkle proof or price and perform no I/O or submission.
+
+Enable `crypto` for `config_address`, `treasury_address`, `guardian_set_address`
+and `ReceiverAccounts::derive`. They reuse Kit Core's highest-bump PDA search,
+return its validated address and bump, and accept custom program identities.
+The guardian-set index is an unsigned 32 bit big-endian seed; treasury IDs are
+unsigned bytes. `random_treasury_id` consumes exactly one uniformly filled byte
+from a caller-provided entropy callback and preserves provider failures. No
+ambient RNG or platform dependency is added.
+
+The receiver, Wormhole and push-oracle program constants match the pinned Dart
+reference. Complete instruction vectors and PDA boundary fixtures come from an
+independent Dart execution. The receiver parameter order, account privileges and
+configuration/treasury seeds are also checked against the pinned Pyth SDK.

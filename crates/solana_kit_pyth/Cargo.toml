@@ -13,6 +13,7 @@ description = "Portable Pyth price, account and Wormhole clients for off-chain a
 
 [features]
 default = []
+crypto = ["solana_kit_core/crypto"]
 hermes = ["dep:num-traits", "dep:serde", "dep:serde_json", "dep:solana_kit_client", "solana_kit_core/fixed-points"]
 
 [dependencies]
