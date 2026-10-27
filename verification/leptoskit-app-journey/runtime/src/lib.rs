@@ -7,6 +7,7 @@
 
 mod config;
 mod service;
+mod startup;
 mod timers;
 
 use leptoskit_bridge::Error;
@@ -20,10 +21,15 @@ type Host = WasmHost<HeadlessBackend>;
 /// Reads explicit test grants from `journey.json` in the generated app sandbox.
 /// No network access, wallet worker or runtime starts until activation.
 pub fn from_app_dirs(data: &Path, _cache: &Path) -> Result<ServiceInstaller, Error> {
+    let mut startup = startup::Startup::create(data).map_err(native)?;
     let endpoints = config::Endpoints::read(data)?;
+    startup.record("configuration-ready").map_err(native)?;
     let data = data.to_owned();
     Ok(Box::new(move |host| {
-        service::Service::install(host, &data, endpoints)
+        startup
+            .record("service-activation-entered")
+            .map_err(native)?;
+        service::Service::install(host, &data, endpoints, startup)
             .map(|service| Box::new(service) as Box<dyn leptoskit_bridge_ffi::app::AppService>)
     }))
 }

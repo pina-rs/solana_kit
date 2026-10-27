@@ -377,6 +377,7 @@ jobs:
           path: |
             ${{ runner.temp }}/installed-wallet-run/native-ui
             ${{ runner.temp }}/installed-wallet-run/validator.log
+            ${{ runner.temp }}/installed-wallet-run/journey-startup.txt
             ${{ runner.temp }}/installed-appium.log
             ${{ runner.temp }}/installed-wda.log
             ${{ runner.temp }}/installed-ios-app.log

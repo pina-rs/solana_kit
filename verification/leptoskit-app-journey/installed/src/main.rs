@@ -6,6 +6,7 @@ mod journey;
 mod launch;
 mod ports;
 mod rpc;
+mod startup;
 mod validator;
 
 use leptoskit_testing::native::{Error, NativeTester};
@@ -36,12 +37,17 @@ fn main() -> Result<()> {
 
     let options = launch.options();
     let result = NativeTester::run(options, |tester| journey::run(tester, &mut node));
-    finish([result, node.close(), data.close()])
+    finish([
+        result,
+        startup::retain(data.path(), &launch.directory).map_err(Into::into),
+        node.close(),
+        data.close(),
+    ])
 }
 
 /// Evaluate every cleanup outcome, preserving a sole original error and reporting
 /// all causes when both the journey and one or more owned cleanups fail.
-fn finish(outcomes: [Result<()>; 3]) -> Result<()> {
+fn finish(outcomes: [Result<()>; 4]) -> Result<()> {
     let mut failures = outcomes
         .into_iter()
         .filter_map(|result| result.err())

@@ -1,5 +1,5 @@
 //! One application owner routes every capability and joins all native work.
-use crate::{Host, config::Endpoints, native, timers::Timers};
+use crate::{Host, config::Endpoints, native, startup::Startup, timers::Timers};
 use leptoskit_bridge::Error;
 use leptoskit_bridge_ffi::app::{AppService, ServiceClose, ServiceWork};
 use solana_kit_leptoskit::{
@@ -27,6 +27,7 @@ pub(super) struct Service {
     runtime: Runtime,
     queued: ServiceWork,
     owner: ThreadId,
+    startup: Startup,
 }
 
 impl Service {
@@ -34,6 +35,7 @@ impl Service {
         host: &mut Host,
         data: &Path,
         endpoints: Endpoints,
+        startup: Startup,
     ) -> Result<Self, Error> {
         // Public generated hosts call the service from their native UI thread.
         // Refuse an ambient runtime before constructing an owner whose close is synchronous.
@@ -58,6 +60,7 @@ impl Service {
             runtime,
             queued: ServiceWork::default(),
             owner: thread::current().id(),
+            startup,
         })
     }
 
@@ -99,6 +102,12 @@ impl AppService for Service {
             return Err(Error::InvalidArgument);
         }
 
+        self.startup
+            .observe(
+                host.surface().root().is_some(),
+                !host.surface().backend().log().is_empty(),
+            )
+            .map_err(native)?;
         let handle = self.runtime.handle().clone();
         let _entered = handle.enter();
 
