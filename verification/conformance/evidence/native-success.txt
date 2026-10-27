@@ -361,4 +361,7 @@ sysvar-public-fetch-decoder-failures: Ok(())
 sysvar-public-fetch-rpc-causes-limits: Ok(())
 explicit-backup-roundtrip: Ok(())
 explicit-backup-consume-export-capability: Ok(())
-solana-kit-core-v38: 356/356 cases passed
+pyth-upstream-wire-composition: Ok(())
+pyth-preserved-signature-reduction: Ok(())
+pyth-bounded-forward-compatible-wire: Ok(())
+solana-kit-core-v39: 359/359 cases passed

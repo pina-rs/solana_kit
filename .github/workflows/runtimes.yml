@@ -75,5 +75,7 @@ jobs:
         run: |
           cargo +1.99.1 fmt --manifest-path verification/leptoskit/Cargo.toml --check
 
-          cargo +1.99.1 clippy --manifest-path verification/leptoskit/Cargo.toml --locked -- -D \
-            warnings
+          cargo +1.99.1 test --manifest-path verification/leptoskit/Cargo.toml --locked
+
+          cargo +1.99.1 clippy --manifest-path verification/leptoskit/Cargo.toml --locked \
+            --all-targets -- -D warnings
