@@ -1,0 +1,20 @@
+{
+  "binary": { "encoding": "hex", "data": ["504e4155"] },
+  "parsed": [
+    {
+      "id": "feed-one",
+      "price": {
+        "price": "-1234567890123456789012345678901234567890",
+        "conf": "340282366920938463463374607431768211456",
+        "expo": -8,
+        "publish_time": 9223372036854775807
+      },
+      "ema_price": { "price": 42, "conf": -7, "expo": -8, "publish_time": 9223372036854775807 },
+      "metadata": {
+        "slot": 9007199254740993,
+        "prev_publish_time": -123,
+        "proof_available_time": 1700000000
+      }
+    }
+  ]
+}

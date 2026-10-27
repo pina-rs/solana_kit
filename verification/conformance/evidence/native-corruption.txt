@@ -367,4 +367,8 @@ pyth-bounded-forward-compatible-wire: Ok(())
 pyth-legacy-account-fields-and-staleness: Ok(())
 pyth-receiver-borsh-verification-variants: Ok(())
 pyth-account-limits-and-truncation: Ok(())
-solana-kit-core-v40: 361/362 cases passed
+pyth-hermes-exact-json-components: Ok(())
+pyth-hermes-listing-and-wire-names: Ok(())
+pyth-hermes-duplicate-aware-json-budgets: Ok(())
+pyth-hermes-presence-and-explicit-approximation: Ok(())
+solana-kit-core-v41: 365/366 cases passed

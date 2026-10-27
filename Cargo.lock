@@ -1780,6 +1780,10 @@ name = "solana_kit_pyth"
 version = "0.1.0"
 dependencies = [
  "hex-literal",
+ "num-traits",
+ "serde",
+ "serde_json",
+ "solana_kit_client",
  "solana_kit_core",
 ]
 

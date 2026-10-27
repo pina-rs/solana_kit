@@ -4,6 +4,12 @@
 #![doc = include_str!("../README.md")]
 
 extern crate alloc;
+#[cfg(feature = "hermes")]
+extern crate std;
+
+/// Bounded Hermes response models with exact integer components.
+#[cfg(feature = "hermes")]
+pub mod hermes;
 
 mod account_types;
 mod accumulator;
