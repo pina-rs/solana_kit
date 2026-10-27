@@ -32,6 +32,9 @@ cargo run --locked --manifest-path "$SDK/verification/leptoskit-app-journey/inst
 
 The iOS CI journey creates its own simulator, builds the ordinary generated
 application with `leptoskit native build ios-simulator`, and installs that bundle.
+It selects Xcode 26.6 on the macOS 26 runner, verifies the test runtime library
+required by the pinned XCTest agent, and chooses an available simulator runtime
+matching that Xcode's simulator SDK.
 It queries the installed application's container and passes its new
 `Library/Application Support` directory to the controller. The job builds the
 pinned driver's WebDriverAgent separately and passes its explicit derived-data

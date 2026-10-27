@@ -118,20 +118,24 @@ jobs:
 
   generated-wallet-apple:
     name: generated-wallet-${{ matrix.platform }}
-    runs-on: "macos-15"
+    runs-on: ${{ matrix.runner }}
     timeout-minutes: 60
     strategy:
       fail-fast: false
       matrix:
         include:
           - platform: macos
+            runner: macos-15
+            xcode: "26.2"
             native-target: macos
             driver: mac2
           - platform: ios
+            runner: macos-26
+            xcode: "26.6"
             native-target: ios-simulator
             driver: xcuitest
     env:
-      DEVELOPER_DIR: /Applications/Xcode_26.2.app/Contents/Developer
+      DEVELOPER_DIR: /Applications/Xcode_${{ matrix.xcode }}.app/Contents/Developer
       npm_config_user_agent: solana-kit-verification
       npm_config_audit: "false"
     steps:
@@ -151,6 +155,10 @@ jobs:
         run: |
           rustup toolchain install 1.99.1 --profile minimal \
             --component clippy --target wasm32-unknown-unknown
+
+      - name: Verify the selected iOS test runtime library
+        if: matrix.platform == 'ios'
+        run: test -f "$DEVELOPER_DIR/Platforms/iPhoneSimulator.platform/Developer/usr/lib/lib_TestingInterop.dylib"
 
       - name: Install the iOS simulator compiler target
         if: matrix.platform == 'ios'
@@ -234,8 +242,11 @@ jobs:
         if: matrix.platform == 'ios'
         run: |
           set -euo pipefail
-          read -r runtime device_type < <(xcrun simctl list runtimes available --json | jq -er '
-            [.runtimes[] | select(.platform == "iOS" and .isAvailable)] |
+          runtime_version="$(xcrun --sdk iphonesimulator --show-sdk-version)"
+          read -r runtime device_type < <(xcrun simctl list runtimes available --json |
+            jq -er --arg version "$runtime_version" '
+            [.runtimes[] | select(.platform == "iOS" and .isAvailable and
+              (.version | split(".")[:2] | join(".")) == $version)] |
             sort_by(.version | split(".") | map(tonumber)) | last |
             "\(.identifier) \([.supportedDeviceTypes[] |
               select(.name | test("^iPhone [0-9]+$"))] |
