@@ -41,6 +41,9 @@ jobs:
             -p solana_kit_stake -p solana_kit_loader
           cargo "+$RUST_TOOLCHAIN" run --locked --manifest-path "$PROGRAM_MANIFEST" \
             --package "$PROGRAM_PACKAGE"
+          cargo "+$RUST_TOOLCHAIN" test --locked \
+            --manifest-path "$PROGRAM_MANIFEST" --package solana_kit_stake_activation_oracle \
+            --test activation
 
   portable-programs:
     runs-on: "ubuntu-24.04"

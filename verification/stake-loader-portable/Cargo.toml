@@ -5,7 +5,7 @@ edition = "2024"
 publish = false
 
 [workspace]
-members = ["guest", "host"]
+members = ["guest", "host", "oracle"]
 
 [dependencies]
 solana_kit_address_lookup_table = { path = "../../crates/solana_kit_address_lookup_table", features = ["pda"] }

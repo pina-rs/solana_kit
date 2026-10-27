@@ -3,6 +3,7 @@
 #![deny(missing_docs)]
 #![doc = include_str!("../README.md")]
 extern crate alloc;
+mod activation;
 mod value_traits;
 
 mod generated;

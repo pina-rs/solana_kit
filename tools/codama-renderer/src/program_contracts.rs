@@ -27,6 +27,7 @@ const INPUTS: &[(&str, &str, &str)] = &[
     ("stake_metadata", "solana_kit_stake", "stake_metadata"),
     ("stake_helpers", "solana_kit_stake", "helpers"),
     ("stake_options", "solana_kit_stake", "options"),
+    ("stake_activation", "solana_kit_stake", "activation"),
     ("stake_values", "solana_kit_stake", "values"),
     ("loader_protocol", "solana_kit_loader", "protocol"),
     ("loader_wires", "solana_kit_loader", "wires"),
@@ -195,7 +196,7 @@ mod tests {
         assert!(entrypoints("fn hidden() {").is_err());
         let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
         let (source, count) = render(&root).unwrap();
-        assert_eq!(count, 74);
+        assert_eq!(count, 81);
         assert!(
             source.contains("stake_options::all_lockup_option_combinations_have_literal_frames")
         );
