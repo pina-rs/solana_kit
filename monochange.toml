@@ -192,6 +192,11 @@ path = "crates/solana_kit_attestation_service"
 type = "cargo"
 publish = { enabled = false }
 
+[package.solana_kit_pyth]
+path = "crates/solana_kit_pyth"
+type = "cargo"
+publish = { enabled = false }
+
 [package.solana_kit_squads]
 path = "crates/solana_kit_squads"
 type = "cargo"
