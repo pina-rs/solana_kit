@@ -75,6 +75,38 @@ Metadata equality includes all attribute entries. Malformed attribute values are
 errors. Missing or null attributes and binary chunk lists become empty; absent
 parsed results remain distinct from an explicitly empty result list.
 
-Hermes HTTP requests, retry orchestration, instruction builders and PDA helpers
-remain implementation work. These models do not establish full Pyth or ecosystem
-parity.
+The same feature provides a runtime-neutral Hermes `Client` for feed listings,
+latest updates and updates at a signed Unix timestamp. It uses an existing
+`rest::Transport<hermes::Service>` and `subscriptions::Clock` supplied by the
+application. Native adapters can retain Send futures; browser and interpreted
+guests can use local futures. Construction starts no I/O or task.
+
+```rust
+# #[cfg(feature = "hermes")]
+# {
+use solana_kit_client::{rest, subscriptions::Clock};
+use solana_kit_pyth::hermes::{Client, Policy, Service};
+
+fn client<T: rest::Transport<Service>, C: Clock>(transport: T, clock: C) -> Client<T, C> {
+    Client::new(transport, clock, Policy::default(), rest::Budgets::default())
+}
+# }
+```
+
+`Policy::default()` grants 5000 ms per attempt and three retries, with delays of
+100, 200 and 400 ms. Only I/O failures, elapsed exchange deadlines, HTTP 408/429
+and statuses at least 500 retry. Policy denial, cancellation, resource limits,
+clock failures and malformed success bodies stop immediately. Timing policy
+validation rejects zero timeout, delay overflow and more than 32 retries.
+Every losing exchange is dropped before backoff; dropping the whole operation
+also drops its exchange and timer. HTTP errors retain their bounded original
+body, while ordinary diagnostics hide response and adapter values.
+
+Provider roots, custom headers and bearer authentication remain explicit
+application adapter policy. Bind the Hermes `Service` slot to an approved
+`NativeRest`, `BrowserRest`, `WasiRest` or LeptosKit REST route. The default
+provider root is `hermes::DEFAULT_BASE_URL`; self-hosted path prefixes are
+preserved by the shared request-target encoder. No ambient secrets are resolved.
+Actual host-network composition evidence for this client remains follow-up work.
+Pyth instruction builders and PDA helpers also remain open. This slice does not
+establish full Pyth or ecosystem parity.

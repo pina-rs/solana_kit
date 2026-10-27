@@ -46,8 +46,39 @@ and the sole corrupt-hash control. Native, browser, WASI Preview 1, Preview 2 an
 the production LeptosKit wasmi host consume the same registry. Actual execution
 must pass on each host before its runtime cell is accepted.
 
-Hermes GET operations, injected timeout/backoff orchestration, HTTP errors,
-custom provider roots and authentication composition still require their own
-implementation and network evidence. Pyth instruction builders and PDA helpers
-also remain open. This response-model slice does not complete Pyth or the full
-ecosystem.
+## GET orchestration
+
+The runtime-neutral `Client` uses the existing REST destination and clock
+contracts. Its three operations preserve route segments, ordered repeated IDs,
+both encoding names, optional listing filters, default options and exact signed
+timestamps. Decoded query values remain verbatim. The shared encoder uses `%20`
+for a space where Dart uses `+`; both encode the same query component value.
+Request strings and pair counts are admitted before copying. The full encoded
+relative target also has a byte ceiling before an exchange is constructed.
+
+The default policy gives each attempt 5000 ms and permits three retries, delayed
+by 100, 200 and 400 ms. Configured retries are limited to 32 and every exponential
+delay is checked in advance. Clock ticks use checked addition. Actual timer
+failures propagate separately from an elapsed deadline. Transient I/O, deadlines,
+HTTP 408/429 and statuses at least 500 retry; policy, cancellation, budget,
+framing and response-schema failures stop. Original bounded HTTP error bodies
+remain accessible while ordinary diagnostics hide their contents.
+
+Each exchange is destroyed before retry backoff starts. Cancelling the returned
+future destroys its current exchange and timer without detached work or a retry.
+Twelve native contracts exercise all three operations, ordered options, exact
+backoff, last failures, transport categories, resource admission, timeout,
+unrepresentable ticks, timer admission failure and physical future destruction.
+The adapters and clocks deliberately contain Rc state, proving local futures do
+not acquire a universal Send requirement.
+
+Four appended shared groups exercise these GET futures in the same portable
+registry, advancing it to v42 with 370 cases. Every earlier case and the sole
+corrupt-hash control remain. Each runtime must execute that expanded registry
+before its cell is accepted. Native test fixtures perform no host I/O.
+
+Provider roots, headers and authentication use the existing approved transport
+adapter policies. Actual native, browser, WASI and interpreted-host network
+composition for this new client still requires its own evidence. Pyth instruction
+builders and PDA helpers also remain open. This does not complete Pyth or the
+full ecosystem.

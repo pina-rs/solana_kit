@@ -74,7 +74,7 @@ mod tests {
 
     #[test]
     fn accounts_for_transaction_effects_and_distinct_message_crypto() {
-        assert_eq!(allowance().unwrap(), 13_455_000_000);
+        assert_eq!(allowance().unwrap(), 13_515_000_000);
         assert_eq!(MESSAGE_COUNT, 256);
         assert_eq!(
             MESSAGE_COUNT as u64 * CRYPTO_CALLS_PER_MESSAGE + FIXED_CRYPTO_CALLS,

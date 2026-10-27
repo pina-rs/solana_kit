@@ -5,17 +5,25 @@
 //! typed allocation, reject duplicate keys and cap each integer at 8192 bytes.
 //! Decoding establishes no price authenticity, freshness or account ownership.
 
+mod client;
 mod enums;
+mod error;
 mod integer;
 mod models;
+mod policy;
+mod requests;
 
 use alloc::vec::Vec;
 use serde::de::DeserializeOwned;
 use solana_kit_client::rest::{Budgets, JsonError};
 
+pub use client::{Client, Service};
 pub use enums::{AssetType, Encoding};
+pub use error::Error;
 pub use integer::MAX_INTEGER_BYTES;
 pub use models::{BinaryUpdate, Price, PriceFeed, PriceFeedMetadata, PriceMetadata, PriceUpdate};
+pub use policy::{ConfigError, DEFAULT_BASE_URL, MAX_HTTP_RETRIES, Policy};
+pub use requests::UpdateOptions;
 
 /// Decodes a price-update response after complete shared JSON admission.
 ///
