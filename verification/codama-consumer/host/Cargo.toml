@@ -7,4 +7,4 @@ publish = false
 [workspace]
 
 [dependencies]
-leptoskit_wasm = { git = "https://github.com/ifiokjr/leptoskit", rev = "e9e0bbb4ac35e70d656b5d4c4b4e87795822028b" }
+leptoskit_wasm = { git = "https://github.com/ifiokjr/leptoskit", rev = "71eabc78daac558b1381bdbacfff182f69fc7846" }
