@@ -112,7 +112,7 @@ fn activation_is_inert_until_the_generated_host_installs_the_service() {
     let install = from_app_dirs(&sandbox.0, &sandbox.0).unwrap();
     assert!(host.plugins().resolve("solana-wallet-session").is_none());
     assert!(!sandbox.0.join("solana-wallet").exists());
-    let service = install(&mut host).unwrap();
+    let mut service = install(&mut host).unwrap();
 
     for name in [
         "solana-wallet-session",
@@ -123,6 +123,13 @@ fn activation_is_inert_until_the_generated_host_installs_the_service() {
         assert!(host.plugins().resolve(name).is_some());
     }
 
+    service
+        .poll(&mut host, &mut Context::from_waker(Waker::noop()))
+        .unwrap();
+    assert_eq!(
+        fs::read_to_string(sandbox.0.join("journey-startup.txt")).unwrap(),
+        "factory-entered\nconfiguration-ready\nservice-activation-entered\nservice-polled\n"
+    );
     futures::executor::block_on(service.close()).unwrap();
 }
 

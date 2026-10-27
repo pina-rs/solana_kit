@@ -738,7 +738,7 @@ checksum = "09edd9e8b54e49e587e4f6295a7d29c3ea94d469cb40ab8ca70b288248a81db2"
 [[package]]
 name = "leptoskit_appkit"
 version = "0.1.0"
-source = "git+https://github.com/ifiokjr/leptoskit?rev=25b1861ddc729a8f3b70117cd0c48e06659c9697#25b1861ddc729a8f3b70117cd0c48e06659c9697"
+source = "git+https://github.com/ifiokjr/leptoskit?rev=7437097c52aa68a3401bd378764e051ed4c9165a#7437097c52aa68a3401bd378764e051ed4c9165a"
 dependencies = [
  "leptoskit_native",
  "leptoskit_yoga",
@@ -754,7 +754,7 @@ dependencies = [
 [[package]]
 name = "leptoskit_bridge"
 version = "0.1.0"
-source = "git+https://github.com/ifiokjr/leptoskit?rev=25b1861ddc729a8f3b70117cd0c48e06659c9697#25b1861ddc729a8f3b70117cd0c48e06659c9697"
+source = "git+https://github.com/ifiokjr/leptoskit?rev=7437097c52aa68a3401bd378764e051ed4c9165a#7437097c52aa68a3401bd378764e051ed4c9165a"
 dependencies = [
  "bytes",
  "thiserror",
@@ -763,12 +763,13 @@ dependencies = [
 [[package]]
 name = "leptoskit_bridge_ffi"
 version = "0.1.0"
-source = "git+https://github.com/ifiokjr/leptoskit?rev=25b1861ddc729a8f3b70117cd0c48e06659c9697#25b1861ddc729a8f3b70117cd0c48e06659c9697"
+source = "git+https://github.com/ifiokjr/leptoskit?rev=7437097c52aa68a3401bd378764e051ed4c9165a#7437097c52aa68a3401bd378764e051ed4c9165a"
 dependencies = [
  "leptoskit_appkit",
  "leptoskit_bridge",
  "leptoskit_codepush",
  "leptoskit_native",
+ "leptoskit_uikit",
  "leptoskit_wasm",
  "leptoskit_yoga",
  "serde",
@@ -778,7 +779,7 @@ dependencies = [
 [[package]]
 name = "leptoskit_codepush"
 version = "0.1.0"
-source = "git+https://github.com/ifiokjr/leptoskit?rev=25b1861ddc729a8f3b70117cd0c48e06659c9697#25b1861ddc729a8f3b70117cd0c48e06659c9697"
+source = "git+https://github.com/ifiokjr/leptoskit?rev=7437097c52aa68a3401bd378764e051ed4c9165a#7437097c52aa68a3401bd378764e051ed4c9165a"
 dependencies = [
  "ed25519-dalek 3.0.0",
  "flate2",
@@ -795,16 +796,32 @@ dependencies = [
 [[package]]
 name = "leptoskit_native"
 version = "0.1.0"
-source = "git+https://github.com/ifiokjr/leptoskit?rev=25b1861ddc729a8f3b70117cd0c48e06659c9697#25b1861ddc729a8f3b70117cd0c48e06659c9697"
+source = "git+https://github.com/ifiokjr/leptoskit?rev=7437097c52aa68a3401bd378764e051ed4c9165a#7437097c52aa68a3401bd378764e051ed4c9165a"
 dependencies = [
  "leptoskit_yoga",
  "serde",
 ]
 
 [[package]]
+name = "leptoskit_uikit"
+version = "0.1.0"
+source = "git+https://github.com/ifiokjr/leptoskit?rev=7437097c52aa68a3401bd378764e051ed4c9165a#7437097c52aa68a3401bd378764e051ed4c9165a"
+dependencies = [
+ "leptoskit_native",
+ "leptoskit_yoga",
+ "objc2",
+ "objc2-core-foundation",
+ "objc2-core-graphics",
+ "objc2-core-text",
+ "objc2-foundation",
+ "objc2-quartz-core",
+ "objc2-ui-kit",
+]
+
+[[package]]
 name = "leptoskit_wasm"
 version = "0.1.0"
-source = "git+https://github.com/ifiokjr/leptoskit?rev=25b1861ddc729a8f3b70117cd0c48e06659c9697#25b1861ddc729a8f3b70117cd0c48e06659c9697"
+source = "git+https://github.com/ifiokjr/leptoskit?rev=7437097c52aa68a3401bd378764e051ed4c9165a#7437097c52aa68a3401bd378764e051ed4c9165a"
 dependencies = [
  "leptoskit_bridge",
  "leptoskit_native",
@@ -818,7 +835,7 @@ dependencies = [
 [[package]]
 name = "leptoskit_yoga"
 version = "0.1.0"
-source = "git+https://github.com/ifiokjr/leptoskit?rev=25b1861ddc729a8f3b70117cd0c48e06659c9697#25b1861ddc729a8f3b70117cd0c48e06659c9697"
+source = "git+https://github.com/ifiokjr/leptoskit?rev=7437097c52aa68a3401bd378764e051ed4c9165a#7437097c52aa68a3401bd378764e051ed4c9165a"
 dependencies = [
  "serde",
 ]
@@ -916,6 +933,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "objc2-core-text"
+version = "0.3.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0cde0dfb48d25d2b4862161a4d5fcc0e3c24367869ad306b0c9ec0073bfed92d"
+dependencies = [
+ "bitflags",
+ "objc2",
+ "objc2-core-foundation",
+ "objc2-core-graphics",
+]
+
+[[package]]
 name = "objc2-encode"
 version = "4.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -954,6 +983,21 @@ dependencies = [
  "objc2-core-foundation",
  "objc2-core-graphics",
  "objc2-foundation",
+]
+
+[[package]]
+name = "objc2-ui-kit"
+version = "0.3.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d87d638e33c06f577498cbcc50491496a3ed4246998a7fbba7ccb98b1e7eab22"
+dependencies = [
+ "bitflags",
+ "objc2",
+ "objc2-core-foundation",
+ "objc2-core-graphics",
+ "objc2-core-text",
+ "objc2-foundation",
+ "objc2-quartz-core",
 ]
 
 [[package]]

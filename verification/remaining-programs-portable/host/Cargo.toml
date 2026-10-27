@@ -6,5 +6,5 @@ publish = false
 
 [dependencies]
 anyhow = "1.0"
-leptoskit_wasm = { git = "https://github.com/ifiokjr/leptoskit", rev = "25b1861ddc729a8f3b70117cd0c48e06659c9697" }
+leptoskit_wasm = { git = "https://github.com/ifiokjr/leptoskit", rev = "7437097c52aa68a3401bd378764e051ed4c9165a" }
 wasmi = { version = "=2.0.0", features = ["portable-dispatch"] }

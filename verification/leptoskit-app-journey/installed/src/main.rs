@@ -3,17 +3,16 @@
 mod accessibility;
 mod application_data;
 mod journey;
+mod launch;
 mod ports;
 mod rpc;
+mod startup;
 mod validator;
 
-use leptoskit_testing::native::{Application, Error, NativeTester, Options, Platform};
-use std::{fs, path::PathBuf};
+use leptoskit_testing::native::{Error, NativeTester};
+use std::fs;
 
 type Result<T> = std::result::Result<T, Error>;
-const ARGUMENTS: usize = 5;
-const DRIVER_STARTUP_SECONDS: u64 = 900;
-const UI_WAIT_SECONDS: u64 = 30;
 
 fn require(condition: bool, message: impl Into<String>) -> Result<()> {
     if !condition {
@@ -26,48 +25,29 @@ fn require(condition: bool, message: impl Into<String>) -> Result<()> {
 /// Every path is explicit and the controller creates its run and app directories.
 /// It cannot reuse a prior wallet, ledger, Solana CLI configuration or endpoint.
 fn main() -> Result<()> {
-    let arguments: Vec<_> = std::env::args_os().skip(1).collect();
-    require(
-        arguments.len() == ARGUMENTS,
-        "usage: installed_wallet <loopback-driver> <app.bundle> <fresh-app-data> <fresh-run-directory> <validator-binary>",
-    )?;
-    let driver = arguments[0]
-        .to_str()
-        .ok_or_else(|| Error::Configuration("driver must be UTF-8".into()))?;
-    rpc::loopback_url(driver)?;
-    let bundle = PathBuf::from(&arguments[1]).canonicalize()?;
-    let data = PathBuf::from(&arguments[2]);
-    let directory = PathBuf::from(&arguments[3]);
-
-    fs::create_dir(&directory)?;
-    let data = application_data::ApplicationData::create(data)?;
-    let mut node = validator::Validator::start(&directory, &arguments[4])?;
+    let launch = launch::Launch::read()?;
+    fs::create_dir(&launch.directory)?;
+    let data = application_data::ApplicationData::create(launch.data.clone())?;
+    let mut node = validator::Validator::start(&launch.directory, &launch.validator)?;
     let config = serde_json::json!({"http":node.http(),"socket":node.socket()});
     fs::write(
         data.path().join("journey.json"),
         serde_json::to_vec(&config)?,
     )?;
 
-    let mut options = Options::new(
-        driver,
-        Platform::Macos,
-        Application::Path(
-            bundle
-                .into_os_string()
-                .into_string()
-                .map_err(|_| Error::Configuration("app bundle path must be UTF-8".into()))?,
-        ),
-    );
-    options.artifacts = directory.join("native-ui");
-    options.startup_seconds = DRIVER_STARTUP_SECONDS;
-    options.wait_seconds = UI_WAIT_SECONDS;
+    let options = launch.options();
     let result = NativeTester::run(options, |tester| journey::run(tester, &mut node));
-    finish([result, node.close(), data.close()])
+    finish([
+        result,
+        startup::retain(data.path(), &launch.directory).map_err(Into::into),
+        node.close(),
+        data.close(),
+    ])
 }
 
 /// Evaluate every cleanup outcome, preserving a sole original error and reporting
 /// all causes when both the journey and one or more owned cleanups fail.
-fn finish(outcomes: [Result<()>; 3]) -> Result<()> {
+fn finish(outcomes: [Result<()>; 4]) -> Result<()> {
     let mut failures = outcomes
         .into_iter()
         .filter_map(|result| result.err())

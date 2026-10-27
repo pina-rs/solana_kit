@@ -34,7 +34,7 @@ your interpreter alive; `HttpHost` then unloads its interpreter. Drop aborts wor
 shutdown proves that accounting and native resources have terminated.
 
 The current source selects the compatible public LeptosKit pin
-`25b1861ddc729a8f3b70117cd0c48e06659c9697` for the required guest Call identity API.
+`7437097c52aa68a3401bd378764e051ed4c9165a` for the required guest Call identity API.
 The manifest and workspace lockfiles select this revision.
 Registry publication requires an
 available compatible upstream release. Component publishing remains disabled.
@@ -70,8 +70,8 @@ through native join and awaited driver shutdown. The REST request cap includes i
 complete binary frame, while the existing RPC cap still applies to its JSON body.
 Actual Rust guest/provider journeys, host routing and joined shutdown replay are
 required for each claimed runtime. The selected framework revision is public commit
-`25b1861ddc729a8f3b70117cd0c48e06659c9697`, tree
-`24d38f72a5dc36939afc316d648e75e23d5bbd71`. A source revision identifies the
+`7437097c52aa68a3401bd378764e051ed4c9165a`, tree
+`f4048de8e271deaf882de45e476fba554f937890`. A source revision identifies the
 dependency; the individual transport receipts establish execution coverage.
 
 ## Optional wallet controls and Android platform
