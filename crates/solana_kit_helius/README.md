@@ -65,6 +65,10 @@ pinned current integer rules). Older deployments may use different rent rules.
 
 The bundled read requires a matching clock/context slot and complete recent
 history. These checks detect inconsistency rather than authenticating a node.
+The full 512-entry history alone occupies 16,392 bytes before base64 encoding.
+Configure the transport and shared client's receive budgets for the bundled
+response, such as 64 KiB for an ordinary 200-byte stake allocation. The query's
+per-account decode limits do not raise those separate receive budgets.
 Signer identities remain proposals; destination checks, actual signatures,
 submission-time state and execution still belong to the application. No
 unverified provider withdrawal REST route or hidden extra bank read is used.
