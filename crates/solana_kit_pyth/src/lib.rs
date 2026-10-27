@@ -5,10 +5,16 @@
 
 extern crate alloc;
 
+mod account_types;
 mod accumulator;
+mod legacy;
 mod messages;
+mod receiver;
 mod vaa;
 
+pub use account_types::*;
 pub use accumulator::*;
+pub use legacy::*;
 pub use messages::*;
+pub use receiver::*;
 pub use vaa::*;

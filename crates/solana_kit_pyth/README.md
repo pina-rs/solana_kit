@@ -1,6 +1,6 @@
 # Solana Kit Pyth
 
-Portable off-chain client code for Pyth wire messages. This crate uses
+Portable off-chain client code for Pyth wire messages and price accounts. This crate uses
 `no_std + alloc` and the existing `solana_kit_core` bounded codecs. Browser Wasm,
 WASI and native clients use the same parsing code without a runtime dependency.
 On-chain programs should use Pina or official Solana program libraries.
@@ -17,6 +17,14 @@ Parsing validates structure and budgets. It does not authenticate guardians,
 emitters, signatures, Merkle paths or prices. Header inspection and trimming have
 the pinned Dart helpers' narrower contracts; use the complete envelope parser
 when those helpers are applied to unvalidated input.
+
+Legacy price accounts decode exact integer samples, rational EMA state and
+ordered publisher components with a caller-selected allocation limit. An optional
+read-context slot derives the effective status without rewriting the stored
+aggregate. Receiver `PriceUpdateV2` accounts reuse the price-message fields with
+Borsh little-endian decoding: full verification has a 133-byte prefix, partial
+verification has a 134-byte prefix, and remaining account bytes are borrowed.
+Account parsing establishes no owner, guardian authentication or price freshness.
 
 ```rust
 use solana_kit_core::codecs::{Error, Limits};
@@ -36,6 +44,6 @@ The reference Dart Wormhole-message helper rejects the upstream fixture's actual
 slot, ring size and 20-byte root. It also rejects unknown proof variants and
 preserves upstream-compatible minor versions and append-only extensions.
 
-Hermes requests, JSON feeds, legacy price accounts, PriceUpdateV2 accounts,
-instruction builders and PDA helpers remain implementation work. Wire support
-alone does not establish full Pyth or ecosystem parity.
+Hermes requests, JSON feeds, instruction builders and PDA helpers remain
+implementation work. Wire and account support do not establish full Pyth or
+ecosystem parity.

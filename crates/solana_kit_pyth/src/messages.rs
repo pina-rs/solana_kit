@@ -1,6 +1,6 @@
 //! Current Pyth verification and price-message prefixes, in network byte order.
 use alloc::string::String;
-use solana_kit_core::codecs::{Base16, Decoder, Error, FixedBytes, Limits, Number, Reader};
+use solana_kit_core::codecs::{Base16, Decoder, Endian, Error, FixedBytes, Limits, Number, Reader};
 
 /// Magic of the Wormhole verification message, distinct from its VAA envelope.
 pub const WORMHOLE_VERIFICATION_MAGIC: [u8; 4] = *b"AUWV";
@@ -111,14 +111,21 @@ pub fn parse_pyth_price_feed_message(
         return Err(Error::InvalidDiscriminator);
     }
 
+    read_price_message(&mut reader, Endian::Big)
+}
+
+pub(crate) fn read_price_message(
+    reader: &mut Reader<'_>,
+    endian: Endian,
+) -> Result<PythPriceFeedMessage, Error> {
     Ok(PythPriceFeedMessage {
-        feed_id: FixedBytes::<32>.read(&mut reader)?,
-        price: Number::<i64>::BE.read(&mut reader)?,
-        confidence: Number::<u64>::BE.read(&mut reader)?,
-        exponent: Number::<i32>::BE.read(&mut reader)?,
-        publish_time: Number::<i64>::BE.read(&mut reader)?,
-        prev_publish_time: Number::<i64>::BE.read(&mut reader)?,
-        ema_price: Number::<i64>::BE.read(&mut reader)?,
-        ema_conf: Number::<u64>::BE.read(&mut reader)?,
+        feed_id: FixedBytes::<32>.read(reader)?,
+        price: Number::<i64>::new(endian).read(reader)?,
+        confidence: Number::<u64>::new(endian).read(reader)?,
+        exponent: Number::<i32>::new(endian).read(reader)?,
+        publish_time: Number::<i64>::new(endian).read(reader)?,
+        prev_publish_time: Number::<i64>::new(endian).read(reader)?,
+        ema_price: Number::<i64>::new(endian).read(reader)?,
+        ema_conf: Number::<u64>::new(endian).read(reader)?,
     })
 }

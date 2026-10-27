@@ -1,8 +1,8 @@
 # Pyth wire compatibility
 
-This is a partial Pyth port. Hermes, JSON feeds, legacy price accounts,
-PriceUpdateV2, instruction builders and PDA helpers remain pending. No wire test
-establishes complete Pyth or ecosystem parity.
+This documents the Pyth wire phase. Account decoding is covered by
+`pyth-accounts.md`; Hermes, JSON feeds, instruction builders and PDA helpers remain
+pending. No wire test establishes complete Pyth or ecosystem parity.
 
 The Dart reference is commit `0138bb956d2d81ccc0c56edc602401c0df2f2b46` of
 <https://github.com/openbudgetfun/solana_kit>. Current protocol structure and the
