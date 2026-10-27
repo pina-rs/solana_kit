@@ -2,9 +2,9 @@
 name = "solana_kit_app_journey_runtime"
 version = "0.0.0"
 edition = "2024"
-rust-version = "1.89"
 license = "Unlicense"
 publish = false
+rust-version = "1.89"
 description = "Private generated application verification runtime"
 
 [workspace]

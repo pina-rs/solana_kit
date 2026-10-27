@@ -62,6 +62,21 @@ async fn public_rest_preserves_methods_encoded_targets_and_body_types() {
 }
 
 #[tokio::test]
+async fn bodyless_get_preserves_the_target_without_an_implicit_content_type() {
+    let (address, peer) = support::server(support::response(OK, b"done")).await;
+    let reply = adapter(address)
+        .exchange(request(rest::Method::Get, rest::Body::Absent, 4))
+        .await
+        .unwrap();
+    assert_eq!(reply.status, OK);
+    assert_eq!(reply.body, b"done");
+    let observed = String::from_utf8(peer.await.unwrap()).unwrap();
+    assert!(observed.starts_with("GET /root/a%2Fb?fixed=1&key=a%20b&key=%26 HTTP/1.1\r\n"));
+    assert!(!observed.to_ascii_lowercase().contains("content-type:"));
+    assert!(observed.ends_with("\r\n\r\n"));
+}
+
+#[tokio::test]
 async fn public_rest_denies_unknown_routes_and_bounds_actual_bodies() {
     let listener = support::listener().await;
     let transport = adapter(listener.local_addr().unwrap());

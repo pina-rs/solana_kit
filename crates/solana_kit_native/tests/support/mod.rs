@@ -29,9 +29,7 @@ pub async fn read_request<S: AsyncRead + Unpin>(stream: &mut S) -> Vec<u8> {
                 .strip_prefix("content-length: ")
                 .map(str::to_owned)
         })
-        .unwrap()
-        .parse()
-        .unwrap();
+        .map_or(0, |length| length.parse().unwrap());
     let start = bytes.len();
     bytes.resize(start + length, 0);
     stream.read_exact(&mut bytes[start..]).await.unwrap();
