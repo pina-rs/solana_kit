@@ -342,6 +342,19 @@ jobs:
             -u http_proxy -u https_proxy -u all_proxy \
             "$controller" "${arguments[@]}"
 
+      - name: Capture logs for the owned iOS application
+        if: always() && matrix.platform == 'ios'
+        timeout-minutes: 2
+        run: |
+          set -euo pipefail
+          marker="$RUNNER_TEMP/wallet-ios-device"
+          if [ -f "$marker" ]; then
+            device="$(cat "$marker")"
+            xcrun simctl spawn "$device" log show --style compact --last 5m --info --debug \
+              --predicate 'process == "App" OR eventMessage CONTAINS "com.leptoskit.solanawalletapp"' \
+              > "$RUNNER_TEMP/installed-ios-app.log"
+          fi
+
       - name: Shut down and delete only the owned simulator
         if: always() && matrix.platform == 'ios'
         run: |
@@ -366,3 +379,4 @@ jobs:
             ${{ runner.temp }}/installed-wallet-run/validator.log
             ${{ runner.temp }}/installed-appium.log
             ${{ runner.temp }}/installed-wda.log
+            ${{ runner.temp }}/installed-ios-app.log

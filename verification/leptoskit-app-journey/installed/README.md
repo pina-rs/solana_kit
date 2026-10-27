@@ -46,6 +46,8 @@ preserving that configuration, as described by the
 [XCUITest lifecycle capabilities](https://appium.github.io/appium-xcuitest-driver/latest/reference/capabilities/).
 The wallet, native UI actions and independent ledger checks are shared
 with the macOS journey. CI shuts down and deletes only the simulator it created.
+Before deletion it retains five minutes of unified logs scoped to the generated
+app, including startup failures that precede the first wallet control.
 No simulator or generated mobile build is created on the development machine.
 
 Both the run directory and application data directory must be absent initially.
