@@ -375,4 +375,7 @@ pyth-hermes-GET-routes-and-ordered-options: Ok(())
 pyth-hermes-finite-retries-and-last-error: Ok(())
 pyth-hermes-pending-deadlines-and-cancellation: Ok(())
 pyth-hermes-policy-and-request-admission: Ok(())
-solana-kit-core-v42: 369/370 cases passed
+pyth-receiver-Borsh-and-account-privileges: Ok(())
+pyth-receiver-PDAs-and-Anchor-domain: Ok(())
+pyth-receiver-budgets-and-caller-entropy: Ok(())
+solana-kit-core-v43: 372/373 cases passed
