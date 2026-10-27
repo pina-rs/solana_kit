@@ -38,6 +38,7 @@ const CLEANUP_MILLIS: u64 = 200;
 const ACCOUNT_LAMPORTS: u64 = 7;
 const OTHER_FAMILIES: usize = 8;
 const FIRST_REMOTE: usize = 101;
+const PAUSED_REGISTRATIONS: usize = 4;
 type Peer = tokio_tungstenite::WebSocketStream<tokio::net::TcpStream>;
 const ADDRESS: &str = "11111111111111111111111111111111";
 
@@ -105,7 +106,10 @@ async fn rpc_peer(
     reads: Arc<AtomicUsize>,
     observed: Arc<Notify>,
     http_started: Arc<Notify>,
+    registration_pause: Arc<Notify>,
 ) {
+    registration_pause.notified().await;
+
     loop {
         let (mut socket, _) = listener.accept().await.unwrap();
         let Some(request) = json_request(&mut socket).await else {
@@ -115,7 +119,7 @@ async fn rpc_peer(
         if reads.fetch_add(1, Ordering::SeqCst) == 0 {
             assert_eq!(
                 registered.load(Ordering::SeqCst),
-                4,
+                PAUSED_REGISTRATIONS,
                 "controlled peer arrival order"
             );
         }
@@ -190,7 +194,12 @@ fn notifications() -> Vec<(&'static str, serde_json::Value)> {
     ]
 }
 /// Holds the last six registrations until HTTP arrives, independent of scheduling.
-async fn register_peer(socket: &mut Peer, registered: &AtomicUsize, http_started: &Notify) {
+async fn register_peer(
+    socket: &mut Peer,
+    registered: &AtomicUsize,
+    http_started: &Notify,
+    registration_pause: &Notify,
+) {
     let notifications = notifications();
 
     for id in 1..=10 {
@@ -216,7 +225,8 @@ async fn register_peer(socket: &mut Peer, registered: &AtomicUsize, http_started
             .await
             .unwrap();
 
-        if id == 4 {
+        if id == PAUSED_REGISTRATIONS {
+            registration_pause.notify_one();
             // Independent connections may deliver HTTP before the remaining WS frames.
             http_started.notified().await;
         }
@@ -227,10 +237,11 @@ async fn websocket_peer(
     registered: Arc<AtomicUsize>,
     observed: Arc<Notify>,
     http_started: Arc<Notify>,
+    registration_pause: Arc<Notify>,
 ) {
     let (socket, _) = listener.accept().await.unwrap();
     let mut socket = tokio_tungstenite::accept_async(socket).await.unwrap();
-    register_peer(&mut socket, &registered, &http_started).await;
+    register_peer(&mut socket, &registered, &http_started, &registration_pause).await;
 
     for (index, (family, result)) in notifications().into_iter().enumerate() {
         socket
@@ -486,12 +497,14 @@ async fn http_and_all_nine_families_share_one_socket_with_send_factory_future() 
     let reads = Arc::new(AtomicUsize::new(0));
     let observed = Arc::new(Notify::new());
     let http_started = Arc::new(Notify::new());
+    let registration_pause = Arc::new(Notify::new());
 
     let peer = tokio::spawn(websocket_peer(
         socket_listener,
         registered.clone(),
         observed.clone(),
         http_started.clone(),
+        registration_pause.clone(),
     ));
     let rpc = tokio::spawn(rpc_peer(
         http,
@@ -499,6 +512,7 @@ async fn http_and_all_nine_families_share_one_socket_with_send_factory_future() 
         reads.clone(),
         observed,
         http_started,
+        registration_pause,
     ));
     tokio::spawn(run_client(ws_endpoint, http_endpoint))
         .await
