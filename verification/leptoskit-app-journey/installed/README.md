@@ -1,7 +1,7 @@
 # Installed generated wallet journey
 
 This private controller drives an application produced by the public LeptosKit
-generator through Appium's native macOS and iOS drivers. It selects the ordinary composed
+generator through Appium's native macOS, iOS and Android drivers. It selects the ordinary composed
 runtime using `prepare-wallet-rpc`. No generated platform host is replaced or
 patched. This package is never published or reserved on crates.io.
 
@@ -57,6 +57,31 @@ resets the receipt. This helps distinguish factory, configuration, activation,
 polling and rendering progress without retaining wallet or endpoint data.
 No simulator or generated mobile build is created on the development machine.
 
+The Android job builds the ordinary generated x86-64 debug APK and installs it on
+a fresh API35 emulator. Its controller receives an explicit ADB binary and device
+ID. Before launching the app, it copies only the public bootstrap configuration
+into the new app's private files directory through `run-as`. The guest uses the
+[emulator's host-loopback alias](https://developer.android.com/studio/run/emulator-networking-address),
+while the independent observer keeps its own numeric host-loopback connection.
+The controller reads the native account through its Android content description
+and applies the same funding, rejection and executed-transfer checks.
+Android button actions use public accessibility descriptions so uppercase visual
+titles do not change which control the journey selects. Apple actions retain the
+public text selector; on iOS this excludes inaccessible title children that can
+share a button's name. The controller carries its selected platform into each
+action.
+
+CI invokes one shell launcher so the installed APK and Appium PID share a cleanup
+owner. It uninstalls its app on every controller outcome, then the emulator action
+stops the owned emulator. The controller's local staging directory is also new and
+removed after the session; it never copies private wallet material to the host.
+
+Before uninstalling, the launcher retains the owned emulator's main and crash
+buffers at error level. Capture keeps at most 1,000 records with a deadline of
+20 seconds and a further five seconds before forced termination. The workflow
+uploads `installed-android.log`. A capture failure fails a successful journey and
+preserves an earlier controller failure.
+
 Both the run directory and application data directory must be absent initially.
 The generated macOS host uses the bundle-scoped Application Support directory shown
 above; iOS uses its installed sandbox directly. The controller removes the owned application data and ledger after closing
@@ -67,7 +92,7 @@ never uploads ledger keypairs. The driver quits only the tested application.
 The workflow pins Agave 4.2.0 archives and checks their SHA-256 digests before
 execution. The native driver dependencies and framework revision are also pinned.
 Compilation, Clippy and protocol tests do not establish installed OS acceptance;
-the actual CI journey must pass for each platform. Android, subscription controls, cancellation
+the actual CI journey must pass for each platform. Subscription controls, cancellation
 and app relaunch/persistence journeys remain separate acceptance work.
 
 This is exclusively off-chain client verification. Use Pina or official Solana

@@ -1,6 +1,7 @@
 //! An OS driver operates the unmodified public-generator host against an owned node.
 #![forbid(unsafe_code)]
 mod accessibility;
+mod android;
 mod application_data;
 mod journey;
 mod launch;
@@ -29,14 +30,11 @@ fn main() -> Result<()> {
     fs::create_dir(&launch.directory)?;
     let data = application_data::ApplicationData::create(launch.data.clone())?;
     let mut node = validator::Validator::start(&launch.directory, &launch.validator)?;
-    let config = serde_json::json!({"http":node.http(),"socket":node.socket()});
-    fs::write(
-        data.path().join("journey.json"),
-        serde_json::to_vec(&config)?,
-    )?;
+    launch.configure(&node, data.path())?;
 
     let options = launch.options();
-    let result = NativeTester::run(options, |tester| journey::run(tester, &mut node));
+    let platform = options.platform;
+    let result = NativeTester::run(options, |tester| journey::run(tester, &mut node, platform));
     finish([
         result,
         startup::retain(data.path(), &launch.directory).map_err(Into::into),
@@ -47,7 +45,7 @@ fn main() -> Result<()> {
 
 /// Evaluate every cleanup outcome, preserving a sole original error and reporting
 /// all causes when both the journey and one or more owned cleanups fail.
-fn finish(outcomes: [Result<()>; 4]) -> Result<()> {
+fn finish(outcomes: impl IntoIterator<Item = Result<()>>) -> Result<()> {
     let mut failures = outcomes
         .into_iter()
         .filter_map(|result| result.err())

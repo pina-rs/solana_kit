@@ -68,12 +68,11 @@ impl Validator {
         Ok(node)
     }
 
-    pub(crate) fn http(&self) -> String {
-        format!("http://127.0.0.1:{}", self.ports.rpc)
-    }
-
-    pub(crate) fn socket(&self) -> String {
-        format!("ws://127.0.0.1:{}", self.ports.rpc + 1)
+    pub(crate) fn guest_endpoints(&self, host: &str) -> serde_json::Value {
+        json!({
+            "http":format!("http://{host}:{}", self.ports.rpc),
+            "socket":format!("ws://{host}:{}", self.ports.rpc+1),
+        })
     }
 
     pub(crate) fn alive(&mut self) -> Result<()> {
