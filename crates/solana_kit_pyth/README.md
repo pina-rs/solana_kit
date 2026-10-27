@@ -1,8 +1,10 @@
 # Solana Kit Pyth
 
-Portable off-chain client code for Pyth wire messages and price accounts. This crate uses
-`no_std + alloc` and the existing `solana_kit_core` bounded codecs. Browser Wasm,
-WASI and native clients use the same parsing code without a runtime dependency.
+Portable off-chain client code for Pyth wire messages, price accounts and Hermes
+response models. The default crate uses `no_std + alloc` and the existing
+`solana_kit_core` bounded codecs. Browser Wasm, WASI and native clients use the
+same parsing code without an executor dependency. Optional Hermes JSON support
+uses the portable Kit client admission layer and exact integer support.
 On-chain programs should use Pina or official Solana program libraries.
 
 The current implementation parses Wormhole v1 envelopes, official `AUWV` Merkle
@@ -44,6 +46,35 @@ The reference Dart Wormhole-message helper rejects the upstream fixture's actual
 slot, ring size and 20-byte root. It also rejects unknown proof variants and
 preserves upstream-compatible minor versions and append-only extensions.
 
-Hermes requests, JSON feeds, instruction builders and PDA helpers remain
-implementation work. Wire and account support do not establish full Pyth or
-ecosystem parity.
+Enable `hermes` for bounded JSON price updates and feed metadata. Price and
+confidence components retain arbitrary precision, including values beyond
+128 bits. The shared JSON admission layer checks bytes, nesting, items, strings
+and duplicate keys before typed decoding. Each integer component is limited to
+8192 text bytes before conversion. `Price::approximate_f64` explicitly permits
+floating-point loss; the stored integer remains exact.
+
+```rust
+# fn main() -> Result<(), Box<dyn std::error::Error>> {
+# #[cfg(feature = "hermes")]
+# {
+use solana_kit_client::rest::Budgets;
+use solana_kit_pyth::hermes::{Encoding, decode_price_update};
+
+let update = decode_price_update(
+    br#"{"binary":{"encoding":"hex","data":[]}}"#,
+    Budgets::default(),
+)?;
+assert_eq!(update.binary.encoding, Encoding::Hex);
+assert!(update.parsed.is_none());
+# }
+# Ok(())
+# }
+```
+
+Metadata equality includes all attribute entries. Malformed attribute values are
+errors. Missing or null attributes and binary chunk lists become empty; absent
+parsed results remain distinct from an explicitly empty result list.
+
+Hermes HTTP requests, retry orchestration, instruction builders and PDA helpers
+remain implementation work. These models do not establish full Pyth or ecosystem
+parity.

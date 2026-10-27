@@ -11,7 +11,15 @@ repository = "https://github.com/pina-rs/solana_kit/tree/main/crates/solana_kit_
 rust-version.workspace = true
 description = "Portable Pyth price, account and Wormhole clients for off-chain applications"
 
+[features]
+default = []
+hermes = ["dep:num-traits", "dep:serde", "dep:serde_json", "dep:solana_kit_client", "solana_kit_core/fixed-points"]
+
 [dependencies]
+num-traits = { version = "0.2.19", default-features = false, optional = true }
+serde = { version = "1.0.229", default-features = false, features = ["alloc", "derive"], optional = true }
+serde_json = { version = "1.0.154", default-features = false, features = ["alloc", "arbitrary_precision"], optional = true }
+solana_kit_client = { workspace = true, optional = true }
 solana_kit_core.workspace = true
 
 [dev-dependencies]
