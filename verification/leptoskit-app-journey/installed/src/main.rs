@@ -33,7 +33,8 @@ fn main() -> Result<()> {
     launch.configure(&node, data.path())?;
 
     let options = launch.options();
-    let result = NativeTester::run(options, |tester| journey::run(tester, &mut node));
+    let platform = options.platform;
+    let result = NativeTester::run(options, |tester| journey::run(tester, &mut node, platform));
     finish([
         result,
         startup::retain(data.path(), &launch.directory).map_err(Into::into),

@@ -1,11 +1,21 @@
 //! Read only public native accessibility captures saved by NativeTester.
 use crate::{Error, Result, require};
-use leptoskit_testing::native::NativeTester;
+use leptoskit_testing::native::{Locator, NativeTester, Platform};
 use quick_xml::{
     Reader, XmlVersion,
     events::{BytesStart, Event},
 };
 use std::{collections::BTreeMap, fs};
+
+/// Android transforms button text; iOS text selectors exclude title children.
+pub(crate) fn action(platform: Platform, label: &str) -> Locator {
+    match platform {
+        Platform::Android => Locator::accessibility_id(label),
+        Platform::Ios | Platform::Macos | Platform::Windows | Platform::Linux => {
+            Locator::text(label)
+        }
+    }
+}
 
 /// Select exactly one matching labelled native element in the latest capture.
 pub(crate) fn value(tester: &NativeTester, identifier: &str) -> Result<String> {

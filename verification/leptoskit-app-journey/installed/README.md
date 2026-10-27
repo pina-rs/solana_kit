@@ -65,8 +65,11 @@ into the new app's private files directory through `run-as`. The guest uses the
 while the independent observer keeps its own numeric host-loopback connection.
 The controller reads the native account through its Android content description
 and applies the same funding, rejection and executed-transfer checks.
-Button actions use the public accessibility labels so Android's uppercase visual
-titles do not change which control the journey selects.
+Android button actions use public accessibility descriptions so uppercase visual
+titles do not change which control the journey selects. Apple actions retain the
+public text selector; on iOS this excludes inaccessible title children that can
+share a button's name. The controller carries its selected platform into each
+action.
 
 CI invokes one shell launcher so the installed APK and Appium PID share a cleanup
 owner. It uninstalls its app on every controller outcome, then the emulator action
