@@ -55,7 +55,10 @@ default no-feature client guard unchanged.
 The native `factory_network` test composes actual loopback HTTP with two callable
 confirmation operations and all nine typed subscription families on one WebSocket.
 Unrelated typed values survive both confirmations, then explicit unsubscribe and
-socket close complete. The private browser network runner exercises Window Fetch,
+socket close complete. Successful local flushes are witnessed per signature at
+HTTP dispatch. A peer barrier holds WebSocket processing at four registrations
+until HTTP arrives; all ten subscriptions must subsequently reach the peer.
+The private browser network runner exercises Window Fetch,
 the maintained WebSocket poll adapter and a genuinely pending Promise while an
 `Rc` stays alive across awaits. Each fixture owner is joined explicitly.
 

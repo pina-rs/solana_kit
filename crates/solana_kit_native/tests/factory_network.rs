@@ -1,7 +1,10 @@
 //! Actual HTTP and one WebSocket compose two watches with every typed family.
+#[path = "factory_network/ordering.rs"]
+mod ordering;
 #[path = "factory_network/submission.rs"]
 mod submission;
 use futures_util::{SinkExt, StreamExt};
+use ordering::{ObservedHttp, ObservedSocket};
 use solana_kit_client::{
     Client, Limits,
     confirmation::{FactoryConfig, Policy, SessionAccess, confirm_signature_shared},
@@ -9,7 +12,7 @@ use solana_kit_client::{
 };
 use solana_kit_core::{Address, Hash, Signature, transaction::Lifetime};
 use solana_kit_native::{
-    HttpConfig, NativeHttp, NativeSubscriptionSocket, NativeWebSocket, WsConfig,
+    HttpConfig, NativeHttp, NativeSubscriptionSocket, NativeWebSocket, WsConfig, WsError,
 };
 use std::{
     future::{pending, poll_fn},
@@ -95,23 +98,29 @@ async fn json_request(socket: &mut tokio::net::TcpStream) -> Option<serde_json::
     socket.read_exact(&mut body).await.ok()?;
     Some(serde_json::from_slice(&body).unwrap())
 }
+/// Checks that real HTTP overtakes the deliberately paused WebSocket receiver.
 async fn rpc_peer(
     listener: TcpListener,
     registered: Arc<AtomicUsize>,
     reads: Arc<AtomicUsize>,
     observed: Arc<Notify>,
+    http_started: Arc<Notify>,
 ) {
     loop {
         let (mut socket, _) = listener.accept().await.unwrap();
         let Some(request) = json_request(&mut socket).await else {
             continue;
         };
-        assert_eq!(
-            registered.load(Ordering::SeqCst),
-            10,
-            "registration before HTTP"
-        );
-        reads.fetch_add(1, Ordering::SeqCst);
+
+        if reads.fetch_add(1, Ordering::SeqCst) == 0 {
+            assert_eq!(
+                registered.load(Ordering::SeqCst),
+                4,
+                "controlled peer arrival order"
+            );
+        }
+
+        http_started.notify_one();
         observed.notify_one();
 
         let result = match request["method"].as_str().unwrap() {
@@ -180,7 +189,8 @@ fn notifications() -> Vec<(&'static str, serde_json::Value)> {
         ),
     ]
 }
-async fn register_peer(socket: &mut Peer, registered: &AtomicUsize) {
+/// Holds the last six registrations until HTTP arrives, independent of scheduling.
+async fn register_peer(socket: &mut Peer, registered: &AtomicUsize, http_started: &Notify) {
     let notifications = notifications();
 
     for id in 1..=10 {
@@ -205,16 +215,22 @@ async fn register_peer(socket: &mut Peer, registered: &AtomicUsize) {
             ))
             .await
             .unwrap();
+
+        if id == 4 {
+            // Independent connections may deliver HTTP before the remaining WS frames.
+            http_started.notified().await;
+        }
     }
 }
 async fn websocket_peer(
     listener: TcpListener,
     registered: Arc<AtomicUsize>,
     observed: Arc<Notify>,
+    http_started: Arc<Notify>,
 ) {
     let (socket, _) = listener.accept().await.unwrap();
     let mut socket = tokio_tungstenite::accept_async(socket).await.unwrap();
-    register_peer(&mut socket, &registered).await;
+    register_peer(&mut socket, &registered, &http_started).await;
 
     for (index, (family, result)) in notifications().into_iter().enumerate() {
         socket
@@ -284,8 +300,8 @@ fn signature_notice(
     .to_string()
     .into()
 }
-async fn value<R: SubscriptionMethod>(
-    owner: &Mutex<Session<NativeSubscriptionSocket>>,
+async fn value<R: SubscriptionMethod, S: TextSocket<Error = WsError>>(
+    owner: &Mutex<Session<S>>,
     clock: &Monotonic,
     handle: &Subscription<R>,
 ) -> R::Response {
@@ -302,7 +318,7 @@ async fn value<R: SubscriptionMethod>(
     value
 }
 
-type Owner = Mutex<Session<NativeSubscriptionSocket>>;
+type Owner<S = NativeSubscriptionSocket> = Mutex<Session<S>>;
 struct Families {
     account: Subscription<Account>,
     program: Subscription<Program>,
@@ -314,7 +330,7 @@ struct Families {
     updates: Subscription<SlotsUpdates>,
 }
 impl Families {
-    fn register(session: &mut Session<NativeSubscriptionSocket>, address: Address) -> Self {
+    fn register(session: &mut Session<ObservedSocket>, address: Address) -> Self {
         use solana_kit_client::methods::{
             accounts::AccountEncoding,
             transaction_results::{BlockConfig as RpcBlockConfig, TransactionDetails},
@@ -352,7 +368,12 @@ impl Families {
             updates: session.subscribe(SlotsUpdates, DEADLINE).unwrap(),
         }
     }
-    async fn assert_values(&self, owner: &Owner, clock: &Monotonic, address: Address) {
+    async fn assert_values(
+        &self,
+        owner: &Owner<ObservedSocket>,
+        clock: &Monotonic,
+        address: Address,
+    ) {
         assert!(matches!(
             value(owner, clock, &self.account).await.value,
             solana_kit_core::accounts::MaybeAccount::Present(_)
@@ -371,7 +392,7 @@ impl Families {
             SlotUpdate::Dead { slot: 2, .. }
         ));
     }
-    async fn close(self, mut session: Session<NativeSubscriptionSocket>, clock: &Monotonic) {
+    async fn close(self, mut session: Session<ObservedSocket>, clock: &Monotonic) {
         session
             .unsubscribe(self.account, clock, DEADLINE)
             .await
@@ -412,13 +433,17 @@ async fn run_client(ws_endpoint: String, http_endpoint: String) {
     let socket = NativeWebSocket::connect(&ws_endpoint, WsConfig::default())
         .await
         .unwrap();
+    let flushed = Arc::new(AtomicUsize::new(0));
     let owner = Mutex::new(Session::new(
-        NativeSubscriptionSocket::from(socket),
+        ObservedSocket::new(NativeSubscriptionSocket::from(socket), flushed.clone()),
         GENERATION,
         Budget::default(),
     ));
     let client = Client::new(
-        NativeHttp::new(&http_endpoint, HttpConfig::default()).unwrap(),
+        ObservedHttp {
+            inner: NativeHttp::new(&http_endpoint, HttpConfig::default()).unwrap(),
+            flushed,
+        },
         Limits::default(),
     );
     let clock = Monotonic(tokio::time::Instant::now());
@@ -460,17 +485,26 @@ async fn http_and_all_nine_families_share_one_socket_with_send_factory_future() 
     let registered = Arc::new(AtomicUsize::new(0));
     let reads = Arc::new(AtomicUsize::new(0));
     let observed = Arc::new(Notify::new());
+    let http_started = Arc::new(Notify::new());
 
     let peer = tokio::spawn(websocket_peer(
         socket_listener,
         registered.clone(),
         observed.clone(),
+        http_started.clone(),
     ));
-    let rpc = tokio::spawn(rpc_peer(http, registered, reads.clone(), observed));
+    let rpc = tokio::spawn(rpc_peer(
+        http,
+        registered.clone(),
+        reads.clone(),
+        observed,
+        http_started,
+    ));
     tokio::spawn(run_client(ws_endpoint, http_endpoint))
         .await
         .unwrap();
     peer.await.unwrap();
+    assert_eq!(registered.load(Ordering::SeqCst), 10);
     assert!(reads.load(Ordering::SeqCst) > 0);
     rpc.abort();
     assert!(rpc.await.unwrap_err().is_cancelled());
