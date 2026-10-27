@@ -187,7 +187,7 @@ do not establish live service acceptance, cryptographic proof verification or
 complete validation of every nested extension schema.
 
 The wider review still needs to adjudicate DAS required fields and extension
-schemas, remaining provider services and withdrawal evaluation. The Dart fixtures
+schemas, remaining provider services and live withdrawal-program compatibility. The Dart fixtures
 alone do not establish current provider compatibility.
 
 Wallet operations now target the provider's Wallet v1 beta API. Applications
@@ -214,10 +214,33 @@ signatures reject; `crypto` additionally authenticates every signature.
 
 The unsupported draft staking REST routes and service slot are removed. The
 shared `staking-preparation` group checks instruction bytes, roles, request
-counts, overflow, signer failures, changed snapshots and cancellation. State-dependent
-withdrawal amounts remain unfinished. In particular, the
-provider SDK's epoch comparison will not establish the withdrawal contract
-without independent Stake state/history review.
+counts, overflow, signer failures, changed snapshots and cancellation.
+
+`staking::get_withdrawable_amount` replaces the draft provider route with one
+standard contextual RPC read of the account, Clock, Rent and Stake History.
+Its rules follow the pinned Stake processor at
+`b37e4f76d4fbd08ad28c291f77620541489089c7`: before deactivation the full delegated
+amount is reserved; cooldown uses the integer history calculation; lockup needs
+both epoch and timestamp boundaries or the matching proposed custodian signer.
+The result separates partial amounts retaining rent from complete inactive closure.
+It does not approve intermediate amounts that would leave an underfunded account.
+
+The current program derives reserve from live Rent and actual allocation. The
+RPC adapter uses exact integer arithmetic for threshold bits representing 1 or 2,
+including a literal odd reserve above the JavaScript safe-integer range. Other
+rent settings, incomplete or reordered history, mismatched clock/context slots,
+missing or foreign sysvars, malformed data and authority failures reject. The
+caller selects the deployed rate-change epoch explicitly. Older program versions
+may have different reserve rules; their compatibility is not inferred.
+
+Seven public Stake withdrawal bodies passed native execution, alongside the
+original 37 Stake tests. The maintained generator includes all 88 program bodies,
+and its actual native runner passed 88/88. Helius native contracts exercise the
+real shared RPC frame, exact amount sets, failures and drop cancellation of the
+single suspended exchange. Strict SDK Clippy passed. Current-source browser,
+both WASI previews and production LeptosKit wasmi still require this change's CI.
+These fixtures do not authenticate a node, identify a deployed program version,
+prove live provider availability, supply signatures or guarantee a later withdrawal.
 
 Stake-account discovery uses one contextual base64 program-account scan, filtering
 the requested withdrawal authority at byte offset 44. The shared RPC client and

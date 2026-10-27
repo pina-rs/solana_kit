@@ -5,6 +5,7 @@ use solana_kit_helius::staking::*;
 
 mod accounts;
 mod runtime;
+mod withdrawal;
 
 pub(super) const LIMITS: Limits = Limits::new(4096, 4096);
 
@@ -12,6 +13,7 @@ pub(super) const LIMITS: Limits = Limits::new(4096, 4096);
 pub fn preparation() {
     instruction_contracts();
     accounts::discovery();
+    withdrawal::evaluation();
     runtime::transactions();
     runtime::failures();
     runtime::cancellation();

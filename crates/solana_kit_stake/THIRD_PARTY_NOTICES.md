@@ -1,4 +1,6 @@
-# Stake activation sources
+# Stake program sources
+
+Withdrawal amount and lockup rules are adapted from the [Stake program processor](https://github.com/solana-program/stake/blob/b37e4f76d4fbd08ad28c291f77620541489089c7/program/src/processor.rs), under the same retained Apache-2.0 license. The client implementation accepts observations and proposed signer identities, returns disjoint amount ranges, and performs no on-chain account mutation or signing.
 
 Integer activation and cooldown behavior is adapted from [Solana Stake Interface](https://github.com/solana-program/stake/tree/b37e4f76d4fbd08ad28c291f77620541489089c7/interface), licensed under Apache-2.0. The license is retained in `UPSTREAM-LICENSE`.
 

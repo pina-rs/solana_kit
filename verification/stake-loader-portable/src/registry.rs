@@ -39,8 +39,10 @@ mod stake_protocol;
 mod stake_values;
 #[path = "../../../crates/solana_kit_stake/tests/wires.rs"]
 mod stake_wires;
+#[path = "../../../crates/solana_kit_stake/tests/withdrawal.rs"]
+mod stake_withdrawal;
 
-pub const COUNT: usize = 81;
+pub const COUNT: usize = 88;
 pub const CASES: [(&str, fn()); COUNT] = [
     (
         "alt_accounts::create_and_extend_preserve_distinct_positional_addresses",
@@ -245,6 +247,34 @@ pub const CASES: [(&str, fn()); COUNT] = [
         "stake_activation::ambiguous_history_and_impossible_non_bootstrap_epochs_are_rejected",
         stake_activation::ambiguous_history_and_impossible_non_bootstrap_epochs_are_rejected
             as fn(),
+    ),
+    (
+        "stake_withdrawal::inactive_closure_does_not_make_the_rent_gap_withdrawable",
+        stake_withdrawal::inactive_closure_does_not_make_the_rent_gap_withdrawable as fn(),
+    ),
+    (
+        "stake_withdrawal::uninitialized_and_empty_accounts_require_their_account_signer",
+        stake_withdrawal::uninitialized_and_empty_accounts_require_their_account_signer as fn(),
+    ),
+    (
+        "stake_withdrawal::warming_stake_reserves_the_entire_delegation",
+        stake_withdrawal::warming_stake_reserves_the_entire_delegation as fn(),
+    ),
+    (
+        "stake_withdrawal::cooldown_history_and_rate_select_the_actual_reserved_principal",
+        stake_withdrawal::cooldown_history_and_rate_select_the_actual_reserved_principal as fn(),
+    ),
+    (
+        "stake_withdrawal::lockup_requires_both_boundaries_or_the_matching_custodian",
+        stake_withdrawal::lockup_requires_both_boundaries_or_the_matching_custodian as fn(),
+    ),
+    (
+        "stake_withdrawal::invalid_observations_never_become_successful_zero_amounts",
+        stake_withdrawal::invalid_observations_never_become_successful_zero_amounts as fn(),
+    ),
+    (
+        "stake_withdrawal::selected_rent_reserve_does_not_read_the_stored_metadata_reserve",
+        stake_withdrawal::selected_rent_reserve_does_not_read_the_stored_metadata_reserve as fn(),
     ),
     (
         "stake_values::source_value_traits_retain_payload_and_variant_identity",

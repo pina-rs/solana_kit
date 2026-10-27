@@ -53,9 +53,21 @@ nonempty JSON remains an error under the shared admission policy.
 Staking preparation reuses Kit System and Stake builders. The application supplies
 the new stake account and its signer, owns RPC and execution, and decides whether
 to submit the prepared transaction. Stake-account discovery checks the withdrawal
-authority and preserves the evaluation context and account metadata. Withdrawal
-evaluation remains under review; instruction construction does not establish
-withdrawable funds.
+authority and preserves the evaluation context and account metadata.
+
+`staking::get_withdrawable_amount` reads the stake account, Clock, Rent and Stake
+History in one standard `getMultipleAccounts` evaluation. It returns distinct
+partial-withdrawal and full-close limits after checking the proposed authority,
+lockup and history-based activation. The current program uses live rent and
+exact integer thresholds of 1 or 2; other rent configurations are rejected.
+Supply the deployed program's rate-change epoch explicitly (`Some(0)` for the
+pinned current integer rules). Older deployments may use different rent rules.
+
+The bundled read requires a matching clock/context slot and complete recent
+history. These checks detect inconsistency rather than authenticating a node.
+Signer identities remain proposals; destination checks, actual signatures,
+submission-time state and execution still belong to the application. No
+unverified provider withdrawal REST route or hidden extra bank read is used.
 
 ```rust
 use solana_kit_helius::{
