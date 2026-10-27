@@ -24,7 +24,7 @@ The selected runtime is `solana-wallet`. It installs Rust
 `wallet_service::from_app_dirs` and Android `dev.solanakit.wallet.MwaPlatform`.
 Their actual bridge names are distinct: `solana-wallet-session` and
 `solana-wallet-platform`. The SDK and generated application select framework commit
-`25b1861ddc729a8f3b70117cd0c48e06659c9697`, which supports hybrid registration and
+`386e1cd81737fd6ddffdd763a1a5d2c96d8c0d6d`, which supports hybrid registration and
 Android action/scheme visibility queries. Normal Git dependencies give every
 framework package the same Rust source identity. Cargo patch and replace tables
 are rejected.

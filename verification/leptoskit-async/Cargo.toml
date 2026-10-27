@@ -3,7 +3,7 @@ members = ["guest", "host"]
 resolver = "3"
 
 [workspace.dependencies]
-leptoskit_bridge = { git = "https://github.com/ifiokjr/leptoskit", rev = "25b1861ddc729a8f3b70117cd0c48e06659c9697" }
+leptoskit_bridge = { git = "https://github.com/ifiokjr/leptoskit", rev = "386e1cd81737fd6ddffdd763a1a5d2c96d8c0d6d" }
 
 [profile.release]
 panic = "abort"

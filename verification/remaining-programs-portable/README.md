@@ -8,7 +8,7 @@ macro-emitted instruction cases. Assertions remain with their public owners.
 The native executable and both WASI previews emit the complete named case stream.
 The browser calls the same registry. The interpreted guest commits its report only
 after every body returns through production LeptosKit WasmHost at revision
-25b1861ddc729a8f3b70117cd0c48e06659c9697.
+386e1cd81737fd6ddffdd763a1a5d2c96d8c0d6d.
 Deliberate corruption and one-fuel exhaustion must reject before a report commit.
 The compiled guest must pass the closed three-import SDK gate.
 

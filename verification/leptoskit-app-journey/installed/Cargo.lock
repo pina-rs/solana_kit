@@ -460,7 +460,7 @@ dependencies = [
 [[package]]
 name = "leptoskit_native"
 version = "0.1.0"
-source = "git+https://github.com/ifiokjr/leptoskit?rev=25b1861ddc729a8f3b70117cd0c48e06659c9697#25b1861ddc729a8f3b70117cd0c48e06659c9697"
+source = "git+https://github.com/ifiokjr/leptoskit?rev=386e1cd81737fd6ddffdd763a1a5d2c96d8c0d6d#386e1cd81737fd6ddffdd763a1a5d2c96d8c0d6d"
 dependencies = [
  "leptoskit_yoga",
 ]
@@ -468,7 +468,7 @@ dependencies = [
 [[package]]
 name = "leptoskit_testing"
 version = "0.1.0"
-source = "git+https://github.com/ifiokjr/leptoskit?rev=25b1861ddc729a8f3b70117cd0c48e06659c9697#25b1861ddc729a8f3b70117cd0c48e06659c9697"
+source = "git+https://github.com/ifiokjr/leptoskit?rev=386e1cd81737fd6ddffdd763a1a5d2c96d8c0d6d#386e1cd81737fd6ddffdd763a1a5d2c96d8c0d6d"
 dependencies = [
  "base64 0.22.1",
  "leptoskit_native",
@@ -483,7 +483,7 @@ dependencies = [
 [[package]]
 name = "leptoskit_yoga"
 version = "0.1.0"
-source = "git+https://github.com/ifiokjr/leptoskit?rev=25b1861ddc729a8f3b70117cd0c48e06659c9697#25b1861ddc729a8f3b70117cd0c48e06659c9697"
+source = "git+https://github.com/ifiokjr/leptoskit?rev=386e1cd81737fd6ddffdd763a1a5d2c96d8c0d6d#386e1cd81737fd6ddffdd763a1a5d2c96d8c0d6d"
 
 [[package]]
 name = "libc"

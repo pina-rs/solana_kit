@@ -21,7 +21,7 @@ stream. The interpreted guest must commit its complete74/74 report exactly once;
 one unit of fuel must fail before commit. Separate mutation builds must expose
 intentional corruption in every runtime.
 
-The host selects framework commit `25b1861ddc729a8f3b70117cd0c48e06659c9697` and
+The host selects framework commit `386e1cd81737fd6ddffdd763a1a5d2c96d8c0d6d` and
 Wasmi2's portable-dispatch backend. This is an explicit fixture backend choice.
 The compiled guest must pass the existing closed import checker. Historical
 69-body receipts, including the earlier Config diagnostic failure, do not verify
