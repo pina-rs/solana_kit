@@ -5,11 +5,15 @@ use std::{ffi::OsString, path::PathBuf};
 
 const DRIVER_STARTUP_SECONDS: u64 = 900;
 const UI_WAIT_SECONDS: u64 = 30;
-const USAGE: &str = "usage: installed_wallet <macos|ios> <loopback-driver> <application> <fresh-app-data> <fresh-run-directory> <validator-binary> [<ios-device>]";
+const USAGE: &str = "usage: installed_wallet <macos|ios> <loopback-driver> <application> <fresh-app-data> <fresh-run-directory> <validator-binary> [<ios-device> <prebuilt-wda-directory>]";
 
 enum Target {
     Macos(String),
-    Ios { identifier: String, device: String },
+    Ios {
+        identifier: String,
+        device: String,
+        wda: String,
+    },
 }
 
 pub(crate) struct Launch {
@@ -45,9 +49,10 @@ impl Launch {
             (Some("macos"), []) => {
                 Target::Macos(text(&PathBuf::from(app).canonicalize()?.into_os_string())?)
             }
-            (Some("ios"), [device]) => Target::Ios {
+            (Some("ios"), [device, wda]) => Target::Ios {
                 identifier: text(app)?,
                 device: text(device)?,
+                wda: text(&PathBuf::from(wda).canonicalize()?.into_os_string())?,
             },
             _ => return Err(Error::Configuration(USAGE.into())),
         };
@@ -64,7 +69,9 @@ impl Launch {
     pub(crate) fn options(&self) -> Options {
         let (platform, application, device) = match &self.target {
             Target::Macos(path) => (Platform::Macos, Application::Path(path.clone()), None),
-            Target::Ios { identifier, device } => (
+            Target::Ios {
+                identifier, device, ..
+            } => (
                 Platform::Ios,
                 Application::Identifier(identifier.clone()),
                 Some(device.clone()),
@@ -77,6 +84,18 @@ impl Launch {
             for capability in ["appium:forceAppLaunch", "appium:shouldTerminateApp"] {
                 options.capabilities.insert(capability.into(), true.into());
             }
+        }
+
+        if let Target::Ios { wda, .. } = &self.target {
+            options
+                .capabilities
+                .insert("appium:usePrebuiltWDA".into(), true.into());
+            options
+                .capabilities
+                .insert("appium:derivedDataPath".into(), wda.clone().into());
+            options
+                .capabilities
+                .insert("appium:showXcodeLog".into(), true.into());
         }
 
         options.artifacts = self.directory.join("native-ui");
@@ -110,6 +129,7 @@ mod tests {
             "fresh-run",
             "validator",
             "explicit-simulator",
+            ".",
         ]
         .map(OsString::from)
         .into()
@@ -125,12 +145,13 @@ mod tests {
         );
         assert_eq!(options.device.as_deref(), Some("explicit-simulator"));
         assert_eq!(options.capabilities["appium:shouldTerminateApp"], true);
+        assert_eq!(options.capabilities["appium:usePrebuiltWDA"], true);
     }
 
     #[test]
     fn mobile_requires_a_device_and_a_numeric_local_driver() {
         let mut arguments = mobile();
-        arguments.pop();
+        arguments.truncate(6);
         assert!(Launch::parse(&arguments).is_err());
         arguments = mobile();
         arguments[1] = "http://example.invalid:14731".into();

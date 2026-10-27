@@ -263,6 +263,16 @@ jobs:
           bundle="$RUNNER_TEMP/wallet-rpc-app/.leptoskit/ios/build/Build/Products/Debug-iphonesimulator/App.app"
           xcrun simctl install "$device" "$bundle"
 
+      - name: Build the pinned XCTest agent before starting its native session
+        if: matrix.platform == 'ios'
+        run: |
+          set -euo pipefail
+          device="$(cat "$RUNNER_TEMP/wallet-ios-device")"
+          (
+            cd framework
+            bash setup/scripts/native_wda_build.sh "$device" "$RUNNER_TEMP/installed-wda"
+          ) > "$RUNNER_TEMP/installed-wda.log" 2>&1
+
       - name: Drive the installed generated app against its owned fresh validator
         run: |
           set -euo pipefail
@@ -314,7 +324,7 @@ jobs:
             container="$(xcrun simctl get_app_container "$device" "$identifier" data)"
             arguments=(ios "http://127.0.0.1:$driver_port" "$identifier"
               "$container/Library/Application Support" "$RUNNER_TEMP/installed-wallet-run"
-              "$validator" "$device")
+              "$validator" "$device" "$RUNNER_TEMP/installed-wda")
           fi
 
           env -u HTTP_PROXY -u HTTPS_PROXY -u ALL_PROXY \
@@ -344,3 +354,4 @@ jobs:
             ${{ runner.temp }}/installed-wallet-run/native-ui
             ${{ runner.temp }}/installed-wallet-run/validator.log
             ${{ runner.temp }}/installed-appium.log
+            ${{ runner.temp }}/installed-wda.log

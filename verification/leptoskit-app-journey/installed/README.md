@@ -33,7 +33,10 @@ cargo run --locked --manifest-path "$SDK/verification/leptoskit-app-journey/inst
 The iOS CI journey creates its own simulator, builds the ordinary generated
 application with `leptoskit native build ios-simulator`, and installs that bundle.
 It queries the installed application's container and passes its new
-`Library/Application Support` directory to the controller. Launch uses the bundle
+`Library/Application Support` directory to the controller. The job builds the
+pinned driver's WebDriverAgent separately and passes its explicit derived-data
+directory. Agent compilation therefore completes before its service-start
+deadline begins. Launch uses the bundle
 identifier and explicit simulator ID, preserving the configuration written before
 launch. The iOS session explicitly starts and terminates only its tested app while
 preserving that configuration, as described by the
