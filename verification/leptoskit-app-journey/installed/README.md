@@ -76,6 +76,12 @@ owner. It uninstalls its app on every controller outcome, then the emulator acti
 stops the owned emulator. The controller's local staging directory is also new and
 removed after the session; it never copies private wallet material to the host.
 
+Before uninstalling, the launcher retains the owned emulator's main and crash
+buffers at error level. Capture keeps at most 1,000 records with a deadline of
+20 seconds and a further five seconds before forced termination. The workflow
+uploads `installed-android.log`. A capture failure fails a successful journey and
+preserves an earlier controller failure.
+
 Both the run directory and application data directory must be absent initially.
 The generated macOS host uses the bundle-scoped Application Support directory shown
 above; iOS uses its installed sandbox directly. The controller removes the owned application data and ledger after closing

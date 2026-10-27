@@ -18,6 +18,15 @@ server=
 cleanup() {
   status=$?
 
+  if ! timeout -k 5s 20s "$adb" -s "$device" logcat -b main -b crash -d -t 1000 \
+    -v threadtime '*:E' > "$RUNNER_TEMP/installed-android.log" 2>&1; then
+    echo 'Could not retain bounded Android error and crash logs' >&2
+
+    if [ "$status" -eq 0 ]; then
+      status=1
+    fi
+  fi
+
   if [ -n "$server" ]; then
     kill "$server" 2>/dev/null || true
     wait "$server" 2>/dev/null || true
