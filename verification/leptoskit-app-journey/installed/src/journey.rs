@@ -35,7 +35,7 @@ impl Transfer {
 pub(crate) fn run(tester: &mut NativeTester, node: &mut Validator) -> Result<()> {
     let payer = fresh_wallet(tester)?;
     fund(node, &payer)?;
-    tester.tap(&Locator::text("Read balance"))?;
+    tester.tap(&Locator::accessibility_id("Read balance"))?;
     tester.expect_visible(&Locator::text(format!("Balance: {FUNDING} lamports")))?;
     let recipient = bs58::encode([98; ADDRESS_BYTES]).into_string();
     let before = node.rpc.balance(&recipient)?;
@@ -49,14 +49,14 @@ pub(crate) fn run(tester: &mut NativeTester, node: &mut Validator) -> Result<()>
     approve_transfer(tester, node, &transfer)?;
 
     node.alive()?;
-    tester.tap(&Locator::text("Disconnect wallet"))?;
-    tester.expect_visible(&Locator::text("Create local wallet"))?;
+    tester.tap(&Locator::accessibility_id("Disconnect wallet"))?;
+    tester.expect_visible(&Locator::accessibility_id("Create local wallet"))?;
     tester.checkpoint("Explicit disconnect completed")?;
     Ok(())
 }
 
 fn fresh_wallet(tester: &mut NativeTester) -> Result<String> {
-    tester.tap(&Locator::text("Create local wallet"))?;
+    tester.tap(&Locator::accessibility_id("Create local wallet"))?;
     tester.expect_visible(&Locator::text(
         "Local wallet connected; not saved automatically",
     ))?;
@@ -91,10 +91,10 @@ fn fund(node: &mut Validator, account: &str) -> Result<()> {
 }
 
 fn reject_transfer(tester: &mut NativeTester, node: &Validator, transfer: &Transfer) -> Result<()> {
-    tester.tap(&Locator::text("Review test SOL transfer"))?;
+    tester.tap(&Locator::accessibility_id("Review test SOL transfer"))?;
     review(tester, transfer)?;
     tester.checkpoint("Real transfer review before rejection")?;
-    tester.tap(&Locator::text("Reject signature"))?;
+    tester.tap(&Locator::accessibility_id("Reject signature"))?;
     tester.expect_visible(&Locator::text("Transfer rejected; nothing submitted"))?;
 
     require(
@@ -112,9 +112,9 @@ fn approve_transfer(
     node: &mut Validator,
     transfer: &Transfer,
 ) -> Result<()> {
-    tester.tap(&Locator::text("Review test SOL transfer"))?;
+    tester.tap(&Locator::accessibility_id("Review test SOL transfer"))?;
     review(tester, transfer)?;
-    tester.tap(&Locator::text("Approve signature"))?;
+    tester.tap(&Locator::accessibility_id("Approve signature"))?;
     let after = transfer.after()?;
     let signature = effect::wait_for_transfer(node, transfer)?;
     tester.expect_visible(&Locator::text(format!(
