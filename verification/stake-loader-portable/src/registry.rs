@@ -25,6 +25,8 @@ mod loader_v4_metadata;
 mod loader_values;
 #[path = "../../../crates/solana_kit_loader/tests/wires.rs"]
 mod loader_wires;
+#[path = "../../../crates/solana_kit_stake/tests/activation.rs"]
+mod stake_activation;
 #[path = "../../../crates/solana_kit_stake/tests/helpers.rs"]
 mod stake_helpers;
 #[path = "../../../crates/solana_kit_stake/tests/stake_metadata.rs"]
@@ -38,7 +40,7 @@ mod stake_values;
 #[path = "../../../crates/solana_kit_stake/tests/wires.rs"]
 mod stake_wires;
 
-pub const COUNT: usize = 74;
+pub const COUNT: usize = 81;
 pub const CASES: [(&str, fn()); COUNT] = [
     (
         "alt_accounts::create_and_extend_preserve_distinct_positional_addresses",
@@ -213,6 +215,36 @@ pub const CASES: [(&str, fn()); COUNT] = [
     (
         "stake_options::explicit_lockup_plan_preserves_nondefault_values",
         stake_options::explicit_lockup_plan_preserves_nondefault_values as fn(),
+    ),
+    (
+        "stake_activation::bootstrap_and_epoch_boundaries_preserve_upstream_precedence",
+        stake_activation::bootstrap_and_epoch_boundaries_preserve_upstream_precedence as fn(),
+    ),
+    (
+        "stake_activation::warmup_uses_cluster_share_and_the_rate_change_epoch",
+        stake_activation::warmup_uses_cluster_share_and_the_rate_change_epoch as fn(),
+    ),
+    (
+        "stake_activation::cooldown_retains_only_effective_stake_and_uses_cluster_history",
+        stake_activation::cooldown_retains_only_effective_stake_and_uses_cluster_history as fn(),
+    ),
+    (
+        "stake_activation::missing_history_distinguishes_initial_fallback_from_internal_gaps",
+        stake_activation::missing_history_distinguishes_initial_fallback_from_internal_gaps
+            as fn(),
+    ),
+    (
+        "stake_activation::minimum_progress_zero_portions_and_empty_accounts_are_distinct",
+        stake_activation::minimum_progress_zero_portions_and_empty_accounts_are_distinct as fn(),
+    ),
+    (
+        "stake_activation::saturation_and_maximum_epoch_keep_integer_rate_semantics",
+        stake_activation::saturation_and_maximum_epoch_keep_integer_rate_semantics as fn(),
+    ),
+    (
+        "stake_activation::ambiguous_history_and_impossible_non_bootstrap_epochs_are_rejected",
+        stake_activation::ambiguous_history_and_impossible_non_bootstrap_epochs_are_rejected
+            as fn(),
     ),
     (
         "stake_values::source_value_traits_retain_payload_and_variant_identity",
