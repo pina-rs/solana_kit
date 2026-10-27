@@ -371,4 +371,8 @@ pyth-hermes-exact-json-components: Ok(())
 pyth-hermes-listing-and-wire-names: Ok(())
 pyth-hermes-duplicate-aware-json-budgets: Ok(())
 pyth-hermes-presence-and-explicit-approximation: Ok(())
-solana-kit-core-v41: 366/366 cases passed
+pyth-hermes-GET-routes-and-ordered-options: Ok(())
+pyth-hermes-finite-retries-and-last-error: Ok(())
+pyth-hermes-pending-deadlines-and-cancellation: Ok(())
+pyth-hermes-policy-and-request-admission: Ok(())
+solana-kit-core-v42: 370/370 cases passed
