@@ -37,6 +37,7 @@ members = [
   "verification/browser-websocket",
   "verification/conformance",
   "verification/guest",
+  "verification/surfpool-native",
   "verification/token-2022-contracts",
   "xtask",
 ]

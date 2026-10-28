@@ -1,0 +1,20 @@
+[package]
+name = "solana_kit_surfpool_native_verification"
+version = "0.1.0"
+edition.workspace = true
+license.workspace = true
+publish = false
+rust-version.workspace = true
+
+[dependencies]
+serde = { version = "1.0.229", features = ["derive"] }
+serde_json = "1.0.154"
+solana_kit_client.workspace = true
+solana_kit_core = { workspace = true, features = ["crypto"] }
+solana_kit_native.workspace = true
+solana_kit_surfpool.workspace = true
+tokio = { version = "=1.54.1", features = ["rt", "macros", "time"] }
+zeroize = { version = "1.9.1", features = ["alloc"] }
+
+[target.'cfg(target_os = "macos")'.dependencies]
+libc = "0.2.191"
