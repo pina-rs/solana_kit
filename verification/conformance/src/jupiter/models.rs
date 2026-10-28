@@ -1,10 +1,10 @@
 //! Precision, optionality and known-field errors are checked independently from routing.
 
 use crate::require;
-use alloc::string::ToString;
+use alloc::{format, string::ToString};
 use solana_kit_client::rest::Budgets;
 use solana_kit_core::Address;
-use solana_kit_jupiter::{decode_prices, decode_tokens};
+use solana_kit_jupiter::{Error, decode_prices, decode_tokens};
 
 const PRICE_DECIMALS: u8 = 9;
 const TOKEN_DECIMALS: u8 = 6;
@@ -132,6 +132,32 @@ pub(super) fn invalid() -> Result<(), &'static str> {
             decode_prices(body, Budgets::default()).is_err(),
             "malformed price record accepted",
         )?;
+    }
+
+    schema_diagnostics()
+}
+
+fn schema_diagnostics() -> Result<(), &'static str> {
+    const SENTINEL: &str = "sensitive-schema-value";
+    let error = decode_tokens(
+        br#"[{"isVerified":"sensitive-schema-value"}]"#,
+        Budgets::default(),
+    )
+    .err()
+    .ok_or("malformed sensitive token accepted")?;
+
+    require(
+        matches!(&error, Error::Schema(cause) if cause.to_string().contains(SENTINEL)),
+        "schema fixture did not produce a value-bearing cause",
+    )?;
+    let mut current: Option<&(dyn core::error::Error + 'static)> = Some(&error);
+
+    while let Some(cause) = current {
+        require(
+            !format!("{cause} {cause:?}").contains(SENTINEL),
+            "schema diagnostics leaked response data",
+        )?;
+        current = cause.source();
     }
 
     Ok(())

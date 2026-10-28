@@ -21,6 +21,7 @@ pub enum Error {
     /// Shared byte, depth, item, string, syntax or duplicate-key admission failure.
     Json(JsonError),
     /// A known response field had an invalid type or value.
+    /// Its underlying error can contain response data and is excluded from the source chain.
     Schema(serde_json::Error),
 }
 
@@ -54,7 +55,6 @@ impl StdError for Error {
         match self {
             Self::Transport(error) => Some(error),
             Self::Json(error) => Some(error),
-            Self::Schema(error) => Some(error),
             _ => None,
         }
     }
