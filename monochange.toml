@@ -222,3 +222,8 @@ publish = { enabled = false }
 path = "crates/solana_kit_sns"
 type = "cargo"
 publish = { enabled = false }
+
+[package.solana_kit_surfpool]
+path = "crates/solana_kit_surfpool"
+type = "cargo"
+publish = { enabled = false }

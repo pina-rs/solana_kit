@@ -824,6 +824,7 @@ dependencies = [
  "solana_kit_pyth",
  "solana_kit_signers",
  "solana_kit_sns",
+ "solana_kit_surfpool",
  "solana_kit_system",
  "solana_kit_token",
  "solana_kit_wallet",
@@ -913,6 +914,17 @@ name = "solana_kit_sns"
 version = "0.1.0"
 dependencies = [
  "solana_kit_core",
+]
+
+[[package]]
+name = "solana_kit_surfpool"
+version = "0.1.0"
+dependencies = [
+ "serde",
+ "serde_json",
+ "solana_kit_client",
+ "solana_kit_core",
+ "zeroize",
 ]
 
 [[package]]
