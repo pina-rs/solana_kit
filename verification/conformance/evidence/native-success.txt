@@ -393,4 +393,8 @@ jupiter-lookup-and-blockhash-kit-conversion: Ok(())
 jupiter-swap-transaction-wire-decoding: Ok(())
 jupiter-swap-single-exchange-error-and-budgets: Ok(())
 jupiter-swap-owned-future-cancellation: Ok(())
-solana-kit-core-v45: 388/388 cases passed
+sns-hash-domain-pda: Ok(())
+sns-record-reverse-pda: Ok(())
+sns-registry-value-codecs: Ok(())
+sns-record-content-lazy-bounds: Ok(())
+solana-kit-core-v46: 392/392 cases passed

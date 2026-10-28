@@ -15,8 +15,14 @@ exposing lazy, bounded identifier and content slices. Identifier bytes do not
 establish staleness or association validation.
 
 The `solana-kit-core-v46` registry preserves the preceding 388 cases and appends
-four SNS groups, for 392 canonical cases. The corruption control is expected to
-pass 391 of 392. These are source expectations, not host execution receipts.
-Native, browser, WASI, wasmi, and generated desktop and mobile artifacts require
-fresh execution. No RPC resolution, network access, or full ecosystem parity is
+four SNS groups, for 392 canonical cases. Native execution passed all 392;
+the deliberate corruption control passed 391 and exited with failure. The
+preceding 388 report entries remain byte-identical. All eight SNS contract
+tests, the conformance integrity tests, strict Clippy and documentation checks
+passed. Four actual dependency graphs contain only SNS and Kit's cryptography
+closure across native, browser Wasm and both WASI targets.
+
+Browser, WASI, wasmi, and generated desktop and mobile artifacts still require
+fresh execution. Native dependency selection does not establish execution on
+those hosts. No RPC resolution, network access, or full ecosystem parity is
 claimed by this phase.
