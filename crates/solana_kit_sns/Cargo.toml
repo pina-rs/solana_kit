@@ -1,0 +1,14 @@
+[package]
+name = "solana_kit_sns"
+version = "0.1.0"
+authors.workspace = true
+edition.workspace = true
+license = "Unlicense AND MIT"
+publish = false
+readme = "README.md"
+repository = "https://github.com/pina-rs/solana_kit/tree/main/crates/solana_kit_sns"
+rust-version.workspace = true
+description = "Portable offline Solana Name Service client primitives"
+
+[dependencies]
+solana_kit_core = { workspace = true, features = ["crypto"] }

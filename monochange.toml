@@ -217,3 +217,8 @@ publish = { enabled = false }
 path = "crates/solana_kit_helius"
 type = "cargo"
 publish = { enabled = false }
+
+[package.solana_kit_sns]
+path = "crates/solana_kit_sns"
+type = "cargo"
+publish = { enabled = false }

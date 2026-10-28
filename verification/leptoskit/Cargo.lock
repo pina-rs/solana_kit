@@ -823,6 +823,7 @@ dependencies = [
  "solana_kit_memo",
  "solana_kit_pyth",
  "solana_kit_signers",
+ "solana_kit_sns",
  "solana_kit_system",
  "solana_kit_token",
  "solana_kit_wallet",
@@ -902,6 +903,13 @@ dependencies = [
 
 [[package]]
 name = "solana_kit_signers"
+version = "0.1.0"
+dependencies = [
+ "solana_kit_core",
+]
+
+[[package]]
+name = "solana_kit_sns"
 version = "0.1.0"
 dependencies = [
  "solana_kit_core",

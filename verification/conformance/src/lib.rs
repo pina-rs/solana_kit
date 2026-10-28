@@ -59,6 +59,7 @@ mod rpc_results;
 mod rpc_submission;
 /// Public signer fixtures for portable orchestration diagnostics.
 pub mod signers;
+mod sns;
 mod subscriptions;
 mod sysvar_composition;
 mod text_numbers;
@@ -78,9 +79,9 @@ pub mod system_client;
 use alloc::vec::Vec;
 
 /// Integrated core contract suite; execution receipts identify actual hosts.
-pub const SUITE_ID: &str = "solana-kit-core-v45";
+pub const SUITE_ID: &str = "solana-kit-core-v46";
 /// Exact current registrants, including all preserved and appended contract groups.
-pub const EXPECTED_CASE_COUNT: usize = 388;
+pub const EXPECTED_CASE_COUNT: usize = 392;
 
 /// Selects authentic fixtures or the intentionally incorrect hash oracle.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -187,6 +188,7 @@ pub fn run(mode: FixtureMode) -> Report {
 
     cases.extend(jupiter::cases());
     cases.extend(jupiter::swap_cases());
+    cases.extend(sns::cases());
 
     Report {
         suite_id: SUITE_ID,
