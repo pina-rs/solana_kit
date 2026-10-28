@@ -374,7 +374,7 @@ pub fn encode_record_content(content: &str, record: SnsRecord) -> Result<Vec<u8>
 
         let mut result = Vec::with_capacity(EVM_IDENTIFIER_LENGTH);
 
-        for pair in bytes[2..].chunks_exact(2) {
+        for pair in bytes[2..].as_chunks::<2>().0 {
             let high = hex_digit(pair[0]).ok_or(DataError::InvalidContent)?;
             let low = hex_digit(pair[1]).ok_or(DataError::InvalidContent)?;
             result.push(high * HEX_RADIX + low);
