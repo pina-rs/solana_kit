@@ -4,6 +4,12 @@ Typed Surfpool cheatcodes for off-chain Solana applications. Use this library to
 prepare local account state, control the test clock, query confidential balances,
 profile transactions and upload caller-provided program bytes.
 
+The external CLI research target is Surfpool `v1.7.0`, commit
+`9be726da6456b58a3b39c099885c6c5904da4543`. Release asset digests are pinned in
+[`docs/planning/references.toml`](../../docs/planning/references.toml). A verified
+Darwin arm64 binary reports `surfpool 1.7.0`; an actual server compatibility
+journey remains pending. This target is independent of this SDK crate's version.
+
 All 28 methods from the pinned Dart Surfpool package are represented by public
 request types. Requests run through `solana_kit_client::Client` and its existing
 transport, correlation IDs, JSON admission, byte limits and depth limits. Supply
@@ -43,8 +49,14 @@ those details can contain sensitive provider values or adapter text.
 `SurfnetConfig` preserves upstream defaults and prepares exact CLI arguments
 with three explicit, distinct ports. `DeployOptions` uploads borrowed bytes in
 sequence, then registers an optional parsed IDL. Its default chunk size is the
-pinned 15 MiB; configure the client's JSON budget accordingly, or choose a smaller
-nonzero chunk size. A failed deployment leaves prior writes visible and never
+pinned Dart 15 MiB. Surfpool 1.7.0 caps each HTTP request body at 15 MiB: raw
+program bytes expand to exactly twice their length in hex, plus JSON framing.
+The default raw chunk therefore exceeds that server cap. Choose a smaller
+nonzero chunk that fits both the server cap and the client's complete wire budget.
+
+Current preparation also copies a configured chunk and allocates its full hex
+string before wire rejection; native allocation regressions await execution and
+repair. A failed deployment leaves prior writes visible and never
 replays them. The optional `crypto` feature derives associated token addresses
 through existing Kit cryptography.
 

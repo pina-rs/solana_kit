@@ -18,3 +18,38 @@ commit = "fecf8628d326ff7b03f295523e6bb584c3fdf88d"
 guest_target = "wasm32-unknown-unknown"
 guest_engine = "wasmi"
 guest_engine_major = 2
+
+[surfpool]
+inspected_on = "2026-10-28"
+repository = "https://github.com/solana-foundation/surfpool"
+release = "v1.7.0"
+commit = "9be726da6456b58a3b39c099885c6c5904da4543"
+published_at = "2026-10-28T00:02:23Z"
+release_url = "https://github.com/solana-foundation/surfpool/releases/tag/v1.7.0"
+http_request_body_cap_bytes = 15728640
+
+# Archive digests are release-advertised pins; Darwin arm64 was also verified locally.
+[[surfpool.assets]]
+name = "surfpool-darwin-arm64.tar.gz"
+asset_id = 683265196
+sha256 = "32c309e3b79bfa3913e384b3c9b109000720cfe7f346d145feb6693fccfb202f"
+bytes = 32548745
+verified_binary_sha256 = "64c0e114e508cc9d61a106d2d0e80f1865e901f6bca2a4546b0363b6ffd79934"
+
+[[surfpool.assets]]
+name = "surfpool-darwin-x64.tar.gz"
+asset_id = 683265164
+sha256 = "b9724b6a67ac33b9cc94fb41adaf47bd638269142c7ddc6a0dae7ca77fd9e760"
+bytes = 33114604
+
+[[surfpool.assets]]
+name = "surfpool-linux-x64.tar.gz"
+asset_id = 683265105
+sha256 = "5bef2b0b186a74622508f104b6d2e4e2db040932b6d8f3a811172e241f802a63"
+bytes = 34588771
+
+[[surfpool.assets]]
+name = "surfpool-windows-x64.tar.gz"
+asset_id = 683265063
+sha256 = "a7ba3c1440dd523810d5ad569145ed8e96c8e0be8ce91186a75903a4bab484f2"
+bytes = 29760635
