@@ -1,0 +1,17 @@
+[package]
+name = "solana_kit_jupiter"
+version = "0.1.0"
+edition.workspace = true
+include = ["src/**", "tests/**", "README.md", "LICENSE", "MIT-DART.txt", "THIRD_PARTY_NOTICES.md"]
+license = "Unlicense AND MIT"
+publish = false
+readme = "README.md"
+repository = "https://github.com/pina-rs/solana_kit/tree/main/crates/solana_kit_jupiter"
+rust-version.workspace = true
+description = "Executor-neutral Jupiter price and token clients for off-chain applications"
+
+[dependencies]
+serde = { version = "1.0.229", features = ["derive"] }
+serde_json = { version = "1.0.154", features = ["arbitrary_precision", "raw_value"] }
+solana_kit_client.workspace = true
+solana_kit_core.workspace = true

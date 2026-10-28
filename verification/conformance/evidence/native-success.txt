@@ -378,4 +378,9 @@ pyth-hermes-policy-and-request-admission: Ok(())
 pyth-receiver-Borsh-and-account-privileges: Ok(())
 pyth-receiver-PDAs-and-Anchor-domain: Ok(())
 pyth-receiver-budgets-and-caller-entropy: Ok(())
-solana-kit-core-v43: 373/373 cases passed
+jupiter-price-token-routes-and-local-futures: Ok(())
+jupiter-exact-price-token-wire-models: Ok(())
+jupiter-malformed-known-fields-and-mint-keys: Ok(())
+jupiter-http-budgets-and-single-exchange: Ok(())
+jupiter-input-admission-and-owned-cancellation: Ok(())
+solana-kit-core-v44: 378/378 cases passed

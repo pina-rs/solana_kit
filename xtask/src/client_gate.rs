@@ -1,10 +1,16 @@
-//! Independent exact-version normal/build policy for the public RPC client.
+//! Independent exact-version normal/build policies for public RPC and Jupiter clients.
 
 use crate::process::{cargo, success};
 use anyhow::{Result, ensure};
 use std::collections::BTreeSet;
 
-fn dependencies(tree: &str) -> Result<()> {
+const CLIENT: &str = include_str!("../policy/client.txt");
+const JUPITER: &str = concat!(
+    include_str!("../policy/client.txt"),
+    "solana_kit_jupiter v0.1.0\n"
+);
+
+fn dependencies(tree: &str, policy: &str) -> Result<()> {
     let actual: BTreeSet<_> = tree
         .lines()
         .map(|line| {
@@ -14,7 +20,7 @@ fn dependencies(tree: &str) -> Result<()> {
         })
         .filter(|line| !line.is_empty())
         .collect();
-    let expected: BTreeSet<_> = include_str!("../policy/client.txt").lines().collect();
+    let expected: BTreeSet<_> = policy.lines().collect();
     ensure!(
         actual == expected,
         "unexpected client dependencies: {actual:?}"
@@ -25,6 +31,25 @@ fn dependencies(tree: &str) -> Result<()> {
 
 /// Queries the real graph separately on native and each supported Wasm target.
 pub(crate) fn run() -> Result<()> {
+    for (package, policy) in [
+        ("solana_kit_client", CLIENT),
+        ("solana_kit_jupiter", JUPITER),
+    ] {
+        graphs(package, policy)?;
+        let forbidden = format!("{policy}tokio v1.54.1\n");
+        let rejected =
+            dependencies(&forbidden, policy).expect_err("client graph must reject Tokio");
+        ensure!(
+            rejected.to_string().contains("tokio"),
+            "wrong client rejection"
+        );
+        println!("{package} dependency negative control rejected: {rejected}");
+    }
+
+    Ok(())
+}
+
+fn graphs(package: &str, policy: &str) -> Result<()> {
     for target in [
         None,
         Some("wasm32-unknown-unknown"),
@@ -36,7 +61,7 @@ pub(crate) fn run() -> Result<()> {
             "tree",
             "--locked",
             "-p",
-            "solana_kit_client",
+            package,
             "--no-default-features",
             "-e",
             "normal,build",
@@ -51,17 +76,15 @@ pub(crate) fn run() -> Result<()> {
             command.args(["--target", target]);
         }
 
-        let label = format!("client-dependencies-{}", target.unwrap_or("native"));
+        let label = format!("{package}-dependencies-{}", target.unwrap_or("native"));
         let output = success(&mut command, &label)?;
-        dependencies(&String::from_utf8(output.stdout)?)?;
+        dependencies(&String::from_utf8(output.stdout)?, policy)?;
     }
 
-    let forbidden = concat!(include_str!("../policy/client.txt"), "tokio v1.54.1\n");
-    let rejected = dependencies(forbidden).expect_err("client graph must reject Tokio");
-    ensure!(
-        rejected.to_string().contains("tokio"),
-        "wrong client rejection"
-    );
-    println!("client dependency negative control rejected: {rejected}");
     Ok(())
+}
+
+#[test]
+fn current_client_and_jupiter_graphs_reject_tokio_on_every_target() {
+    run().expect("native, browser and both WASI graphs plus negative controls must pass");
 }
