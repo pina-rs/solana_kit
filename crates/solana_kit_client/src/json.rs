@@ -9,10 +9,12 @@ use serde_json::value::RawValue;
 use crate::methods::Method;
 use crate::{Error, Reply, Request};
 
+mod request_buffer;
+
 /// Explicit JSON body and nesting budgets.
 #[derive(Debug, Clone, Copy)]
 pub struct Limits {
-    /// Maximum request and reply bytes.
+    /// Maximum request and reply bytes, also applied while buffering request JSON.
     pub bytes: usize,
     /// Maximum nested JSON containers, checked before value allocation.
     pub depth: usize,
@@ -52,18 +54,17 @@ struct Frame<'a> {
 }
 
 pub fn request<R: Method>(id: u64, method: &R, limits: Limits) -> Result<Request, Error> {
-    let params = serde_json::value::to_raw_value(method)?;
-
-    if !matches!(params.get().as_bytes().first(), Some(b'[' | b'{')) {
-        return Err(Error::Envelope);
-    }
-
-    let body = serde_json::to_vec(&Frame {
-        jsonrpc: "2.0",
-        id,
-        method: R::NAME,
-        params: &params,
-    })?;
+    let params_bytes = request_buffer::encode(method, limits.bytes)?;
+    let params: &RawValue = serde_json::from_slice(&params_bytes)?;
+    let body = request_buffer::encode(
+        &Frame {
+            jsonrpc: "2.0",
+            id,
+            method: R::NAME,
+            params,
+        },
+        limits.bytes,
+    )?;
     check_limits(&body, limits)?;
 
     Ok(Request {
