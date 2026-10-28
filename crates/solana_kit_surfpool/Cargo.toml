@@ -18,7 +18,7 @@ crypto = ["solana_kit_core/crypto", "dep:solana_kit_associated_token_account"]
 [dependencies]
 serde = { version = "1.0.229", features = ["derive"] }
 serde_json = { version = "1.0.154", features = ["arbitrary_precision", "raw_value"] }
+solana_kit_associated_token_account = { workspace = true, features = ["crypto"], optional = true }
 solana_kit_client.workspace = true
 solana_kit_core.workspace = true
 zeroize = { version = "1.9.1", default-features = false, features = ["alloc"] }
-solana_kit_associated_token_account = { version = "0.1.0", path = "../solana_kit_associated_token_account", features = ["crypto"], optional = true }
