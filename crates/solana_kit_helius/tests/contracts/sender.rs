@@ -115,10 +115,6 @@ fn acknowledgements(submission: &Submission<'_>) {
         assert_eq!(retained, expected);
         assert_eq!(*reported, foreign);
     }
-}
-
-/// Provider errors retain exact data and remain redacted in diagnostics.
-fn provider_error(submission: &Submission<'_>) {
     for response in [
         format!(r#""{expected}""#),
         format!(r#"{{"jsonrpc":"2.0","id":1,"result":"{expected}"}}"#),
@@ -131,7 +127,10 @@ fn provider_error(submission: &Submission<'_>) {
             expected
         );
     }
+}
 
+/// Provider errors retain exact data and remain redacted in diagnostics.
+fn provider_error(submission: &Submission<'_>) {
     let error = submission
         .decode(br#"{"jsonrpc":"2.0","id":1,"error":{"code":-9,"message":"secret-error"},"result":"must-not-succeed"}"#)
         .expect_err("remote error");

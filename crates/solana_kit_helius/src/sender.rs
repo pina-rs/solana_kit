@@ -74,7 +74,10 @@ impl Serialize for Submission<'_> {
 /// Identity correlation does not prove broadcast, confirmation or finality.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize)]
 #[serde(try_from = "String")]
-pub struct Acknowledgement(pub Signature);
+pub struct Acknowledgement(
+    /// Canonical primary signature reported for the submitted transaction.
+    pub Signature,
+);
 
 impl TryFrom<String> for Acknowledgement {
     type Error = solana_kit_core::ParseError;
