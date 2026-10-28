@@ -1,5 +1,6 @@
 //! Installed by prepare.rs into a workspace made by the public generator.
 mod flow;
+mod trace;
 
 use futures::{executor::LocalPool, task::LocalSpawnExt};
 use leptoskit::native::Element;
@@ -47,7 +48,15 @@ pub fn main() {
 /// Runs local work after real native/plugin wake or a dispatched UI action.
 pub fn poll() {
     POOL.with_borrow_mut(LocalPool::run_until_stalled);
+    trace::poll();
     leptoskit::guest::render();
+}
+
+/// Records only the node and handled state of an actual native press.
+pub fn event(node: i64, kind: i32, result: i32) {
+    if kind == 0 {
+        trace::press(node, result);
+    }
 }
 
 #[unsafe(no_mangle)]

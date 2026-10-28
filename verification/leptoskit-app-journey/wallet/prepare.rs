@@ -149,16 +149,7 @@ fn guest(sdk: &Path, app: &Path) -> Result<Vec<(PathBuf, String)>> {
         return Err("expected a real public-generator native app entry".into());
     }
 
-    let original_main =
-        "let state = Counter::default();\n\tleptoskit::guest::mount(move || screen(&state));";
-    let original_event = "leptoskit::guest::dispatch(node, kind, ptr, len)\n}";
-    let mut source = original.replace(original_main, "wallet_fixture::main();");
-    source = source.replace(original_event,
-        "let result = leptoskit::guest::dispatch(node, kind, ptr, len);\n\twallet_fixture::poll();\n\tresult\n}");
-
-    if !source.contains("wallet_fixture::main();") || !source.contains("wallet_fixture::poll();") {
-        return Err("generated entry contract changed; inspect the new public template".into());
-    }
+    let mut source = guest_entry(&original)?;
 
     if !source.contains("mod wallet_fixture;") {
         source.push_str(
@@ -171,6 +162,7 @@ fn guest(sdk: &Path, app: &Path) -> Result<Vec<(PathBuf, String)>> {
 
     for (template, destination) in [
         ("guest/mod.rs", "mod.rs"),
+        ("guest/trace.rs", "trace.rs"),
         ("guest/flow.rs", "flow.rs"),
         ("guest/flow/local.rs", "flow/local.rs"),
         ("guest/flow/mobile.rs", "flow/mobile.rs"),
@@ -196,6 +188,25 @@ fn guest(sdk: &Path, app: &Path) -> Result<Vec<(PathBuf, String)>> {
 
     edits.push((manifest, contents));
     Ok(edits)
+}
+
+fn guest_entry(original: &str) -> Result<String> {
+    let original_main =
+        "let state = Counter::default();\n\tleptoskit::guest::mount(move || screen(&state));";
+    let original_event = "leptoskit::guest::dispatch(node, kind, ptr, len)\n}";
+    let previous_event = "let result = leptoskit::guest::dispatch(node, kind, ptr, len);\n\twallet_fixture::poll();\n\tresult\n}";
+    let current_event = "let result = leptoskit::guest::dispatch(node, kind, ptr, len);\n\twallet_fixture::event(node, kind, result);\n\twallet_fixture::poll();\n\tresult\n}";
+    let source = original.replace(original_main, "wallet_fixture::main();");
+    let source = source.replace(original_event, current_event);
+    let source = source.replace(previous_event, current_event);
+
+    if source.matches("wallet_fixture::main();").count() != 1
+        || source.matches(current_event).count() != 1
+    {
+        return Err("generated entry contract changed; inspect the new public template".into());
+    }
+
+    Ok(source)
 }
 
 fn guest_dependencies(sdk: &Path) -> Vec<String> {
@@ -242,4 +253,19 @@ fn dependency_entry(contents: &str, dependency: &str, section: &str) -> Result<S
     }
 
     Ok(contents.replacen(&marker, &format!("{marker}{dependency}"), 1))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::guest_entry;
+
+    #[test]
+    fn upgrades_previous_guest_event_and_is_idempotent() {
+        let previous = "wallet_fixture::main();\nlet result = leptoskit::guest::dispatch(node, kind, ptr, len);\n\twallet_fixture::poll();\n\tresult\n}";
+        let upgraded = guest_entry(previous).unwrap();
+
+        assert!(upgraded.contains("wallet_fixture::event(node, kind, result);"));
+        assert_eq!(guest_entry(&upgraded).unwrap(), upgraded);
+        assert!(guest_entry("wallet_fixture::main();\nwallet_fixture::poll();").is_err());
+    }
 }

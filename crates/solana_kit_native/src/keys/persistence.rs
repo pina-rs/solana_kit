@@ -21,15 +21,50 @@ const PRIVATE_DIRECTORY_MODE: u32 = 0o700;
 #[cfg(unix)]
 const PRIVATE_FILE_MODE: u32 = 0o600;
 
-/// A backup failure with its exact I/O cause and publication outcome.
+/// The fixed operation at which a private key backup failed.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[non_exhaustive]
+pub enum KeyFileStage {
+    /// Checking whether private file permissions are supported.
+    CheckPlatform,
+    /// Checking that the destination has a file name.
+    ValidateDestination,
+    /// Generating a random staging directory name.
+    GenerateStagingName,
+    /// Creating the destination's parent directories.
+    CreateParentDirectory,
+    /// Creating the private staging directory.
+    CreateStagingDirectory,
+    /// Opening a new private staging file.
+    OpenStagingFile,
+    /// Writing the key's JSON into the staging file.
+    WriteStagingFile,
+    /// Synchronizing the complete staging file.
+    SyncStagingFile,
+    /// Linking the complete file into the destination without overwriting.
+    PublishDestination,
+    /// Removing the staging file or directory after publication.
+    Cleanup,
+}
+
+/// A backup failure with its known stage, exact I/O cause and publication outcome.
 #[derive(Debug)]
 pub struct KeyFileError {
+    stage: Option<KeyFileStage>,
     source: io::Error,
     cleanup: Vec<io::Error>,
     published: bool,
 }
 
 impl KeyFileError {
+    /// The operation that failed, without paths or key material.
+    ///
+    /// Library failures return `Some(stage)`; caller-supplied I/O conversions return `None`.
+    #[must_use]
+    pub fn stage(&self) -> Option<KeyFileStage> {
+        self.stage
+    }
+
     /// True means the complete destination was published before cleanup failed.
     #[must_use]
     pub fn published(&self) -> bool {
@@ -40,6 +75,15 @@ impl KeyFileError {
     #[must_use]
     pub fn cleanup_errors(&self) -> &[io::Error] {
         &self.cleanup
+    }
+
+    fn new(stage: KeyFileStage, source: io::Error) -> Self {
+        Self {
+            stage: Some(stage),
+            source,
+            cleanup: Vec::new(),
+            published: false,
+        }
     }
 }
 
@@ -52,19 +96,22 @@ impl KeyFileError {
 /// hard-link support fail rather than falling back to an overwriting rename.
 ///
 /// # Errors
-/// Returns the original I/O error and all cleanup failures. On platforms without
-/// the Unix permission primitive, returns Unsupported before creating anything.
+/// Returns the failed stage, original I/O error and all cleanup failures. On
+/// platforms without the Unix permission primitive, returns Unsupported before
+/// creating anything.
 pub fn write_keypair_new(path: &Path, keypair: &ExportableKeypair) -> Result<(), KeyFileError> {
     write_supported(path, keypair)
 }
 
 #[cfg(not(unix))]
 fn write_supported(_: &Path, _: &ExportableKeypair) -> Result<(), KeyFileError> {
-    Err(io::Error::new(
-        io::ErrorKind::Unsupported,
-        "private key-file storage requires Unix permissions",
-    )
-    .into())
+    Err(KeyFileError::new(
+        KeyFileStage::CheckPlatform,
+        io::Error::new(
+            io::ErrorKind::Unsupported,
+            "private key-file storage requires Unix permissions",
+        ),
+    ))
 }
 
 #[cfg(unix)]
@@ -76,24 +123,28 @@ fn write_supported(path: &Path, keypair: &ExportableKeypair) -> Result<(), KeyFi
         .filter(|parent| !parent.as_os_str().is_empty())
         .unwrap_or(Path::new("."));
     let name = path.file_name().ok_or_else(|| {
-        io::Error::new(
-            io::ErrorKind::InvalidInput,
-            "backup destination requires a file name",
+        KeyFileError::new(
+            KeyFileStage::ValidateDestination,
+            io::Error::new(
+                io::ErrorKind::InvalidInput,
+                "backup destination requires a file name",
+            ),
         )
     })?;
     let directory = staging_directory(parent)?;
     let staged = directory.join("keypair.json");
 
     let mut published = false;
-    let operation = (|| -> io::Result<()> {
+    let operation = (|| -> Result<(), KeyFileError> {
         let mut file = OpenOptions::new()
             .write(true)
             .create_new(true)
             .mode(PRIVATE_FILE_MODE)
-            .open(&staged)?;
-        write_json(&mut file, keypair)?;
-        file.sync_all()?;
-        fs::hard_link(&staged, parent.join(name))?;
+            .open(&staged)
+            .map_err(|source| KeyFileError::new(KeyFileStage::OpenStagingFile, source))?;
+        write_staged(&mut file, keypair)?;
+        fs::hard_link(&staged, parent.join(name))
+            .map_err(|source| KeyFileError::new(KeyFileStage::PublishDestination, source))?;
         published = true;
 
         Ok(())
@@ -103,26 +154,29 @@ fn write_supported(path: &Path, keypair: &ExportableKeypair) -> Result<(), KeyFi
     match (operation, cleanup.is_empty()) {
         (Ok(()), true) => Ok(()),
         (Ok(()), false) => Err(KeyFileError {
+            stage: Some(KeyFileStage::Cleanup),
             source: io::Error::other("backup published but staging cleanup failed"),
             cleanup,
             published,
         }),
-        (Err(source), _) => Err(KeyFileError {
-            source,
-            cleanup,
-            published,
-        }),
+        (Err(mut error), _) => {
+            error.cleanup = cleanup;
+            error.published = published;
+            Err(error)
+        }
     }
 }
 
 #[cfg(unix)]
-fn staging_directory(parent: &Path) -> io::Result<PathBuf> {
+fn staging_directory(parent: &Path) -> Result<PathBuf, KeyFileError> {
     use std::os::unix::fs::DirBuilderExt;
 
     let mut nonce = [0; DIRECTORY_NONCE_BYTES];
     NativeEntropy::default()
         .fill_sync(&mut nonce)
-        .map_err(io::Error::other)?;
+        .map_err(|source| {
+            KeyFileError::new(KeyFileStage::GenerateStagingName, io::Error::other(source))
+        })?;
     let suffix = nonce
         .iter()
         .map(|byte| format!("{byte:02x}"))
@@ -131,12 +185,22 @@ fn staging_directory(parent: &Path) -> io::Result<PathBuf> {
     fs::DirBuilder::new()
         .recursive(true)
         .mode(PRIVATE_DIRECTORY_MODE)
-        .create(parent)?;
+        .create(parent)
+        .map_err(|source| KeyFileError::new(KeyFileStage::CreateParentDirectory, source))?;
     fs::DirBuilder::new()
         .mode(PRIVATE_DIRECTORY_MODE)
-        .create(&directory)?;
+        .create(&directory)
+        .map_err(|source| KeyFileError::new(KeyFileStage::CreateStagingDirectory, source))?;
 
     Ok(directory)
+}
+
+#[cfg(unix)]
+fn write_staged(file: &mut File, keypair: &ExportableKeypair) -> Result<(), KeyFileError> {
+    write_json(file, keypair)
+        .map_err(|source| KeyFileError::new(KeyFileStage::WriteStagingFile, source))?;
+    file.sync_all()
+        .map_err(|source| KeyFileError::new(KeyFileStage::SyncStagingFile, source))
 }
 
 #[cfg(unix)]
@@ -191,9 +255,13 @@ impl Error for KeyFileError {
 impl From<io::Error> for KeyFileError {
     fn from(source: io::Error) -> Self {
         Self {
+            stage: None,
             source,
             cleanup: Vec::new(),
             published: false,
         }
     }
 }
+
+#[cfg(all(test, unix))]
+mod tests;

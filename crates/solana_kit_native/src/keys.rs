@@ -14,7 +14,7 @@ use std::sync::Arc;
 use solana_kit_core::crypto::Entropy;
 use tokio_rustls::rustls::crypto::{CryptoProvider, GetRandomFailed, ring};
 
-pub use persistence::{KeyFileError, write_keypair_new};
+pub use persistence::{KeyFileError, KeyFileStage, write_keypair_new};
 
 /// A native secure provider's original randomness failure.
 #[derive(Debug)]

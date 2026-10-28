@@ -10,6 +10,7 @@ controller="$(jq -sre '[.[] | select(.reason == "compiler-artifact" and
 adb="$ANDROID_HOME/platform-tools/adb"
 device=emulator-5554
 package=com.leptoskit.solanawalletapp
+receipt_limit=16384
 
 "$adb" -s "$device" install \
   "$RUNNER_TEMP/wallet-rpc-app/android/app/build/outputs/apk/debug/app-debug.apk"
@@ -17,6 +18,42 @@ server=
 
 cleanup() {
   status=$?
+
+  receipt="$RUNNER_TEMP/installed-wallet-run/android-wallet-diagnostics.txt"
+  mkdir -p "$(dirname "$receipt")"
+
+  if timeout -k 5s 20s "$adb" -s "$device" exec-out run-as "$package" \
+    cat files/journey-diagnostics.txt > "$receipt" 2>/dev/null; then
+    if [ "$(wc -c < "$receipt")" -gt "$receipt_limit" ] || ! awk '
+      BEGIN {
+        actions = "(create|load|restore|save|backup|review|approve|reject|cancel|disconnect|android)"
+        errors = "(ok|Unavailable|PermissionDenied|InvalidArgument|Busy|TooLarge|Cancelled|Native|"
+        errors = errors "InvalidCall|Exhausted)"
+        category = "(bridge|mobile|entropy|storage|worker|json)"
+        os_code = "(None|Some\\(-?[[:digit:]]+\\))"
+        io = "(None|Some\\(\\([[:alpha:]]+, " os_code "\\)\\))"
+        published = "(None|Some\\((true|false)\\))"
+        stages = "(CheckPlatform|ValidateDestination|GenerateStagingName|CreateParentDirectory|"
+        stages = stages "CreateStagingDirectory|OpenStagingFile|WriteStagingFile|SyncStagingFile|"
+        stages = stages "PublishDestination|Cleanup)"
+        stage = "(None|Some\\(" stages "\\))"
+      }
+      /^press node=-?[[:digit:]]+ handled=[01]$/ { next }
+      $0 ~ "^action " actions "$" { next }
+      /^guest result (ok|bridge-native|bridge-cancelled|other)$/ { next }
+      /^save (received|admitted)$/ { next }
+      $0 ~ "^save (completed|rejected) " errors "$" { next }
+      /^(lease ended|trace overflow|receipt overflow|invalid-receipt)$/ { next }
+      $0 ~ "^failure " category " io=" io " published=" published " stage=" stage "$" { next }
+      { exit 1 }
+    ' "$receipt"; then
+      rm -f "$receipt"
+      echo 'Android wallet diagnostic receipt failed validation' >&2
+      status=1
+    fi
+  else
+    printf '%s\n' 'receipt unavailable in Android app' > "$receipt"
+  fi
 
   if ! timeout -k 5s 20s "$adb" -s "$device" logcat -b main -b crash -d -t 1000 \
     -v threadtime '*:E' > "$RUNNER_TEMP/installed-android.log" 2>&1; then

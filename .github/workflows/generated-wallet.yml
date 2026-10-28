@@ -510,5 +510,6 @@ jobs:
           path: |
             ${{ runner.temp }}/installed-wallet-run/native-ui
             ${{ runner.temp }}/installed-wallet-run/validator.log
+            ${{ runner.temp }}/installed-wallet-run/android-wallet-diagnostics.txt
             ${{ runner.temp }}/installed-appium.log
             ${{ runner.temp }}/installed-android.log

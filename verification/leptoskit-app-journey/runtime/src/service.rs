@@ -1,5 +1,7 @@
 //! One application owner routes every capability and joins all native work.
-use crate::{Host, config::Endpoints, native, startup::Startup, timers::Timers};
+use crate::{
+    Host, config::Endpoints, diagnostics::Diagnostics, native, startup::Startup, timers::Timers,
+};
 use leptoskit_bridge::Error;
 use leptoskit_bridge_ffi::app::{AppService, ServiceClose, ServiceWork};
 use solana_kit_leptoskit::{
@@ -28,6 +30,7 @@ pub(super) struct Service {
     queued: ServiceWork,
     owner: ThreadId,
     startup: Startup,
+    diagnostics: Diagnostics,
 }
 
 impl Service {
@@ -52,6 +55,7 @@ impl Service {
         let sockets = sockets(host, endpoints.socket, endpoints.quiet_socket)?;
         let timers = Timers::new(host)?;
         let wallet = WalletService::install(host, data).map_err(native)?;
+        let diagnostics = Diagnostics::new(host, data)?;
         Ok(Self {
             http,
             sockets,
@@ -61,6 +65,7 @@ impl Service {
             queued: ServiceWork::default(),
             owner: thread::current().id(),
             startup,
+            diagnostics,
         })
     }
 
@@ -92,6 +97,20 @@ impl Service {
 
         Ok(self.timers.poll(host, context)? || completed)
     }
+
+    fn observe_wallet(&mut self) -> Result<(), Error> {
+        while let Some(trace) = self.wallet.take_trace() {
+            self.diagnostics.trace(trace).map_err(native)?;
+        }
+
+        let failures = self.wallet.failures();
+
+        while let Some(failure) = failures.take()? {
+            self.diagnostics.failure(failure).map_err(native)?;
+        }
+
+        Ok(())
+    }
 }
 
 impl AppService for Service {
@@ -116,6 +135,8 @@ impl AppService for Service {
         let mut platform = ServiceWork::default();
 
         for _ in 0..TURNS {
+            self.diagnostics.route(host, &mut incoming.requests)?;
+
             let routed = self
                 .http
                 .route(
@@ -138,6 +159,7 @@ impl AppService for Service {
                     cancelled: routed.cancelled,
                 },
             )?;
+            self.observe_wallet()?;
             append(&mut platform, work);
             let completed = self.completions(host, context)?;
             incoming = drain(host);

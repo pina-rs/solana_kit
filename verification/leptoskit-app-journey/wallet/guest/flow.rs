@@ -4,7 +4,7 @@ mod local;
 mod mobile;
 mod rpc;
 
-use super::{AppError, failed, show};
+use super::{AppError, failed, show, trace};
 use leptoskit_bridge::{Error, Event, guest::Events};
 use solana_kit_leptoskit::wallet_ui::{
     LocalWalletAction as Action, LocalWalletCommands, LocalWalletEvents, local_wallet_panel,
@@ -40,6 +40,7 @@ pub(super) async fn run(
     );
 
     while let Ok(action) = actions.next_action().await {
+        trace::action(action);
         show(
             local_wallet_panel(None, true, android, &commands),
             "Opening selected wallet",
@@ -63,6 +64,8 @@ pub(super) async fn run(
 }
 
 fn result_status(result: Result<(), AppError>) -> String {
+    trace::result(&result);
+
     match result {
         Ok(()) => "Choose a wallet".to_owned(),
         Err(error)
@@ -163,10 +166,14 @@ pub(super) async fn cancellable<T>(
     std::future::poll_fn(|context| {
         for _ in 0..ACTION_BUDGET {
             match action.as_mut().poll(context) {
-                Poll::Ready(Ok(Action::Cancel | Action::Disconnect)) | Poll::Ready(Err(_)) => {
+                Poll::Ready(Ok(action @ (Action::Cancel | Action::Disconnect))) => {
+                    trace::action(action);
                     return Poll::Ready(None);
                 }
-                Poll::Ready(Ok(_)) => {}
+                Poll::Ready(Err(_)) => {
+                    return Poll::Ready(None);
+                }
+                Poll::Ready(Ok(action)) => trace::action(action),
                 Poll::Pending => return operation.as_mut().poll(context).map(Some),
             }
         }

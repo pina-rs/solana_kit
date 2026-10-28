@@ -6,6 +6,7 @@
 #![forbid(unsafe_code)]
 
 mod config;
+mod diagnostics;
 mod service;
 mod startup;
 mod timers;

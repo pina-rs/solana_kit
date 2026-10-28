@@ -209,6 +209,39 @@ fn actual_guest_reads_rejects_stale_approval_and_cancels_real_pending_http() {
 }
 
 #[test]
+fn failed_private_copy_reaches_the_guest_without_becoming_cancellation() {
+    let mut peer = peer::Peer::new();
+    let mut app = Application::new(peer.port());
+    app.tap("Create local wallet");
+    app.text("Local wallet connected; not saved automatically");
+    let destination = app._sandbox.0.join("solana-wallet/wallet-backup.json");
+    fs::write(&destination, b"existing private copy").unwrap();
+
+    app.tap("Create private copy");
+    app.text("wallet session request failed");
+    app.text("Create local wallet");
+    assert_eq!(fs::read(destination).unwrap(), b"existing private copy");
+    let receipt = fs::read_to_string(app._sandbox.0.join("journey-diagnostics.txt")).unwrap();
+    let backup = receipt.find("action backup\n").unwrap();
+    let received = receipt.find("save received\n").unwrap();
+    let admitted = receipt.find("save admitted\n").unwrap();
+    let completed = receipt.find("save completed Native\n").unwrap();
+    let ended = receipt.find("lease ended\n").unwrap();
+    let guest = receipt.find("guest result bridge-native\n").unwrap();
+    let failure = receipt
+        .find("failure storage io=Some((AlreadyExists,")
+        .unwrap();
+    assert!(backup < received && received < admitted && admitted < completed && completed < ended);
+    assert!(ended < guest);
+    assert!(backup < failure);
+    assert!(receipt.contains("published=Some(false)"));
+    assert!(receipt.contains("stage=Some(PublishDestination)"));
+    assert!(!receipt.contains("existing private copy"));
+    app.close();
+    peer.close().unwrap();
+}
+
+#[test]
 fn approval_submits_once_and_matches_an_independent_signed_wire_oracle() {
     let mut peer = peer::Peer::new();
     let mut app = Application::new(peer.port());

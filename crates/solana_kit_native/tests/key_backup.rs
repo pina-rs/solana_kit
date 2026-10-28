@@ -1,7 +1,8 @@
 #![cfg(all(feature = "keys", unix))]
 
 use std::{
-    fs,
+    error::Error,
+    fs, io,
     os::unix::fs::{PermissionsExt, symlink},
     path::PathBuf,
     sync::{
@@ -11,7 +12,7 @@ use std::{
 };
 
 use solana_kit_core::crypto::{Entropy, ExportableKeypair, Keypair};
-use solana_kit_native::keys::{NativeEntropy, write_keypair_new};
+use solana_kit_native::keys::{KeyFileError, KeyFileStage, NativeEntropy, write_keypair_new};
 use tokio_rustls::rustls::crypto::{GetRandomFailed, SecureRandom, ring};
 
 const TEST_SEED: [u8; 32] = [7; 32];
@@ -30,6 +31,26 @@ fn directory() -> PathBuf {
 
 fn keypair() -> ExportableKeypair {
     ExportableKeypair::from_seed(&TEST_SEED)
+}
+
+#[test]
+fn caller_io_conversion_retains_its_cause_without_claiming_a_backup_stage() {
+    let original = io::Error::from_raw_os_error(13);
+    let original_kind = original.kind();
+    let original_code = original.raw_os_error();
+    let failure: KeyFileError = original.into();
+    let source = failure
+        .source()
+        .expect("original I/O cause")
+        .downcast_ref::<io::Error>()
+        .expect("retained I/O error type");
+
+    assert_eq!(failure.stage(), None);
+    assert_eq!(source.kind(), original_kind);
+    assert_eq!(source.raw_os_error(), original_code);
+    assert!(original_code.is_some());
+    assert!(!failure.published());
+    assert!(failure.cleanup_errors().is_empty());
 }
 
 #[test]
@@ -58,6 +79,16 @@ fn backup_is_complete_private_json_and_never_overwrites() {
 
     let failure =
         write_keypair_new(&destination, &keypair).expect_err("existing backup must survive");
+    assert_eq!(failure.stage(), Some(KeyFileStage::PublishDestination));
+    assert_eq!(
+        failure
+            .source()
+            .unwrap()
+            .downcast_ref::<io::Error>()
+            .unwrap()
+            .kind(),
+        io::ErrorKind::AlreadyExists
+    );
     assert!(!failure.published());
     assert!(failure.cleanup_errors().is_empty());
     assert_eq!(
@@ -79,6 +110,7 @@ fn symlink_destination_preserves_its_target_and_is_not_followed() {
     symlink(&target, &destination).expect("destination link");
 
     let failure = write_keypair_new(&destination, &keypair()).expect_err("no link overwrite");
+    assert_eq!(failure.stage(), Some(KeyFileStage::PublishDestination));
     assert!(!failure.published());
     assert!(failure.cleanup_errors().is_empty());
     assert_eq!(fs::read(&target).expect("target remains intact"), sentinel);
@@ -90,6 +122,32 @@ fn symlink_destination_preserves_its_target_and_is_not_followed() {
 
     fs::remove_file(destination).expect("remove owned link");
     fs::remove_file(target).expect("remove owned target");
+    fs::remove_dir(directory).expect("no staging artifacts remain");
+}
+
+#[test]
+fn existing_parent_file_retains_its_cause_and_does_not_publish() {
+    let directory = directory();
+    let parent = directory.join("parent");
+    let sentinel = b"existing parent is a file";
+    fs::write(&parent, sentinel).expect("owned parent fixture");
+
+    let failure = write_keypair_new(&parent.join("keypair.json"), &keypair())
+        .expect_err("cannot create a staging directory inside a file");
+    let source = failure
+        .source()
+        .unwrap()
+        .downcast_ref::<io::Error>()
+        .unwrap();
+
+    assert_eq!(failure.stage(), Some(KeyFileStage::CreateParentDirectory));
+    assert!(source.raw_os_error().is_some());
+    assert!(!failure.published());
+    assert!(failure.cleanup_errors().is_empty());
+    assert_eq!(fs::read(&parent).unwrap(), sentinel);
+    assert_eq!(fs::read_dir(&directory).unwrap().count(), 1);
+
+    fs::remove_file(parent).expect("remove unchanged fixture");
     fs::remove_dir(directory).expect("no staging artifacts remain");
 }
 
