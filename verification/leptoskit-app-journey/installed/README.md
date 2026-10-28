@@ -20,6 +20,31 @@ fee and payer debit, recipient effect and unique signature. It then checks the
 application's confirmation text and real rendered pixels before disconnecting.
 Neither funding nor approval is automatically repeated.
 
+The controller explicitly makes a private copy of that first wallet, then creates
+and saves a different native wallet. Each later phase closes its OS automation
+session and launches the generated application again with the same private app
+data. The first relaunch selects **Load saved wallet**; the second selects
+**Restore private copy**. Each must show its original, distinct public address,
+read the independently observed balance, and approve a message whose signature
+the guest verifies against that wallet's public key. Signing must leave its
+ledger balance unchanged. A restore implementation that incorrectly loads the
+saved wallet therefore fails the address check.
+
+Relaunch never reconnects a wallet automatically: both sessions first require the
+ordinary selection controls and no connected account. Private wallet bytes remain
+inside the application sandbox. The controller only retains public addresses,
+native screenshots and accessibility captures. It never reads or copies either
+private key file. All three native sessions must finish before the owned data and
+validator are removed; failure in a phase stops later phases and retains its
+failure capture.
+
+Each successful phase explicitly terminates only its tested app and requires the
+driver's not-running state before the next session. This uses the documented
+[Mac2 application commands](https://appium.github.io/appium-mac2-driver/latest/reference/execute-methods/),
+[XCUITest application commands](https://appium.github.io/appium-xcuitest-driver/latest/reference/execute-methods/)
+and [UiAutomator2 application commands](https://appium.github.io/appium-uiautomator2-driver/latest/reference/execute-methods/).
+Creating another automation session alone does not count as process relaunch.
+
 Run the controller on a dedicated macOS test machine after building the ordinary
 generated application and starting the pinned Mac2 driver:
 
@@ -92,8 +117,10 @@ never uploads ledger keypairs. The driver quits only the tested application.
 The workflow pins Agave 4.2.0 archives and checks their SHA-256 digests before
 execution. The native driver dependencies and framework revision are also pinned.
 Compilation, Clippy and protocol tests do not establish installed OS acceptance;
-the actual CI journey must pass for each platform. Subscription controls, cancellation
-and app relaunch/persistence journeys remain separate acceptance work.
+the actual CI journey must pass for each platform. The save/relaunch/restore
+phases above are implemented but require their current-source CI execution before
+claiming installed acceptance. Subscription controls and installed cancellation
+remain separate acceptance work.
 
 This is exclusively off-chain client verification. Use Pina or official Solana
 program libraries for on-chain programs.

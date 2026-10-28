@@ -1,5 +1,8 @@
 //! Real OS controls, fresh native wallet entropy and independently checked ledger effects.
 mod effect;
+mod persistence;
+
+pub(crate) use persistence::Wallets;
 
 use crate::{Error, Result, accessibility, require, validator::Validator};
 use leptoskit_testing::native::{Locator, NativeTester, Platform};
@@ -36,8 +39,10 @@ pub(crate) fn run(
     tester: &mut NativeTester,
     node: &mut Validator,
     platform: Platform,
-) -> Result<()> {
+) -> Result<Wallets> {
     let payer = fresh_wallet(tester, platform)?;
+    tester.tap(&accessibility::action(platform, "Create private copy"))?;
+    tester.expect_visible(&Locator::text("Private copy created inside the app"))?;
     fund(node, &payer)?;
     tester.tap(&accessibility::action(platform, "Read balance"))?;
     tester.expect_visible(&Locator::text(format!("Balance: {FUNDING} lamports")))?;
@@ -56,7 +61,7 @@ pub(crate) fn run(
     tester.tap(&accessibility::action(platform, "Disconnect wallet"))?;
     tester.expect_visible(&accessibility::action(platform, "Create local wallet"))?;
     tester.checkpoint("Explicit disconnect completed")?;
-    Ok(())
+    persistence::save_other_wallet(tester, platform, transfer.payer)
 }
 
 fn fresh_wallet(tester: &mut NativeTester, platform: Platform) -> Result<String> {

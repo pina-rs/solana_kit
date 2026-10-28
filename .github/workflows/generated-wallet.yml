@@ -57,6 +57,13 @@ jobs:
           cargo +1.99.1 clippy --locked --manifest-path "$manifest" \
             --all-targets --features generated-wallet-tests -- -D warnings
 
+      - name: Test and lint the installed journey controller
+        run: |
+          set -euo pipefail
+          manifest=sdk/verification/leptoskit-app-journey/installed/Cargo.toml
+          cargo +1.99.1 test --locked --manifest-path "$manifest" --all-targets
+          cargo +1.99.1 clippy --locked --manifest-path "$manifest" --all-targets -- -D warnings
+
       - name: Generate and adapt the ordinary wallet consumer
         run: |
           set -euo pipefail

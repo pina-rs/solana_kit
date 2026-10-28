@@ -1,6 +1,7 @@
 //! Select a desktop bundle or an already-installed app on an explicit simulator.
 use crate::{Error, Result, android, require, rpc, validator::Validator};
-use leptoskit_testing::native::{Application, Options, Platform};
+use leptoskit_testing::native::{Application, NativeTester, Options, Platform};
+use serde_json::json;
 use std::{
     ffi::OsString,
     fs,
@@ -9,6 +10,7 @@ use std::{
 
 const DRIVER_STARTUP_SECONDS: u64 = 900;
 const UI_WAIT_SECONDS: u64 = 30;
+const APP_NOT_RUNNING: u64 = 1;
 const USAGE: &str = "usage: installed_wallet <macos|ios|android> <loopback-driver> <application> <fresh-config-directory> <fresh-run-directory> <validator-binary> [<device> <prebuilt-wda-directory|adb-binary>]";
 
 enum Target {
@@ -104,6 +106,30 @@ impl Launch {
         }
 
         Ok(())
+    }
+
+    /// Explicitly terminate this app, then require the OS driver's not-running
+    /// state before another session may claim to exercise a process relaunch.
+    pub(crate) fn stop_app(&self, tester: &NativeTester) -> Result<()> {
+        let (driver, arguments) = match &self.target {
+            Target::Macos(path) => ("macos", json!({"path": path})),
+            Target::Ios { identifier, .. } => ("mobile", json!({"bundleId": identifier})),
+            Target::Android { identifier, .. } => ("mobile", json!({"appId": identifier})),
+        };
+
+        let stopped = tester.native_command(&format!("{driver}: terminateApp"), &arguments)?;
+
+        let acknowledged = match &self.target {
+            Target::Macos(_) => stopped.is_null(),
+            Target::Ios { .. } | Target::Android { .. } => stopped == true,
+        };
+
+        require(acknowledged, "driver did not acknowledge app termination")?;
+        let state = tester.native_command(&format!("{driver}: queryAppState"), &arguments)?;
+        require(
+            state.as_u64() == Some(APP_NOT_RUNNING),
+            "app still running before relaunch",
+        )
     }
 
     /// Reuse installed mobile apps so their prelaunch RPC configuration survives the session.
