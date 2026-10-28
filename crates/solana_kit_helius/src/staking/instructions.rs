@@ -16,8 +16,9 @@ pub const HELIUS_VALIDATOR: Address = Address::from_bytes([
     228, 13, 38, 144, 40, 49, 8, 227, 182, 97, 21, 81,
 ]);
 
-/// Builds create, initialize and Helius-delegation instructions using exact lamport arithmetic.
+/// Builds create, initialize and delegation instructions using exact lamport arithmetic.
 ///
+/// Delegation uses the requested validator vote account or [`HELIUS_VALIDATOR`] when absent.
 /// Limits apply to each reused instruction builder. The caller must supply the new
 /// account's signature and combine all three instructions into one transaction.
 pub fn build_stake_instructions(
@@ -31,7 +32,12 @@ pub fn build_stake_instructions(
         .ok_or(StakingBuildError::LamportOverflow)?;
     let create = create_account(request.owner, request.stake_account, lamports, limits)?;
     let initialize = initialize_account(request.owner, request.stake_account, limits)?;
-    let delegate = delegate_account(request.owner, request.stake_account, limits)?;
+    let delegate = delegate_account(
+        request.owner,
+        request.stake_account,
+        request.validator_vote.unwrap_or(HELIUS_VALIDATOR),
+        limits,
+    )?;
 
     Ok(StakeInstructions {
         stake_account: request.stake_account,
@@ -89,11 +95,12 @@ fn initialize_account(
 fn delegate_account(
     owner: Address,
     stake: Address,
+    vote: Address,
     limits: Limits,
 ) -> Result<Instruction, StakingBuildError> {
     let accounts = DelegateStakeAccounts {
         stake,
-        vote: HELIUS_VALIDATOR,
+        vote,
         clock_sysvar: sysvars::CLOCK_ADDRESS,
         stake_history: sysvars::STAKE_HISTORY_ADDRESS,
         unused: STAKE_CONFIG,

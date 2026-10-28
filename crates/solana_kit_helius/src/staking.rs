@@ -33,7 +33,7 @@ pub struct PreparationOptions {
     pub instruction_limits: Limits,
 }
 
-/// Exact stake funding and an explicit caller-owned new account identity.
+/// Exact stake funding, validator choice and a caller-owned new account identity.
 #[derive(Debug, Clone, Copy)]
 pub struct StakeRequest {
     /// Fee payer, stake authority, withdrawal authority and initial custodian.
@@ -42,6 +42,8 @@ pub struct StakeRequest {
     pub stake_account: Address,
     /// Delegated amount, excluding rent reserve; added with checked arithmetic.
     pub lamports: u64,
+    /// Validator vote account; defaults to [`HELIUS_VALIDATOR`] when absent.
+    pub validator_vote: Option<Address>,
 }
 
 /// Explicit deactivation identities.

@@ -77,8 +77,10 @@ nonempty JSON remains an error under the shared admission policy.
 
 Staking preparation reuses Kit System and Stake builders. The application supplies
 the new stake account and its signer, owns RPC and execution, and decides whether
-to submit the prepared transaction. Stake-account discovery checks the withdrawal
-authority and preserves the evaluation context and account metadata.
+to submit the prepared transaction. Set `StakeRequest::validator_vote` to choose a
+validator vote account; `None` delegates to `HELIUS_VALIDATOR`. Stake-account
+discovery checks the withdrawal authority and preserves the evaluation context
+and account metadata.
 
 `staking::get_withdrawable_amount` reads the stake account, Clock, Rent and Stake
 History in one standard `getMultipleAccounts` evaluation. It returns distinct

@@ -30,13 +30,30 @@ fn instruction_contracts() {
         owner,
         stake_account: stake,
         lamports: 9_007_199_254_740_993,
+        validator_vote: None,
     };
-    let result = build_stake_instructions(request, 2, LIMITS).expect("exact stake funding");
-    assert_eq!(result.stake_account, stake);
-    let [create, initialize, delegate] = &result.instructions;
-    assert_eq!(create.program_address, solana_kit_system::SYSTEM_PROGRAM);
-    create_contract(owner, stake, create);
-    initialization_and_delegation(owner, stake, initialize, delegate);
+    let custom_validator = Address::from_bytes([3; 32]);
+
+    for (validator_vote, expected_vote) in [
+        (None, HELIUS_VALIDATOR),
+        (Some(custom_validator), custom_validator),
+    ] {
+        let result = build_stake_instructions(
+            StakeRequest {
+                validator_vote,
+                ..request
+            },
+            2,
+            LIMITS,
+        )
+        .expect("exact stake funding");
+        assert_eq!(result.stake_account, stake);
+        let [create, initialize, delegate] = &result.instructions;
+        assert_eq!(create.program_address, solana_kit_system::SYSTEM_PROGRAM);
+        create_contract(owner, stake, create);
+        initialization_and_delegation(owner, stake, expected_vote, initialize, delegate);
+    }
+
     deactivation_and_withdrawal(owner, stake);
     invalid_funding(request);
 }
@@ -66,6 +83,7 @@ fn create_contract(owner: Address, stake: Address, create: &solana_kit_core::Ins
 fn initialization_and_delegation(
     owner: Address,
     stake: Address,
+    vote: Address,
     initialize: &solana_kit_core::Instruction,
     delegate: &solana_kit_core::Instruction,
 ) {
@@ -95,7 +113,7 @@ fn initialization_and_delegation(
             .collect::<Vec<_>>(),
         [
             (stake, AccountRole::Writable),
-            (HELIUS_VALIDATOR, AccountRole::Readonly),
+            (vote, AccountRole::Readonly),
             (sysvars::CLOCK_ADDRESS, AccountRole::Readonly),
             (sysvars::STAKE_HISTORY_ADDRESS, AccountRole::Readonly),
             (solana_kit_stake::STAKE_CONFIG, AccountRole::Readonly),

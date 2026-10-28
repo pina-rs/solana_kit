@@ -4,7 +4,7 @@ use super::LIMITS;
 use base64::{Engine, engine::general_purpose::STANDARD};
 use solana_kit_client::{Client, Reply, Request, Transport, TransportError, plans::Signer};
 use solana_kit_core::{
-    Address, Hash, Signature,
+    AccountRole, Address, Hash, Signature,
     transaction::{self, Lifetime, Message, Transaction, Version},
 };
 use solana_kit_helius::staking::*;
@@ -170,6 +170,7 @@ fn request() -> StakeRequest {
         owner: address(1),
         stake_account: address(2),
         lamports: 9_007_199_254_740_993,
+        validator_vote: None,
     }
 }
 
@@ -181,31 +182,54 @@ fn backend(mode: Mode) -> Backend {
 }
 
 pub(super) fn transactions() {
-    let (rpc, reads) = client(&["2"]);
-    let result = futures::executor::block_on(get_stake_instructions(&rpc, request(), options()))
-        .expect("instruction-only preparation");
-    assert_eq!(result.instructions.len(), 3);
-    assert_eq!(reads.borrow().len(), 1);
+    let custom_validator = address(3);
 
-    stake_transaction();
+    for (validator_vote, expected_vote) in [
+        (None, HELIUS_VALIDATOR),
+        (Some(custom_validator), custom_validator),
+    ] {
+        let request = StakeRequest {
+            validator_vote,
+            ..request()
+        };
+        let (rpc, reads) = client(&["2"]);
+        let result = futures::executor::block_on(get_stake_instructions(&rpc, request, options()))
+            .expect("instruction-only preparation");
+        assert_eq!(result.instructions.len(), 3);
+        let vote = &result.instructions[2].accounts[1];
+        assert_eq!(
+            (vote.address, vote.role),
+            (expected_vote, AccountRole::Readonly)
+        );
+        assert_eq!(reads.borrow().len(), 1);
+        assert_eq!(
+            reads.borrow()[0]["method"],
+            "getMinimumBalanceForRentExemption"
+        );
+        stake_transaction(request, expected_vote);
+    }
+
     transitions();
 }
 
-fn stake_transaction() {
+fn stake_transaction(request: StakeRequest, expected_vote: Address) {
     let (rpc, requests) = client(&["2", BLOCKHASH]);
     let signer = backend(Mode::Success);
-    let result = futures::executor::block_on(create_stake_transaction(
-        &rpc,
-        &signer,
-        request(),
-        options(),
-    ))
-    .expect("prepared caller-signed stake transaction");
+    let result =
+        futures::executor::block_on(create_stake_transaction(&rpc, &signer, request, options()))
+            .expect("prepared caller-signed stake transaction");
     assert_eq!(signer.calls.get(), 1);
     assert_eq!(result.stake_account, address(2));
-    assert_eq!(result.transaction.message().version(), Version::V0);
-    assert_eq!(result.transaction.message().instructions().len(), 3);
-    assert_eq!(result.transaction.message().signers().len(), 2);
+    let message = result.transaction.message();
+    assert_eq!(message.version(), Version::V0);
+    assert_eq!(message.instructions().len(), 3);
+    assert_eq!(message.signers(), &[request.owner, request.stake_account]);
+    let vote_index = usize::from(message.instructions()[2].accounts()[1]);
+    assert_eq!(message.static_accounts()[vote_index], expected_vote);
+    assert!(
+        vote_index
+            >= message.static_accounts().len() - usize::from(message.header().readonly_unsigned)
+    );
     let encoded =
         serialize_transaction(&result.transaction, LIMITS).expect("canonical Base64 wire");
     let bytes = STANDARD
