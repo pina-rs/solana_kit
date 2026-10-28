@@ -27,6 +27,16 @@ enum Target {
     },
 }
 
+impl Target {
+    /// Pinned Mac2 returns true; its reference also documents a null acknowledgment.
+    fn acknowledges_termination(&self, response: &serde_json::Value) -> bool {
+        match self {
+            Self::Macos(_) => response.is_null() || response == true,
+            Self::Ios { .. } | Self::Android { .. } => response == true,
+        }
+    }
+}
+
 pub(crate) struct Launch {
     target: Target,
     driver: String,
@@ -119,12 +129,10 @@ impl Launch {
 
         let stopped = tester.native_command(&format!("{driver}: terminateApp"), &arguments)?;
 
-        let acknowledged = match &self.target {
-            Target::Macos(_) => stopped.is_null(),
-            Target::Ios { .. } | Target::Android { .. } => stopped == true,
-        };
-
-        require(acknowledged, "driver did not acknowledge app termination")?;
+        require(
+            self.target.acknowledges_termination(&stopped),
+            "driver did not acknowledge app termination",
+        )?;
         let state = tester.native_command(&format!("{driver}: queryAppState"), &arguments)?;
         require(
             state.as_u64() == Some(APP_NOT_RUNNING),
@@ -200,6 +208,34 @@ fn text(value: &OsString) -> Result<String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn termination_acknowledgements_match_pinned_driver_protocols() {
+        let macos = Target::Macos("test.app".into());
+        let ios = Target::Ios {
+            identifier: "test.app".into(),
+            device: "simulator".into(),
+            wda: "prebuilt".into(),
+        };
+        let android = Target::Android {
+            identifier: "test.app".into(),
+            device: "emulator".into(),
+            adb: "adb".into(),
+        };
+
+        for (response, desktop, mobile) in [
+            (json!(true), true, true),
+            (json!(null), true, false),
+            (json!(false), false, false),
+            (json!("true"), false, false),
+            (json!(1), false, false),
+            (json!({}), false, false),
+        ] {
+            assert_eq!(macos.acknowledges_termination(&response), desktop);
+            assert_eq!(ios.acknowledges_termination(&response), mobile);
+            assert_eq!(android.acknowledges_termination(&response), mobile);
+        }
+    }
 
     fn mobile() -> Vec<OsString> {
         [
