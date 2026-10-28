@@ -8,7 +8,26 @@ pub struct HexBytes(#[doc = "Owned unencoded bytes."] pub Vec<u8>);
 
 impl Serialize for HexBytes {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
-        serializer.serialize_str(&encode(&self.0))
+        HexSlice(&self.0).serialize(serializer)
+    }
+}
+
+/// Borrows bytes so JSON's formatter can stop at the shared client's byte budget.
+pub(crate) struct HexSlice<'a>(pub &'a [u8]);
+
+impl Serialize for HexSlice<'_> {
+    fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+        serializer.collect_str(self)
+    }
+}
+
+impl core::fmt::Display for HexSlice<'_> {
+    fn fmt(&self, formatter: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        for byte in self.0 {
+            write!(formatter, "{byte:02x}")?;
+        }
+
+        Ok(())
     }
 }
 
@@ -34,12 +53,14 @@ pub fn encode(bytes: &[u8]) -> String {
 
 /// Rejects odd-length or noncanonical hexadecimal rather than losing byte data.
 pub fn decode(text: &str) -> Result<Vec<u8>, InvalidHex> {
-    if !text.len().is_multiple_of(2) {
+    let (pairs, remainder) = text.as_bytes().as_chunks::<2>();
+
+    if !remainder.is_empty() {
         return Err(InvalidHex);
     }
 
-    text.as_bytes()
-        .chunks_exact(2)
+    pairs
+        .iter()
         .map(|pair| {
             let high = nibble(pair[0])?;
             let low = nibble(pair[1])?;

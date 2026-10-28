@@ -3,6 +3,7 @@
 use crate::{Object, hex::HexBytes, types::*};
 use serde::{Serialize, Serializer};
 use serde_json::Value;
+use solana_kit_client::{Error, methods::Method};
 use solana_kit_core::Address;
 
 /// Marks one account as offline, with optional provider-defined configuration.
@@ -121,11 +122,33 @@ pub struct WriteProgram {
 
 impl Serialize for WriteProgram {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+        BorrowedWriteProgram {
+            program_id: self.program_id,
+            data: &self.data.0,
+            offset: self.offset,
+            authority: self.authority,
+        }
+        .serialize(serializer)
+    }
+}
+
+method!(WriteProgram, "surfnet_writeProgram", Value);
+
+/// Keeps deployment's borrowed chunks on the public request's exact wire path.
+pub(crate) struct BorrowedWriteProgram<'a> {
+    pub program_id: Address,
+    pub data: &'a [u8],
+    pub offset: u64,
+    pub authority: Option<Address>,
+}
+
+impl Serialize for BorrowedWriteProgram<'_> {
+    fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         use serde::ser::SerializeSeq;
         let mut sequence =
             serializer.serialize_seq(Some(3 + usize::from(self.authority.is_some())))?;
         sequence.serialize_element(&self.program_id.to_string())?;
-        sequence.serialize_element(&self.data)?;
+        sequence.serialize_element(&crate::hex::HexSlice(self.data))?;
         sequence.serialize_element(&self.offset)?;
 
         if let Some(authority) = self.authority {
@@ -136,4 +159,11 @@ impl Serialize for WriteProgram {
     }
 }
 
-method!(WriteProgram, "surfnet_writeProgram", Value);
+impl Method for BorrowedWriteProgram<'_> {
+    type Response = <WriteProgram as Method>::Response;
+    const NAME: &'static str = <WriteProgram as Method>::NAME;
+
+    fn decode(&self, result: &str) -> Result<Self::Response, Error> {
+        crate::response::decode(result).map_err(Error::Schema)
+    }
+}

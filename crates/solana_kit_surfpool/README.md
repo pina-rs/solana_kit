@@ -54,11 +54,12 @@ program bytes expand to exactly twice their length in hex, plus JSON framing.
 The default raw chunk therefore exceeds that server cap. Choose a smaller
 nonzero chunk that fits both the server cap and the client's complete wire budget.
 
-Current preparation also copies a configured chunk and allocates its full hex
-string before wire rejection; native allocation regressions await execution and
-repair. A failed deployment leaves prior writes visible and never
-replays them. The optional `crypto` feature derives associated token addresses
-through existing Kit cryptography.
+JSON serialization streams hex through the shared client's bounded writer, and
+deployment borrows each configured chunk. Wire-budget failures preserve the
+original typed `BodyLimit` through the redacted Surfpool error wrapper. Runtime
+validation of this allocation repair is pending. A failed deployment leaves prior
+writes visible and never replays them. The optional `crypto` feature derives
+associated token addresses through existing Kit cryptography.
 
 `SurfpoolClient` composes the RPC owner with caller-provided subscriptions and
 payer. Host adapters own endpoints, authentication, deadlines and cancellation.

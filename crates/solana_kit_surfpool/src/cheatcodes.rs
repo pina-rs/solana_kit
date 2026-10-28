@@ -5,6 +5,7 @@ mod administration;
 mod profiling;
 
 pub use crate::builders::{ResetAccount, SetAccount, SetTokenAccount, StreamAccount};
+pub(crate) use account::BorrowedWriteProgram;
 pub use account::*;
 pub use administration::*;
 pub use profiling::*;

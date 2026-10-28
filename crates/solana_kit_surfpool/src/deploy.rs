@@ -2,9 +2,8 @@
 
 use crate::{
     Object, Surfnet,
-    cheatcodes::{RegisterIdl, WriteProgram},
+    cheatcodes::{BorrowedWriteProgram, RegisterIdl},
     errors::SurfpoolRpcError,
-    hex::HexBytes,
 };
 use solana_kit_client::Transport;
 use solana_kit_core::Address;
@@ -42,6 +41,9 @@ impl<'a> DeployOptions<'a> {
 impl<T: Transport> Surfnet<T> {
     /// Writes each chunk once, in order, then registers the optional IDL.
     ///
+    /// Each chunk stays borrowed through its exchange. Dropping this future drops
+    /// the active transport future without starting later chunks or IDL registration.
+    ///
     /// # Errors
     /// Stops on the first exchange failure or an unrepresentable byte offset.
     /// Partial writes remain visible upstream; the method never retries or rolls back.
@@ -55,9 +57,9 @@ impl<T: Transport> Surfnet<T> {
                 .checked_mul(options.chunk_bytes.get())
                 .and_then(|offset| u64::try_from(offset).ok())
                 .ok_or(DeployError::OffsetOverflow)?;
-            self.execute(WriteProgram {
+            self.execute(BorrowedWriteProgram {
                 program_id: options.program_id,
-                data: HexBytes(chunk.to_vec()),
+                data: chunk,
                 offset,
                 authority: None,
             })
