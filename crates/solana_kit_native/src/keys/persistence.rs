@@ -1,4 +1,4 @@
-//! Complete backups are published with a no-overwrite hard link.
+//! Complete backups are published atomically without replacing existing entries.
 
 use std::{error::Error, fmt, io, path::Path};
 
@@ -41,7 +41,7 @@ pub enum KeyFileStage {
     WriteStagingFile,
     /// Synchronizing the complete staging file.
     SyncStagingFile,
-    /// Linking the complete file into the destination without overwriting.
+    /// Publishing the complete file into the destination without overwriting.
     PublishDestination,
     /// Removing the staging file or directory after publication.
     Cleanup,
@@ -91,9 +91,10 @@ impl KeyFileError {
 ///
 /// The caller must supply a trusted parent directory. On Unix, a new private
 /// staging directory and file are created with permissions 0700 and 0600. Only
-/// a fully flushed file is linked into the destination. Competing writers and
-/// existing files, including symbolic links, fail atomically. Filesystems without
-/// hard-link support fail rather than falling back to an overwriting rename.
+/// a fully flushed file is published into the destination. Linux and Android use
+/// a no-replace rename; other Unix platforms use a hard link. Competing writers
+/// and existing entries, including symbolic links, fail atomically. Unsupported
+/// filesystem operations fail without falling back to an overwriting rename.
 ///
 /// # Errors
 /// Returns the failed stage, original I/O error and all cleanup failures. On
@@ -143,7 +144,7 @@ fn write_supported(path: &Path, keypair: &ExportableKeypair) -> Result<(), KeyFi
             .open(&staged)
             .map_err(|source| KeyFileError::new(KeyFileStage::OpenStagingFile, source))?;
         write_staged(&mut file, keypair)?;
-        fs::hard_link(&staged, parent.join(name))
+        publish_new(&staged, &parent.join(name))
             .map_err(|source| KeyFileError::new(KeyFileStage::PublishDestination, source))?;
         published = true;
 
@@ -165,6 +166,19 @@ fn write_supported(path: &Path, keypair: &ExportableKeypair) -> Result<(), KeyFi
             Err(error)
         }
     }
+}
+
+/// Android forbids app hard links; NOREPLACE keeps publication atomic on Linux too.
+#[cfg(any(target_os = "linux", target_os = "android"))]
+fn publish_new(staged: &Path, destination: &Path) -> io::Result<()> {
+    use rustix::fs::{CWD, RenameFlags, renameat_with};
+
+    renameat_with(CWD, staged, CWD, destination, RenameFlags::NOREPLACE).map_err(io::Error::from)
+}
+
+#[cfg(all(unix, not(any(target_os = "linux", target_os = "android"))))]
+fn publish_new(staged: &Path, destination: &Path) -> io::Result<()> {
+    fs::hard_link(staged, destination)
 }
 
 #[cfg(unix)]

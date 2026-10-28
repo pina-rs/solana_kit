@@ -11,13 +11,16 @@ No global provider or executor is installed.
 
 Backup writes are blocking. Callers select their blocking executor and join its
 work before teardown. On Unix, the destination appears only after the complete
-file is flushed in a new private staging directory. A hard link publishes it
-without overwriting an existing file or symbolic link. The caller must supply a
-trusted parent directory. Private files use mode 0600 and staging directories use
-0700. An error reports whether publication preceded cleanup failure, and retains
-all cleanup errors. Filesystems without hard links fail explicitly. Other
-platforms return Unsupported before creating a file. This does not promise
-power-loss durability or protection against a hostile owner of the parent path.
+file is flushed in a new private staging directory. Linux and Android publish it
+with an atomic no-replace rename because Android apps cannot create hard links.
+Other Unix platforms use a hard link. Both operations refuse existing files,
+directories and symbolic links. The caller must supply a trusted parent
+directory. Private files use mode 0600 and staging directories use 0700. An error
+reports whether publication preceded cleanup failure, and retains the original
+I/O cause and all cleanup errors. Unsupported filesystem operations fail
+explicitly. Other platforms return Unsupported before creating a file. This does
+not promise power-loss durability or protection against a hostile owner of the
+parent path.
 
 `NativeHttp::new(endpoint, HttpConfig::default())` implements the public
 `solana_kit_client::Transport`. Each polled exchange owns its connection and
