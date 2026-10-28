@@ -38,7 +38,7 @@ jobs:
         shell: bash
         run: |
           cargo +1.99.1 install --locked --git https://github.com/ifiokjr/monostyle.git \
-            --rev 8da21273398c2a9c56f2f9ba99effadd217633ce monostyle
+            --rev ae86916d5055fb2c15f665bbe4f0f90bd8abc26e monostyle
 
       - name: Score every generated corpus source
         shell: bash

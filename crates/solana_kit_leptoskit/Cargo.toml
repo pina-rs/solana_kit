@@ -17,6 +17,7 @@ wallet-platform = ["guest", "dep:solana_kit_core", "dep:solana_kit_wallet", "sol
 wallet-ui = ["dep:leptoskit_native", "dep:solana_kit_wallet"]
 wallet-browser-ui = ["wallet-ui", "dep:solana_kit_browser"]
 wallet-session = ["wallet-platform", "dep:serde_json"]
+wallet-verification = ["wallet-host"]
 wallet-host = [
   "host",
   "dep:solana_kit_core",

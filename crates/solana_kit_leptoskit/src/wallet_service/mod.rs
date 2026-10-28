@@ -9,6 +9,7 @@ mod composition_tests;
 mod routing_tests;
 #[cfg(all(test, unix))]
 mod tests;
+
 mod worker;
 
 use crate::wallet_wire as wire;
@@ -30,6 +31,26 @@ const SERVICE: &str = "solana-wallet-session";
 const MAX_BYTES: usize = 65_536;
 const MAX_CALLS: u64 = 256;
 const MAX_ROUTE_TURNS: usize = wire::POLL_BUDGET;
+#[cfg(feature = "wallet-verification")]
+const TRACE_LIMIT: usize = 128;
+
+/// Bounded, non-secret lifecycle observations for the generated verification app.
+#[cfg(feature = "wallet-verification")]
+#[derive(Clone, Copy, Debug)]
+pub enum WalletTrace {
+    /// The service received a save request.
+    SaveReceived,
+    /// A save request entered the native worker mailbox.
+    SaveAdmitted,
+    /// The service rejected a save request before admission.
+    SaveRejected(Error),
+    /// The native worker completed a save request.
+    SaveCompleted(Result<(), Error>),
+    /// A completed operation ended the current lease.
+    LeaseEnded,
+    /// Further observations were discarded at the bound.
+    Overflow,
+}
 
 /// Owns a unique native session, its native worker, and original error journal.
 pub struct WalletService {
@@ -44,6 +65,8 @@ pub struct WalletService {
     calls: u64,
     queued: ServiceWork,
     drained: BTreeSet<CallId>,
+    #[cfg(feature = "wallet-verification")]
+    trace: std::collections::VecDeque<WalletTrace>,
 }
 
 /// Returns an inert installer using only host-selected application directories.
@@ -96,12 +119,59 @@ impl WalletService {
             calls: 0,
             queued: ServiceWork::default(),
             drained: BTreeSet::new(),
+            #[cfg(feature = "wallet-verification")]
+            trace: std::collections::VecDeque::new(),
         })
     }
 
     /// Retains opaque original native causes without logging peer or key bytes.
     pub fn failures(&self) -> WalletFailures {
         WalletFailures(Arc::clone(&self.shared))
+    }
+
+    /// Takes the oldest bounded verification observation.
+    #[cfg(feature = "wallet-verification")]
+    pub fn take_trace(&mut self) -> Option<WalletTrace> {
+        self.trace.pop_front()
+    }
+
+    #[cfg(feature = "wallet-verification")]
+    fn trace(&mut self, event: WalletTrace) {
+        if self.trace.len() == TRACE_LIMIT {
+            self.trace[TRACE_LIMIT - 1] = WalletTrace::Overflow;
+        } else {
+            self.trace.push_back(event);
+        }
+    }
+
+    #[cfg(feature = "wallet-verification")]
+    fn trace_admitted(&mut self, method: u32) {
+        if method == wire::SAVE_LOCAL {
+            self.trace(WalletTrace::SaveAdmitted);
+        }
+    }
+
+    #[cfg(feature = "wallet-verification")]
+    fn trace_received(&mut self, method: u32) {
+        if method == wire::SAVE_LOCAL {
+            self.trace(WalletTrace::SaveReceived);
+        }
+    }
+
+    #[cfg(feature = "wallet-verification")]
+    fn trace_rejected(&mut self, method: u32, error: Error) {
+        if method == wire::SAVE_LOCAL {
+            self.trace(WalletTrace::SaveRejected(error));
+        }
+    }
+
+    #[cfg(feature = "wallet-verification")]
+    fn trace_completed(&mut self, method: u32, result: &Result<Vec<u8>, Error>) {
+        if method == wire::SAVE_LOCAL {
+            self.trace(WalletTrace::SaveCompleted(
+                result.as_ref().map(|_| ()).map_err(|error| *error),
+            ));
+        }
     }
 
     /// Check generation before emitting authority; a completed lease remains
@@ -116,16 +186,45 @@ impl WalletService {
                 continue;
             }
 
+            #[cfg(feature = "wallet-verification")]
+            self.trace_completed(method, &completion.result);
+
             if wire::starting(method) && completion.result.is_ok() {
                 self.open_lease(host, completion, method)?;
                 continue;
             }
 
             if method == wire::CLOSE || completion.result.is_err() {
-                self.end_lease(host)?;
+                self.complete_ending(host, completion)?;
+                continue;
             }
 
             finish(host, completion.call, completion.result)?;
+        }
+
+        Ok(())
+    }
+
+    fn complete_ending(
+        &mut self,
+        host: &mut WasmHost<HeadlessBackend>,
+        completion: worker::Completion,
+    ) -> Result<(), Error> {
+        // Publish both results before waking the guest, so lease cancellation
+        // cannot hide the operation's actual error.
+        let mut completed = false;
+
+        if let Some(call) = self.lease.take() {
+            self.pending.remove(&call);
+            completed = complete(host, call, Err(Error::Cancelled))?;
+            #[cfg(feature = "wallet-verification")]
+            self.trace(WalletTrace::LeaseEnded);
+        }
+
+        completed |= complete(host, completion.call, completion.result)?;
+
+        if completed {
+            host.wake_plugins().map_err(|_| Error::Native)?;
         }
 
         Ok(())
@@ -152,15 +251,6 @@ impl WalletService {
         host.wake_plugins().map_err(|_| Error::Native)
     }
 
-    fn end_lease(&mut self, host: &mut WasmHost<HeadlessBackend>) -> Result<(), Error> {
-        if let Some(call) = self.lease.take() {
-            self.pending.remove(&call);
-            finish(host, call, Err(Error::Cancelled))?;
-        }
-
-        Ok(())
-    }
-
     fn cancellations(
         &mut self,
         host: &mut WasmHost<HeadlessBackend>,
@@ -168,14 +258,14 @@ impl WalletService {
         work: &mut ServiceWork,
     ) -> Result<(), Error> {
         for call in incoming {
-            if self.pending.remove(&call).is_none() {
-                if !self.drained.remove(&call) {
-                    work.cancelled.push(call);
-                }
+            if self.pending.remove(&call).is_some() {
+                self.invalidate(host)?;
                 continue;
             }
 
-            self.invalidate(host)?;
+            if !self.drained.remove(&call) {
+                work.cancelled.push(call);
+            }
         }
 
         Ok(())
@@ -184,6 +274,11 @@ impl WalletService {
     fn invalidate(&mut self, host: &mut WasmHost<HeadlessBackend>) -> Result<(), Error> {
         self.mailbox.clear();
         self.shared.cancel();
+        #[cfg(feature = "wallet-verification")]
+        if self.lease.is_some() {
+            self.trace(WalletTrace::LeaseEnded);
+        }
+
         self.lease = None;
         let cancelled = std::mem::take(&mut self.pending);
 
@@ -205,6 +300,9 @@ impl WalletService {
                 work.requests.push(request);
                 continue;
             }
+
+            #[cfg(feature = "wallet-verification")]
+            self.trace_received(request.method.0);
 
             if !matches!(host.plugins().result(request.id), Ok(None)) {
                 continue;
@@ -233,10 +331,16 @@ impl WalletService {
             || exhausted
             || request.payload.len() > MAX_BYTES
         {
+            #[cfg(feature = "wallet-verification")]
+            self.trace_rejected(request.method.0, Error::Busy);
+
             return finish(host, request.id, Err(Error::Busy));
         }
 
         if !starting && self.lease.is_none() {
+            #[cfg(feature = "wallet-verification")]
+            self.trace_rejected(request.method.0, Error::Unavailable);
+
             return finish(host, request.id, Err(Error::Unavailable));
         }
 
@@ -245,8 +349,14 @@ impl WalletService {
         let epoch = self.shared.epoch();
 
         if let Err(error) = self.mailbox.send(worker::Command { request, epoch }) {
+            #[cfg(feature = "wallet-verification")]
+            self.trace_rejected(method, error);
+
             return finish(host, call, Err(error));
         }
+
+        #[cfg(feature = "wallet-verification")]
+        self.trace_admitted(method);
 
         self.calls = self.calls.saturating_add(1);
         self.pending.insert(call, (epoch, method));
@@ -389,9 +499,21 @@ fn finish(
     call: CallId,
     result: Result<Vec<u8>, Error>,
 ) -> Result<(), Error> {
+    if complete(host, call, result)? {
+        host.wake_plugins().map_err(|_| Error::Native)?;
+    }
+
+    Ok(())
+}
+
+fn complete(
+    host: &mut WasmHost<HeadlessBackend>,
+    call: CallId,
+    result: Result<Vec<u8>, Error>,
+) -> Result<bool, Error> {
     match host.plugins().complete(call, result.map(Into::into)) {
-        Ok(()) => host.wake_plugins().map_err(|_| Error::Native),
-        Err(Error::InvalidCall) => Ok(()),
+        Ok(()) => Ok(true),
+        Err(Error::InvalidCall) => Ok(false),
         Err(error) => Err(error),
     }
 }

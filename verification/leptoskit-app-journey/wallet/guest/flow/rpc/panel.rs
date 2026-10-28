@@ -34,7 +34,10 @@ pub(super) async fn next(
     let rpc = Box::pin(rpc.next());
 
     match futures::future::select(wallet, rpc).await {
-        Either::Left((Ok(action), _)) => Ok(Intent::Wallet(action)),
+        Either::Left((Ok(action), _)) => {
+            super::super::trace::action(action);
+            Ok(Intent::Wallet(action))
+        }
         Either::Right((Some(action), _)) => Ok(Intent::Rpc(action)),
         _ => Err(Error::Queue.into()),
     }

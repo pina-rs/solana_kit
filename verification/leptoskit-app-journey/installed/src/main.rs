@@ -5,6 +5,7 @@ mod android;
 mod application_data;
 mod journey;
 mod launch;
+
 mod ports;
 mod rpc;
 mod startup;
@@ -32,9 +33,22 @@ fn main() -> Result<()> {
     let mut node = validator::Validator::start(&launch.directory, &launch.validator)?;
     launch.configure(&node, data.path())?;
 
-    let options = launch.options();
-    let platform = options.platform;
-    let result = NativeTester::run(options, |tester| journey::run(tester, &mut node, platform));
+    let platform = launch.options().platform;
+    let result = (|| {
+        let wallets = NativeTester::run(launch.options(), |tester| {
+            let wallets = journey::run(tester, &mut node, platform)?;
+            launch.stop_app(tester)?;
+            Ok(wallets)
+        })?;
+        NativeTester::run(launch.options(), |tester| {
+            wallets.saved.verify(tester, &mut node, platform)?;
+            launch.stop_app(tester)
+        })?;
+        NativeTester::run(launch.options(), |tester| {
+            wallets.backup.verify(tester, &mut node, platform)?;
+            launch.stop_app(tester)
+        })
+    })();
     finish([
         result,
         startup::retain(data.path(), &launch.directory).map_err(Into::into),

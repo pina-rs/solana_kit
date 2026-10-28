@@ -14,14 +14,17 @@ env:
 
 jobs:
   actual-sessions:
-    runs-on: ubuntu-24.04
+    runs-on: "ubuntu-24.04"
     timeout-minutes: 40
+
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+
       - name: Prepare pinned compiler and runtime
         shell: bash
+
         run: |
           set -euo pipefail
           rustup toolchain install 1.99.1 --profile minimal --component clippy --component rustfmt \
@@ -37,6 +40,7 @@ jobs:
             -C "$RUNNER_TEMP/session-host"
       - name: Execute typed factories and cooperative reactor regressions
         shell: bash
+
         run: |
           set -euo pipefail
           manifest=verification/confirmation-factories/Cargo.toml
@@ -70,6 +74,7 @@ jobs:
         shell: bash
         env:
           RUSTDOCFLAGS: -D warnings
+
         run: |
           set -euo pipefail
           manifest=verification/wasi-text-sockets/Cargo.toml

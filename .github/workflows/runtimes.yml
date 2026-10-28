@@ -19,6 +19,7 @@ jobs:
 
       - name: Install pinned toolchain and browser runner
         shell: bash
+
         run: |
           rustup toolchain install 1.99.1 --profile minimal --component rustfmt --component clippy \
             --target wasm32-unknown-unknown --target wasm32-wasip1 --target wasm32-wasip2
@@ -27,6 +28,7 @@ jobs:
 
       - name: Download checksum-pinned hosts
         shell: bash
+
         run: |
           host_dir="$RUNNER_TEMP/runtime-hosts"
 
@@ -68,10 +70,12 @@ jobs:
 
       - name: Execute suite, corruption controls, dependency gates and clean consumer
         shell: bash
+
         run: cargo +1.99.1 xtask all
 
       - name: Check private upstream-host harness
         shell: bash
+
         run: |
           cargo +1.99.1 fmt --manifest-path verification/leptoskit/Cargo.toml --check
 

@@ -1,6 +1,7 @@
 //! Select a desktop bundle or an already-installed app on an explicit simulator.
 use crate::{Error, Result, android, require, rpc, validator::Validator};
-use leptoskit_testing::native::{Application, Options, Platform};
+use leptoskit_testing::native::{Application, NativeTester, Options, Platform};
+use serde_json::json;
 use std::{
     ffi::OsString,
     fs,
@@ -9,6 +10,7 @@ use std::{
 
 const DRIVER_STARTUP_SECONDS: u64 = 900;
 const UI_WAIT_SECONDS: u64 = 30;
+const APP_NOT_RUNNING: u64 = 1;
 const USAGE: &str = "usage: installed_wallet <macos|ios|android> <loopback-driver> <application> <fresh-config-directory> <fresh-run-directory> <validator-binary> [<device> <prebuilt-wda-directory|adb-binary>]";
 
 enum Target {
@@ -23,6 +25,16 @@ enum Target {
         device: String,
         adb: PathBuf,
     },
+}
+
+impl Target {
+    /// Pinned Mac2 returns true; its reference also documents a null acknowledgment.
+    fn acknowledges_termination(&self, response: &serde_json::Value) -> bool {
+        match self {
+            Self::Macos(_) => response.is_null() || response == true,
+            Self::Ios { .. } | Self::Android { .. } => response == true,
+        }
+    }
 }
 
 pub(crate) struct Launch {
@@ -106,6 +118,28 @@ impl Launch {
         Ok(())
     }
 
+    /// Explicitly terminate this app, then require the OS driver's not-running
+    /// state before another session may claim to exercise a process relaunch.
+    pub(crate) fn stop_app(&self, tester: &NativeTester) -> Result<()> {
+        let (driver, arguments) = match &self.target {
+            Target::Macos(path) => ("macos", json!({"path": path})),
+            Target::Ios { identifier, .. } => ("mobile", json!({"bundleId": identifier})),
+            Target::Android { identifier, .. } => ("mobile", json!({"appId": identifier})),
+        };
+
+        let stopped = tester.native_command(&format!("{driver}: terminateApp"), &arguments)?;
+
+        require(
+            self.target.acknowledges_termination(&stopped),
+            "driver did not acknowledge app termination",
+        )?;
+        let state = tester.native_command(&format!("{driver}: queryAppState"), &arguments)?;
+        require(
+            state.as_u64() == Some(APP_NOT_RUNNING),
+            "app still running before relaunch",
+        )
+    }
+
     /// Reuse installed mobile apps so their prelaunch RPC configuration survives the session.
     pub(crate) fn options(&self) -> Options {
         let (platform, application, device) = match &self.target {
@@ -174,6 +208,34 @@ fn text(value: &OsString) -> Result<String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn termination_acknowledgements_match_pinned_driver_protocols() {
+        let macos = Target::Macos("test.app".into());
+        let ios = Target::Ios {
+            identifier: "test.app".into(),
+            device: "simulator".into(),
+            wda: "prebuilt".into(),
+        };
+        let android = Target::Android {
+            identifier: "test.app".into(),
+            device: "emulator".into(),
+            adb: "adb".into(),
+        };
+
+        for (response, desktop, mobile) in [
+            (json!(true), true, true),
+            (json!(null), true, false),
+            (json!(false), false, false),
+            (json!("true"), false, false),
+            (json!(1), false, false),
+            (json!({}), false, false),
+        ] {
+            assert_eq!(macos.acknowledges_termination(&response), desktop);
+            assert_eq!(ios.acknowledges_termination(&response), mobile);
+            assert_eq!(android.acknowledges_termination(&response), mobile);
+        }
+    }
 
     fn mobile() -> Vec<OsString> {
         [

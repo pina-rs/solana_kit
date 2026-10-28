@@ -45,8 +45,8 @@ jobs:
       - name: Build accepted Monostyle source and prepare pinned formatter
         shell: bash
         env:
-          MONOSTYLE_REVISION: 8da21273398c2a9c56f2f9ba99effadd217633ce
-          MONOSTYLE_TREE: e3f47513e4d0e4bc95899642b85d03df421ad2b5
+          MONOSTYLE_REVISION: ae86916d5055fb2c15f665bbe4f0f90bd8abc26e
+          MONOSTYLE_TREE: d6157d0cc5892f6cf28ea9a0b3b1d7610a4cf23f
           TYPESCRIPT_SHA256: 9c52244de2c25a33addc7ddacff4443234a2dc4b5d3f34131262d1e0df35007c
         run: |
           set -euo pipefail
