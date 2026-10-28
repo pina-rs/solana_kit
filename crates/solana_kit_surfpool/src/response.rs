@@ -35,13 +35,11 @@ pub(crate) fn decode<T: DeserializeOwned>(text: &str) -> Result<Response<T>, ser
             .is_some_and(|object| object.contains_key("value"));
 
     if let Value::Object(mut envelope) = raw {
-        if contextual {
-            if let Some(value) = envelope.remove("value") {
-                return Ok(Response {
-                    value: typed(value)?,
-                    envelope: Some(envelope),
-                });
-            }
+        if contextual && let Some(value) = envelope.remove("value") {
+            return Ok(Response {
+                value: typed(value)?,
+                envelope: Some(envelope),
+            });
         }
 
         return Ok(Response {
