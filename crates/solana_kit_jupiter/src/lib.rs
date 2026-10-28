@@ -2,20 +2,36 @@
 #![deny(missing_docs)]
 #![doc = include_str!("../README.md")]
 
+mod build;
 mod client;
+mod convert;
 mod error;
+mod integer;
+mod lookup;
 mod models;
+mod object;
+
+mod order;
+mod order_request;
 mod requests;
 mod scalar;
+mod swap;
 
 use solana_kit_client::rest::Budgets;
 use solana_kit_core::Address;
 use std::collections::BTreeMap;
 
+pub use build::{AccountMetaPayload, BlockhashWithMetadata, BuildResponse, InstructionPayload};
 pub use client::{Client, Service};
+pub use convert::decode_base64_swap_transaction;
 pub use error::Error;
+pub use integer::Integer;
+pub use lookup::{LookupTablePayload, LookupTables};
 pub use models::{Price, TokenItem};
+pub use order::{ExecutionResponse, OrderMode, OrderResponse};
+pub use order_request::{OrderRequest, SwapMode};
 pub use requests::{Category, Interval, TokenLimit};
+pub use swap::{decode_build, decode_execution, decode_order};
 
 /// The reference service root; the application adapter approves origins and authentication.
 pub const DEFAULT_BASE_URL: &str = "https://api.jup.ag";

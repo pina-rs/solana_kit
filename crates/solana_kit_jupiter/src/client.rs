@@ -9,10 +9,10 @@ use std::collections::BTreeMap;
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Service;
 
-/// Jupiter price and token APIs without an executor or global networking state.
+/// Jupiter swap, price and token APIs without an executor or global networking state.
 pub struct Client<T> {
     transport: T,
-    budgets: Budgets,
+    pub(crate) budgets: Budgets,
 }
 
 impl<T: Transport<Service>> Client<T> {
@@ -91,13 +91,28 @@ impl<T: Transport<Service>> Client<T> {
         crate::decode_tokens(&bytes, self.budgets)
     }
 
-    async fn get(&self, path: &[&str], query: Vec<(String, String)>) -> Result<Vec<u8>, Error> {
+    pub(crate) async fn get(
+        &self,
+        path: &[&str],
+        query: Vec<(String, String)>,
+    ) -> Result<Vec<u8>, Error> {
+        self.request(rest::Method::Get, path, query, rest::Body::Absent)
+            .await
+    }
+
+    pub(crate) async fn request(
+        &self,
+        method: rest::Method,
+        path: &[&str],
+        query: Vec<(String, String)>,
+        body: rest::Body,
+    ) -> Result<Vec<u8>, Error> {
         let request = rest::Request {
             service: Service,
-            method: rest::Method::Get,
+            method,
             path_segments: path.iter().map(|part| (*part).to_owned()).collect(),
             query,
-            body: rest::Body::Absent,
+            body,
             max_reply_bytes: self.budgets.bytes,
         };
         rest::request_target(

@@ -8,10 +8,10 @@ publish = false
 readme = "README.md"
 repository = "https://github.com/pina-rs/solana_kit/tree/main/crates/solana_kit_jupiter"
 rust-version.workspace = true
-description = "Executor-neutral Jupiter price and token clients for off-chain applications"
+description = "Executor-neutral Jupiter swap, price and token clients for off-chain applications"
 
 [dependencies]
 serde = { version = "1.0.229", features = ["derive"] }
 serde_json = { version = "1.0.154", features = ["arbitrary_precision", "raw_value"] }
 solana_kit_client.workspace = true
-solana_kit_core.workspace = true
+solana_kit_core = { workspace = true, features = ["text-codecs"] }
