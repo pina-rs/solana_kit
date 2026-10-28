@@ -397,4 +397,12 @@ sns-hash-domain-pda: Ok(())
 sns-record-reverse-pda: Ok(())
 sns-registry-value-codecs: Ok(())
 sns-record-content-lazy-bounds: Ok(())
-solana-kit-core-v46: 392/392 cases passed
+surfpool-account-wire: Ok(())
+surfpool-administration-wire: Ok(())
+surfpool-profile-clock-wire: Ok(())
+surfpool-context-exact-models: Ok(())
+surfpool-error-budget: Ok(())
+surfpool-local-cancellation: Ok(())
+surfpool-config-deploy: Ok(())
+surfpool-method-manifest: Ok(())
+solana-kit-core-v47: 400/400 cases passed

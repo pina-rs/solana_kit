@@ -38,10 +38,10 @@ report through the actual pinned host. The earlier 108-case acceptance and 92-ca
 minimum measurements below remain historical. No current-suite minimum,
 elapsed-time or SDK speed claim is made.
 
-The checked-in native reports still record the actual v46 SNS results, 392/392
-canonical and 391/392 corrupted. They remain unchanged until root executes v47
-and captures its authentic reports; this source integration establishes no new
-native, browser, WASI or interpreted execution.
+The checked-in native reports record actual v47 execution: 400/400 canonical
+and 399/400 corrupted, with a failure exit for the corruption control. All
+preceding 392 result entries remain byte-identical. These native reports do not
+establish browser, WASI or interpreted execution of the current suite.
 
 The two Token groups and three confirmation groups add only ordinary work.
 The eight Surfpool groups also receive the unchanged ordinary-case allowance;

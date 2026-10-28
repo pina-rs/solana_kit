@@ -56,8 +56,10 @@ nonzero chunk that fits both the server cap and the client's complete wire budge
 
 JSON serialization streams hex through the shared client's bounded writer, and
 deployment borrows each configured chunk. Wire-budget failures preserve the
-original typed `BodyLimit` through the redacted Surfpool error wrapper. Runtime
-validation of this allocation repair is pending. A failed deployment leaves prior
+original typed `BodyLimit` through the redacted Surfpool error wrapper. All six
+native allocation controls pass, including the three observed failures before
+the repair. Assertions and thresholds remain unchanged; a later byte-literal
+style cleanup emits identical fixture bytes. A failed deployment leaves prior
 writes visible and never replays them. The optional `crypto` feature derives
 associated token addresses through existing Kit cryptography.
 
@@ -73,8 +75,14 @@ libraries for on-chain work. The shared Kit client accepts all HTTP 2xx statuses
 the pinned Dart internal client accepted only 200.
 
 The `tests/support` public API fixtures are also registered in the integrated
-conformance suite for native, browser, WASI and interpreted Wasm execution. Their
-presence does not establish that any host has executed them.
+conformance suite for native, browser, WASI and interpreted Wasm execution.
+Native execution passes 400/400 cases; deliberate fixture corruption passes
+399/400 and exits with failure. All preceding 392 report entries remain
+byte-identical. Strict Clippy, package tests with cryptography, cancellation
+controls and documentation checks pass. Eight actual dependency graphs contain
+only the admitted client and cryptography closure across four targets and two
+feature selections; both Tokio injection controls are rejected. Current-source
+browser, WASI, interpreted Wasm and external server execution remain required.
 
 Source provenance and retained license notices appear in
 `THIRD_PARTY_NOTICES.md` and `MIT-DART.txt`. Original Rust code uses the Unlicense.
