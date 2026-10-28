@@ -122,7 +122,7 @@ impl HexSink {
             return b'"';
         }
 
-        [b'b', b'a'][position % 2]
+        b"ba"[position % 2]
     }
 }
 
