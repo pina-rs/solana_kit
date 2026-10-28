@@ -1,6 +1,6 @@
 //! Offline SNS vectors shared across every conformance host.
 
-use alloc::{string::ToString, vec};
+use alloc::vec;
 use solana_kit_core::{
     Address,
     codecs::{Decoder, Encoder, Limits},
@@ -156,5 +156,5 @@ fn record_payload() -> Result<(), &'static str> {
     let evm = "0xc0ffee254729296a45a3885639ac7e10f9d54979";
     let bytes = encode_record_content(evm, SnsRecord::Eth).map_err(|_| "SNS EVM encode")?;
     let decoded = decode_record_content(&bytes, SnsRecord::Eth).map_err(|_| "SNS EVM decode")?;
-    crate::require(decoded == evm.to_string(), "SNS EVM content")
+    crate::require(decoded == evm, "SNS EVM content")
 }
