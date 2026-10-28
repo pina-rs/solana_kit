@@ -1,17 +1,17 @@
 //! A non-Send Rc future proves lazy execution and active-exchange cancellation.
 
 use super::require;
-use solana_kit_client::{Client, Limits, Reply, Request, Transport, TransportError};
-use solana_kit_core::Address;
-use solana_kit_surfpool::{Surfnet, cheatcodes::GetSurfnetInfo, deploy::DeployOptions};
-use std::{
+use alloc::rc::Rc;
+use core::{
     cell::Cell,
     future::Future,
     num::NonZeroUsize,
     pin::{Pin, pin},
-    rc::Rc,
     task::{Context, Poll, Waker},
 };
+use solana_kit_client::{Client, Limits, Reply, Request, Transport, TransportError};
+use solana_kit_core::Address;
+use solana_kit_surfpool::{Surfnet, cheatcodes::GetSurfnetInfo, deploy::DeployOptions};
 
 struct LocalTransport {
     starts: Rc<Cell<usize>>,

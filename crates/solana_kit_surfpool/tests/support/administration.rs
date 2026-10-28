@@ -1,9 +1,9 @@
 //! Independent method-name and trailing-argument fixtures for provider administration.
 
 use super::{call, require};
+use alloc::{format, vec};
 use solana_kit_core::Address;
 use solana_kit_surfpool::cheatcodes::*;
-use std::{format, vec};
 
 pub fn run() -> Result<(), &'static str> {
     call(

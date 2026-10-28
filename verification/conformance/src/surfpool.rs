@@ -1,7 +1,5 @@
 //! The exact public Surfpool contract bodies run on each portability host.
 
-extern crate std;
-
 #[path = "../../../crates/solana_kit_surfpool/tests/support/mod.rs"]
 mod support;
 

@@ -1,8 +1,8 @@
 //! Model fixtures distinguish signed exact integers, object schemas and secret display.
 
 use super::{call, require};
+use alloc::{format, vec};
 use solana_kit_surfpool::{cheatcodes::GetSurfnetInfo, hex, types::*};
-use std::{format, vec};
 
 pub fn run() -> Result<(), &'static str> {
     let response = call(

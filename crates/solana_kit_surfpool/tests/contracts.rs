@@ -1,5 +1,7 @@
 //! Every assertion body is also registered in the integrated portable suite.
 
+extern crate alloc;
+
 mod support;
 
 #[test]

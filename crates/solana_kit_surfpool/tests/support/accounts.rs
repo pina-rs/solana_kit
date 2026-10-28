@@ -1,9 +1,9 @@
 //! Account mutation oracles cover all eight account/key/program wire methods.
 
 use super::{call, require};
+use alloc::{format, vec};
 use solana_kit_core::Address;
 use solana_kit_surfpool::{builders::*, cheatcodes::*, hex::HexBytes, types::*};
-use std::{format, vec};
 
 const ADDRESS: Address = Address::from_bytes([0; 32]);
 const TEXT: &str = "11111111111111111111111111111111";

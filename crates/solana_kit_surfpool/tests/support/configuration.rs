@@ -1,6 +1,12 @@
 //! Configuration defaults, port validation and real sequential deployment requests.
 
 use super::{fixture::poll_ready, require};
+use alloc::{format, rc::Rc, vec::Vec};
+use core::{
+    cell::RefCell,
+    future::{Ready, ready},
+    num::{NonZeroU16, NonZeroUsize},
+};
 use serde_json::Value;
 use solana_kit_client::{Client, Limits, Reply, Request, Transport, TransportError};
 use solana_kit_core::Address;
@@ -8,14 +14,6 @@ use solana_kit_surfpool::{
     Surfnet,
     config::{BlockProductionMode, ConfigError, Ports, SurfnetConfig},
     deploy::DeployOptions,
-};
-use std::{
-    cell::RefCell,
-    format,
-    future::{Ready, ready},
-    num::{NonZeroU16, NonZeroUsize},
-    rc::Rc,
-    vec::Vec,
 };
 
 const RPC_PORT: u16 = 10001;

@@ -1,18 +1,15 @@
 //! Immediate Rc-backed exchanges keep these fixtures independent of an executor.
 
+use alloc::{format, rc::Rc, string::String, vec::Vec};
+use core::{
+    cell::{Cell, RefCell},
+    future::{Future, Ready, ready},
+    pin::pin,
+    task::{Context, Poll, Waker},
+};
 use serde_json::Value;
 use solana_kit_client::{
     Client, Error, Limits, Reply, Request, Transport, TransportError, methods::Method,
-};
-use std::{
-    cell::{Cell, RefCell},
-    format,
-    future::{Future, Ready, ready},
-    pin::pin,
-    rc::Rc,
-    string::String,
-    task::{Context, Poll, Waker},
-    vec::Vec,
 };
 
 pub struct Recording {

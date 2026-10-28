@@ -4,14 +4,10 @@ use super::{
     fixture::{Recording, framed, poll_ready},
     require,
 };
+use alloc::{format, rc::Rc, vec::Vec};
+use core::cell::{Cell, RefCell};
 use solana_kit_client::{Client, Error, Limits, Presence};
 use solana_kit_surfpool::{Surfnet, cheatcodes::*};
-use std::{
-    cell::{Cell, RefCell},
-    format,
-    rc::Rc,
-    vec::Vec,
-};
 
 const HTTP_OK: u16 = 200;
 const HTTP_UNAVAILABLE: u16 = 503;

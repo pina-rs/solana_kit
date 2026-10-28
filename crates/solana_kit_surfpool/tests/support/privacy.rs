@@ -1,6 +1,8 @@
 //! Real value-bearing errors stay available only through explicit cause access.
 
 use super::{failures::make_surfnet, fixture::poll_ready, require};
+use alloc::{format, string::ToString};
+use core::{error::Error as StdError, fmt, future::Ready, future::ready};
 use solana_kit_client::{
     Client, Error, Limits, Presence, Reply, Request, Transport, TransportError,
     TransportFailureKind,
@@ -8,7 +10,6 @@ use solana_kit_client::{
 use solana_kit_surfpool::{
     Surfnet, cheatcodes::GetSurfnetInfo, deploy::DeployError, errors::SurfpoolRpcError,
 };
-use std::{error::Error as StdError, fmt, format, future::Ready, future::ready, string::ToString};
 
 const HTTP_OK: u16 = 200;
 const HTTP_UNAVAILABLE: u16 = 503;
