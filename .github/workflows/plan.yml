@@ -114,6 +114,10 @@ jobs:
 
           cargo +1.89.0 test -p solana_kit_pyth --all-features --locked
 
+      - name: Execute Jupiter clients on the promised MSRV
+        shell: bash
+        run: cargo +1.89.0 test -p solana_kit_jupiter --locked
+
       - name: Verify sender address observations in both signer feature modes
         shell: bash
         env:

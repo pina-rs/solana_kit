@@ -29,6 +29,7 @@ mod ordered_collections;
 mod framing_cases;
 mod instructions;
 mod introspection_cases;
+mod jupiter;
 mod keypair_backup;
 mod keypair_import;
 mod lookup_origin;
@@ -75,9 +76,9 @@ pub mod system_client;
 use alloc::vec::Vec;
 
 /// Integrated core contract suite; execution receipts identify actual hosts.
-pub const SUITE_ID: &str = "solana-kit-core-v43";
+pub const SUITE_ID: &str = "solana-kit-core-v44";
 /// Exact current registrants, including all preserved and appended contract groups.
-pub const EXPECTED_CASE_COUNT: usize = 373;
+pub const EXPECTED_CASE_COUNT: usize = 378;
 
 /// Selects authentic fixtures or the intentionally incorrect hash oracle.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -180,6 +181,7 @@ pub fn run(mode: FixtureMode) -> Report {
     cases.extend(pyth_hermes::cases());
     cases.extend(pyth_http::cases());
     cases.extend(pyth_receiver::cases());
+    cases.extend(jupiter::cases());
 
     Report {
         suite_id: SUITE_ID,

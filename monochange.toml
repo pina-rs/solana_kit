@@ -31,6 +31,12 @@ changelog = false
 publish = { enabled = false }
 
 # Add implemented client/adapter packages here when their versions converge.
+[package.solana_kit_jupiter]
+path = "crates/solana_kit_jupiter"
+type = "cargo"
+changelog = false
+publish = { enabled = false }
+
 [package.solana_kit_native]
 path = "crates/solana_kit_native"
 type = "cargo"
