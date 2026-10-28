@@ -1,7 +1,7 @@
 //! Configuration defaults, port validation and real sequential deployment requests.
 
 use super::{fixture::poll_ready, require};
-use alloc::{format, rc::Rc, vec::Vec};
+use alloc::{format, rc::Rc, string::ToString, vec::Vec};
 use core::{
     cell::RefCell,
     future::{Ready, ready},
