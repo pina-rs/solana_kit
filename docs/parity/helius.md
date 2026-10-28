@@ -62,6 +62,29 @@ the contract groups establish declaration-by-declaration behavioral parity.
 Paid-service credentials are not required for deterministic tests; no live
 provider verification or normal registry release is claimed.
 
+## Complete DAS records
+
+The pinned provider schema at `8560889fffe1af14d69e99d001cec29196756b87`
+allows partial NFT editions, token accounts and token-account pages. The existing
+wire types retain that behavior, including missing and null fields. The Dart Kit
+requires mint and edition for an NFT edition; address, mint, owner and amount for
+a token account; and total, limit and token accounts for its page.
+
+`CompleteNftEdition`, `CompleteTokenAccount` and `CompleteTokenAccountList`
+provide those complete application contracts through direct deserialization or
+fallible conversion from the provider types. Conversion moves typed fields and
+optional metadata without JSON reencoding or implicit defaults. A partial nested
+account rejects the entire complete page. `IncompleteDasRecord` retains the wire
+field, distinguishes missing from null and identifies the nested account position.
+
+The shared `das-vectors` group exercises all nine required fields, both absence
+forms, exact integers, opaque extension metadata and array/type rejection.
+It also converts real typed `getTokenAccounts` Method results. Its registration
+is shared by native, browser, both WASI previews and the production LeptosKit
+runner. Registration alone does not prove execution of this change; its current
+source must pass CI. These checks do not authenticate provider records, establish
+live service availability or complete the Helius declaration ledger.
+
 ## Unified signup
 
 The opt-in `signup` feature authenticates a caller or accepts a pre-authenticated

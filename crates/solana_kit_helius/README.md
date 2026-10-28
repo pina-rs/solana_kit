@@ -13,6 +13,31 @@ queries, webhooks, authentication, staking preparation and transaction submissio
 Optional `crypto` enables caller-key authentication signing. Runtime libraries,
 ambient credentials and automatic submission retries are excluded.
 
+DAS wire records follow the provider's partial-response contract. Applications
+that require complete records can convert `NftEdition`, `TokenAccount` and
+`TokenAccountList` through `TryFrom` into `CompleteNftEdition`,
+`CompleteTokenAccount` and `CompleteTokenAccountList`. The complete types require
+the Dart Kit's mint/edition, account identity/amount and page counts/account list.
+`IncompleteDasRecord` distinguishes missing fields from explicit nulls and reports
+the position of an incomplete account in a page. Optional metadata retains its
+missing/null distinction, and raw amounts remain exact `u64` values.
+
+```rust
+use solana_kit_helius::das::{CompleteTokenAccountList, TokenAccountList};
+
+# fn main() -> Result<(), Box<dyn std::error::Error>> {
+let wire: TokenAccountList =
+    serde_json::from_str(r#"{"total":0,"limit":0,"token_accounts":[]}"#)?;
+let page = CompleteTokenAccountList::try_from(wire)?;
+assert!(page.token_accounts.is_empty());
+# Ok(())
+# }
+```
+
+Complete types also deserialize directly, rejecting omitted or null required
+fields and incomplete nested accounts. Completeness checks field presence and
+types; it does not authenticate provider data or validate on-chain account state.
+
 Enable `signup` for `auth::auth_signup`. It checks the first developer project,
 reuses or creates a project key, or prepares hosted checkout for a new subscription.
 Pre-authenticated callers need no cryptography. Combine `signup` with `crypto`

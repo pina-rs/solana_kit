@@ -1,11 +1,13 @@
 //! The twelve pinned Digital Asset Standard operations.
 
 mod assets;
+mod complete;
 mod metadata;
 mod options;
 mod requests;
 
 pub use assets::*;
+pub use complete::*;
 pub use metadata::*;
 pub use options::*;
 pub use requests::*;
@@ -13,7 +15,11 @@ pub use requests::*;
 method!(GetAssetRequest, "getAsset", HeliusAsset);
 method!(GetAssetBatchRequest, "getAssetBatch", Vec<HeliusAsset>);
 method!(GetAssetProofRequest, "getAssetProof", AssetProof);
-method!(GetAssetProofBatchRequest, "getAssetProofBatch", std::collections::BTreeMap<String, AssetProof>);
+method!(
+    GetAssetProofBatchRequest,
+    "getAssetProofBatch",
+    std::collections::BTreeMap<String, AssetProof>
+);
 method!(
     GetAssetsByAuthorityRequest,
     "getAssetsByAuthority",

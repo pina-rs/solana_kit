@@ -1,5 +1,7 @@
 //! DAS requests and results follow independently pinned provider wire schemas.
 
+mod required;
+
 use serde::{Deserialize, Serialize, de::DeserializeOwned};
 use serde_json::value::RawValue;
 use solana_kit_client::methods::Method;
@@ -56,6 +58,7 @@ pub fn vectors() {
 
     malformed_parameters();
     malformed_results();
+    required::fields();
 }
 
 fn reject<Operation: DeserializeOwned>(inputs: &[&str]) {
