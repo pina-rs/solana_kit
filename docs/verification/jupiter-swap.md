@@ -50,7 +50,7 @@ run through the existing `solana_kit_conformance` registry. They cover query
 defaults and overrides, request bodies, response precision and optionality,
 malformed fields, duplicate keys, admission budgets, conversion failure paths,
 independent v0 wire bytes, single-exchange errors and owned-future cancellation.
-The suite identity is `solana-kit-core-v45`, with 388 canonical cases and 387
+At this source phase the suite identity was `solana-kit-core-v45`, with 388 canonical cases and 387
 passing cases under the sole-hash-corruption negative control.
 
 Root-owned execution uses the existing commands and harnesses:
@@ -66,7 +66,7 @@ cargo clippy -p solana_kit_jupiter -p solana_kit_conformance --all-targets --loc
 Browser execution uses `verification/browser`; WASI uses the conformance binary
 for its maintained WASI targets. `verification/guest` and `verification/leptoskit`
 execute the same registry in the pinned production wasmi host. The ten extra
-ordinary groups use the existing finite fuel-accounting formula. The source retains
+ordinary groups use the existing finite fuel-accounting formula. That phase retained
 the independent explicit `13_785_000_000` fuel oracle for 388 cases and
 all fixed crypto, MWA and overflow controls. The host test still requires execution.
 The fixtures use a manual local peer and require no credentials or live Jupiter access.

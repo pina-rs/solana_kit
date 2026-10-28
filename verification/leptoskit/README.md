@@ -9,7 +9,7 @@ pressing its report each execute the whole suite. Wasmi 2 meters Wasm operations
 dynamic copying, and first-use lazy function translation. It does not meter
 elapsed time. The upstream application default and production source are unchanged.
 
-The harness grants the current 388-case suite **13,785,000,000 fuel per entry**.
+The harness grants the current 392-case suite **13,845,000,000 fuel per entry**.
 The host computes `15_000_000 × (EXPECTED_CASE_COUNT - 3) +
 5_000_000 × (MAX_BATCH + 1 + 3 × MESSAGE_COUNT + 4 + 573)` with checked arithmetic.
 These are pooled workload
@@ -19,7 +19,7 @@ overflow reject. A separate fresh guest with one fuel must trap with
 `OutOfFuel` before committing anything. Production host defaults are unchanged.
 
 The three separately accounted groups are the transaction batch and two message
-groups. The current total retains 385 ordinary groups and 257 authenticated
+groups. The current total contains 389 ordinary groups and 257 authenticated
 transactions, then accounts for 772 actual message crypto calls: 514 signing
 calls, 256 strict verification calls, and two key derivations. The batch signs
 256 distinct one-byte messages, and its comparison oracle signs all 256 again;
@@ -31,9 +31,9 @@ explicit finite workload accounting, not a new measured per-operation rate.
 The separate MWA workload contributes 573 checked backend entries. The three new
 Pyth account groups, four Hermes response groups, four Hermes GET groups and three
 receiver instruction/PDA groups, five Jupiter price/token groups and ten Jupiter
-swap groups receive the unchanged ordinary-case allowance.
+swap groups, and four SNS groups receive the unchanged ordinary-case allowance.
 
-Current CI must execute all 388 canonical cases and the 387/388 sole-hash-corruption
+Current CI must execute all 392 canonical cases and the 391/392 sole-hash-corruption
 report through the actual pinned host. The earlier 108-case acceptance and 92-case
 minimum measurements below remain historical. No current-suite minimum,
 elapsed-time or SDK speed claim is made.
