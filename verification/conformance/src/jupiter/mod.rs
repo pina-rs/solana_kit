@@ -3,6 +3,9 @@
 mod fixture;
 mod models;
 mod ownership;
+mod swap;
+
+pub(crate) use swap::cases as swap_cases;
 
 use crate::{CaseResult, case, require};
 use alloc::{rc::Rc, string::ToString};
@@ -10,6 +13,9 @@ use fixture::{Peer, State, finish};
 use solana_kit_client::rest::{self, Budgets};
 use solana_kit_core::Address;
 use solana_kit_jupiter::{Category, Interval, TokenLimit};
+
+const SEARCH_LIMIT: u64 = 7;
+const TARGET_BYTES: usize = 256;
 
 pub(crate) fn cases() -> [CaseResult; 5] {
     [
@@ -32,7 +38,7 @@ pub(crate) fn cases() -> [CaseResult; 5] {
 
 #[test]
 fn jupiter_public_contracts_pass() {
-    for case in cases() {
+    for case in cases().into_iter().chain(swap::cases()) {
         assert!(case.outcome.is_ok(), "{}: {:?}", case.name, case.outcome);
     }
 }
@@ -43,7 +49,8 @@ fn routes() -> Result<(), &'static str> {
     let mint = Address::from_bytes([0; 32]);
     finish(prices.get_prices(&[mint, mint]))?.map_err(|_| "Jupiter price request failed")?;
     let tokens = Peer::new(state.clone(), b"[]").client(Budgets::default());
-    finish(tokens.search_tokens("SOL +/雪", Some(7)))?.map_err(|_| "Jupiter search failed")?;
+    finish(tokens.search_tokens("SOL +/雪", Some(SEARCH_LIMIT)))?
+        .map_err(|_| "Jupiter search failed")?;
     finish(tokens.tagged_tokens("verified"))?.map_err(|_| "Jupiter tag request failed")?;
     finish(tokens.category_tokens(
         Category::TopTraded,
@@ -51,6 +58,7 @@ fn routes() -> Result<(), &'static str> {
         TokenLimit::new(100),
     ))?
     .map_err(|_| "Jupiter category request failed")?;
+
     finish(tokens.recent_tokens())?.map_err(|_| "Jupiter recent request failed")?;
     check_requests(&state, mint)
 }
@@ -90,8 +98,13 @@ fn check_requests(state: &State, mint: Address) -> Result<(), &'static str> {
         requests[1].query[1] == ("limit".into(), "7".into()),
         "search limit was lost",
     )?;
-    let encoded = rest::request_target("/", &requests[1].path_segments, &requests[1].query, 256)
-        .map_err(|_| "Jupiter target encoding failed")?;
+    let encoded = rest::request_target(
+        "/",
+        &requests[1].path_segments,
+        &requests[1].query,
+        TARGET_BYTES,
+    )
+    .map_err(|_| "Jupiter target encoding failed")?;
     require(
         encoded == "/tokens/v2/search?query=SOL%20%2B%2F%E9%9B%AA&limit=7",
         "query escaped its boundary",

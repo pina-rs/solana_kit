@@ -1,7 +1,10 @@
 //! Native tasks may require Send without imposing that bound on local Wasm adapters.
 
 use solana_kit_client::{Reply, TransportError, rest};
-use solana_kit_jupiter::{Category, Client, Interval, Service};
+use solana_kit_core::Address;
+use solana_kit_jupiter::{
+    Category, Client, Integer, Interval, OrderRequest, OrderResponse, Service,
+};
 use std::future::{Ready, ready};
 
 struct Native;
@@ -27,4 +30,17 @@ fn native_call_futures_satisfy_send() {
     requires_send(client.tagged_tokens("verified"));
     requires_send(client.category_tokens(Category::TopTrending, Interval::OneHour, None));
     requires_send(client.recent_tokens());
+    let order = OrderRequest::new(
+        Address::from_bytes([0; 32]),
+        Address::from_bytes([1; 32]),
+        Integer::from(1),
+    );
+    let accepted = OrderResponse {
+        request_id: Some("accepted".into()),
+        ..OrderResponse::default()
+    };
+
+    requires_send(client.get_order(&order));
+    requires_send(client.build_swap(&order));
+    requires_send(client.execute_order(&accepted, "signed"));
 }

@@ -1,6 +1,6 @@
 # Solana Kit Jupiter
 
-Jupiter Price API v3 and Token API v2 clients for **off-chain application code**.
+Jupiter Swap API v2, Price API v3 and Token API v2 clients for **off-chain application code**.
 Use Pina or the Solana program libraries for on-chain programs.
 
 The client reuses Kit's bounded REST transport. It owns no executor, origin,
@@ -38,6 +38,58 @@ Record and error diagnostics omit response data; bounded HTTP bodies remain
 available explicitly. No price freshness, token verification, investment value,
 swap safety or successful execution is inferred from an API response.
 
-This phase implements the price and token surface. Swap order, build, execution
-and transaction decoding remain separate delivery work. Normal publication is
-disabled; a future name reservation is version `0.0.0` only.
+Normal publication remains disabled.
+
+`get_order` requests a quote and an optional assembled transaction. Inspect
+`encoded_transaction` with `decode_base64_swap_transaction`, review its accounts,
+instructions and signed message, and sign it with the application's signers.
+`execute_order` posts the caller's signed base64 transaction once and requires a
+nonblank `request_id` from the accepted order. It preserves the identifier and
+sends `lastValidBlockHeight` as a string when available. Execution responses keep
+status, code, signature and error independently; a signature can accompany failure.
+The application decides whether an execution succeeded and confirms landing.
+
+```rust
+use solana_kit_client::rest::{Budgets, Transport};
+use solana_kit_core::Address;
+use solana_kit_jupiter::{Client, Error, Integer, OrderRequest, OrderResponse, Service};
+
+async fn quote<T: Transport<Service>>(
+    transport: T,
+    input_mint: Address,
+    output_mint: Address,
+) -> Result<OrderResponse, Error> {
+    let request = OrderRequest::new(input_mint, output_mint, Integer::from(1_000_000));
+    Client::new(transport, Budgets::default()).get_order(&request).await
+}
+```
+
+`OrderRequest` preserves optional parameters and provider defaults. Extra query
+parameters override built-in values, matching Dart; arbitrary values remain
+encoded query data. Economic limits and taker requirements are enforced by the
+provider. `Integer` retains signed decimal integers of arbitrary width without
+floating point. It accepts number and decimal-string response variants, normalizes
+leading zeroes, and rejects fractional, exponent and hexadecimal representations.
+Expiry timestamps, basis points and execution codes use checked `i64` values.
+
+`build_swap` returns nullable raw instructions for self-landing. Its ordered lookup
+map preserves response key order and each table's on-chain address index order.
+Missing or null lookup-address lists fall back to map keys; an explicit empty list
+stays empty. `to_instruction`, `to_account_meta`, `to_lookup_table` and `to_lifetime`
+perform explicit conversion into Kit-owned values. They reject missing privileges,
+invalid addresses, malformed base64, oversized lookup tables and invalid lifetimes.
+No instruction ordering, signing, RPC submission or table authenticity is inferred.
+
+Use `decode_order`, `decode_build` and `decode_execution` for standalone response
+decoding. These apply shared admission before typed allocation, require JSON objects
+and retain the exact bounded response bytes in `raw_response`. Missing and null
+optional fields stay absent. An unknown string order mode maps to `None`; nonstring
+execution errors remain available in raw JSON, matching the reference. Other
+malformed known fields reject rather than silently disappearing. Serde derives
+alone do not provide the shared admission or raw-response retention boundary.
+
+The conformance suite registers ten swap groups for native Rust, browser Wasm,
+WASI and the existing LeptosKit guest harness. The fixtures exercise request wire
+forms, exact precision, nullable models, malformed fields, Kit conversion,
+HTTP/adapter errors, budgets and dropped-future cancellation. They establish
+client contracts without making live Jupiter requests.
