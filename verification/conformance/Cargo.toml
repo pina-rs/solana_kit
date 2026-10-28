@@ -33,6 +33,7 @@ solana_kit_pyth = { path = "../../crates/solana_kit_pyth", features = ["hermes",
 solana_kit_signers = { path = "../../crates/solana_kit_signers", features = ["crypto"] }
 solana_kit_sns = { path = "../../crates/solana_kit_sns" }
 solana_kit_system = { path = "../../crates/solana_kit_system" }
+solana_kit_surfpool = { path = "../../crates/solana_kit_surfpool" }
 solana_kit_token = { path = "../../crates/solana_kit_token" }
 solana_kit_wallet = { path = "../../crates/solana_kit_wallet", features = ["mwa"] }
 solana_kit_wallet_verification = { path = "../wallet-runtime" }
