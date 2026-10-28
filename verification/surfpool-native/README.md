@@ -91,10 +91,14 @@ These are source requirements and seams, not executed control results. WS,
 signed System transfers, automatic ports and public native lifecycle APIs remain
 next-phase work.
 
-The selected journey passed against stock 1.7.0: fresh genesis and readiness,
-funded payer and exact account bytes, confirmed time travel and processed-bank
-readback, HTTP 413 with an absent account after an 8 MiB raw write, and successful
-exit followed by reaping. The verified Darwin arm64 executable SHA-256 is
+Two local runs against stock 1.7.0 observed fresh genesis and readiness, funded
+payer and exact account bytes, confirmed time travel and processed-bank readback,
+HTTP 413 with an absent account after an 8 MiB raw write, and successful exit
+followed by reaping. A later strict oversized-request replay failed after the
+startup, account and clock checks. Its typed cause remains undiagnosed; that
+replay is not accepted as a pass or evidence that the optional probe is reliable.
+Current-source CI remains a separate required check. The Darwin arm64 executable
+used in the two successful runs had verified SHA-256
 `64c0e114e508cc9d61a106d2d0e80f1865e901f6bca2a4546b0363b6ffd79934`.
 
 `cargo test --locked -p solana_kit_surfpool_native_verification` exercises
