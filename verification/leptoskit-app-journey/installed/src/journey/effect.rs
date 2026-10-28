@@ -4,9 +4,14 @@ use crate::{Error, Result, require, validator::Validator};
 use serde_json::{Value, json};
 use std::{thread, time::Instant};
 
+pub(super) struct Receipt {
+    pub(super) signature: String,
+    pub(super) payer_balance: u64,
+}
+
 /// Discover only successful transfers from this freshly funded UI key.
 /// Safe observations may poll; the UI's approve action is never repeated.
-pub(super) fn wait_for_transfer(node: &mut Validator, transfer: &Transfer) -> Result<String> {
+pub(super) fn wait_for_transfer(node: &mut Validator, transfer: &Transfer) -> Result<Receipt> {
     let deadline = Instant::now() + OBSERVE;
 
     loop {
@@ -19,13 +24,20 @@ pub(super) fn wait_for_transfer(node: &mut Validator, transfer: &Transfer) -> Re
             ]))?;
 
             if !transaction.is_null() {
-                verify(&transaction, transfer, &signature)?;
+                let payer_balance = verify(&transaction, transfer, &signature)?;
+                require(
+                    node.rpc.balance(&transfer.payer)? == payer_balance,
+                    "independent payer effect",
+                )?;
                 require(
                     node.rpc.balance(&transfer.recipient)? == transfer.after()?,
                     "independent recipient effect",
                 )?;
 
-                return Ok(signature);
+                return Ok(Receipt {
+                    signature,
+                    payer_balance,
+                });
             }
         }
 
@@ -62,7 +74,7 @@ fn submitted(node: &Validator, recipient: &str) -> Result<Option<String>> {
     Ok(Some(signature.to_owned()))
 }
 
-fn verify(transaction: &Value, transfer: &Transfer, signature: &str) -> Result<()> {
+fn verify(transaction: &Value, transfer: &Transfer, signature: &str) -> Result<u64> {
     let message = &transaction["transaction"]["message"];
     require(
         transaction["meta"]["err"] == Value::Null,
@@ -106,7 +118,7 @@ fn instruction(message: &Value) -> Result<()> {
     require(data == expected, "executed System transfer bytes")
 }
 
-fn balances(meta: &Value, transfer: &Transfer) -> Result<()> {
+fn balances(meta: &Value, transfer: &Transfer) -> Result<u64> {
     require(
         meta["preBalances"][1] == transfer.before && meta["postBalances"][1] == transfer.after()?,
         "ledger recipient balance delta",
@@ -126,5 +138,6 @@ fn balances(meta: &Value, transfer: &Transfer) -> Result<()> {
     require(
         fee > 0 && meta["postBalances"][0] == after,
         "ledger payer debit and network fee",
-    )
+    )?;
+    Ok(after)
 }

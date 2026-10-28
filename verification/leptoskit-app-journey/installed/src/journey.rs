@@ -55,13 +55,16 @@ pub(crate) fn run(
     };
 
     reject_transfer(tester, node, &transfer, platform)?;
-    approve_transfer(tester, node, &transfer, platform)?;
+    let balance = approve_transfer(tester, node, &transfer, platform)?;
+    tester.tap(&accessibility::action(platform, "Read balance"))?;
+    tester.expect_visible(&Locator::text(format!("Balance: {balance} lamports")))?;
+    tester.checkpoint("Initial payer balance checked before process termination")?;
 
     node.alive()?;
     tester.tap(&accessibility::action(platform, "Disconnect wallet"))?;
     tester.expect_visible(&accessibility::action(platform, "Create local wallet"))?;
     tester.checkpoint("Explicit disconnect completed")?;
-    persistence::save_other_wallet(tester, platform, transfer.payer)
+    persistence::save_other_wallet(tester, platform, transfer.payer, balance)
 }
 
 fn fresh_wallet(tester: &mut NativeTester, platform: Platform) -> Result<String> {
@@ -126,12 +129,15 @@ fn approve_transfer(
     node: &mut Validator,
     transfer: &Transfer,
     platform: Platform,
-) -> Result<()> {
+) -> Result<u64> {
     tester.tap(&accessibility::action(platform, "Review test SOL transfer"))?;
     review(tester, transfer)?;
     tester.tap(&accessibility::action(platform, "Approve signature"))?;
     let after = transfer.after()?;
-    let signature = effect::wait_for_transfer(node, transfer)?;
+    let effect::Receipt {
+        signature,
+        payer_balance,
+    } = effect::wait_for_transfer(node, transfer)?;
     tester.expect_visible(&Locator::text(format!(
         "Transfer confirmed: {signature}. Recipient balance: {after} lamports"
     )))?;
@@ -141,7 +147,8 @@ fn approve_transfer(
     require(
         colors > MINIMUM_COLORS,
         "native pixels are blank or synthetic",
-    )
+    )?;
+    Ok(payer_balance)
 }
 
 fn review(tester: &NativeTester, transfer: &Transfer) -> Result<()> {
