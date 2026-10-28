@@ -9,6 +9,8 @@ use std::fmt;
 /// Each `NativeHttp` retains its caller-approved endpoint, headers, TLS roots and
 /// deadlines. A root may contain a fixed authentication query. Request data only
 /// appends encoded relative segments and query pairs. No redirects are followed.
+/// Remote roots require HTTPS. Plain HTTP is limited to literal loopback IPs for
+/// caller-owned local services; names such as `localhost` are not exempted.
 pub struct NativeRest<D> {
     routes: Vec<(D, NativeHttp)>,
     max_target_bytes: usize,
@@ -16,6 +18,10 @@ pub struct NativeRest<D> {
 
 impl<D: Eq> NativeRest<D> {
     /// Binds unique named routes and an explicit encoded request-target limit.
+    ///
+    /// Rejects remote plaintext roots before DNS or socket work, regardless of
+    /// whether the caller has attached credentials. No plaintext remote opt-in
+    /// exists. Loopback HTTP does not protect against other local processes.
     pub fn new(routes: Vec<(D, NativeHttp)>, max_target_bytes: usize) -> Result<Self, ConfigError> {
         if routes.is_empty() || max_target_bytes == 0 {
             return Err(ConfigError(
@@ -23,7 +29,17 @@ impl<D: Eq> NativeRest<D> {
             ));
         }
 
-        for (index, (name, _)) in routes.iter().enumerate() {
+        for (index, (name, adapter)) in routes.iter().enumerate() {
+            if !adapter.endpoint.secure
+                && !adapter
+                    .endpoint
+                    .host
+                    .parse::<std::net::IpAddr>()
+                    .is_ok_and(|ip| ip.is_loopback())
+            {
+                return Err(ConfigError("remote REST routes require HTTPS"));
+            }
+
             if routes[..index].iter().any(|(other, _)| name == other) {
                 return Err(ConfigError("duplicate REST destination"));
             }

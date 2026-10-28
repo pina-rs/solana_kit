@@ -82,6 +82,53 @@ async fn tls_case(hostname: &str, trusted: bool, succeeds: bool) {
 }
 
 #[tokio::test]
+async fn rest_keeps_credentials_and_submission_body_on_verified_tls() {
+    use solana_kit_client::rest::{self, Transport};
+    use solana_kit_native::{HeaderValue, NativeRest};
+
+    const BODY: &[u8] = br#"{"method":"sendTransaction","params":["synthetic-signed-wire"]}"#;
+    let listener = listener().await;
+    let port = listener.local_addr().unwrap().port();
+    let server = tokio::spawn(async move {
+        let (socket, _) = listener.accept().await.unwrap();
+        let mut stream = acceptor().accept(socket).await.unwrap();
+        let observed = read_request(&mut stream).await;
+        let text = std::str::from_utf8(&observed).unwrap();
+        assert!(text.starts_with("POST /fast?api-key=synthetic-key HTTP/1.1\r\n"));
+        assert!(text.contains("authorization: Bearer synthetic-token\r\n"));
+        assert!(observed.ends_with(BODY));
+        stream.write_all(&response(200, b"TLS")).await.unwrap();
+    });
+    let mut config = HttpConfig {
+        tls: TlsRoots::Certificates(vec![ROOT.to_vec()]),
+        ..HttpConfig::default()
+    };
+    config.headers.insert(
+        "authorization",
+        HeaderValue::from_static("Bearer synthetic-token"),
+    );
+    let http = NativeHttp::new(
+        &format!("https://localhost:{port}/?api-key=synthetic-key"),
+        config,
+    )
+    .unwrap();
+    let transport = NativeRest::new(vec![((), http)], 1024).unwrap();
+    let reply = transport
+        .exchange(rest::Request {
+            service: (),
+            method: rest::Method::Post,
+            path_segments: vec!["fast".into()],
+            query: Vec::new(),
+            body: rest::Body::Json(BODY.to_vec()),
+            max_reply_bytes: 3,
+        })
+        .await
+        .unwrap();
+    assert_eq!(reply.body, b"TLS");
+    server.await.unwrap();
+}
+
+#[tokio::test]
 async fn connect_deadline_includes_tls_handshake() {
     let listener = listener().await;
     let address = listener.local_addr().unwrap();
