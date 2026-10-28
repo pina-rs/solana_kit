@@ -119,6 +119,18 @@ pub enum Failure {
     /// Existing subscription owner failure, including false unsubscribe and gaps.
     Subscription(crate::subscriptions::Failure),
 }
+impl Failure {
+    /// Keeps the established high-level mismatch contract when low-level decoding rejects it.
+    pub(super) fn submission_rpc(error: crate::Error) -> Self {
+        match error {
+            crate::Error::SubmissionSignatureMismatch { expected, actual } => {
+                Self::ReportedSignatureMismatch { expected, actual }
+            }
+            error => Self::Rpc(error),
+        }
+    }
+}
+
 impl fmt::Display for Failure {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "confirmation failure: {self:?}")

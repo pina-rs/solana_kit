@@ -74,8 +74,11 @@ production LeptosKit interpreter. Ordinary native callers also pass on Rust 1.89
 Address history defaults to signature pages capped at 1000 entries. Explicit full
 pages retain their 100-entry cap and strict version negotiation. Transaction and
 block reads preserve historical missing-metadata version omission. Submission
-accepts opaque bytes without a global legacy packet cap, automatic retry or
-confirmation. Full result graphs keep exact quantities and preserve opaque JSON
+accepts `SignedWire::new(&bytes)?`, which validates complete legacy/v0/v1 wire
+before transport and retains its primary signature. Every successful send result
+must equal that signature. Exact bytes and the larger V1 packet allowance are
+preserved. The client never automatically retries or infers confirmation.
+Full result graphs keep exact quantities and preserve opaque JSON
 only for program-defined data and unknown future transaction failures.
 
 `introspection::decode_rpc_transaction` resolves those typed transaction results

@@ -102,5 +102,9 @@ All retained source licenses and provenance remain intact.
 These results execute local memory-transport protocol behavior. Accepted network
 adapters have their own receipts. This receipt establishes no new HTTP/socket,
 validator, device, installed application, registry, complete-declaration or full
-Phase 4 claim. SendTransaction remains opaque, with no client retry, signing,
-expiry inference or confirmation behavior. Component publication stays disabled.
+Phase 4 claim. `SendTransaction` now requires structurally validated `SignedWire`
+and binds successful acknowledgements to its primary signature, with no client
+retry, signing, expiry inference or confirmation behavior. Former malformed
+opaque-wire success fixtures are retained as construction rejection controls;
+success paths use signed legacy and maximum-sized V1 fixtures. Component
+publication stays disabled.

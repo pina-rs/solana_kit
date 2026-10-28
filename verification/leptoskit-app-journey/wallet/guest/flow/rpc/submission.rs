@@ -2,7 +2,7 @@
 use super::{AppError, Error, Rpc, balance, sleep};
 use solana_kit_client::{
     confirmation::{Confirmation, Policy, reconcile},
-    methods::submission::{SendConfig, SendTransaction, WireEncoding},
+    methods::submission::{SendConfig, SendTransaction, SignedWire, WireEncoding},
 };
 use solana_kit_core::{Address, transaction::Transaction};
 
@@ -34,7 +34,7 @@ pub(super) async fn send(
     };
     let actual = client
         .call(SendTransaction {
-            wire: &wire,
+            wire: SignedWire::new(&wire)?,
             encoding: WireEncoding::Base64,
             config,
         })

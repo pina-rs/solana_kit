@@ -130,6 +130,13 @@ pub enum Error {
     Envelope,
     /// The response belongs to another request.
     Correlation,
+    /// A submission acknowledgement names another transaction.
+    SubmissionSignatureMismatch {
+        /// Primary signature retained from the exact submitted wire.
+        expected: solana_kit_core::Signature,
+        /// Canonical signature reported by the endpoint.
+        actual: Box<solana_kit_core::Signature>,
+    },
     /// The node returned a JSON-RPC error.
     Remote(RemoteError),
     /// Account base64 bytes or reported full allocation size are invalid.

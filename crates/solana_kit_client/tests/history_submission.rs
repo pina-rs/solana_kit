@@ -7,6 +7,9 @@ use solana_kit_client::{Client, Error, Limits, Reply, Request, Transport, Transp
 use solana_kit_core::{Address, Signature};
 use std::future::{Ready, ready};
 
+#[path = "fixtures/submission_wire.rs"]
+mod submission_wire;
+
 struct Fixture {
     method: &'static str,
     params: serde_json::Value,
@@ -299,38 +302,41 @@ fn fee_and_airdrop_exact_integer_params() {
 
 #[test]
 fn send_keeps_wire_bytes_version_and_node_policy_explicit() {
+    use base64::{Engine, engine::general_purpose::STANDARD};
+    let wire = submission_wire::wire(255, 7);
+    let expected = Signature::from_bytes([7; 64]);
     let config = SendConfig {
         skip_preflight: Some(false),
         preflight_commitment: Some(Commitment::Finalized),
         max_retries: Some(u64::MAX),
         min_context_slot: Some(u64::MAX),
     };
-    let params = serde_json::json!(["AAEC", {
+    let params = serde_json::json!([STANDARD.encode(&wire), {
         "encoding":"base64", "skipPreflight":false,
         "preflightCommitment":"finalized", "maxRetries":u64::MAX,
         "minContextSlot":u64::MAX
     }]);
     let method = SendTransaction {
-        wire: &[0, 1, 2],
+        wire: SignedWire::new(&wire).unwrap(),
         encoding: WireEncoding::Base64,
         config,
     };
-    let result = call(method, params, &format!("\"{}\"", signature())).unwrap();
-    assert_eq!(result, signature());
+    let result = call(method, params, &format!("\"{expected}\"")).unwrap();
+    assert_eq!(result, expected);
     call(
         SendTransaction {
-            wire: &[0, 1, 2],
+            wire: SignedWire::new(&wire).unwrap(),
             encoding: WireEncoding::Base58,
             config: SendConfig::default(),
         },
-        serde_json::json!(["15T",{"encoding":"base58"}]),
-        &format!("\"{}\"", signature()),
+        serde_json::json!([bs58::encode(&wire).into_string(),{"encoding":"base58"}]),
+        &format!("\"{expected}\""),
     )
     .unwrap();
 
-    let version_one_wire = vec![0x81; 4096];
+    let version_one_wire = submission_wire::full_v1();
     let request = SendTransaction {
-        wire: &version_one_wire,
+        wire: SignedWire::new(&version_one_wire).unwrap(),
         encoding: WireEncoding::Base64,
         config: SendConfig::default(),
     };

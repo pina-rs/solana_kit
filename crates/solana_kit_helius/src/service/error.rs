@@ -40,6 +40,8 @@ pub enum Error {
     Schema(serde_json::Error),
     /// An endpoint's non-null protocol error, preserved as bounded exact JSON.
     Provider(Box<serde_json::value::RawValue>),
+    /// A Sender acknowledgement failed canonical parsing or transaction binding.
+    Submission(solana_kit_client::Error),
 }
 
 impl fmt::Debug for Error {
@@ -56,6 +58,7 @@ impl fmt::Debug for Error {
             Self::String => formatter.write_str("String"),
             Self::Schema(_) => formatter.write_str("Schema"),
             Self::Provider(_) => formatter.write_str("Provider"),
+            Self::Submission(_) => formatter.write_str("Submission"),
         }
     }
 }
@@ -71,6 +74,7 @@ impl StdError for Error {
         match self {
             Self::Transport(error) => Some(error),
             Self::Schema(error) => Some(error),
+            Self::Submission(error) => Some(error),
             _ => None,
         }
     }
