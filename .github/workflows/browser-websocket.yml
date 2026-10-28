@@ -19,6 +19,7 @@ jobs:
 
       - name: Install Rust and browser runner
         shell: bash
+
         run: |
           rustup toolchain install 1.99.1 --profile minimal --component rustfmt --component clippy \
             --target wasm32-unknown-unknown
@@ -29,6 +30,7 @@ jobs:
 
       - name: Download checksum-pinned browser
         shell: bash
+
         run: |
           host_dir="$RUNNER_TEMP/browser-hosts"
 
@@ -68,6 +70,7 @@ jobs:
         env:
           RUSTDOCFLAGS: -D warnings
           WASM_BINDGEN_TEST_DRIVER_TIMEOUT: "30"
+
         run: |
           cargo +1.99.1 check -p solana_kit_browser --target wasm32-unknown-unknown --locked
 

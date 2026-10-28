@@ -33,23 +33,27 @@ jobs:
           persist-credentials: false
 
       - name: Install the pinned compiler
+
         run: |
           rustup toolchain install 1.99.1 --profile minimal \
             --component clippy --target wasm32-unknown-unknown
 
       - name: Build the public generator
+
         run: |
           set -euo pipefail
           cargo +1.99.1 build --locked --manifest-path framework/Cargo.toml \
             -p leptoskit_cli --bin leptoskit --message-format=json > "$RUNNER_TEMP/cli.jsonl"
 
       - name: Check the preparation command
+
         run: |
           set -euo pipefail
           cargo +1.99.1 test --locked --manifest-path sdk/Cargo.toml \
             --package solana_kit_xtask generated_wallet::
 
       - name: Execute and lint the composed native runtime
+
         run: |
           set -euo pipefail
           manifest=sdk/verification/leptoskit-app-journey/runtime/Cargo.toml
@@ -58,6 +62,7 @@ jobs:
             --all-targets --features generated-wallet-tests -- -D warnings
 
       - name: Test and lint the installed journey controller
+
         run: |
           set -euo pipefail
           manifest=sdk/verification/leptoskit-app-journey/installed/Cargo.toml
@@ -65,6 +70,7 @@ jobs:
           cargo +1.99.1 clippy --locked --manifest-path "$manifest" --all-targets -- -D warnings
 
       - name: Generate and adapt the ordinary wallet consumer
+
         run: |
           set -euo pipefail
           cli="$(jq -sre '[.[] | select(.reason == "compiler-artifact" and
@@ -81,6 +87,7 @@ jobs:
           done
 
       - name: Verify repeatable preparation and ordinary dependency sources
+
         run: |
           set -euo pipefail
           for fixture in wallet wallet-rpc; do
@@ -100,6 +107,7 @@ jobs:
           done
 
       - name: Compile the generated wallet guest
+
         run: |
           set -euo pipefail
 
@@ -112,6 +120,7 @@ jobs:
           done
 
       - name: Execute the generated guest controls through production wasmi
+
         run: |
           set -euo pipefail
           guest="$(jq -sre '[.[] | select(.reason == "compiler-artifact" and
@@ -127,24 +136,29 @@ jobs:
     name: generated-wallet-${{ matrix.platform }}
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 60
+
     strategy:
       fail-fast: false
+
       matrix:
         include:
           - platform: macos
-            runner: macos-15
+            runner: "macos-15"
             xcode: "26.2"
             native-target: macos
             driver: mac2
+
           - platform: ios
-            runner: macos-26
+            runner: "macos-26"
             xcode: "26.6"
             native-target: ios-simulator
             driver: xcuitest
+
     env:
       DEVELOPER_DIR: /Applications/Xcode_${{ matrix.xcode }}.app/Contents/Developer
       npm_config_user_agent: solana-kit-verification
       npm_config_audit: "false"
+
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -159,16 +173,19 @@ jobs:
           persist-credentials: false
 
       - name: Install the pinned compiler
+
         run: |
           rustup toolchain install 1.99.1 --profile minimal \
             --component clippy --target wasm32-unknown-unknown
 
       - name: Verify the selected iOS test runtime library
         if: matrix.platform == 'ios'
+
         run: test -f "$DEVELOPER_DIR/Platforms/iPhoneSimulator.platform/Developer/usr/lib/lib_TestingInterop.dylib"
 
       - name: Install the iOS simulator compiler target
         if: matrix.platform == 'ios'
+
         run: |
           set -euo pipefail
           case "$(uname -m)" in
@@ -179,6 +196,7 @@ jobs:
           rustup target add --toolchain 1.99.1 "$target"
 
       - name: Verify the generated app toolchains
+
         run: |
           cargo --version
           rustc --version
@@ -186,12 +204,14 @@ jobs:
           xcodebuild -version
 
       - name: Build the public generator
+
         run: |
           set -euo pipefail
           cargo +1.99.1 build --locked --manifest-path framework/Cargo.toml \
             -p leptoskit_cli --bin leptoskit --message-format=json > "$RUNNER_TEMP/cli.jsonl"
 
       - name: Build the actual generated Apple app and composed registrant
+
         run: |
           set -euo pipefail
           cli="$(jq -sre '[.[] | select(.reason == "compiler-artifact" and
@@ -214,6 +234,7 @@ jobs:
           fi
 
       - name: Build and lint the installed application controller
+
         run: |
           set -euo pipefail
           manifest=sdk/verification/leptoskit-app-journey/installed/Cargo.toml
@@ -223,6 +244,7 @@ jobs:
             --message-format=json > "$RUNNER_TEMP/installed-controller.jsonl"
 
       - name: Install the pinned native UI driver and validator
+
         run: |
           set -euo pipefail
           npm ci --prefix framework/setup/native-ui
@@ -252,6 +274,7 @@ jobs:
 
       - name: Create and install on an owned fresh iOS simulator
         if: matrix.platform == 'ios'
+
         run: |
           set -euo pipefail
           runtime_version="$(xcrun --sdk iphonesimulator --show-sdk-version)"
@@ -288,6 +311,7 @@ jobs:
 
       - name: Build the pinned XCTest agent before starting its native session
         if: matrix.platform == 'ios'
+
         run: |
           set -euo pipefail
           device="$(cat "$RUNNER_TEMP/wallet-ios-device")"
@@ -297,6 +321,7 @@ jobs:
           ) > "$RUNNER_TEMP/installed-wda.log" 2>&1
 
       - name: Drive the installed generated app against its owned fresh validator
+
         run: |
           set -euo pipefail
           controller="$(jq -sre '[.[] | select(.reason == "compiler-artifact" and
@@ -357,6 +382,7 @@ jobs:
       - name: Capture logs for the owned iOS application
         if: always() && matrix.platform == 'ios'
         timeout-minutes: 2
+
         run: |
           set -euo pipefail
           marker="$RUNNER_TEMP/wallet-ios-device"
@@ -369,6 +395,7 @@ jobs:
 
       - name: Shut down and delete only the owned simulator
         if: always() && matrix.platform == 'ios'
+
         run: |
           set -euo pipefail
           marker="$RUNNER_TEMP/wallet-ios-device"
@@ -395,7 +422,7 @@ jobs:
             ${{ runner.temp }}/installed-ios-app.log
 
   generated-wallet-android:
-    runs-on: ubuntu-24.04
+    runs-on: "ubuntu-24.04"
     timeout-minutes: 75
 
     env:
@@ -425,6 +452,7 @@ jobs:
           java-version: "21"
 
       - name: Install the pinned compiler and Android targets
+
         run: |
           set -euo pipefail
           rustup toolchain install 1.99.1 --profile minimal \
@@ -432,6 +460,7 @@ jobs:
           rustup target add --toolchain 1.99.1 x86_64-linux-android
 
       - name: Install the generated Android host toolchains
+
         run: |
           set -euo pipefail
           bash framework/setup/scripts/android_sdk_install.sh "ndk;$NDK_VERSION" \
@@ -440,6 +469,7 @@ jobs:
           printf 'ANDROID_NDK_HOME=%s/ndk/%s\n' "$ANDROID_HOME" "$NDK_VERSION" >> "$GITHUB_ENV"
 
       - name: Build the public generator and installed controller
+
         run: |
           set -euo pipefail
           cargo +1.99.1 build --locked --manifest-path framework/Cargo.toml \
@@ -452,6 +482,7 @@ jobs:
             --message-format=json > "$RUNNER_TEMP/installed-controller.jsonl"
 
       - name: Build the ordinary generated Android app and composed runtime
+
         run: |
           set -euo pipefail
           cli="$(jq -sre '[.[] | select(.reason == "compiler-artifact" and
@@ -468,6 +499,7 @@ jobs:
           "$cli" native build android-x86_64
 
       - name: Install the pinned Android UI driver and validator
+
         run: |
           set -euo pipefail
           npm ci --prefix framework/setup/native-ui
@@ -483,6 +515,7 @@ jobs:
           rm "$archive"
 
       - name: Enable the owned emulator accelerator
+
         run: |
           set -euo pipefail
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' \
@@ -497,9 +530,12 @@ jobs:
           target: default
           arch: x86_64
           avd-name: solana-kit-wallet
+
           force-avd-creation: true
           disable-animations: true
-          emulator-options: -no-snapshot -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          emulator-options: >-
+            -no-snapshot -no-window -gpu swiftshader_indirect
+            -noaudio -no-boot-anim -camera-back none
           script: bash sdk/verification/leptoskit-app-journey/installed/run_android.sh
 
       - name: Retain actual Android app evidence

@@ -24,11 +24,13 @@ jobs:
 
       - name: Install pinned Rust tools
         shell: bash
+
         run: |
           rustup toolchain install 1.99.1 --profile minimal --component rustfmt --component clippy
 
       - name: Test portable core and conformance
         shell: bash
+
         run: |
           cargo +1.99.1 fmt --all --check
 
@@ -50,6 +52,7 @@ jobs:
 
       - name: Execute canonical suite and corrupt-fixture exit control
         shell: bash
+
         run: |
           cargo +1.99.1 run --quiet -p solana_kit_conformance --locked > \
             "$RUNNER_TEMP/native-success.txt"
@@ -73,6 +76,7 @@ jobs:
 
       - name: Verify both public crate archives
         shell: bash
+
         run: |
           cargo +1.99.1 package -p solana_kit_core --all-features --locked
 
@@ -88,6 +92,7 @@ jobs:
 
       - name: Check promised core MSRV
         shell: bash
+
         run: |
           rustup toolchain install 1.89.0 --profile minimal
 
@@ -103,12 +108,14 @@ jobs:
 
       - name: Execute confirmation factories on the promised MSRV
         shell: bash
+
         run: |
           cargo +1.89.0 test -p solana_kit_client --features confirmation-factories \
             --all-targets --locked
 
       - name: Execute Pyth clients on the promised MSRV
         shell: bash
+
         run: |
           cargo +1.89.0 test -p solana_kit_pyth --no-default-features --locked
 
@@ -116,6 +123,7 @@ jobs:
 
       - name: Execute Jupiter clients on the promised MSRV
         shell: bash
+
         run: cargo +1.89.0 test -p solana_kit_jupiter --locked
 
       - name: Verify sender address observations in both signer feature modes
@@ -123,6 +131,7 @@ jobs:
         env:
           RUSTUP_TOOLCHAIN: 1.89.0
           RUSTUP_AUTO_INSTALL: "0"
+
         run: |
           set -euo pipefail
           rustc_path="$(rustup which --toolchain 1.89.0 rustc)"
@@ -153,6 +162,7 @@ jobs:
 
       - name: Check ledger and Rust formatting
         shell: bash
+
         run: |
           rustup toolchain install 1.99.1 --profile minimal --component rustfmt
 
@@ -175,12 +185,13 @@ jobs:
 
           "$RUNNER_TEMP/check-plan" "$RUNNER_TEMP/dart-reference"
 
-      - name: Enforce monostyle 90 in both categories
+      - name: "Enforce monostyle 90 in both categories"
         shell: bash
+
         run: |
           cargo +1.99.1 install monostyle --locked \
             --git https://github.com/ifiokjr/monostyle \
-            --rev 8da21273398c2a9c56f2f9ba99effadd217633ce
+            --rev ae86916d5055fb2c15f665bbe4f0f90bd8abc26e
 
           cargo +1.99.1 xtask style
 
@@ -188,6 +199,7 @@ jobs:
 
       - name: Validate ownership and preview release files
         shell: bash
+
         run: |
           monochange_dir="$RUNNER_TEMP/monochange-0.21.0"
 

@@ -5,7 +5,7 @@ Install the reviewed Monostyle 0.3.27 parser revision, then run the style gate:
 ```sh
 cargo install monostyle --locked \
   --git https://github.com/ifiokjr/monostyle \
-  --rev 8da21273398c2a9c56f2f9ba99effadd217633ce
+  --rev ae86916d5055fb2c15f665bbe4f0f90bd8abc26e
 cargo xtask style
 ```
 

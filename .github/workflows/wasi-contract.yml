@@ -70,6 +70,6 @@ jobs:
 
           cargo install monostyle --locked \
             --git https://github.com/ifiokjr/monostyle \
-            --rev 8da21273398c2a9c56f2f9ba99effadd217633ce
+            --rev ae86916d5055fb2c15f665bbe4f0f90bd8abc26e
 
           monostyle check verification/wasi-contract --include-generated --fail-under 90

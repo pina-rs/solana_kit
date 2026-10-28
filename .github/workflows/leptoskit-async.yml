@@ -18,16 +18,19 @@ jobs:
           persist-credentials: false
 
       - name: Install pinned guest toolchain
+
         run: |
           rustup toolchain install 1.99.1 --profile minimal --component rustfmt --component clippy \
             --target wasm32-unknown-unknown
 
       - name: Build required real Rust guest
+
         run: |
           cargo +1.99.1 build --locked --manifest-path verification/leptoskit-async/Cargo.toml -p \
             solana_kit_leptoskit_async_guest --target wasm32-unknown-unknown
 
       - name: Execute canonical and failing controls in pinned actual host
+
         run: |
           cargo +1.99.1 run --locked --manifest-path verification/leptoskit-async/Cargo.toml -p \
             solana_kit_leptoskit_async_host -- \
@@ -35,11 +38,13 @@ jobs:
           solana_kit_leptoskit_async_guest.wasm
 
       - name: Test compiled ABI and rejection gates
+
         run: |
           cargo +1.99.1 test --locked --manifest-path verification/leptoskit-async/Cargo.toml \
             --workspace
 
       - name: Check private source
+
         run: |
           cargo +1.99.1 fmt --manifest-path verification/leptoskit-async/Cargo.toml --all --check
 
