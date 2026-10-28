@@ -1,6 +1,6 @@
 # Original program client contracts
 
-This private workspace imports all81 public test bodies from the Address Lookup
+This private workspace imports all 88 public test bodies from the Address Lookup
 Table, Config, Stake and Loader crates by their original source paths. The
 registry calls those functions directly; it does not copy their assertions or
 substitute a model implementation. Literal account privileges, discriminators,
@@ -17,7 +17,7 @@ Regeneration must leave both tracked files byte-identical. The
 [program workflow](../../.github/workflows/program-clients.yml) requires native
 Rust1.89 and1.99, Chrome, Wasmtime50 Preview1 and Preview2, and the actual pinned
 LeptosKit `WasmHost`. Both WASI command streams must match native's complete named
-stream. The interpreted guest must commit its complete81/81 report exactly once;
+stream. The interpreted guest must commit its complete 88/88 report exactly once;
 one unit of fuel must fail before commit. Separate mutation builds must expose
 intentional corruption in every runtime.
 
@@ -25,9 +25,11 @@ The host selects framework commit `7437097c52aa68a3401bd378764e051ed4c9165a` and
 Wasmi2's portable-dispatch backend. This is an explicit fixture backend choice.
 The compiled guest must pass the existing closed import checker. Historical
 69-body receipts, including the earlier Config diagnostic failure, do not verify
-the current81-body candidate. The Config allocator probe and published-interface
+the current 88-body candidate. The Config allocator probe and published-interface
 activation differential test remain native only. The seven literal activation
 cases run through the same public Stake implementation on every portable host.
+Seven withdrawal cases also exercise authority, lockup, cooldown, full-close gaps,
+malformed observations and the selected reserve through the public client API.
 
 The native activation oracle calls the published interface with its ordinary
 container for contiguous sysvar history. Sparse observations use its public

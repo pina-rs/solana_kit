@@ -4,6 +4,8 @@
 #![doc = include_str!("../README.md")]
 extern crate alloc;
 mod activation;
+mod withdrawal;
+pub use withdrawal::*;
 mod value_traits;
 
 mod generated;

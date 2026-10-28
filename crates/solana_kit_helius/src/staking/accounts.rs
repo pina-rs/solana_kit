@@ -48,11 +48,17 @@ pub enum StakeAccountError {
     AuthorityMismatch(Address),
     /// The response context precedes the requested minimum slot.
     StaleContext,
+    /// Clock, context slot or complete epoch history disagree within a bundled read.
+    IncoherentSnapshot,
+    /// Rent settings are unsupported by the current integer program rules or overflow.
+    InvalidRent,
+    /// The program-state assessment rejected the proposed withdrawal signers or state.
+    Withdrawal(solana_kit_stake::WithdrawalError),
 }
 
 impl core::fmt::Display for StakeAccountError {
     fn fmt(&self, formatter: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        write!(formatter, "stake-account discovery failed: {self:?}")
+        write!(formatter, "stake-account read failed: {self:?}")
     }
 }
 impl std::error::Error for StakeAccountError {
@@ -60,6 +66,7 @@ impl std::error::Error for StakeAccountError {
         match self {
             Self::Rpc(error) => Some(error),
             Self::Decode(error) => Some(error),
+            Self::Withdrawal(error) => Some(error),
             _ => None,
         }
     }
@@ -139,6 +146,14 @@ fn decode(
     account: Account<AccountData>,
     limits: Limits,
 ) -> Result<Account<StakeStateAccount>, StakeAccountError> {
+    solana_kit_stake::decode_account(full_bytes(account)?, limits)
+        .map_err(StakeAccountError::Decode)
+}
+
+/// Retains complete byte data and metadata for program and sysvar decoding.
+pub(super) fn full_bytes(
+    account: Account<AccountData>,
+) -> Result<EncodedAccount, StakeAccountError> {
     let Account {
         address,
         owner,
@@ -156,7 +171,7 @@ fn decode(
     let AccountData::Bytes { bytes, slice: None } = data else {
         return Err(StakeAccountError::Representation);
     };
-    let encoded = EncodedAccount {
+    Ok(EncodedAccount {
         address,
         owner,
         lamports,
@@ -164,8 +179,7 @@ fn decode(
         space,
         rent_epoch,
         data: bytes,
-    };
-    solana_kit_stake::decode_account(encoded, limits).map_err(StakeAccountError::Decode)
+    })
 }
 
 fn matches_delegation(

@@ -2,12 +2,13 @@
 //!
 //! Amounts are exact lamports. Applications own the new stake-account signer, entropy,
 //! transport, deadlines and executor. Preparation does not submit or confirm a transaction.
-//! State-dependent withdrawal evaluation remains under provider review.
+//! Withdrawal assessment uses bundled standard RPC observations and explicit program rules.
 
 mod accounts;
 mod errors;
 mod instructions;
 mod transactions;
+mod withdrawal;
 
 pub use accounts::{StakeAccountError, StakeAccountQuery, get_helius_stake_accounts};
 pub use errors::{PreparationError, StakingBuildError};
@@ -18,6 +19,7 @@ pub use transactions::{
     create_stake_transaction, create_unstake_transaction, create_withdraw_transaction,
     get_stake_instructions, serialize_transaction,
 };
+pub use withdrawal::{StakeWithdrawalQuery, get_withdrawable_amount};
 
 use solana_kit_client::methods::Commitment;
 use solana_kit_core::{Address, Instruction, codecs::Limits, transaction::Transaction};
