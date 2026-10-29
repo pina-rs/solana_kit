@@ -12,12 +12,14 @@ description = "Executor-neutral typed Solana RPC for off-chain applications"
 
 [features]
 confirmation-factories = ["dep:solana_kit_system"]
+resource-estimation = ["dep:solana_kit_compute_budget"]
 
 [dependencies]
 base64 = { version = "0.22.1", default-features = false, features = ["alloc"] }
 bs58 = { version = "0.5.1", default-features = false, features = ["alloc"] }
 serde = { version = "1.0.229", features = ["derive"] }
 serde_json = { version = "1.0.154", features = ["arbitrary_precision", "raw_value"] }
+solana_kit_compute_budget = { workspace = true, optional = true }
 solana_kit_core.workspace = true
 solana_kit_system = { workspace = true, optional = true }
 

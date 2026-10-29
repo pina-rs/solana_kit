@@ -74,7 +74,15 @@ mod tests {
 
     #[test]
     fn accounts_for_transaction_effects_and_distinct_message_crypto() {
-        assert_eq!(allowance().unwrap(), 13_965_000_000);
+        let fixed_mwa = checked_mwa_work(&BACKEND_WORK).unwrap();
+        assert_eq!(
+            checked_allowance(400, MAX_BATCH, MESSAGE_COUNT).unwrap() + fixed_mwa,
+            13_965_000_000
+        );
+        let next_case_count = u64::try_from(EXPECTED_CASE_COUNT).unwrap() + 1;
+        let next =
+            checked_allowance(next_case_count, MAX_BATCH, MESSAGE_COUNT).unwrap() + fixed_mwa;
+        assert_eq!(next - allowance().unwrap(), 15_000_000);
         assert_eq!(MESSAGE_COUNT, 256);
         assert_eq!(
             MESSAGE_COUNT as u64 * CRYPTO_CALLS_PER_MESSAGE + FIXED_CRYPTO_CALLS,

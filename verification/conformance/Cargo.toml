@@ -22,7 +22,7 @@ serde_json = { version = "1.0.154", features = ["arbitrary_precision", "raw_valu
 hex-literal = "1.0.0"
 signer_capability_consumer = { path = "../signer-capabilities" }
 solana_kit_associated_token_account = { path = "../../crates/solana_kit_associated_token_account", features = ["crypto"] }
-solana_kit_client = { path = "../../crates/solana_kit_client" }
+solana_kit_client = { path = "../../crates/solana_kit_client", features = ["resource-estimation"] }
 solana_kit_compute_budget = { path = "../../crates/solana_kit_compute_budget" }
 solana_kit_core = { path = "../../crates/solana_kit_core", features = ["crypto", "fixed-points", "text-codecs", "bigint-codecs", "keccak"] }
 solana_kit_core_contracts_verification = { path = "../core-contracts-portable" }
@@ -32,8 +32,8 @@ solana_kit_memo = { path = "../../crates/solana_kit_memo" }
 solana_kit_pyth = { path = "../../crates/solana_kit_pyth", features = ["hermes", "crypto"] }
 solana_kit_signers = { path = "../../crates/solana_kit_signers", features = ["crypto"] }
 solana_kit_sns = { path = "../../crates/solana_kit_sns" }
-solana_kit_system = { path = "../../crates/solana_kit_system" }
 solana_kit_surfpool = { path = "../../crates/solana_kit_surfpool" }
+solana_kit_system = { path = "../../crates/solana_kit_system" }
 solana_kit_token = { path = "../../crates/solana_kit_token" }
 solana_kit_wallet = { path = "../../crates/solana_kit_wallet", features = ["mwa"] }
 solana_kit_wallet_verification = { path = "../wallet-runtime" }
