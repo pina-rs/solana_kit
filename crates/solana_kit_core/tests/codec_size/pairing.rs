@@ -10,6 +10,9 @@ use solana_kit_core::{
 
 const LIMITS: Limits = Limits::new(64, 64);
 
+#[path = "observers.rs"]
+mod observers;
+
 /// Counts every operation that constructor rejection must leave untouched.
 #[derive(Default)]
 struct Calls {
@@ -170,8 +173,10 @@ fn variable_mismatches() {
     }
 }
 
-/// Mapping queries do not call local conversions, even during rejection.
+/// Mapping and observer queries leave callbacks untouched, even during rejection.
 pub fn local_callbacks() {
+    observers::metadata_and_callbacks();
+
     let writes = Rc::new(Cell::new(0));
     let reads = Rc::new(Cell::new(0));
     let write_calls = Rc::clone(&writes);
