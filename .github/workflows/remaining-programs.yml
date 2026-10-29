@@ -31,9 +31,11 @@ jobs:
           persist-credentials: false
 
       - name: Install the selected native compiler
+
         run: rustup toolchain install "$RUST_TOOLCHAIN" --profile minimal
 
       - name: Execute every public native contract
+
         run: |
           set -euo pipefail
           cargo "+$RUST_TOOLCHAIN" test --locked --all-features \
@@ -62,51 +64,10 @@ jobs:
           path: reference
           persist-credentials: false
 
-      - name: Install the compiler and browser runner
-        run: |
-          set -euo pipefail
-          rustup toolchain install 1.99.1 --profile minimal --component rustfmt --component clippy \
-            --target wasm32-unknown-unknown,wasm32-wasip1,wasm32-wasip2
-          cargo +1.99.1 install wasm-bindgen-cli --version 0.2.128 --locked
-
-      - name: Prepare checksum-pinned runtime hosts
-        run: |
-          set -euo pipefail
-          hosts="$RUNNER_TEMP/program-hosts"
-          mkdir "$hosts"
-          release=https://github.com/bytecodealliance/wasmtime/releases/download/v50.0.0
-          chrome=https://storage.googleapis.com/chrome-for-testing-public/155.0.8059.84/linux64
-
-          curl --fail --location --silent --show-error --user-agent solana-kit-verification \
-            "$release/wasmtime-v50.0.0-x86_64-linux.tar.xz" --output "$hosts/wasmtime.tar.xz"
-          curl --fail --location --silent --show-error --user-agent solana-kit-verification \
-            "$chrome/chrome-linux64.zip" --output "$hosts/chrome.zip"
-          curl --fail --location --silent --show-error --user-agent solana-kit-verification \
-            "$chrome/chromedriver-linux64.zip" --output "$hosts/driver.zip"
-
-          printf '%s  %s\n' 77c19ee0437991f9ac7837b9c269d9c7076744f85dad263fea5214cc2723c7ff \
-            "$hosts/wasmtime.tar.xz" | sha256sum --check --strict
-          printf '%s  %s\n' cf0f049892dea22e6a6db26d47ed0d7776b7158edcbec4634086633df8bafcbc \
-            "$hosts/chrome.zip" | sha256sum --check --strict
-          printf '%s  %s\n' 4fe2433044363e5233d642e70fa50278b471bda08032d922402c8bd7c6d743fd \
-            "$hosts/driver.zip" | sha256sum --check --strict
-
-          tar -xf "$hosts/wasmtime.tar.xz" --strip-components=1 -C "$hosts"
-          unzip -q "$hosts/chrome.zip" -d "$hosts"
-          unzip -q "$hosts/driver.zip" -d "$hosts"
-
-          printf 'WASMTIME=%s/wasmtime\nCHROME=%s/chrome-linux64/chrome\n' \
-            "$hosts" "$hosts" >> "$GITHUB_ENV"
-          printf 'CHROMEDRIVER=%s/chromedriver-linux64/chromedriver\n' \
-            "$hosts" >> "$GITHUB_ENV"
-
-          jq -n --arg binary "$hosts/chrome-linux64/chrome" \
-            '{"goog:chromeOptions": {binary: $binary, args: ["--no-sandbox"]}}' \
-            > "$RUNNER_TEMP/program-webdriver.json"
-          printf 'WASM_BINDGEN_TEST_WEBDRIVER_JSON=%s/program-webdriver.json\n' \
-            "$RUNNER_TEMP" >> "$GITHUB_ENV"
+      - uses: ./.github/actions/portable-program-hosts
 
       - name: Verify exact registry regeneration and native output
+
         run: |
           set -euo pipefail
           for input in attestation:solana_kit_attestation_service squads:solana_kit_squads \
@@ -141,6 +102,7 @@ jobs:
             --package "$PROGRAM_PACKAGE" > "$RUNNER_TEMP/program-native.txt"
 
       - name: Compare all Attestation and Squads contracts to pinned external oracles
+
         run: |
           set -euo pipefail
           oracles="$RUNNER_TEMP/program-oracles"
@@ -187,6 +149,7 @@ jobs:
       - name: Execute every original contract in Chrome
         env:
           WASM_BINDGEN_USE_BROWSER: "1"
+
         run: |
           set -euo pipefail
           cargo +1.99.1 test --locked --manifest-path "$PROGRAM_MANIFEST" \
@@ -195,6 +158,7 @@ jobs:
       - name: Observe deliberate corruption in the real browser
         env:
           WASM_BINDGEN_USE_BROWSER: "1"
+
         run: |
           set -euo pipefail
           if CARGO_TARGET_DIR="$RUNNER_TEMP/program-corrupt" cargo +1.99.1 test --locked \
@@ -208,6 +172,7 @@ jobs:
           grep -F 'intentional portable contract corruption' "$RUNNER_TEMP/corrupt-browser.txt"
 
       - name: Execute both WASI previews and compare complete named streams
+
         run: |
           set -euo pipefail
           for target in wasm32-wasip1 wasm32-wasip2; do
@@ -227,6 +192,7 @@ jobs:
           done
 
       - name: Build and inspect the real interpreted guest
+
         run: |
           set -euo pipefail
           cargo +1.99.1 build --locked --manifest-path "$PROGRAM_MANIFEST" \
@@ -244,11 +210,13 @@ jobs:
           printf 'PROGRAM_GUEST=%s\n' "$guest" >> "$GITHUB_ENV"
 
       - name: Execute all contracts through production LeptosKit with fuel control
+
         run: |
           cargo +1.99.1 run --locked --manifest-path "$PROGRAM_MANIFEST" \
             --package solana_kit_remaining_programs_host -- "$PROGRAM_GUEST"
 
       - name: Reject intentional corruption in native and both WASI previews
+
         run: |
           set -euo pipefail
           for target in native wasm32-wasip1 wasm32-wasip2; do
@@ -281,6 +249,7 @@ jobs:
           done
 
       - name: Reject interpreted-guest corruption before commit
+
         run: |
           set -euo pipefail
           CARGO_TARGET_DIR="$RUNNER_TEMP/program-corrupt" cargo +1.99.1 build --locked \
@@ -302,6 +271,7 @@ jobs:
           grep -F 'intentional portable contract corruption' "$RUNNER_TEMP/corrupt-wasmi.txt"
 
       - name: Reject an unrelated guest panic as corruption evidence
+
         run: |
           set -euo pipefail
           CARGO_TARGET_DIR="$RUNNER_TEMP/program-corrupt" cargo +1.99.1 build --locked \
@@ -325,6 +295,7 @@ jobs:
           grep -F 'corruption trap marker missing' "$RUNNER_TEMP/unrelated-wasmi.txt"
 
       - name: Verify minimal normal and build dependencies on every target
+
         run: |
           set -euo pipefail
           cargo +1.99.1 fetch --locked
@@ -332,6 +303,7 @@ jobs:
             --features verification --bin program_clients_gate
 
       - name: Check formatting and strict native client linting
+
         run: |
           set -euo pipefail
           cargo +1.99.1 fmt --all --check
@@ -340,213 +312,14 @@ jobs:
             -p solana_kit_attestation_service -p solana_kit_squads \
             -p solana_kit_subscriptions -- -D warnings
 
-      - name: Execute Helius contracts in native Rust and the real browser
-        env:
-          WASM_BINDGEN_USE_BROWSER: "1"
-        run: |
-          set -euo pipefail
-          manifest=verification/helius-portable/Cargo.toml
-          package=solana_kit_helius_portable
-          cargo +1.99.1 fmt --manifest-path "$manifest" --all --check
+      - name: Keep strict linting for every public Helius feature
 
-          for mode in crypto no-crypto checkout checkout-crypto base base-crypto; do
-            features=()
-            report=verification/helius-portable/report.txt
-            case "$mode" in
-              crypto) stream="$RUNNER_TEMP/helius-native.txt" ;;
-              no-crypto)
-                features+=(--no-default-features --features signup)
-                report=verification/helius-portable/report-no-crypto.txt
-                stream="$RUNNER_TEMP/helius-no-crypto.txt"
-                ;;
-              checkout)
-                features+=(--no-default-features --features checkout)
-                report=verification/helius-portable/report-checkout-no-crypto.txt
-                stream="$RUNNER_TEMP/helius-checkout.txt"
-                ;;
-              checkout-crypto)
-                features+=(--no-default-features --features "checkout,crypto")
-                report=verification/helius-portable/report-checkout.txt
-                stream="$RUNNER_TEMP/helius-checkout-crypto.txt"
-                ;;
-              base)
-                features+=(--no-default-features)
-                report=verification/helius-portable/report-base.txt
-                stream="$RUNNER_TEMP/helius-base.txt"
-                ;;
-              base-crypto)
-                features+=(--no-default-features --features crypto)
-                report=verification/helius-portable/report-base-crypto.txt
-                stream="$RUNNER_TEMP/helius-base-crypto.txt"
-                ;;
-              *) exit 1 ;;
-            esac
-            cargo +1.99.1 test --locked --manifest-path "$manifest" \
-              --package "$package" "${features[@]}" --test native_future --test native_payment
-            cargo +1.99.1 run --locked --quiet --manifest-path "$manifest" \
-              --package "$package" "${features[@]}" > "$stream"
-            cmp "$report" "$stream"
-          done
+        run: |
           cargo +1.99.1 clippy --locked --all-targets --all-features \
             -p solana_kit_helius -- -D warnings
-          for mode in crypto no-crypto checkout checkout-crypto; do
-            features=()
-            case "$mode" in
-              crypto) ;;
-              no-crypto) features+=(--no-default-features --features signup) ;;
-              checkout) features+=(--no-default-features --features checkout) ;;
-              checkout-crypto) features+=(--no-default-features --features "checkout,crypto") ;;
-              *) exit 1 ;;
-            esac
-            cargo +1.99.1 test --locked --manifest-path "$manifest" \
-              --package "$package" "${features[@]}" --lib \
-              --target wasm32-unknown-unknown -- --nocapture
-          done
-          if cargo +1.99.1 test --locked --manifest-path "$manifest" \
-            --package "$package" --lib --features corrupt \
-            --target wasm32-unknown-unknown -- --nocapture \
-            > "$RUNNER_TEMP/helius-corrupt-browser.txt" 2>&1; then
-            echo "intentional Helius browser corruption unexpectedly passed" >&2
-            exit 1
-          fi
-          grep -F 'intentional portable contract corruption' \
-            "$RUNNER_TEMP/helius-corrupt-browser.txt"
-
-      - name: Execute Helius in both WASI previews with corruption controls
-        run: |
-          set -euo pipefail
-          manifest=verification/helius-portable/Cargo.toml
-          package=solana_kit_helius_portable
-          for target in native wasm32-wasip1 wasm32-wasip2; do
-            arguments=()
-            if [ "$target" != native ]; then arguments+=(--target "$target"); fi
-
-            if [ "$target" != native ]; then
-              for mode in crypto no-crypto checkout checkout-crypto; do
-                features=()
-                expected="$RUNNER_TEMP/helius-native.txt"
-                case "$mode" in
-                  crypto) ;;
-                  no-crypto)
-                    features+=(--no-default-features --features signup)
-                    expected="$RUNNER_TEMP/helius-no-crypto.txt"
-                    ;;
-                  checkout)
-                    features+=(--no-default-features --features checkout)
-                    expected="$RUNNER_TEMP/helius-checkout.txt"
-                    ;;
-                  checkout-crypto)
-                    features+=(--no-default-features --features "checkout,crypto")
-                    expected="$RUNNER_TEMP/helius-checkout-crypto.txt"
-                    ;;
-                  *) exit 1 ;;
-                esac
-
-                cargo +1.99.1 build --locked --manifest-path "$manifest" \
-                  --package "$package" "${arguments[@]}" "${features[@]}" \
-                  --message-format=json > "$RUNNER_TEMP/helius-wasi.jsonl"
-                component="$(jq -sre --arg name "$package" '
-                  [.[] | select(.reason == "compiler-artifact" and .target.name == $name and
-                    (.target.kind | index("bin")) != null) | .filenames[] |
-                    select(endswith(".wasm"))] |
-                  if length == 1 then .[0] else error("expected one Helius component") end
-                ' "$RUNNER_TEMP/helius-wasi.jsonl")"
-                "$WASMTIME" "$component" > "$RUNNER_TEMP/helius-$target-$mode.txt"
-                cmp "$expected" "$RUNNER_TEMP/helius-$target-$mode.txt"
-                cat "$RUNNER_TEMP/helius-$target-$mode.txt"
-              done
-            fi
-
-            CARGO_TARGET_DIR="$RUNNER_TEMP/program-corrupt" cargo +1.99.1 build --locked \
-              --manifest-path "$manifest" --package "$package" --features corrupt \
-              "${arguments[@]}" --message-format=json > "$RUNNER_TEMP/helius-negative.jsonl"
-            executable="$(jq -sre --arg name "$package" --arg target "$target" '
-              [.[] | select(.reason == "compiler-artifact" and .target.name == $name and
-                (.target.kind | index("bin")) != null) |
-                if $target == "native" then .executable else
-                  .filenames[] | select(endswith(".wasm")) end |
-                select(. != null)] |
-              if length == 1 then .[0]
-              else error("expected one Helius negative executable") end
-            ' "$RUNNER_TEMP/helius-negative.jsonl")"
-
-            runner=()
-            if [ "$target" != native ]; then runner=("$WASMTIME"); fi
-            if "${runner[@]}" "$executable" > "$RUNNER_TEMP/helius-corrupt-$target.txt" 2>&1; then
-              echo "intentional Helius corruption unexpectedly succeeded: $target" >&2
-              exit 1
-            fi
-            grep -F 'intentional portable contract corruption' \
-              "$RUNNER_TEMP/helius-corrupt-$target.txt"
-          done
-
-      - name: Execute Helius through production LeptosKit and reject unrelated panics
-        run: |
-          set -euo pipefail
-          manifest=verification/helius-portable/Cargo.toml
-          package=solana_kit_helius_guest
-          for mode in crypto no-crypto checkout checkout-crypto; do
-            features=()
-            report=verification/helius-portable/report.txt
-            case "$mode" in
-              crypto) ;;
-              no-crypto)
-                features+=(--no-default-features --features signup)
-                report=verification/helius-portable/report-no-crypto.txt
-                ;;
-              checkout)
-                features+=(--no-default-features --features checkout)
-                report=verification/helius-portable/report-checkout-no-crypto.txt
-                ;;
-              checkout-crypto)
-                features+=(--no-default-features --features "checkout,crypto")
-                report=verification/helius-portable/report-checkout.txt
-                ;;
-              *) exit 1 ;;
-            esac
-
-            cargo +1.99.1 build --locked --manifest-path "$manifest" \
-              --package "$package" "${features[@]}" --target wasm32-unknown-unknown \
-              --message-format=json > "$RUNNER_TEMP/helius-guest.jsonl"
-            guest="$(jq -sre --arg name "$package" '
-              [.[] | select(.reason == "compiler-artifact" and .target.name == $name) |
-                .filenames[] | select(endswith(".wasm"))] |
-              if length == 1 then .[0] else error("expected one Helius guest") end
-            ' "$RUNNER_TEMP/helius-guest.jsonl")"
-            cargo +1.99.1 xtask imports "$guest"
-            cargo +1.99.1 run --locked --manifest-path "$PROGRAM_MANIFEST" \
-              --package solana_kit_remaining_programs_host -- "$guest" --expected-report "$report"
-
-            for control in solana_kit_helius_portable/corrupt unexpected-panic; do
-              CARGO_TARGET_DIR="$RUNNER_TEMP/program-corrupt" cargo +1.99.1 build --locked \
-                --manifest-path "$manifest" --package "$package" "${features[@]}" \
-                --features "$control" --target wasm32-unknown-unknown --message-format=json \
-                > "$RUNNER_TEMP/helius-guest-control.jsonl"
-              guest="$(jq -sre --arg name "$package" '
-                [.[] | select(.reason == "compiler-artifact" and .target.name == $name) |
-                  .filenames[] | select(endswith(".wasm"))] |
-                if length == 1 then .[0] else error("expected one Helius control guest") end
-              ' "$RUNNER_TEMP/helius-guest-control.jsonl")"
-              if [ "$control" = solana_kit_helius_portable/corrupt ]; then
-                cargo +1.99.1 xtask imports "$guest"
-                cargo +1.99.1 run --locked --manifest-path "$PROGRAM_MANIFEST" \
-                  --package solana_kit_remaining_programs_host -- "$guest" --expect-corrupt \
-                  2>&1 | tee "$RUNNER_TEMP/helius-marked-wasmi.txt"
-                grep -F 'intentional portable contract corruption' \
-                  "$RUNNER_TEMP/helius-marked-wasmi.txt"
-              else
-                if cargo +1.99.1 run --locked --manifest-path "$PROGRAM_MANIFEST" \
-                  --package solana_kit_remaining_programs_host -- "$guest" --expect-corrupt \
-                  > "$RUNNER_TEMP/helius-unrelated-wasmi.txt" 2>&1; then
-                  echo "unrelated Helius panic falsely confirmed corruption" >&2
-                  exit 1
-                fi
-                grep -F 'corruption trap marker missing' "$RUNNER_TEMP/helius-unrelated-wasmi.txt"
-              fi
-            done
-          done
 
       - name: Authenticate all Helius declaration source owners
+
         run: |
           set -euo pipefail
           awk -F '\t' '$2=="solana_kit_helius" {
@@ -559,71 +332,285 @@ jobs:
           (cd reference && sha256sum --check --strict "$RUNNER_TEMP/helius-source.sha256")
           cmp crates/solana_kit_helius/MIT-DART.txt reference/LICENSE
 
-      - name: Check all Helius feature graphs on every target
+
+  helius-portability:
+    name: helius-${{ matrix.mode }}
+    runs-on: "ubuntu-24.04"
+    timeout-minutes: 40
+
+    strategy:
+      fail-fast: false
+
+      matrix:
+        include:
+          - mode: base
+            features: ""
+            report: report-base.txt
+            graph: default
+            signing: "false"
+
+          - mode: base-crypto
+            features: crypto
+            report: report-base-crypto.txt
+            graph: default
+            signing: "true"
+
+          - mode: checkout
+            features: checkout
+            report: report-checkout-no-crypto.txt
+            graph: checkout
+            signing: "false"
+
+          - mode: checkout-crypto
+            features: checkout,crypto
+            report: report-checkout.txt
+            graph: checkout
+            signing: "true"
+
+          - mode: signup
+            features: signup
+            report: report-no-crypto.txt
+            graph: signup
+            signing: "false"
+
+          - mode: signup-crypto
+            features: signup,crypto
+            report: report.txt
+            graph: signup
+            signing: "true"
+
+    env:
+      HELIUS_FEATURES: ${{ matrix.features }}
+      HELIUS_REPORT: verification/helius-portable/${{ matrix.report }}
+      HELIUS_GRAPH: ${{ matrix.graph }}
+      HELIUS_SIGNING: ${{ matrix.signing }}
+
+      HELIUS_MANIFEST: verification/helius-portable/Cargo.toml
+      HELIUS_PACKAGE: solana_kit_helius_portable
+      HELIUS_GUEST_PACKAGE: solana_kit_helius_guest
+
+      CARGO_TARGET_DIR: ${{ runner.temp }}/helius-${{ matrix.mode }}
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: ./.github/actions/portable-program-hosts
+
+      - name: Execute this named stream and native future contracts
+
         run: |
           set -euo pipefail
-          base_expected="$RUNNER_TEMP/helius-default-closure.txt"
-          cat xtask/policy/client.txt xtask/policy/helius.txt | sort -u > "$base_expected"
-          checkout_expected="$RUNNER_TEMP/helius-checkout-closure.txt"
-          cat "$base_expected" xtask/policy/helius-checkout.txt | sort -u > "$checkout_expected"
-          signup_expected="$RUNNER_TEMP/helius-signup-closure.txt"
-          cat "$checkout_expected" xtask/policy/helius-signup.txt | sort -u > "$signup_expected"
+          features=(--no-default-features)
+
+          if [ -n "$HELIUS_FEATURES" ]; then features+=(--features "$HELIUS_FEATURES"); fi
+
+          cargo +1.99.1 fmt --manifest-path "$HELIUS_MANIFEST" --all --check
+          cargo +1.99.1 test --locked --manifest-path "$HELIUS_MANIFEST" \
+            --package "$HELIUS_PACKAGE" "${features[@]}" \
+            --test native_future --test native_payment
+          cargo +1.99.1 run --locked --quiet --manifest-path "$HELIUS_MANIFEST" \
+            --package "$HELIUS_PACKAGE" "${features[@]}" > "$RUNNER_TEMP/helius-native.txt"
+          cmp "$HELIUS_REPORT" "$RUNNER_TEMP/helius-native.txt"
+
+      - name: Execute this stream and its corruption control in Chrome
+        env:
+          WASM_BINDGEN_USE_BROWSER: "1"
+
+        run: |
+          set -euo pipefail
+          features=(--no-default-features)
+
+          if [ -n "$HELIUS_FEATURES" ]; then features+=(--features "$HELIUS_FEATURES"); fi
+
+          cargo +1.99.1 test --locked --manifest-path "$HELIUS_MANIFEST" \
+            --package "$HELIUS_PACKAGE" "${features[@]}" --lib \
+            --target wasm32-unknown-unknown -- --nocapture
+
+          if CARGO_TARGET_DIR="$RUNNER_TEMP/helius-corrupt" cargo +1.99.1 test --locked \
+            --manifest-path "$HELIUS_MANIFEST" --package "$HELIUS_PACKAGE" \
+            "${features[@]}" --features corrupt --lib \
+            --target wasm32-unknown-unknown -- --nocapture \
+            > "$RUNNER_TEMP/helius-corrupt-browser.txt" 2>&1; then
+            echo "intentional Helius browser corruption unexpectedly passed" >&2
+            exit 1
+          fi
+          grep -F 'intentional portable contract corruption' \
+            "$RUNNER_TEMP/helius-corrupt-browser.txt"
+
+      - name: Compare both WASI previews and reject native and WASI corruption
+
+        run: |
+          set -euo pipefail
+          features=(--no-default-features)
+
+          if [ -n "$HELIUS_FEATURES" ]; then features+=(--features "$HELIUS_FEATURES"); fi
+
+          for target in native wasm32-wasip1 wasm32-wasip2; do
+            arguments=()
+
+            if [ "$target" != native ]; then arguments+=(--target "$target"); fi
+
+            if [ "$target" != native ]; then
+              cargo +1.99.1 build --locked --manifest-path "$HELIUS_MANIFEST" \
+                --package "$HELIUS_PACKAGE" "${arguments[@]}" "${features[@]}" \
+                --message-format=json > "$RUNNER_TEMP/helius-wasi.jsonl"
+
+              component="$(jq -sre --arg name "$HELIUS_PACKAGE" '
+                [.[] | select(.reason == "compiler-artifact" and .target.name == $name and
+                  (.target.kind | index("bin")) != null) | .filenames[] |
+                  select(endswith(".wasm"))] |
+                if length == 1 then .[0] else error("expected one Helius component") end
+              ' "$RUNNER_TEMP/helius-wasi.jsonl")"
+
+              "$WASMTIME" "$component" > "$RUNNER_TEMP/helius-$target.txt"
+              cmp "$RUNNER_TEMP/helius-native.txt" "$RUNNER_TEMP/helius-$target.txt"
+              cat "$RUNNER_TEMP/helius-$target.txt"
+            fi
+
+            CARGO_TARGET_DIR="$RUNNER_TEMP/helius-corrupt" cargo +1.99.1 build --locked \
+              --manifest-path "$HELIUS_MANIFEST" --package "$HELIUS_PACKAGE" \
+              "${features[@]}" --features corrupt "${arguments[@]}" --message-format=json \
+              > "$RUNNER_TEMP/helius-negative.jsonl"
+
+            executable="$(jq -sre --arg name "$HELIUS_PACKAGE" --arg target "$target" '
+              [.[] | select(.reason == "compiler-artifact" and .target.name == $name and
+                (.target.kind | index("bin")) != null) |
+                if $target == "native" then .executable else
+                  .filenames[] | select(endswith(".wasm")) end |
+                select(. != null)] |
+              if length == 1 then .[0]
+              else error("expected one Helius negative executable") end
+            ' "$RUNNER_TEMP/helius-negative.jsonl")"
+
+            runner=()
+
+            if [ "$target" != native ]; then runner=("$WASMTIME"); fi
+
+            if "${runner[@]}" "$executable" \
+              > "$RUNNER_TEMP/helius-corrupt-$target.txt" 2>&1; then
+              echo "intentional Helius corruption unexpectedly succeeded: $target" >&2
+              exit 1
+            fi
+            grep -F 'intentional portable contract corruption' \
+              "$RUNNER_TEMP/helius-corrupt-$target.txt"
+          done
+
+      - name: Execute the production interpreter and both marked-trap controls
+
+        run: |
+          set -euo pipefail
+          features=(--no-default-features)
+
+          if [ -n "$HELIUS_FEATURES" ]; then features+=(--features "$HELIUS_FEATURES"); fi
+
+          cargo +1.99.1 build --locked --manifest-path "$HELIUS_MANIFEST" \
+            --package "$HELIUS_GUEST_PACKAGE" "${features[@]}" \
+            --target wasm32-unknown-unknown --message-format=json \
+            > "$RUNNER_TEMP/helius-guest.jsonl"
+
+          guest="$(jq -sre --arg name "$HELIUS_GUEST_PACKAGE" '
+            [.[] | select(.reason == "compiler-artifact" and .target.name == $name) |
+              .filenames[] | select(endswith(".wasm"))] |
+            if length == 1 then .[0] else error("expected one Helius guest") end
+          ' "$RUNNER_TEMP/helius-guest.jsonl")"
+
+          cargo +1.99.1 xtask imports "$guest"
+          cargo +1.99.1 run --locked --manifest-path "$PROGRAM_MANIFEST" \
+            --package solana_kit_remaining_programs_host -- "$guest" \
+            --expected-report "$HELIUS_REPORT"
+
+          for control in solana_kit_helius_portable/corrupt unexpected-panic; do
+            CARGO_TARGET_DIR="$RUNNER_TEMP/helius-corrupt" cargo +1.99.1 build --locked \
+              --manifest-path "$HELIUS_MANIFEST" --package "$HELIUS_GUEST_PACKAGE" \
+              "${features[@]}" --features "$control" --target wasm32-unknown-unknown \
+              --message-format=json > "$RUNNER_TEMP/helius-guest-control.jsonl"
+
+            guest="$(jq -sre --arg name "$HELIUS_GUEST_PACKAGE" '
+              [.[] | select(.reason == "compiler-artifact" and .target.name == $name) |
+                .filenames[] | select(endswith(".wasm"))] |
+              if length == 1 then .[0] else error("expected one Helius control guest") end
+            ' "$RUNNER_TEMP/helius-guest-control.jsonl")"
+
+            cargo +1.99.1 xtask imports "$guest"
+
+            if [ "$control" = solana_kit_helius_portable/corrupt ]; then
+              cargo +1.99.1 run --locked --manifest-path "$PROGRAM_MANIFEST" \
+                --package solana_kit_remaining_programs_host -- "$guest" --expect-corrupt \
+                2>&1 | tee "$RUNNER_TEMP/helius-marked-wasmi.txt"
+              grep -F 'intentional portable contract corruption' \
+                "$RUNNER_TEMP/helius-marked-wasmi.txt"
+            else
+
+              if cargo +1.99.1 run --locked --manifest-path "$PROGRAM_MANIFEST" \
+                --package solana_kit_remaining_programs_host -- "$guest" --expect-corrupt \
+                > "$RUNNER_TEMP/helius-unrelated-wasmi.txt" 2>&1; then
+                echo "unrelated Helius panic falsely confirmed corruption" >&2
+                exit 1
+              fi
+              grep -F 'corruption trap marker missing' "$RUNNER_TEMP/helius-unrelated-wasmi.txt"
+            fi
+          done
+
+      - name: Check this feature graph on every target and reject injected Tokio
+
+        run: |
+          set -euo pipefail
+          expected="$RUNNER_TEMP/helius-expected-closure.txt"
+          cat xtask/policy/client.txt xtask/policy/helius.txt > "$expected"
+
+          case "$HELIUS_GRAPH" in
+            default) ;;
+            checkout) cat xtask/policy/helius-checkout.txt >> "$expected" ;;
+            signup)
+              cat xtask/policy/helius-checkout.txt xtask/policy/helius-signup.txt >> "$expected"
+              ;;
+            *) exit 1 ;;
+          esac
+
+          sort -u "$expected" -o "$expected"
           allowed="$RUNNER_TEMP/helius-crypto-names.txt"
+          { awk '{print $1}' "$expected"; cat xtask/policy/crypto.txt; } | sort -u > "$allowed"
 
           check_tree() {
-            case "$mode" in
-              default|checkout|signup) cmp "$expected" "$1" ;;
-              crypto|checkout-crypto|signup-crypto)
-                awk 'NR==FNR {allowed[$1]=1; next}
-                  !($1 in allowed) {print "unexpected Helius dependency: " $0 > "/dev/stderr"; exit 1}' \
-                  "$allowed" "$1"
-                ;;
-              *) return 1 ;;
-            esac
+            if [ "$HELIUS_SIGNING" = false ]; then
+              cmp "$expected" "$1"
+
+              return
+            fi
+
+            awk 'NR==FNR {allowed[$1]=1; next}
+              !($1 in allowed) {print "unexpected Helius dependency: " $0 > "/dev/stderr"; exit 1}' \
+              "$allowed" "$1"
           }
 
           for target in native wasm32-unknown-unknown wasm32-wasip1 wasm32-wasip2; do
-            for mode in default crypto checkout checkout-crypto signup signup-crypto; do
-              arguments=()
-              expected="$base_expected"
-              if [ "$target" != native ]; then arguments+=(--target "$target"); fi
-              case "$mode" in
-                crypto) arguments+=(--features crypto) ;;
-                checkout)
-                  arguments+=(--features checkout)
-                  expected="$checkout_expected"
-                  ;;
-                checkout-crypto)
-                  arguments+=(--features "checkout,crypto")
-                  expected="$checkout_expected"
-                  ;;
-                signup)
-                  arguments+=(--features signup)
-                  expected="$signup_expected"
-                  ;;
-                signup-crypto)
-                  arguments+=(--features "signup,crypto")
-                  expected="$signup_expected"
-                  ;;
-              esac
-              { awk '{print $1}' "$expected"; cat xtask/policy/crypto.txt; } | sort -u > "$allowed"
-              cargo +1.99.1 tree --locked -p solana_kit_helius --no-default-features \
-                -e normal,build --prefix none --format '{p}' --no-dedupe "${arguments[@]}" \
-                > "$RUNNER_TEMP/helius-raw-tree.txt"
-              sed 's/ (.*//' "$RUNNER_TEMP/helius-raw-tree.txt" | sort -u \
-                > "$RUNNER_TEMP/helius-tree.txt"
-              check_tree "$RUNNER_TEMP/helius-tree.txt"
-              if [[ "$mode" = *crypto && "$mode" != no-crypto ]]; then
-                grep -F 'ed25519-dalek v2.2.0' "$RUNNER_TEMP/helius-tree.txt"
-              fi
-              cp "$RUNNER_TEMP/helius-tree.txt" "$RUNNER_TEMP/helius-injected-tree.txt"
-              printf 'tokio v1.54.1\n' >> "$RUNNER_TEMP/helius-injected-tree.txt"
-              if check_tree "$RUNNER_TEMP/helius-injected-tree.txt" \
-                > "$RUNNER_TEMP/helius-graph-negative.txt" 2>&1; then
-                echo "Helius graph policy accepted injected Tokio" >&2
-                exit 1
-              fi
-              printf 'PASS Helius %s %s normal/build graph and injected-Tokio rejection\n' \
-                "$target" "$mode"
-            done
+            arguments=(--no-default-features)
+
+            if [ "$target" != native ]; then arguments+=(--target "$target"); fi
+
+            if [ -n "$HELIUS_FEATURES" ]; then arguments+=(--features "$HELIUS_FEATURES"); fi
+
+            cargo +1.99.1 tree --locked -p solana_kit_helius -e normal,build \
+              --prefix none --format '{p}' --no-dedupe "${arguments[@]}" \
+              > "$RUNNER_TEMP/helius-raw-tree.txt"
+            sed 's/ (.*//' "$RUNNER_TEMP/helius-raw-tree.txt" | sort -u \
+              > "$RUNNER_TEMP/helius-tree.txt"
+            check_tree "$RUNNER_TEMP/helius-tree.txt"
+
+            if [ "$HELIUS_SIGNING" = true ]; then
+              grep -F 'ed25519-dalek v2.2.0' "$RUNNER_TEMP/helius-tree.txt"
+            fi
+
+            cp "$RUNNER_TEMP/helius-tree.txt" "$RUNNER_TEMP/helius-injected-tree.txt"
+            printf 'tokio v1.54.1\n' >> "$RUNNER_TEMP/helius-injected-tree.txt"
+
+            if check_tree "$RUNNER_TEMP/helius-injected-tree.txt" \
+              > "$RUNNER_TEMP/helius-graph-negative.txt" 2>&1; then
+              echo "Helius graph policy accepted injected Tokio" >&2
+              exit 1
+            fi
+            printf 'PASS Helius %s %s normal/build graph and injected-Tokio rejection\n' \
+              "$target" "$HELIUS_FEATURES"
           done

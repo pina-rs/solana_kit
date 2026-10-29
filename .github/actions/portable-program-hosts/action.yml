@@ -1,0 +1,53 @@
+name: Portable program hosts
+description: Install pinned Rust and checksum-verified Chrome and Wasmtime.
+
+runs:
+  using: composite
+  steps:
+    - name: Install the compiler and browser runner
+      shell: bash
+
+      run: |
+        set -euo pipefail
+        rustup toolchain install 1.99.1 --profile minimal --component rustfmt --component clippy \
+          --target wasm32-unknown-unknown,wasm32-wasip1,wasm32-wasip2
+        cargo +1.99.1 install wasm-bindgen-cli --version 0.2.128 --locked
+
+    - name: Prepare checksum-pinned runtime hosts
+      shell: bash
+
+      run: |
+        set -euo pipefail
+        hosts="$RUNNER_TEMP/program-hosts"
+        mkdir "$hosts"
+        release=https://github.com/bytecodealliance/wasmtime/releases/download/v50.0.0
+        chrome=https://storage.googleapis.com/chrome-for-testing-public/155.0.8059.84/linux64
+
+        curl --fail --location --silent --show-error --user-agent solana-kit-verification \
+          "$release/wasmtime-v50.0.0-x86_64-linux.tar.xz" --output "$hosts/wasmtime.tar.xz"
+        curl --fail --location --silent --show-error --user-agent solana-kit-verification \
+          "$chrome/chrome-linux64.zip" --output "$hosts/chrome.zip"
+        curl --fail --location --silent --show-error --user-agent solana-kit-verification \
+          "$chrome/chromedriver-linux64.zip" --output "$hosts/driver.zip"
+
+        printf '%s  %s\n' 77c19ee0437991f9ac7837b9c269d9c7076744f85dad263fea5214cc2723c7ff \
+          "$hosts/wasmtime.tar.xz" | sha256sum --check --strict
+        printf '%s  %s\n' cf0f049892dea22e6a6db26d47ed0d7776b7158edcbec4634086633df8bafcbc \
+          "$hosts/chrome.zip" | sha256sum --check --strict
+        printf '%s  %s\n' 4fe2433044363e5233d642e70fa50278b471bda08032d922402c8bd7c6d743fd \
+          "$hosts/driver.zip" | sha256sum --check --strict
+
+        tar -xf "$hosts/wasmtime.tar.xz" --strip-components=1 -C "$hosts"
+        unzip -q "$hosts/chrome.zip" -d "$hosts"
+        unzip -q "$hosts/driver.zip" -d "$hosts"
+
+        printf 'WASMTIME=%s/wasmtime\nCHROME=%s/chrome-linux64/chrome\n' \
+          "$hosts" "$hosts" >> "$GITHUB_ENV"
+        printf 'CHROMEDRIVER=%s/chromedriver-linux64/chromedriver\n' \
+          "$hosts" >> "$GITHUB_ENV"
+
+        jq -n --arg binary "$hosts/chrome-linux64/chrome" \
+          '{"goog:chromeOptions": {binary: $binary, args: ["--no-sandbox"]}}' \
+          > "$RUNNER_TEMP/program-webdriver.json"
+        printf 'WASM_BINDGEN_TEST_WEBDRIVER_JSON=%s/program-webdriver.json\n' \
+          "$RUNNER_TEMP" >> "$GITHUB_ENV"
