@@ -5,6 +5,15 @@ REST operations use a separate caller-owned service adapter. The application own
 approved origins, credentials, deadlines, receive limits and cancellation. No
 operation starts a runtime or automatically retries a submission.
 
+All `SenderRegion` origin, fast and ping helpers use
+`https://sender.helius-rpc.com`, which Helius routes to the nearest region.
+Region keys remain serializable for compatibility, but no longer select a
+regional plaintext host. Helius documents those hosts only over HTTP; the Kit
+does not assume undocumented regional HTTPS support or fall back to HTTP.
+This changes regional routing and adds TLS setup to formerly plaintext calls;
+no latency equivalence is promised. Native REST composition rejects remote HTTP
+roots before connection, including manually supplied regional origins.
+
 This crate is exclusively for off-chain application code. For Solana on-chain
 programs, use Pina or the official Solana program libraries.
 

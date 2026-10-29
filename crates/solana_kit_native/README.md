@@ -238,7 +238,11 @@ new bodies have not executed in this checkpoint.
 
 The unverified REST source extension adds `NativeRest<D>` over these same HTTP
 owners. Each named route owns an approved `NativeHttp` root, headers, TLS policy
-and deadlines. Request segments and ordered query pairs append to that root with
+and deadlines. Remote REST roots require HTTPS at construction, before DNS or
+socket work, with no remote plaintext opt-in. Plain HTTP is limited to literal
+loopback IPs for caller-owned local services; DNS names including `localhost`
+are not exempted. Loopback HTTP does not protect against other local processes.
+Request segments and ordered query pairs append to that root with
 separate percent encoding. Fixed root query values remain first. Decoded dot
 segments are denied. Body presence owns its media type. The exchange retains its
 inline socket and driver, bounds response copies, follows no redirects and sends

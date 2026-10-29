@@ -1,4 +1,4 @@
-//! Endpoint and tip metadata from the immutable source, without automatic dialing.
+//! Confidential Sender routing and pinned tip metadata, without automatic dialing.
 
 pub use crate::enums::SenderRegion;
 
@@ -24,26 +24,21 @@ pub const TIP_ACCOUNTS: [&str; 10] = [
 ];
 
 impl SenderRegion {
-    /// Returns the pinned source origin. Regional HTTP requires explicit adapter policy.
+    /// Returns Helius's auto-routed HTTPS origin for every region key.
+    ///
+    /// The provider documents regional hosts only over plaintext HTTP. Region
+    /// keys remain available for source compatibility, but cannot select those
+    /// hosts: signed transactions and caller credentials require confidentiality.
     pub const fn origin(self) -> &'static str {
-        match self {
-            Self::Default => "https://sender.helius-rpc.com",
-            Self::UsSlc => "http://slc-sender.helius-rpc.com",
-            Self::UsEast => "http://ewr-sender.helius-rpc.com",
-            Self::EuWest => "http://lon-sender.helius-rpc.com",
-            Self::EuCentral => "http://fra-sender.helius-rpc.com",
-            Self::EuNorth => "http://ams-sender.helius-rpc.com",
-            Self::ApSingapore => "http://sg-sender.helius-rpc.com",
-            Self::ApTokyo => "http://tyo-sender.helius-rpc.com",
-        }
+        "https://sender.helius-rpc.com"
     }
 
-    /// Returns the explicit region's fast path without opening a connection.
+    /// Returns the auto-routed HTTPS fast path without opening a connection.
     pub fn fast_url(self) -> String {
         format!("{}/fast", self.origin())
     }
 
-    /// Returns the explicit region's ping path without opening a connection.
+    /// Returns the auto-routed HTTPS ping path without opening a connection.
     pub fn ping_url(self) -> String {
         format!("{}/ping", self.origin())
     }
