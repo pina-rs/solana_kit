@@ -10,7 +10,14 @@ use solana_kit_surfpool::{
 use std::{borrow::Cow, fmt, io, num::NonZeroUsize, path::Path};
 use tokio::{fs, io::AsyncReadExt};
 
+mod artifacts;
 mod idl;
+pub use artifacts::{ArtifactRole, DiscoveryError, ProgramArtifacts, discover_program_artifacts};
+
+#[cfg(feature = "keys")]
+mod program;
+#[cfg(feature = "keys")]
+pub use program::{DeployProgramError, DeployProgramOptions, MAX_KEYPAIR_BYTES, deploy_program};
 
 /// Default maximum compiled program input: 16 MiB.
 pub const MAX_PROGRAM_BYTES: usize = 16 * 1024 * 1024;
@@ -137,6 +144,8 @@ pub enum DeployFile {
     Program,
     /// IDL JSON input.
     Idl,
+    /// Explicit keypair JSON input used by key-backed deployment.
+    Keypair,
 }
 
 /// Redacted deployment failure with original causes available by variant matching.
