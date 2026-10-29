@@ -39,8 +39,8 @@ Preconfirmation is an untrusted early signal, not transaction confirmation.
 ## Verification scope
 
 The maintained runner imports the original public contract bodies. The base
-registry retains 34 groups, or 36 with cryptography. Checkout expands these to
-39 or 41 groups; signup expands them to 43 or 46. Six fixed report manifests guard
+registry retains 35 groups, or 37 with cryptography. Checkout expands these to
+40 or 42 groups; signup expands them to 44 or 47. Six fixed report manifests guard
 names and counts. Seven native multi-thread tests require concrete REST,
 staking preparation, stake-discovery, unified-signup, checkout, renewal and
 compute-estimation futures to retain `Send`. Orchestration tests are feature-gated.
@@ -86,6 +86,46 @@ feature streams shared by native, browser, both WASI previews and the production
 interpreter. The all-feature native runner and concrete Tokio Send case pass
 locally, alongside strict Clippy and API documentation. Current-source browser,
 both WASI previews and production interpreter execution remain required in CI.
+
+## Pure priority fees and compute buffers
+
+`transactions::resolve_priority_fee` reuses exact `Decimal` inputs for the
+estimate, optional rate cap and optional total-lamport cap. Negative values clamp
+to zero. Rates floor to whole micro-lamports, and total caps floor before reducing
+the rate. The total is the checked integer ceiling of rate times compute units
+divided by one million, preserving a consistent fee for every transaction version.
+Zero units yields zero total and ignores the total cap. Caps apply before final
+wire-range checks, so even a cap of `u64::MAX + 1` can rescue a huge estimate at
+`u64::MAX` units into rate 1000000 and total `u64::MAX`.
+
+The private decimal conversion handles fractions and exponents without binary
+floating point or a new arbitrary-precision dependency. It visits the existing
+token and at most an integer's digit width of exponent padding. Comparison
+ceilings retain every cap that can constrain a supported rate. Final rate and
+total overflow have distinct typed errors.
+
+`transactions::buffer_compute_units` follows the pinned helper's binary ceiling,
+then applies the caller minimum, positive floor and maximum of 1400000. A zero
+minimum is allowed; even a minimum above the maximum clamps to that maximum.
+The default `100000 * 1.1` ceiling remains 110001, so rate 2000 costs 221 lamports.
+Finite negative percentages retain the source floor behavior. Non-finite config
+or multiplication rejects before the result narrows to `NonZeroU32`.
+
+The source is `priority_fee.dart` plus `bufferComputeUnits` in
+`create_smart_transaction.dart`; their immutable hashes remain in `source-files.tsv`.
+Rust's JSON-decimal inputs exclude the Dart helper's NaN, infinity and non-numeric
+caps. Unsigned types exclude negative units and minimums. Exact large fee rates
+and caps retain decimal precision that Dart doubles can lose. Both output fields
+must fit wire `u64`; the Dart total is an unbounded `BigInt`.
+
+The shared `priority-fee-resolution` group retains the source pure-fee and buffer
+fixtures, with exact large/exponent inputs, simultaneous caps, fractional ceilings,
+cap rescue, zero cases, overflow and invalid buffer controls. Native public
+contracts and all six portable feature streams register the same group for
+browser, both WASI previews and the production interpreter. This unit adds no
+RPC, signing, submission or Send-suite cases. Native contracts, strict all-feature
+Clippy and API documentation pass. Current-source CI remains required for the
+six portable feature streams and generated installed app journeys.
 
 ## Complete DAS records
 

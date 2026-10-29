@@ -19,6 +19,7 @@ PASS binary-provider-replacement
 PASS auth-routes
 PASS staking-preparation
 PASS compute-units-estimation
+PASS priority-fee-resolution
 PASS wallet-and-enhanced-routes
 PASS oauth-and-developer-routes
 PASS admin-route
@@ -34,4 +35,4 @@ PASS transfer-models
 PASS payment-terms
 PASS auth-default-signing
 PASS auth-caller-signing
-PASS all 36 Helius contract groups
+PASS all 37 Helius contract groups

@@ -20,8 +20,19 @@ retains exact `u64` units and the node's evaluation context; zero is valid.
 Execution failures, unavailable units and stale contexts have distinct typed
 errors with redacted formatting. The all-feature native contracts and concrete
 Tokio Send case pass locally, alongside strict Clippy and API documentation.
-Current-source browser, WASI and production interpreter execution remain
-required in CI.
+The compute-estimation phase passed all 49 CI checks, including browser Wasm,
+both WASI previews, the production interpreter and installed app journeys.
+
+`transactions::resolve_priority_fee` floors exact decimal rates and applies rate
+and total-lamport caps to the same resolved rate. Its checked integer total rounds
+up, and both outputs must fit `u64`. Zero units and negative-to-zero fee clamping
+retain the source behavior. `transactions::buffer_compute_units` returns a positive
+compute limit with the source floor and maximum. Its binary ceiling intentionally
+maps 100000 units to 110001 at the default ten percent buffer; a rate of 2000
+then costs 221 lamports. Non-finite buffer arithmetic rejects before narrowing.
+These pure helpers add no RPC or transaction composition. Their native contract
+fixtures, strict Clippy and API documentation pass. Current-source browser, WASI
+and production interpreter execution remain required in CI.
 
 DAS wire records follow the provider's partial-response contract. Applications
 that require complete records can convert `NftEdition`, `TokenAccount` and

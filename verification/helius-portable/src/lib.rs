@@ -34,17 +34,17 @@ pub const REPORT: &str = include_str!("../report-base-crypto.txt");
 
 /// Number of independently listed contract groups in this feature configuration.
 #[cfg(all(feature = "crypto", feature = "signup"))]
-pub const COUNT: usize = 46;
+pub const COUNT: usize = 47;
 /// Number of non-signing contract groups when cryptography is excluded.
 #[cfg(all(not(feature = "crypto"), feature = "signup"))]
-pub const COUNT: usize = 43;
+pub const COUNT: usize = 44;
 
 /// Checkout-only count without cryptography or signup.
 #[cfg(all(not(feature = "crypto"), feature = "checkout", not(feature = "signup")))]
-pub const COUNT: usize = 39;
+pub const COUNT: usize = 40;
 /// Checkout and cryptography count without signup.
 #[cfg(all(feature = "crypto", feature = "checkout", not(feature = "signup")))]
-pub const COUNT: usize = 41;
+pub const COUNT: usize = 42;
 
 /// Original non-signing contract count when checkout orchestration is absent.
 #[cfg(all(
@@ -52,10 +52,10 @@ pub const COUNT: usize = 41;
     not(feature = "signup"),
     not(feature = "checkout")
 ))]
-pub const COUNT: usize = 34;
+pub const COUNT: usize = 35;
 /// Original signing contract count when signup orchestration is absent.
 #[cfg(all(feature = "crypto", not(feature = "signup"), not(feature = "checkout")))]
-pub const COUNT: usize = 36;
+pub const COUNT: usize = 37;
 
 /// Runs every maintained public assertion before reporting completion.
 pub fn run() -> usize {
