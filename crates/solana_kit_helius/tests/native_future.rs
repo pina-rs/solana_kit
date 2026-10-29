@@ -11,6 +11,13 @@ use std::{
 };
 
 const CODEC_BUDGET: usize = 4096;
+const SIMULATION: &str = concat!(
+    r#"{"context":{"slot":100},"value":{"err":null,"fee":null,"accounts":null,"#,
+    r#""loadedAddresses":null,"logs":null,"preBalances":null,"postBalances":null,"#,
+    r#""preTokenBalances":null,"postTokenBalances":null,"returnData":null,"unitsConsumed":0,"#,
+    r#""replacementBlockhash":{"blockhash":"11111111111111111111111111111111","#,
+    r#""lastValidBlockHeight":99}}}"#,
+);
 
 #[cfg(feature = "signup")]
 struct SignupNative;
@@ -112,6 +119,7 @@ impl solana_kit_client::Transport for Native {
                 r#"{"context":{"slot":1},"value":{"blockhash":"11111111111111111111111111111111","lastValidBlockHeight":99}}"#
             }
             Some("getProgramAccounts") => r#"{"context":{"slot":100},"value":[]}"#,
+            Some("simulateTransaction") => SIMULATION,
             other => panic!("unexpected native RPC operation {other:?}"),
         };
 
@@ -220,5 +228,33 @@ async fn typed_stake_discovery_retains_send_on_native_executor() {
     .expect("typed discovery");
     assert_eq!(accounts.context.slot, 100);
     assert!(accounts.value.is_empty());
+    assert_eq!(exchanges.load(Ordering::SeqCst), 1);
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn compute_estimation_retains_send_on_native_executor() {
+    let exchanges = Arc::new(AtomicUsize::new(0));
+    let client = solana_kit_client::Client::new(
+        Native {
+            exchanges: Arc::clone(&exchanges),
+        },
+        solana_kit_client::Limits::default(),
+    );
+    let estimate = tokio::spawn(async move {
+        solana_kit_helius::transactions::get_compute_units(
+            &client,
+            &[0, 1],
+            solana_kit_client::methods::ReadConfig {
+                commitment: Some(solana_kit_client::methods::Commitment::Confirmed),
+                min_context_slot: Some(90),
+            },
+        )
+        .await
+    })
+    .await
+    .expect("native task joined")
+    .expect("reported compute units");
+    assert_eq!(estimate.context.slot, 100);
+    assert_eq!(estimate.value, 0);
     assert_eq!(exchanges.load(Ordering::SeqCst), 1);
 }

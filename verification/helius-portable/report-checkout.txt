@@ -23,6 +23,7 @@ PASS payment-rejection
 PASS payment-renewal
 PASS payment-cancellation
 PASS staking-preparation
+PASS compute-units-estimation
 PASS wallet-and-enhanced-routes
 PASS oauth-and-developer-routes
 PASS admin-route
@@ -38,4 +39,4 @@ PASS transfer-models
 PASS payment-terms
 PASS auth-default-signing
 PASS auth-caller-signing
-PASS all 40 Helius contract groups
+PASS all 41 Helius contract groups

@@ -39,12 +39,12 @@ Preconfirmation is an untrusted early signal, not transaction confirmation.
 ## Verification scope
 
 The maintained runner imports the original public contract bodies. The base
-registry retains 33 groups, or 35 with cryptography. Checkout expands these to
-38 or 40 groups; signup expands them to 42 or 45. Six fixed report manifests guard
-names and counts. Six native multi-thread tests require
-concrete REST, staking preparation, stake-discovery, unified-signup, checkout and
-renewal futures to retain `Send`. Orchestration tests are feature-gated. Local
-`Rc` exchanges exercise local futures without a universal `Send` requirement.
+registry retains 34 groups, or 36 with cryptography. Checkout expands these to
+39 or 41 groups; signup expands them to 43 or 46. Six fixed report manifests guard
+names and counts. Seven native multi-thread tests require concrete REST,
+staking preparation, stake-discovery, unified-signup, checkout, renewal and
+compute-estimation futures to retain `Send`. Orchestration tests are feature-gated.
+Local `Rc` exchanges exercise local futures without a universal `Send` requirement.
 
 The base suites passed native Rust, Chrome, both WASI previews and the production
 LeptosKit interpreter in [the foundation PR](https://github.com/pina-rs/solana_kit/pull/76).
@@ -61,6 +61,31 @@ defining source files against the immutable hashes. Neither those hashes nor
 the contract groups establish declaration-by-declaration behavioral parity.
 Paid-service credentials are not required for deterministic tests; no live
 provider verification or normal registry release is claimed.
+
+## Compute unit estimation
+
+`transactions::get_compute_units` accepts caller-owned transaction wire and
+explicit shared `ReadConfig` constraints. One bounded `simulateTransaction`
+exchange encodes the exact bytes as Base64, sets `replaceRecentBlockhash: true`
+and `sigVerify: false`, and preserves the node's evaluation context with exact
+`u64` units. A reported zero is valid. A typed execution failure takes precedence
+over units; absent or null units and contexts below the requested minimum slot
+reject through distinct errors. Debug and Display redact response details while
+typed variants retain context and the original failure for explicit inspection.
+
+The pinned Dart `get_compute_units.dart:17-56` supplies the estimator behavior;
+its source hash remains in `source-files.tsv`. The Rust API uses Solana
+transaction wire supplied by the caller. This unit adds no smart-transaction
+construction or submission behavior.
+
+The shared `compute-units-estimation` group covers actual RPC framing, exact
+Base64 bytes and flags, one exchange, zero and large integers, execution-error
+precedence, missing/null/malformed units, bounded admission, redaction, minimum
+slots and cancellation of a suspended exchange. It is registered in the six
+feature streams shared by native, browser, both WASI previews and the production
+interpreter. The all-feature native runner and concrete Tokio Send case pass
+locally, alongside strict Clippy and API documentation. Current-source browser,
+both WASI previews and production interpreter execution remain required in CI.
 
 ## Complete DAS records
 
