@@ -17,8 +17,10 @@ Supply a Developer `ServiceClient` bound to the same identity's JWT, two explici
 `checkout::PollPolicy` values, a monotonic millisecond clock and a fallible
 sleep-until function. The checkout policy bounds intent observation. A fresh
 provisioning window begins only after confirmed checkout and bounds first-project
-discovery. Both windows check time between exchanges; individual status, project,
-details and key-creation requests need caller transport deadlines.
+discovery. An empty final allowed project response returns `ProvisioningTimeout`
+without starting another timer. Both windows check time between exchanges;
+individual status, project, details and key-creation requests need caller transport
+deadlines.
 
 The helper observes the existing checkout intent and never initializes or
 resubmits payment. Completed checkout discovers the first project, then reuses
@@ -79,6 +81,13 @@ WASI previews and the production interpreter. Its expected signup counts become
 49 without crypto and 52 with crypto. A separate native Tokio test owns the
 concrete client and receipt across `spawn` and asserts completed provisioning.
 All new bodies are **UNEXECUTED** in this source handoff.
+
+Source review of commit `fcbde821` found that the final empty project response
+still started a timer after exhausting `max_polls`. The correction returns timeout
+before that timer. Its regression uses a one-read budget and a counted timer that
+would fail if called; the existing timer-failure control still exercises a window
+with another observation available. This finding and correction have no runtime
+verification at this source handoff.
 
 Execution-derived `report*.txt` manifests retain the historical 44/47 signup
 streams. Consequently their fixed-report admission needs an actual refresh before

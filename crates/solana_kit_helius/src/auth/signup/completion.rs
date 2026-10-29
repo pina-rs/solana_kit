@@ -137,7 +137,7 @@ where
 {
     let mut clock = PollClock::new(policy, now()).map_err(SignupCompletionError::Provisioning)?;
 
-    for _ in 0..policy.max_polls {
+    for poll in 1..=policy.max_polls {
         if !clock
             .advance(now())
             .map_err(SignupCompletionError::Provisioning)?
@@ -157,9 +157,10 @@ where
                 .map_err(SignupCompletionError::Project);
         }
 
-        if !clock
-            .advance(now())
-            .map_err(SignupCompletionError::Provisioning)?
+        if poll == policy.max_polls
+            || !clock
+                .advance(now())
+                .map_err(SignupCompletionError::Provisioning)?
         {
             return Err(SignupCompletionError::ProvisioningTimeout);
         }

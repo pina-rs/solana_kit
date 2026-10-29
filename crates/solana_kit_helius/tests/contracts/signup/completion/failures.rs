@@ -8,6 +8,7 @@ const UNAVAILABLE: u16 = 503;
 /// Project timeout, policy, service and timer failures remain distinguishable.
 pub fn completion_failures() {
     project_timeout();
+    exhausted_project_budget();
     service_failures();
     project_failures();
     policy_failures();
@@ -39,6 +40,37 @@ fn project_timeout() {
         Err(SignupCompletionError::ProvisioningTimeout)
     ));
     assert_eq!(calls.len(), 1);
+}
+
+fn exhausted_project_budget() {
+    let input = pending();
+    let original = input.clone();
+    let (client, trace) = client(vec![reply(COMPLETE), reply("[]")]);
+    let mut polling = policy();
+    polling.provisioning.max_polls = 1;
+    let timers = Cell::new(0);
+    let actual = futures::executor::block_on(resume_signup_and_pay(
+        &client,
+        &input,
+        polling,
+        || 0,
+        |_| {
+            timers.set(timers.get() + 1);
+            ready(Err::<(), _>(
+                "timer must not run after the final project read",
+            ))
+        },
+    ));
+    assert!(matches!(
+        actual,
+        Err(SignupCompletionError::ProvisioningTimeout)
+    ));
+    assert_eq!(timers.get(), 0);
+    let calls = trace.borrow();
+    assert_eq!(calls.len(), 2);
+    assert_read(&calls[0], &["checkout", "intent/opaque", "status"]);
+    assert_read(&calls[1], &["projects"]);
+    assert_eq!(input, original);
 }
 
 fn failed() -> Reply {
@@ -185,12 +217,16 @@ fn backwards_clock() {
 fn timer_failure(replies: Vec<Reply>, provisioning: bool) {
     let (client, trace) = client(replies);
     let input = pending();
+    let timers = Cell::new(0);
     let actual = futures::executor::block_on(resume_signup_and_pay(
         &client,
         &input,
         policy(),
         || 0,
-        |_| ready(Err::<(), _>("clock failure")),
+        |_| {
+            timers.set(timers.get() + 1);
+            ready(Err::<(), _>("clock failure"))
+        },
     ));
 
     if provisioning {
@@ -210,4 +246,5 @@ fn timer_failure(replies: Vec<Reply>, provisioning: bool) {
     }
 
     assert_eq!(trace.borrow().len(), if provisioning { 2 } else { 1 });
+    assert_eq!(timers.get(), 1);
 }
