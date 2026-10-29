@@ -1,0 +1,181 @@
+//! The native boundary and packed NPM consumer share this exact Codama AST.
+use super::render_root;
+use serde_json::{Value, json};
+
+fn root() -> Value {
+    let program: Value = serde_json::from_str(include_str!(
+        "../../../../packages/codama-renderers-rust-solana-kit/test/numeric.json"
+    ))
+    .unwrap();
+
+    json!({"kind":"rootNode","standard":"codama","version":"1.8.0","program":program})
+}
+
+/// Parsed expressions alone miss unresolved names, so the emitted use trees are checked too.
+#[test]
+fn numeric_ast_reaches_the_public_emitter_without_the_verification_feature() {
+    let files = render_root(&root()).unwrap();
+    let source = &files
+        .iter()
+        .find(|file| file.path == "numeric_contracts.rs")
+        .unwrap()
+        .source;
+    let syntax = syn::parse_file(source).unwrap();
+
+    for format in ["i32", "u128", "i128", "f32"] {
+        for endian in ["LE", "BE"] {
+            assert!(source.contains(&format!("Number::<{format}>::{endian}")));
+        }
+    }
+
+    assert!(source.contains("Number::<u16>::BE"));
+    assert!(source.contains("Number::<u64>::BE"));
+    assert!(source.contains("Nullable"));
+    assert!(source.contains("Boolean"));
+    assert!(!source.contains("#[derive(Clone, Debug, Eq, PartialEq)]"));
+
+    for name in ["Nullable", "Boolean", "Absence"] {
+        assert!(
+            syntax.items.iter().any(|item| {
+                matches!(item, syn::Item::Use(import) if imports_path(
+                    &import.tree,
+                    &["solana_kit_core", "codecs", name]
+                ))
+            }),
+            "missing qualified codec import: {name}"
+        );
+    }
+}
+
+/// Type names in expressions do not prove that generated clients import them.
+fn imports_path(tree: &syn::UseTree, segments: &[&str]) -> bool {
+    match tree {
+        syn::UseTree::Path(path) => segments
+            .split_first()
+            .is_some_and(|(head, tail)| path.ident == *head && imports_path(&path.tree, tail)),
+        syn::UseTree::Group(group) => group.items.iter().any(|item| imports_path(item, segments)),
+        syn::UseTree::Name(name) => segments.len() == 1 && name.ident == segments[0],
+        syn::UseTree::Rename(_) | syn::UseTree::Glob(_) => false,
+    }
+}
+
+#[test]
+fn emitted_codec_and_legacy_names_cannot_be_program_types() {
+    for name in ["Nullable", "Boolean", "Absence", "Number", "OwnedString"] {
+        let mut input = root();
+        input["program"]["definedTypes"][0]["name"] = json!(name);
+        let error = render_root(&input).unwrap_err().to_string();
+        assert!(
+            error.contains("generated namespace collision"),
+            "{name}: {error}"
+        );
+    }
+}
+
+#[test]
+fn fixed_text_import_names_cannot_be_program_types() {
+    let mut input = root();
+    input["program"]["definedTypes"][0] = json!({
+        "kind":"definedTypeNode", "name":"Utf8Config",
+        "type":{"kind":"fixedSizeTypeNode","size":1,
+            "type":{"kind":"stringTypeNode","encoding":"utf8"}}
+    });
+    let error = render_root(&input).unwrap_err().to_string();
+    assert!(error.contains("generated namespace collision"));
+}
+
+#[test]
+fn numeric_primitive_labels_and_internal_endian_do_not_reserve_type_names() {
+    for name in ["I32", "U128", "I128", "F32", "Endian"] {
+        let mut input = root();
+        input["program"]["definedTypes"][0]["name"] = json!(name);
+        let files = render_root(&input).unwrap();
+        let source = &files
+            .iter()
+            .find(|file| file.path == "numeric_contracts.rs")
+            .unwrap()
+            .source;
+        let syntax = syn::parse_file(source).unwrap();
+        assert!(
+            syntax
+                .items
+                .iter()
+                .any(|item| { matches!(item, syn::Item::Struct(item) if item.ident == name) })
+        );
+    }
+}
+
+#[test]
+fn nullable_component_names_remain_available_without_the_imports() {
+    for name in ["Nullable", "Boolean", "Absence"] {
+        let mut input = root();
+        input["program"]["definedTypes"]
+            .as_array_mut()
+            .unwrap()
+            .retain(|node| node["type"]["kind"] != "optionTypeNode");
+        input["program"]["definedTypes"][0]["name"] = json!(name);
+        assert!(render_root(&input).is_ok(), "{name}");
+    }
+}
+
+#[test]
+fn unknown_numeric_contracts_fail_before_any_files_are_returned() {
+    for (key, value) in [("format", "u256"), ("endian", "middle")] {
+        let mut input = root();
+        input["program"]["definedTypes"][0]["type"][key] = json!(value);
+        assert!(render_root(&input).is_err());
+    }
+}
+
+#[test]
+fn count_and_size_prefixes_reject_signed_and_floating_domains() {
+    for format in ["i32", "f32", "u128"] {
+        let mut count = root();
+        count["program"]["definedTypes"][9]["type"]["count"]["prefix"]["format"] = json!(format);
+        assert!(render_root(&count).is_err());
+
+        let mut size = root();
+        size["program"]["definedTypes"][10]["type"]["prefix"]["format"] = json!(format);
+        assert!(render_root(&size).is_err());
+    }
+}
+
+/// Non-symmetric literals expose a dropped byte order in either dispatch variant.
+#[test]
+fn instruction_tags_keep_both_declared_byte_orders() {
+    for (endian, expected) in [
+        ("be", ["1, 2, 3, 4", "1, 2, 3, 5"]),
+        ("le", ["4, 3, 2, 1", "5, 3, 2, 1"]),
+    ] {
+        let mut input = root();
+
+        for instruction in input["program"]["instructions"].as_array_mut().unwrap() {
+            instruction["arguments"][0]["type"]["endian"] = json!(endian);
+        }
+
+        let files = render_root(&input).unwrap();
+        let source = &files
+            .iter()
+            .find(|file| file.path == "numeric_contracts.rs")
+            .unwrap()
+            .source;
+
+        for literal in expected {
+            assert!(source.contains(literal));
+        }
+    }
+}
+
+#[test]
+fn instruction_tags_reject_unsupported_formats_and_overflow() {
+    for format in ["u16", "u64", "i32", "u128", "i128", "f32"] {
+        let mut input = root();
+        input["program"]["instructions"][0]["arguments"][0]["type"]["format"] = json!(format);
+        assert!(render_root(&input).is_err());
+    }
+
+    let mut input = root();
+    input["program"]["instructions"][0]["arguments"][0]["defaultValue"]["number"] =
+        json!(u64::from(u32::MAX) + 1);
+    assert!(render_root(&input).is_err());
+}

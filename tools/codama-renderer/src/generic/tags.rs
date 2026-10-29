@@ -2,6 +2,7 @@
 use super::{parse, wire};
 use crate::schema::Error;
 use serde_json::Value;
+use solana_kit_core::codecs::Endian;
 const MAX_HEADER_BYTES: usize = 32;
 const HEX_RADIX: u32 = 16;
 #[cfg(all(test, feature = "verification"))]
@@ -80,9 +81,12 @@ fn literal(field: &Value) -> Result<Vec<u8>, Error> {
         .as_u64()
         .ok_or("invalid numeric discriminator")?;
 
-    match wire::number(&field["type"])? {
-        "u8" => Ok(vec![u8::try_from(value)?]),
-        "u32" => Ok(u32::try_from(value)?.to_le_bytes().to_vec()),
+    let number = wire::number(&field["type"])?;
+
+    match (number.format, number.endian) {
+        ("u8", _) => Ok(vec![u8::try_from(value)?]),
+        ("u32", Endian::Little) => Ok(u32::try_from(value)?.to_le_bytes().to_vec()),
+        ("u32", Endian::Big) => Ok(u32::try_from(value)?.to_be_bytes().to_vec()),
         _ => Err("unsupported numeric discriminator width".into()),
     }
 }

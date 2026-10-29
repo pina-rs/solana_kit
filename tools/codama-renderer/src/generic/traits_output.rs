@@ -1,24 +1,23 @@
 //! Optional idiomatic value traits for new public clients leave all existing output unchanged.
 use super::{Program, Shape, Variant};
-use crate::schema::Error;
 
-/// Structural traits follow every typed field/variant; incompatible equality rejects first.
-pub(super) fn emit(program: &Program) -> Result<String, Error> {
-    if !super::equality::derives(program)
+/// Float-bearing models keep Display without promising the Eq/Hash contract.
+pub(super) fn emit(program: &Program) -> String {
+    let hashable = super::equality::derives(program)
         .split(',')
-        .any(|name| name.trim() == "Eq")
-    {
-        return Err("structural hashing requires equality-compatible wire values".into());
-    }
-
+        .any(|name| name.trim() == "Eq");
     let mut output = String::new();
 
     for item in &program.definitions {
-        output.push_str(&value(&item.name, &item.shape));
+        output.push_str(&value(&item.name, &item.shape, hashable));
     }
 
     for item in &program.instructions {
-        output.push_str(&value(&item.name, &Shape::Struct(item.fields.clone())));
+        output.push_str(&value(
+            &item.name,
+            &Shape::Struct(item.fields.clone()),
+            hashable,
+        ));
     }
 
     let name = format!("{}InstructionData", program.name);
@@ -36,16 +35,29 @@ pub(super) fn emit(program: &Program) -> Result<String, Error> {
             prefix: "u8",
             variants,
         },
+        hashable,
     ));
 
     if !program.errors.is_empty() {
         output.push_str(&program_error(&format!("{}Error", program.name)));
     }
 
-    Ok(output)
+    output
 }
 
-fn value(name: &str, shape: &Shape) -> String {
+fn value(name: &str, shape: &Shape, hashable: bool) -> String {
+    let hash = if hashable {
+        hash(name, shape)
+    } else {
+        String::new()
+    };
+
+    format!(
+        "{hash}impl core::fmt::Display for {name}{{\nfn fmt(&self,formatter:&mut core::fmt::Formatter<'_>)->core::fmt::Result{{core::fmt::Debug::fmt(self,formatter)}}\n}}\n"
+    )
+}
+
+fn hash(name: &str, shape: &Shape) -> String {
     let body = match shape {
         Shape::Struct(fields) => fields
             .iter()
@@ -71,7 +83,7 @@ fn value(name: &str, shape: &Shape) -> String {
     };
 
     format!(
-        "impl core::hash::Hash for {name}{{\nfn hash<H:core::hash::Hasher>(&self,state:&mut H){{\n{unused}{body}}}\n}}\nimpl core::fmt::Display for {name}{{\nfn fmt(&self,formatter:&mut core::fmt::Formatter<'_>)->core::fmt::Result{{core::fmt::Debug::fmt(self,formatter)}}\n}}\n"
+        "impl core::hash::Hash for {name}{{\nfn hash<H:core::hash::Hasher>(&self,state:&mut H){{\n{unused}{body}}}\n}}\n"
     )
 }
 

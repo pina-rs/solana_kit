@@ -39,6 +39,7 @@ mod imports;
 mod invocations;
 
 mod layout;
+mod numeric;
 
 #[cfg(all(test, feature = "verification"))]
 mod header_tests;
@@ -70,6 +71,7 @@ mod tests;
 #[cfg(feature = "verification")]
 use crate::generate;
 use crate::schema::Error;
+use numeric::{CountPrefix, Numeric};
 use serde_json::Value;
 use solana_kit_core::Address;
 #[cfg(feature = "verification")]
@@ -128,7 +130,7 @@ pub(crate) struct Field {
 
 #[derive(Clone)]
 pub(crate) enum Wire {
-    Number(&'static str),
+    Number(Numeric),
     Link(String),
     Address,
     Bool,
@@ -146,7 +148,7 @@ pub(crate) enum Wire {
     },
     Option {
         item: Box<Wire>,
-        prefix: &'static str,
+        prefix: Numeric,
         fixed: bool,
     },
     Array {
@@ -155,11 +157,11 @@ pub(crate) enum Wire {
     },
     Prefix {
         item: Box<Wire>,
-        prefix: &'static str,
+        prefix: Numeric,
     },
     Counted {
         item: Box<Wire>,
-        prefix: &'static str,
+        prefix: CountPrefix,
     },
     Tuple(Box<Wire>, Box<Wire>),
 }
@@ -222,7 +224,7 @@ pub(crate) fn render_prefixed_events(root: &Value, policy: &Policy<'_>) -> Resul
 pub(crate) fn render_public_program(root: &Value, policy: &Policy<'_>) -> Result<String, Error> {
     let program = parse::program(&normalize_input(root)?, policy)?;
     let mut output = emit::program(&program)?;
-    output.push_str(&traits_output::emit(&program)?);
+    output.push_str(&traits_output::emit(&program));
     Ok(output)
 }
 

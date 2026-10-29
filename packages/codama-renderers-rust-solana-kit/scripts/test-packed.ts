@@ -46,7 +46,7 @@ try {
   const source = readFileSync(join(packageDirectory, "test/packed-consumer.ts"), "utf8");
   writeFileSync(join(consumer, "verify.ts"), source);
 
-  for (const file of ["contracts.ts", "fixture.ts"]) {
+  for (const file of ["contracts.ts", "fixture.ts", "numeric.json"]) {
     writeFileSync(join(consumer, file), readFileSync(join(packageDirectory, "test", file)));
   }
 
@@ -72,6 +72,7 @@ try {
       "counter.rs",
       "empty_pda_contracts.rs",
       "literal_contracts.rs",
+      "numeric_contracts.rs",
       "record_contracts.rs",
       "resolver_contracts.rs",
       "mod.rs",

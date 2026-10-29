@@ -1,0 +1,132 @@
+{
+  "kind": "programNode",
+  "name": "numericContracts",
+  "publicKey": "11111111111111111111111111111111",
+  "instructions": [{
+    "kind": "instructionNode",
+    "name": "ping",
+    "arguments": [
+      {
+        "kind": "instructionArgumentNode",
+        "name": "discriminator",
+        "type": { "kind": "numberTypeNode", "format": "u32", "endian": "be" },
+        "defaultValue": { "kind": "numberValueNode", "number": 16909060 },
+        "defaultValueStrategy": "omitted"
+      }
+    ],
+    "discriminators": [{ "kind": "fieldDiscriminatorNode", "name": "discriminator" }]
+  }, {
+    "kind": "instructionNode",
+    "name": "pong",
+    "arguments": [
+      {
+        "kind": "instructionArgumentNode",
+        "name": "discriminator",
+        "type": { "kind": "numberTypeNode", "format": "u32", "endian": "be" },
+        "defaultValue": { "kind": "numberValueNode", "number": 16909061 },
+        "defaultValueStrategy": "omitted"
+      }
+    ],
+    "discriminators": [{ "kind": "fieldDiscriminatorNode", "name": "discriminator" }]
+  }],
+  "definedTypes": [
+    {
+      "kind": "definedTypeNode",
+      "name": "u16Be",
+      "type": { "kind": "numberTypeNode", "format": "u16", "endian": "be" }
+    },
+    {
+      "kind": "definedTypeNode",
+      "name": "i32Le",
+      "type": { "kind": "numberTypeNode", "format": "i32", "endian": "le" }
+    },
+    {
+      "kind": "definedTypeNode",
+      "name": "i32Be",
+      "type": { "kind": "numberTypeNode", "format": "i32", "endian": "be" }
+    },
+    {
+      "kind": "definedTypeNode",
+      "name": "u128Le",
+      "type": { "kind": "numberTypeNode", "format": "u128", "endian": "le" }
+    },
+    {
+      "kind": "definedTypeNode",
+      "name": "u128Be",
+      "type": { "kind": "numberTypeNode", "format": "u128", "endian": "be" }
+    },
+    {
+      "kind": "definedTypeNode",
+      "name": "i128Le",
+      "type": { "kind": "numberTypeNode", "format": "i128", "endian": "le" }
+    },
+    {
+      "kind": "definedTypeNode",
+      "name": "i128Be",
+      "type": { "kind": "numberTypeNode", "format": "i128", "endian": "be" }
+    },
+    {
+      "kind": "definedTypeNode",
+      "name": "f32Le",
+      "type": { "kind": "numberTypeNode", "format": "f32", "endian": "le" }
+    },
+    {
+      "kind": "definedTypeNode",
+      "name": "f32Be",
+      "type": { "kind": "numberTypeNode", "format": "f32", "endian": "be" }
+    },
+    {
+      "kind": "definedTypeNode",
+      "name": "boolArrayBe",
+      "type": {
+        "kind": "arrayTypeNode",
+        "item": {
+          "kind": "booleanTypeNode",
+          "size": { "kind": "numberTypeNode", "format": "u8", "endian": "le" }
+        },
+        "count": {
+          "kind": "prefixedCountNode",
+          "prefix": { "kind": "numberTypeNode", "format": "u16", "endian": "be" }
+        }
+      }
+    },
+    {
+      "kind": "definedTypeNode",
+      "name": "sizedBoolBe",
+      "type": {
+        "kind": "sizePrefixTypeNode",
+        "type": {
+          "kind": "booleanTypeNode",
+          "size": { "kind": "numberTypeNode", "format": "u8", "endian": "le" }
+        },
+        "prefix": { "kind": "numberTypeNode", "format": "u64", "endian": "be" }
+      }
+    },
+    {
+      "kind": "definedTypeNode",
+      "name": "optionalBoolBe",
+      "type": {
+        "kind": "optionTypeNode",
+        "item": {
+          "kind": "booleanTypeNode",
+          "size": { "kind": "numberTypeNode", "format": "u8", "endian": "le" }
+        },
+        "prefix": { "kind": "numberTypeNode", "format": "u16", "endian": "be" },
+        "fixed": false
+      }
+    },
+    {
+      "kind": "definedTypeNode",
+      "name": "fixedOptionalBoolBe",
+      "type": {
+        "kind": "optionTypeNode",
+        "item": {
+          "kind": "booleanTypeNode",
+          "size": { "kind": "numberTypeNode", "format": "u8", "endian": "le" }
+        },
+        "prefix": { "kind": "numberTypeNode", "format": "u32", "endian": "be" },
+        "fixed": true
+      }
+    }
+  ]
+}

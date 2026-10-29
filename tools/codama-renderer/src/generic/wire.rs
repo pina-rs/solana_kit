@@ -1,30 +1,14 @@
 //! Closed wire families and explicit layout contracts shared by every program.
 use super::{
-    Wire,
+    CountPrefix, Numeric, Wire,
     parse::{keys, name},
 };
 use crate::schema::Error;
 use serde_json::Value;
 const MAX_HIDDEN_PADDING: usize = 1024;
 
-pub(super) fn number(node: &Value) -> Result<&'static str, Error> {
-    keys(node, &["kind", "format", "endian", "display"])?;
-
-    if node["kind"] != "numberTypeNode" || node["endian"] != "le" {
-        return Err("unsupported integer encoding".into());
-    }
-
-    match node["format"].as_str() {
-        Some("u8") => Ok("u8"),
-        Some("u16") => Ok("u16"),
-        Some("u32") => Ok("u32"),
-        Some("u64") => Ok("u64"),
-        Some("i8") => Ok("i8"),
-        Some("i16") => Ok("i16"),
-        Some("i64") => Ok("i64"),
-        Some("f64") => Ok("f64"),
-        _ => Err("unsupported integer width".into()),
-    }
+pub(super) fn number(node: &Value) -> Result<Numeric, Error> {
+    Numeric::parse(node)
 }
 
 /// The closed dispatch rejects unfamiliar kinds rather than choosing a fallback.
@@ -85,7 +69,7 @@ fn tuple(node: &Value) -> Result<Wire, Error> {
 fn boolean(node: &Value) -> Result<Wire, Error> {
     keys(node, &["kind", "size"])?;
 
-    if number(&node["size"])? != "u8" {
+    if number(&node["size"])?.format != "u8" {
         return Err("unsupported boolean size".into());
     }
 
@@ -109,10 +93,6 @@ fn option(node: &Value) -> Result<Wire, Error> {
 
     let prefix = unsigned(&node["prefix"])?;
 
-    if !["u8", "u32"].contains(&prefix) {
-        return Err("unsupported option tag".into());
-    }
-
     let fixed = match node.get("fixed") {
         Some(value) => value.as_bool().ok_or("invalid fixed-option policy")?,
         None => false,
@@ -133,9 +113,9 @@ fn array(node: &Value) -> Result<Wire, Error> {
         let prefix = if prefix
             == &serde_json::json!({"kind":"numberTypeNode","format":"shortU16","endian":"le"})
         {
-            "shortU16"
+            CountPrefix::ShortU16
         } else {
-            unsigned(prefix)?
+            CountPrefix::Number(unsigned(prefix)?)
         };
 
         return Ok(Wire::Counted {
@@ -172,14 +152,8 @@ fn prefix(node: &Value) -> Result<Wire, Error> {
     })
 }
 
-pub(super) fn unsigned(node: &Value) -> Result<&'static str, Error> {
-    let format = number(node)?;
-
-    if !["u8", "u16", "u32", "u64"].contains(&format) {
-        return Err("length and count prefixes must be unsigned integers".into());
-    }
-
-    Ok(format)
+pub(super) fn unsigned(node: &Value) -> Result<Numeric, Error> {
+    Numeric::unsigned(node)
 }
 
 fn map(node: &Value) -> Result<Wire, Error> {
@@ -195,7 +169,7 @@ fn map(node: &Value) -> Result<Wire, Error> {
             Box::new(parse(&node["key"])?),
             Box::new(parse(&node["value"])?),
         )),
-        prefix: unsigned(&node["count"]["prefix"])?,
+        prefix: CountPrefix::Number(unsigned(&node["count"]["prefix"])?),
     })
 }
 
@@ -228,7 +202,7 @@ fn hidden_constant(constant: &Value, bytes: &mut Vec<u8>) -> Result<(), Error> {
         binding = &binding["type"];
     }
 
-    if number(binding)? != "u8" {
+    if number(binding)?.format != "u8" {
         return Err("hidden prefix constant requires u8".into());
     }
 

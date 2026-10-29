@@ -20,6 +20,7 @@ test("complete record and resolver contracts pass the normal Codama boundary", (
     "empty_pda_contracts.rs",
     "literal_contracts.rs",
     "mod.rs",
+    "numeric_contracts.rs",
     "record_contracts.rs",
     "resolver_contracts.rs",
   ]);

@@ -1,5 +1,5 @@
 //! Import requirements follow typed IR nodes, never generated source text.
-use super::{Field, Program, Shape, Wire};
+use super::{CountPrefix, Field, Numeric, Program, Shape, Wire};
 use std::collections::BTreeSet;
 /// Required codec and ownership symbols, collected from the entire validated model.
 pub(super) type Imports = BTreeSet<&'static str>;
@@ -84,9 +84,7 @@ fn wire(value: &Wire, required: &mut Imports) {
             item,
             prefix,
             fixed,
-        } => {
-            optional(item, *fixed && *prefix == "u8", required);
-        }
+        } => prefixed_option(item, prefix, *fixed, required),
         Wire::Array { item, .. } => sequence(item, false, required),
         Wire::Prefix { item, prefix } => {
             prefix_imports(prefix, required);
@@ -99,6 +97,16 @@ fn wire(value: &Wire, required: &mut Imports) {
         }
         Wire::Tuple(a, b) => tuple(a, b, required),
     }
+}
+
+fn prefixed_option(item: &Wire, prefix: &Numeric, fixed: bool, required: &mut Imports) {
+    if prefix.legacy_option() {
+        optional(item, fixed && prefix.format == "u8", required);
+
+        return;
+    }
+
+    nullable(item, prefix, required);
 }
 
 fn optional(item: &Wire, fixed_byte: bool, required: &mut Imports) {
@@ -121,10 +129,10 @@ fn sequence(item: &Wire, terminated: bool, required: &mut Imports) {
     wire(item, required);
 }
 
-fn prefix_imports(prefix: &str, required: &mut Imports) {
+fn prefix_imports(prefix: &Numeric, required: &mut Imports) {
     required.extend(["ByteSizePrefix", "FrameConsumption", "Number"]);
 
-    if prefix != "u64" {
+    if prefix.format != "u64" {
         required.insert("Mapped");
     }
 }
@@ -144,19 +152,30 @@ fn owned(item: &Wire, required: &mut Imports) {
     }
 }
 
-fn counted(prefix: &str, required: &mut Imports) {
+fn counted(prefix: &CountPrefix, required: &mut Imports) {
     required.insert("Counted");
 
-    if prefix != "u32" {
+    if !matches!(prefix, CountPrefix::Number(number) if number.format == "u32") {
         required.insert("Mapped");
     }
 
     let number = match prefix {
-        "shortU16" => "ShortU16",
+        CountPrefix::ShortU16 => "ShortU16",
         _ => "Number",
     };
 
     required.insert(number);
+}
+
+fn nullable(item: &Wire, prefix: &Numeric, required: &mut Imports) {
+    required.extend(["Nullable", "Boolean", "Absence", "Number"]);
+
+    if prefix.format != "u32" {
+        required.insert("Mapped");
+    }
+
+    owned(item, required);
+    wire(item, required);
 }
 
 fn option(fixed_byte: bool, required: &mut Imports) {

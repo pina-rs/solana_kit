@@ -68,9 +68,11 @@ const RESERVED: &[&str] = &[
 fn names(program: &Program) -> Result<(), Error> {
     let mut names: BTreeSet<String> = RESERVED.iter().copied().map(str::to_owned).collect();
 
-    if super::imports::collect(program).contains("OwnedVector") {
-        names.insert("OwnedVector".to_owned());
-    }
+    names.extend(
+        super::imports::collect(program)
+            .into_iter()
+            .map(str::to_owned),
+    );
 
     for suffix in [
         "InstructionData",
