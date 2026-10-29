@@ -159,6 +159,7 @@ where
 }
 
 /// Observes or rejects values before writing and after reading.
+/// Preserves the inner codec's directional size declarations.
 /// Size calculation does not invoke the observer. Callbacks must not allocate
 /// without their own limits. Byte-buffer observation is intentionally separate.
 #[derive(Clone, Copy, Debug)]
@@ -176,6 +177,10 @@ where
     C: Encoder<T>,
     E: Fn(&T) -> Result<(), Error>,
 {
+    fn encode_size(&self) -> Result<Size, Error> {
+        self.item.encode_size()
+    }
+
     fn encoded_len(&self, value: &T) -> Result<usize, Error> {
         self.item.encoded_len(value)
     }
@@ -191,6 +196,10 @@ where
     C: Decoder<T>,
     D: Fn(&T) -> Result<(), Error>,
 {
+    fn decode_size(&self) -> Result<Size, Error> {
+        self.item.decode_size()
+    }
+
     fn read(&self, reader: &mut Reader<'_>) -> Result<T, Error> {
         let value = self.item.read(reader)?;
         (self.after_read)(&value)?;
