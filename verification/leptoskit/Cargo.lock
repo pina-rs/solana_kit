@@ -791,6 +791,7 @@ version = "0.1.0"
 dependencies = [
  "base64",
  "bs58",
+ "futures-core",
  "serde",
  "serde_json",
  "solana_kit_compute_budget",
@@ -810,6 +811,7 @@ version = "0.1.0"
 dependencies = [
  "base64",
  "bs58",
+ "futures-core",
  "hex-literal",
  "serde_json",
  "signer_capability_consumer",

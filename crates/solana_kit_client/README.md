@@ -11,6 +11,13 @@ preserves nonce lifetimes, and replaces provisional limits while retaining expli
 ones. The caller owns the transport, deadline, and cancellation. See the
 [resource estimation contract](../../docs/parity/client-resource-estimation.md).
 
+The optional `reactive` feature provides caller-driven action and streaming stores
+with cached snapshots, scoped cancellation, owned listener leases and a
+latest-accepted-value stream bridge. Callers poll or spawn each returned driver;
+dropping it cancels its actual owned work. See the
+[reactive store contract](../../docs/architecture/reactive-stores.md) for source
+semantics, local callbacks and the current verification checkpoint.
+
 `rest` owns provider HTTP methods, explicit absent/JSON/form bodies, ordered
 decoded path/query pairs, bounded JSON admission and `Transport<D>`. Each provider
 owns its destination identity. Concrete adapters map that identity to approved

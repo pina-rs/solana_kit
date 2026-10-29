@@ -20,6 +20,9 @@ mod json;
 pub mod plans;
 
 pub mod methods;
+/// Caller-driven reactive action and stream stores.
+#[cfg(feature = "reactive")]
+pub mod reactive;
 #[cfg(feature = "resource-estimation")]
 pub mod resources;
 /// Provider REST requests and shared bounded JSON admission.
