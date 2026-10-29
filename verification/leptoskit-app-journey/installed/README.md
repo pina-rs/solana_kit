@@ -17,7 +17,11 @@ rejects a proposed transfer, and approves a second review showing the payer,
 recipient, amount and fee notice. An independent JSON-RPC observer checks the
 executed legacy System transfer, exact accounts and instruction bytes, network
 fee and payer debit, recipient effect and unique signature. It then checks the
-application's confirmation text and real rendered pixels before disconnecting.
+application's confirmation text and real rendered pixels. Before disconnecting,
+the controller retains the payer's post-transfer balance from the verified
+transaction metadata, requires the owned validator's balance to match, and
+checks the app's **Read balance** text against the same value. The network fee
+comes from that transaction; the controller does not assume a fixed fee.
 Neither funding nor approval is automatically repeated.
 
 The controller explicitly makes a private copy of that first wallet, then creates
@@ -26,9 +30,16 @@ session and launches the generated application again with the same private app
 data. The first relaunch selects **Load saved wallet**; the second selects
 **Restore private copy**. Each must show its original, distinct public address,
 read the independently observed balance, and approve a message whose signature
-the guest verifies against that wallet's public key. Signing must leave its
-ledger balance unchanged. A restore implementation that incorrectly loads the
-saved wallet therefore fails the address check.
+the guest verifies against that wallet's public key. Before signing with the
+restored private copy, both the owned validator's balance and the app's **Read
+balance** text must equal the retained first-session post-transfer balance.
+Recovery cannot adopt a changed ledger balance as its new baseline. Signing must
+leave each wallet's ledger balance unchanged. A restore implementation that
+incorrectly loads the saved wallet therefore fails the address check.
+
+The initial and recovered balance checks retain their own named checkpoints.
+Identify each balance and signature capture by its checkpoint label rather than
+by a fixed capture number.
 
 Relaunch never reconnects a wallet automatically: both sessions first require the
 ordinary selection controls and no connected account. Private wallet bytes remain

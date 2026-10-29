@@ -6,22 +6,36 @@ use leptoskit_testing::native::{Locator, NativeTester, Platform};
 
 enum Storage {
     Saved,
-    Backup,
+    Backup { balance: u64 },
 }
 
 impl Storage {
     fn action(&self) -> &'static str {
         match self {
             Self::Saved => "Load saved wallet",
-            Self::Backup => "Restore private copy",
+            Self::Backup { .. } => "Restore private copy",
         }
     }
 
     fn checkpoint(&self) -> &'static str {
         match self {
             Self::Saved => "Saved wallet loaded and signed after process relaunch",
-            Self::Backup => "Distinct private copy restored and signed after process relaunch",
+            Self::Backup { .. } => {
+                "Distinct private copy restored and signed after process relaunch"
+            }
         }
+    }
+
+    fn verify_balance(&self, observed: u64) -> Result<u64> {
+        let expected = match self {
+            Self::Saved => observed,
+            Self::Backup { balance } => *balance,
+        };
+        require(
+            observed == expected,
+            "restored wallet balance changed since the initial transfer",
+        )?;
+        Ok(expected)
     }
 }
 
@@ -41,6 +55,7 @@ pub(super) fn save_other_wallet(
     tester: &mut NativeTester,
     platform: Platform,
     backup: String,
+    balance: u64,
 ) -> Result<Wallets> {
     let saved = fresh_wallet(tester, platform)?;
     require(saved != backup, "saved and backup wallets must differ")?;
@@ -57,7 +72,7 @@ pub(super) fn save_other_wallet(
         },
         backup: StoredWallet {
             address: backup,
-            storage: Storage::Backup,
+            storage: Storage::Backup { balance },
         },
     })
 }
@@ -72,7 +87,6 @@ impl StoredWallet {
         platform: Platform,
     ) -> Result<()> {
         node.alive()?;
-        let balance = node.rpc.balance(&self.address)?;
         tester.expect_visible(&accessibility::action(platform, "Create local wallet"))?;
         tester.expect_absent(&Locator::accessibility_id(LOCAL_ACCOUNT))?;
         tester.tap(&accessibility::action(platform, self.storage.action()))?;
@@ -83,8 +97,12 @@ impl StoredWallet {
             "relaunched selection returned a different wallet",
         )?;
 
+        let balance = self
+            .storage
+            .verify_balance(node.rpc.balance(&self.address)?)?;
         tester.tap(&accessibility::action(platform, "Read balance"))?;
         tester.expect_visible(&Locator::text(format!("Balance: {balance} lamports")))?;
+        tester.checkpoint("Recovered wallet balance independently checked before signing")?;
         tester.tap(&accessibility::action(platform, "Review signature"))?;
         tester.expect_visible(&Locator::text("Approve local wallet signature"))?;
         tester.tap(&accessibility::action(platform, "Approve signature"))?;
@@ -98,5 +116,22 @@ impl StoredWallet {
         tester.tap(&accessibility::action(platform, "Disconnect wallet"))?;
         tester.expect_visible(&accessibility::action(platform, "Create local wallet"))?;
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn backup_recovery_requires_the_retained_post_transfer_balance() {
+        let backup = Storage::Backup {
+            balance: 1_998_993_000,
+        };
+        assert_eq!(backup.verify_balance(1_998_993_000).unwrap(), 1_998_993_000);
+
+        for changed in [0, 1_998_992_999, 1_998_993_001, 2_000_000_000] {
+            assert!(backup.verify_balance(changed).is_err());
+        }
     }
 }
