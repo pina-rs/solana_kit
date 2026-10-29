@@ -92,6 +92,27 @@ async fn stock_environment_overrides_cannot_escape_explicit_configuration_or_hom
     }
 }
 
+#[cfg(unix)]
+#[tokio::test]
+async fn caller_runtime_symlink_preserves_environment_identity_and_original_path() {
+    let mut fixture = Fixture::new("environment")
+        .await
+        .with_stock_overrides(false);
+    let physical = fs::canonicalize(&fixture.directory).await.unwrap();
+    let alias = fixture.directory.with_extension("alias");
+    fs::symlink(&physical, &alias).await.unwrap();
+    assert_ne!(alias, fs::canonicalize(&alias).await.unwrap());
+    fixture.options.runtime_directory = alias.clone();
+
+    let (mut owner, directory) = fixture.spawn();
+    assert_eq!(owner.runtime_directory(), alias);
+    owner.wait_rpc_ready(WAIT).await.unwrap();
+    assert!(owner.close(close_policy()).await.unwrap().status.success());
+
+    fs::remove_file(alias).await.unwrap();
+    fs::remove_dir_all(directory).await.unwrap();
+}
+
 #[tokio::test]
 async fn malformed_failed_unsealed_or_incomplete_startup_never_becomes_ready() {
     for mode in [

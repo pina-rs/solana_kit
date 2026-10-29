@@ -6,7 +6,7 @@ use std::{
     fs::{File, OpenOptions},
     io::{self, Read, Write},
     net::{IpAddr, SocketAddr, TcpListener, TcpStream},
-    path::PathBuf,
+    path::{Path, PathBuf},
     time::Duration,
 };
 
@@ -114,7 +114,9 @@ fn environment() -> io::Result<()> {
     let cleared = env::var_os("SOLANA_KIT_COMMAND_ENV").is_none()
         && env::var_os("CARGO_MANIFEST_DIR").is_none();
 
-    if home != isolated || selected != "selected" || custom != "preserved" || !cleared {
+    runtime_path(&home, &isolated)?;
+
+    if selected != "selected" || custom != "preserved" || !cleared {
         return Err(io::Error::other("explicit environment policy failed"));
     }
 
@@ -123,7 +125,7 @@ fn environment() -> io::Result<()> {
     configuration_environment_is_absent()
 }
 
-fn fixed_paths(isolated: &std::path::Path) -> io::Result<()> {
+fn fixed_paths(isolated: &Path) -> io::Result<()> {
     for (name, suffix) in [
         ("HOME", ""),
         ("USERPROFILE", ""),
@@ -132,9 +134,17 @@ fn fixed_paths(isolated: &std::path::Path) -> io::Result<()> {
         ("TMP", "tmp"),
         ("TEMP", "tmp"),
     ] {
-        if env::var_os(name).unwrap() != isolated.join(suffix) {
-            return Err(io::Error::other("explicit runtime paths were overridden"));
-        }
+        let path = PathBuf::from(env::var_os(name).unwrap());
+        runtime_path(&path, &isolated.join(suffix))?;
+    }
+
+    Ok(())
+}
+
+fn runtime_path(actual: &Path, expected: &Path) -> io::Result<()> {
+    // getcwd can resolve a caller's runtime alias, including macOS /var -> /private/var.
+    if actual.canonicalize()? != expected.canonicalize()? {
+        return Err(io::Error::other("explicit runtime paths were overridden"));
     }
 
     Ok(())
@@ -209,4 +219,27 @@ fn request(socket: &mut TcpStream) -> io::Result<Value> {
     let mut body = vec![0; length];
     socket.read_exact(&mut body)?;
     serde_json::from_slice(&body).map_err(io::Error::other)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::runtime_path;
+    use crate::process_support::Fixture;
+    use std::io;
+    use tokio::fs;
+
+    #[tokio::test]
+    async fn runtime_path_identity_rejects_foreign_and_missing_home() {
+        let fixture = Fixture::new("environment").await;
+        let directory = fixture.directory;
+        runtime_path(&directory, &directory).unwrap();
+
+        let foreign = runtime_path(&directory.join("config"), &directory).unwrap_err();
+        assert_eq!(foreign.kind(), io::ErrorKind::Other);
+
+        let missing = runtime_path(&directory.join("missing-home"), &directory).unwrap_err();
+        assert_eq!(missing.kind(), io::ErrorKind::NotFound);
+
+        fs::remove_dir_all(directory).await.unwrap();
+    }
 }
