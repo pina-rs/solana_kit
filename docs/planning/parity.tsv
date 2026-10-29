@@ -16,7 +16,7 @@ solana_kit_codecs_numbers	packages/solana_kit_codecs_numbers/pubspec.yaml	solana
 solana_kit_codecs_strings	packages/solana_kit_codecs_strings/pubspec.yaml	solana_kit_core	2	inventoried	-
 solana_kit_compute_budget	packages/solana_kit_compute_budget/pubspec.yaml	solana_kit_compute_budget	6	inventoried	-
 solana_kit_config	packages/solana_kit_config/pubspec.yaml	solana_kit_config	6	inventoried	-
-solana_kit_dapp_publisher_cli	packages/solana_kit_dapp_publisher_cli/pubspec.yaml	workspace tooling and unpublished test harnesses	8	inventoried	-
+solana_kit_dapp_publisher_cli	packages/solana_kit_dapp_publisher_cli/pubspec.yaml	solana_kit_dapp_publisher	8	inventoried	-
 solana_kit_errors	packages/solana_kit_errors/pubspec.yaml	solana_kit_core	2	inventoried	-
 solana_kit_fast_stable_stringify	packages/solana_kit_fast_stable_stringify/pubspec.yaml	solana_kit_client	4	inventoried	-
 solana_kit_fixed_points	packages/solana_kit_fixed_points/pubspec.yaml	solana_kit_core	2	inventoried	-

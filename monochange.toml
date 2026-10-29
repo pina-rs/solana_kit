@@ -227,3 +227,8 @@ publish = { enabled = false }
 path = "crates/solana_kit_surfpool"
 type = "cargo"
 publish = { enabled = false }
+
+[package.solana_kit_dapp_publisher]
+path = "crates/solana_kit_dapp_publisher"
+type = "cargo"
+publish = { enabled = false }
