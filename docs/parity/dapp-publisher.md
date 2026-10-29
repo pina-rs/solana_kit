@@ -89,6 +89,8 @@ all declaration IDs, pending states and other fields remain unchanged.
 Portable-host execution and new cross-language oracles remain unexecuted.
 Source formatting and per-file Monostyle checks establish no behavioral result.
 
-Remaining publisher contracts include portal requests/translations and uploads,
-resumable sessions/checkpoints, retry/polling, metadata/media, funding preflight
-and the native CLI. Their existing canonical declaration IDs remain pending.
+The next portal-only proposal is documented in [Publisher portal protocol](dapp-publisher-portal.md).
+It adds raw wire contracts and explicit retry/upload boundaries without claiming
+workflow orchestration. Resumable sessions/checkpoints, normalized translations,
+metadata/media, funding preflight and native CLI remain separate work. Existing
+canonical declaration IDs remain pending.

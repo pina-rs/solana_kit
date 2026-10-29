@@ -1,6 +1,6 @@
 # Solana Kit dApp Publisher
 
-Portable, off-chain publication attestations and prepared-transaction policy for
+Portable, off-chain publication attestations, prepared-transaction policy and portal protocol for
 application clients. This unpublished source slice freezes exact attestation
 bytes and checks the pinned dApp publisher's transaction policy before callers
 sign. On-chain programs should use Pina or official Solana program libraries.
@@ -56,17 +56,47 @@ Callers issue fresh request IDs and supply exact slot/blockhash values. They sig
 the returned bare JSON bytes. Verified attachment emits the canonical padded
 `base64(signature || JSON)` and cannot adopt a different signed message.
 
-Portal APIs, uploads, resumable workflows, CLI, media processing and complete
-publisher parity remain future slices of this same package. Porting source does
-not authorize uploading application artifacts or publisher/contact metadata.
+Enable `portal` for thirteen fixed typed procedures over the existing Kit
+`rest::Transport<PortalService>` and explicit JSON budgets. The caller's transport
+owns its approved API root, authentication, TLS and cancellation. No default
+origin, credential lookup, HTTP adapter or executor is provided. GET queries
+carry JSON in `input`; POST mutations require explicit calls. Prepared
+transaction strings remain untrusted proposals for the separate policy seal.
+
+Raw bundle/session DTOs preserve missing, null and present fields and exact JSON
+numbers. Wrong known-field types, duplicate keys, mixed or null protocol branches
+and invalid envelopes reject within byte/depth/string/item budgets. Unknown DTO
+fields are ignored. Ordinary error diagnostics redact provider text and bodies;
+bounded evidence requires explicit field access. GET does not hydrate metadata,
+cache sessions, choose signing policy or submit anything.
+
+Only explicit `create_ingestion_with_retry` supports at most three attempts with
+the same nonempty idempotency key and caller-owned Clock/deadline. A 1500 ms base
+retains the source's 1500/3000 ms waits. Permanent schema, admission and auth
+failures do not retry. Completion at or after the deadline loses, including
+decoding. Binary uploads use a separate caller-owned `Uploader`, approved origin,
+explicit bytes/type/cap and one PUT; it receives no portal authentication object.
+Dropping futures drops owned exchanges and timers.
+
+Resumable workflows, normalization, metadata/media, funding preflight and native
+CLI remain later slices. The retained workflow producer is not integrated here.
+Porting source does not authorize uploading application artifacts or contact data.
 
 The tests contain independent JSON, Borsh and legacy/v0/v1 envelope literals plus
 targeted policy rejection cases. The preceding `cff45f7` source passed all 22
 native tests, one Rustdoc example, strict Clippy and documentation checks in root
 verification unit 840. Unit 891 then executed the shared-source refactor: all 22
 native bodies, the Rustdoc example, strict Clippy and documentation checks passed.
-The five appended groups passed within the complete 432-group native suite.
+Its historical v51 execution passed the five groups within the 432-group native suite.
 Deliberate corruption passed 431 groups and exited one. Checked-in reports come
 from those executions. Native tests and shared conformance include the same
 complete assertion bodies; cryptographic bodies have no conditional no-op path.
 No portable-host or cross-language execution is claimed for this new source.
+
+The portal reconciliation preserves all twenty-three retained portal bodies and
+their predicates as Result-returning shared native/portable source. Four new
+portable groups cover routes, envelopes/admission, retry/deadlines and uploads.
+A CI unit control changes the independent expected procedure and verifies later
+real portal groups continue after that reported failure. The current proposal's
+tests, compiler and runtime checks are **UNEXECUTED** by this source worker.
+See the portal parity record for exact source anchors and execution handoff.
