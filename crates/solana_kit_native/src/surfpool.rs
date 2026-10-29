@@ -14,6 +14,10 @@ mod artifacts;
 mod idl;
 pub use artifacts::{ArtifactRole, DiscoveryError, ProgramArtifacts, discover_program_artifacts};
 
+/// Explicit direct-child ownership and RPC readiness on native desktop hosts.
+#[cfg(any(unix, windows))]
+pub mod process;
+
 #[cfg(feature = "keys")]
 mod program;
 #[cfg(feature = "keys")]
