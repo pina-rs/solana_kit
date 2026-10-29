@@ -18,9 +18,10 @@ through the bounded RPC client, using Base64, blockhash replacement and disabled
 signature verification. Supply explicit `ReadConfig` constraints. The result
 retains exact `u64` units and the node's evaluation context; zero is valid.
 Execution failures, unavailable units and stale contexts have distinct typed
-errors with redacted formatting. The shared portable contract group and native
-Send case are authored for this operation; their current source still requires
-compiled verification across the maintained hosts.
+errors with redacted formatting. The all-feature native contracts and concrete
+Tokio Send case pass locally, alongside strict Clippy and API documentation.
+Current-source browser, WASI and production interpreter execution remain
+required in CI.
 
 DAS wire records follow the provider's partial-response contract. Applications
 that require complete records can convert `NftEdition`, `TokenAccount` and

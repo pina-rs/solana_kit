@@ -83,8 +83,9 @@ Base64 bytes and flags, one exchange, zero and large integers, execution-error
 precedence, missing/null/malformed units, bounded admission, redaction, minimum
 slots and cancellation of a suspended exchange. It is registered in the six
 feature streams shared by native, browser, both WASI previews and the production
-interpreter. The native future suite adds a concrete Send case. These are source
-contracts; compiled execution of this change remains required on every host.
+interpreter. The all-feature native runner and concrete Tokio Send case pass
+locally, alongside strict Clippy and API documentation. Current-source browser,
+both WASI previews and production interpreter execution remain required in CI.
 
 ## Complete DAS records
 
