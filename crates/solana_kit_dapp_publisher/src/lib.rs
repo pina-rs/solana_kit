@@ -5,6 +5,10 @@
 mod attestation;
 mod error;
 
+/// Bounded portal protocol with caller-owned destination, authentication and upload policy.
+#[cfg(feature = "portal")]
+pub mod portal;
+
 #[cfg(feature = "crypto")]
 mod policy;
 

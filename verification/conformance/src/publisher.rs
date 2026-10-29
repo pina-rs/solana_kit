@@ -4,6 +4,8 @@
 mod assertions;
 #[path = "../../../crates/solana_kit_dapp_publisher/tests/support/checks.rs"]
 mod checks;
+#[path = "publisher_portal.rs"]
+pub(super) mod portal;
 #[path = "../../../crates/solana_kit_dapp_publisher/tests/prepared/assertions.rs"]
 mod prepared;
 #[path = "../../../crates/solana_kit_dapp_publisher/tests/attestation/signatures.rs"]
