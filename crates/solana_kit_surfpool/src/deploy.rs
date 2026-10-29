@@ -9,8 +9,8 @@ use solana_kit_client::Transport;
 use solana_kit_core::Address;
 use std::num::NonZeroUsize;
 
-/// Pinned upstream deployment chunk size of 15 MiB.
-pub const PROGRAM_CHUNK_BYTES: usize = 15 * 1024 * 1024;
+/// Raw bytes per default write, leaving room for hex and JSON in the 8 KiB wire budget.
+pub const PROGRAM_CHUNK_BYTES: usize = 3 * 1024;
 
 /// Program byte deployment with an optional already parsed IDL.
 #[derive(Clone, Debug)]
@@ -26,14 +26,14 @@ pub struct DeployOptions<'a> {
 }
 
 impl<'a> DeployOptions<'a> {
-    /// Uses the pinned 15 MiB chunk size, requiring an adequate client body budget.
+    /// Uses chunks that fit the default client budget and Surfpool 1.7's HTTP cap.
     pub const fn new(program_id: Address, so_bytes: &'a [u8]) -> Self {
         Self {
             program_id,
             so_bytes,
             idl: None,
             chunk_bytes: NonZeroUsize::new(PROGRAM_CHUNK_BYTES)
-                .expect("pinned chunk size is nonzero"),
+                .expect("default chunk size is nonzero"),
         }
     }
 }

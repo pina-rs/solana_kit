@@ -48,11 +48,12 @@ those details can contain sensitive provider values or adapter text.
 
 `SurfnetConfig` preserves upstream defaults and prepares exact CLI arguments
 with three explicit, distinct ports. `DeployOptions` uploads borrowed bytes in
-sequence, then registers an optional parsed IDL. Its default chunk size is the
-pinned Dart 15 MiB. Surfpool 1.7.0 caps each HTTP request body at 15 MiB: raw
+sequence, then registers an optional parsed IDL. Its default raw chunk is 3 KiB,
+which fits the client's 8 KiB complete wire budget. Surfpool 1.7.0 caps each HTTP request body at 15 MiB: raw
 program bytes expand to exactly twice their length in hex, plus JSON framing.
-The default raw chunk therefore exceeds that server cap. Choose a smaller
-nonzero chunk that fits both the server cap and the client's complete wire budget.
+The Dart default of 15 MiB raw bytes exceeds that server cap after expansion.
+Explicit nonzero chunks retain their exact size; callers choosing larger chunks
+must fit both the server cap and the client's complete wire budget.
 
 JSON serialization streams hex through the shared client's bounded writer, and
 deployment borrows each configured chunk. Wire-budget failures preserve the

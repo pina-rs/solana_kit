@@ -167,6 +167,32 @@ fn program() -> Address {
     Address::from_bytes([0; 32])
 }
 
+#[test]
+fn default_deployment_fits_the_default_wire_budget_and_preserves_all_bytes() {
+    let bytes = vec![0xab; 7 * 1024];
+    let transport = Recorder::default();
+    let limits = Limits::default();
+    let surfnet = surfnet(&transport, limits.bytes);
+    let result = poll_once(surfnet.deploy(DeployOptions::new(program(), &bytes)));
+    assert_eq!(result.unwrap(), program());
+
+    let requests = transport.requests.borrow();
+    assert!(requests.len() > 1);
+    let mut written = String::new();
+    for request in requests.iter() {
+        assert!(request.body.len() <= limits.bytes);
+        let frame: serde_json::Value = serde_json::from_slice(&request.body).unwrap();
+        assert_eq!(frame["method"], "surfnet_writeProgram");
+        assert_eq!(frame["params"][0], program().to_string());
+        assert_eq!(
+            frame["params"][2].as_u64(),
+            Some((written.len() / 2) as u64)
+        );
+        written.push_str(frame["params"][1].as_str().unwrap());
+    }
+    assert_eq!(written, "ab".repeat(bytes.len()));
+}
+
 fn write_program(data: Vec<u8>) -> WriteProgram {
     WriteProgram {
         program_id: program(),
