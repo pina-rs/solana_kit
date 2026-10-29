@@ -94,9 +94,11 @@ An already submitted Tokio filesystem operation may finish after cancellation.
 Implicit diagnostics omit paths and content, while public error variants retain
 the original typed I/O, JSON and portable deployment causes for explicit inspection.
 
-This extension currently has source tests for explicit file/byte equivalence,
-deferred IDL access, exact JSON, partial writes, bounds and cancellation. These
-new tests and feature graphs have not executed in this source-only checkpoint.
+Seventeen native contract cases cover explicit file/byte equivalence, deferred
+IDL access, literal JSON, partial writes, bounds, cancellation and a native
+transport future that retains `Send`. Strict all-feature Clippy and API
+documentation also pass. Isolated feature graphs and current-source CI remain
+required; real program execution is a separate integration check.
 
 `NativeWebSocket::connect(endpoint, WsConfig::default()).await` opens one
 caller-owned text socket. The endpoint explicitly selects `ws://` or `wss://`.
