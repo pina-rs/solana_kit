@@ -533,9 +533,9 @@ jobs:
               if length == 1 then .[0] else error("expected one Helius control guest") end
             ' "$RUNNER_TEMP/helius-guest-control.jsonl")"
 
-            cargo +1.99.1 xtask imports "$guest"
-
             if [ "$control" = solana_kit_helius_portable/corrupt ]; then
+              cargo +1.99.1 xtask imports "$guest"
+
               cargo +1.99.1 run --locked --manifest-path "$PROGRAM_MANIFEST" \
                 --package solana_kit_remaining_programs_host -- "$guest" --expect-corrupt \
                 2>&1 | tee "$RUNNER_TEMP/helius-marked-wasmi.txt"
