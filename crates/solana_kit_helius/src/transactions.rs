@@ -1,4 +1,16 @@
-//! Transaction simulation helpers borrow caller-owned wire bytes and RPC capabilities.
+//! Transaction simulation and pure resource helpers retain caller-owned preparation.
+
+mod compute_buffer;
+mod decimal;
+mod fees;
+
+pub use compute_buffer::{
+    ComputeUnitBuffer, ComputeUnitBufferError, MAX_SMART_TRANSACTION_COMPUTE_UNITS,
+    buffer_compute_units,
+};
+pub use fees::{
+    PriorityFeeError, ResolvePriorityFeeInput, ResolvedPriorityFee, resolve_priority_fee,
+};
 
 use core::fmt;
 use solana_kit_client::{

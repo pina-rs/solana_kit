@@ -24,6 +24,7 @@ PASS payment-renewal
 PASS payment-cancellation
 PASS staking-preparation
 PASS compute-units-estimation
+PASS priority-fee-resolution
 PASS wallet-and-enhanced-routes
 PASS oauth-and-developer-routes
 PASS admin-route
@@ -37,4 +38,4 @@ PASS nested-asset
 PASS enhanced-models
 PASS transfer-models
 PASS payment-terms
-PASS all 39 Helius contract groups
+PASS all 40 Helius contract groups

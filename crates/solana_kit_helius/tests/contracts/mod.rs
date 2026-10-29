@@ -11,6 +11,7 @@ mod payment_support;
 pub mod payment_terms;
 #[cfg(feature = "checkout")]
 pub mod payments;
+pub mod priority_fee_resolution;
 pub mod rest_catalog;
 pub mod rpc;
 pub mod sender;
@@ -103,6 +104,10 @@ pub const CASES: &[(&str, fn())] = &[
     ("payment-cancellation", payments::dropped_preparation),
     ("staking-preparation", staking::preparation),
     ("compute-units-estimation", compute_units::estimation),
+    (
+        "priority-fee-resolution",
+        priority_fee_resolution::resolution,
+    ),
     (
         "wallet-and-enhanced-routes",
         rest_catalog::wallet_and_enhanced_routes,

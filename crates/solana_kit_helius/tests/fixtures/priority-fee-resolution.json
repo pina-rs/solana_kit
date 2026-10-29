@@ -1,0 +1,166 @@
+{
+  "fees": [
+    { "name": "source estimate without caps", "estimate": 1000, "units": 200000, "rate": 1000, "lamports": 200 },
+    { "name": "source fractional lamport rounds up", "estimate": 3, "units": 1000, "rate": 3, "lamports": 1 },
+    { "name": "source exact lamports", "estimate": 2000, "units": 1000, "rate": 2000, "lamports": 2 },
+    { "name": "source fractional rate floors", "estimate": 1234.9, "units": 1000, "rate": 1234, "lamports": 2 },
+    { "name": "source negative rate clamps to zero", "estimate": -10, "units": 1000, "rate": 0, "lamports": 0 },
+    { "name": "zero rate at maximum units", "estimate": 0, "units": 18446744073709551615, "rate": 0, "lamports": 0 },
+    { "name": "zero units retains rate", "estimate": 1000, "units": 0, "rate": 1000, "lamports": 0 },
+    {
+      "name": "exact rate above JS safe integer",
+      "estimate": 9007199254740993.9,
+      "units": 1,
+      "rate": 9007199254740993,
+      "lamports": 9007199255
+    },
+    {
+      "name": "maximum rate with a fraction",
+      "estimate": 18446744073709551615.999,
+      "units": 1,
+      "rate": 18446744073709551615,
+      "lamports": 18446744073710
+    },
+    { "name": "source rate cap", "estimate": 10000, "units": 200000, "rate_cap": 500, "rate": 500, "lamports": 100 },
+    {
+      "name": "source whole total cap",
+      "estimate": 10000,
+      "units": 200000,
+      "lamports_cap": 200,
+      "rate": 1000,
+      "lamports": 200
+    },
+    {
+      "name": "fractional total cap floors",
+      "estimate": 10000,
+      "units": 200000,
+      "lamports_cap": 200.99,
+      "rate": 1000,
+      "lamports": 200
+    },
+    {
+      "name": "both caps constrain the same rate",
+      "estimate": 10000,
+      "units": 200000,
+      "rate_cap": 800.9,
+      "lamports_cap": 100,
+      "rate": 500,
+      "lamports": 100
+    },
+    { "name": "negative rate cap", "estimate": 10000, "units": 200000, "rate_cap": -1, "rate": 0, "lamports": 0 },
+    { "name": "negative total cap", "estimate": 10000, "units": 200000, "lamports_cap": -5, "rate": 0, "lamports": 0 },
+    { "name": "sub-lamport cap", "estimate": 10000, "units": 200000, "lamports_cap": 0.99, "rate": 0, "lamports": 0 },
+    {
+      "name": "total cap constrains rounded-up total",
+      "estimate": 10000,
+      "units": 110001,
+      "lamports_cap": 220,
+      "rate": 1999,
+      "lamports": 220
+    },
+    {
+      "name": "fractional cap preserves integer ceiling",
+      "estimate": 10000,
+      "units": 110001,
+      "lamports_cap": 219.99,
+      "rate": 1990,
+      "lamports": 219
+    },
+    {
+      "name": "zero units ignores total cap",
+      "estimate": 10000,
+      "units": 0,
+      "lamports_cap": -5,
+      "rate": 10000,
+      "lamports": 0
+    },
+    { "name": "positive exponent", "estimate": 1.234e3, "units": 0, "rate": 1234, "lamports": 0 },
+    { "name": "negative exponent", "estimate": 1234e-2, "units": 0, "rate": 12, "lamports": 0 },
+    {
+      "name": "exponent moves fractional leading zeroes",
+      "estimate": 0.000123e7,
+      "units": 0,
+      "rate": 1230,
+      "lamports": 0
+    },
+    {
+      "name": "large coefficient floors after exponent",
+      "estimate": 184467440737095516150000e-4,
+      "units": 0,
+      "rate": 18446744073709551615,
+      "lamports": 0
+    },
+    { "name": "zero with enormous exponent", "estimate": 0e99999999999999999999, "units": 0, "rate": 0, "lamports": 0 },
+    { "name": "enormous negative exponent", "estimate": 1e-99999999999999999999, "units": 0, "rate": 0, "lamports": 0 },
+    { "name": "fraction below one", "estimate": 0.999999999999999999, "units": 0, "rate": 0, "lamports": 0 },
+    { "name": "explicit positive exponent sign", "estimate": 1E+3, "units": 0, "rate": 1000, "lamports": 0 },
+    {
+      "name": "negative zero with enormous exponent",
+      "estimate": -0e99999999999999999999,
+      "units": 0,
+      "rate": 0,
+      "lamports": 0
+    },
+    {
+      "name": "rate cap rescues huge estimate",
+      "estimate": 1e99999999999999999999,
+      "units": 200000,
+      "rate_cap": 500,
+      "rate": 500,
+      "lamports": 100
+    },
+    {
+      "name": "total cap rescues huge estimate",
+      "estimate": 1e99999999999999999999,
+      "units": 200000,
+      "lamports_cap": 200,
+      "rate": 1000,
+      "lamports": 200
+    },
+    {
+      "name": "MAX plus one total cap remains binding",
+      "estimate": 1e99999999999999999999,
+      "units": 18446744073709551615,
+      "lamports_cap": 18446744073709551616,
+      "rate": 1000000,
+      "lamports": 18446744073709551615
+    },
+    {
+      "name": "enormous total cap is nonbinding",
+      "estimate": 1000,
+      "units": 18446744073709551615,
+      "lamports_cap": 1e99999999999999999999,
+      "rate": 1000,
+      "lamports": 18446744073709552
+    }
+  ],
+  "buffers": [
+    { "name": "source binary ten percent ceiling", "raw": 100000, "units": 110001 },
+    { "name": "source default floor", "raw": 1, "units": 1000 },
+    { "name": "source thousand-unit default", "raw": 1000, "units": 1100 },
+    { "name": "source maximum", "raw": 1400000, "units": 1400000 },
+    { "name": "source oversized estimate", "raw": 2000000, "units": 1400000 },
+    { "name": "zero estimate uses floor", "raw": 0, "units": 1000 },
+    { "name": "maximum integer estimate", "raw": 18446744073709551615, "units": 1400000 },
+    { "name": "source custom floor", "raw": 100, "minimum": 500, "buffer_percent": 0.5, "units": 500 },
+    { "name": "source custom percentage", "raw": 1000, "minimum": 1, "buffer_percent": 0.5, "units": 1500 },
+    { "name": "zero minimum remains positive", "raw": 0, "minimum": 0, "buffer_percent": 0, "units": 1 },
+    {
+      "name": "maximum applies after custom floor",
+      "raw": 0,
+      "minimum": 4294967295,
+      "buffer_percent": 0,
+      "units": 1400000
+    },
+    { "name": "finite negative percentage", "raw": 10000, "minimum": 0, "buffer_percent": -0.5, "units": 5000 },
+    { "name": "minus one percentage", "raw": 10000, "minimum": 0, "buffer_percent": -1, "units": 1 },
+    { "name": "percentage below minus one", "raw": 10000, "minimum": 0, "buffer_percent": -2, "units": 1 },
+    {
+      "name": "finite maximum percentage at zero units",
+      "raw": 0,
+      "minimum": 1000,
+      "buffer_percent": 1.7976931348623157e308,
+      "units": 1000
+    }
+  ]
+}
