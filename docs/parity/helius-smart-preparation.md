@@ -5,20 +5,28 @@ This source-only stack starts at main checkpoint
 `4c690a192d1ded2654a0a655023d75da89388dca`. That earlier F34-based source and its
 ignored quality evidence remain on their original branch. Both restore the retained producer
 `347bba41b952e2270629d0de13217f6e7c453486` (tree
-`fdcf668e86ba7ef19a934fbd1ea89097ace508a1`). Production smart-preparation source is
-preserved without a compatibility shim. Existing simulation, fee, buffering and
-RPC read interfaces are unchanged between that producer's parent and this base.
+`fdcf668e86ba7ef19a934fbd1ea89097ace508a1`). Smart-preparation behavior is
+preserved without a compatibility shim. The pipeline reuses the existing
+simulation, fee, buffering and RPC read interfaces. Fee request construction
+enumerates every optional field explicitly against the current schemas.
 Current TLS sender, signup completion and client resource/reactive code remain
 intact. The only new SDK dependency is the existing portable Compute Budget crate;
 Root owns authentic resolution of root and independent consumer lock graphs.
 
 ## Dependency resolution prerequisite
 
-The current signed-source proposal deliberately leaves both Cargo.lock and
-verification/helius-portable/Cargo.lock unchanged. The missing Compute Budget
-dependency edges identified by review unit 1067 must be resolved through Cargo
-before any `--locked` command below can qualify this integration. Existing native,
-portable and OS qualifications cover their historical producers, not this source.
+Root unit 1087 genuinely resolved both Cargo.lock and
+verification/helius-portable/Cargo.lock. The root graph adds the Compute Budget
+dependency edge; the portable graph adds its package and dependency edge. The
+source worker preserved those generated lock changes without editing them.
+
+The first native SDK compile of `ee572ce5` with those locks exited 101: two fee
+request constructors incorrectly assumed `Default` implementations. The repair
+sets all omitted request/options fields to `None` and only `recommended` to
+`Some(true)`, preserving the exact account-key request JSON. No model gains a
+Default implementation. The retained failure is evidence/1087/run-smart-native-b/sdk-tests.stderr.
+Compilation and behavioral success require Root's rerun. Historical native,
+portable and OS qualifications do not qualify this repaired producer.
 
 ## Client contract
 
@@ -100,7 +108,7 @@ These counts register one new group in each configuration. They are not executed
 results. Checked-in reports remain untouched and historical; default verification
 must reject them until Root regenerates them from real output. All new compiler,
 native, browser, both WASI and production wasmi verification is **UNEXECUTED** by
-this source worker. Root owns execution after its publishing/resource lease drains.
+this source worker. Root owns execution after the explicit-constructor repair.
 
 ## Native capture and Root handoff
 

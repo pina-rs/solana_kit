@@ -22,11 +22,16 @@ pub(super) async fn recommended_fee<T: Transport>(
     let response = client
         .call(GetPriorityFeeEstimateRequest {
             account_keys: Some(account_keys.iter().map(ToString::to_string).collect()),
+            transaction: None,
             options: Some(PriorityFeeOptions {
+                priority_level: None,
+                include_all_priority_fee_levels: None,
+                transaction_encoding: None,
+                lookback_slots: None,
+                include_vote: None,
                 recommended: Some(true),
-                ..Default::default()
+                evaluate_empty_slot_as_zero: None,
             }),
-            ..Default::default()
         })
         .await
         .map_err(|error| SmartTransactionError::Rpc {

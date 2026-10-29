@@ -504,6 +504,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "solana_kit_compute_budget"
+version = "0.1.0"
+dependencies = [
+ "solana_kit_core",
+]
+
+[[package]]
 name = "solana_kit_core"
 version = "0.1.0"
 dependencies = [
@@ -524,6 +531,7 @@ dependencies = [
  "serde",
  "serde_json",
  "solana_kit_client",
+ "solana_kit_compute_budget",
  "solana_kit_core",
  "solana_kit_stake",
  "solana_kit_system",
