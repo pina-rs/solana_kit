@@ -793,6 +793,7 @@ dependencies = [
  "bs58",
  "serde",
  "serde_json",
+ "solana_kit_compute_budget",
  "solana_kit_core",
 ]
 
