@@ -1,7 +1,7 @@
 //! Snapshot observation with one accepted-value slot and retained error priority.
 use super::{
     CancellationToken, Cancelled, ListenerLease, ReactiveFailure, ReactiveStreamStore,
-    StreamSnapshot, stream::StreamCore,
+    StreamSnapshot, shared::Core,
 };
 use core::{
     convert::Infallible,
@@ -25,6 +25,7 @@ pub enum BridgeFailure<E, PredicateError> {
 }
 
 type BridgeItem<T, E, PredicateError> = Result<Arc<T>, Arc<BridgeFailure<E, PredicateError>>>;
+type ObservationCore<T, E, W, L> = Core<StreamSnapshot<T, E>, W, E, L>;
 type FilteredSnapshot<T, E, PredicateError> = (
     Option<Arc<T>>,
     Option<Arc<BridgeFailure<E, PredicateError>>>,
@@ -188,8 +189,8 @@ impl<T, E, PredicateError, L: ?Sized> Drop for StoreStream<T, E, PredicateError,
 
 /// Predicate execution is outside the buffer lock because it may synchronously
 /// reset/reconnect and recursively notify this same observer.
-fn observe<T, E, PredicateError, Fut, D, R, L, G>(
-    core: &Weak<StreamCore<T, E, Fut, D, R, L>>,
+fn observe<T, E, PredicateError, W, L, G>(
+    core: &Weak<ObservationCore<T, E, W, L>>,
     buffer: &Weak<Mutex<Buffer<T, E, PredicateError>>>,
     predicate: &G,
 ) where
@@ -204,8 +205,8 @@ fn observe<T, E, PredicateError, Fut, D, R, L, G>(
     observe_captured(&core, &buffer, snapshot, predicate);
 }
 
-fn observe_captured<T, E, PredicateError, Fut, D, R, L, G>(
-    core: &Arc<StreamCore<T, E, Fut, D, R, L>>,
+fn observe_captured<T, E, PredicateError, W, L, G>(
+    core: &Arc<ObservationCore<T, E, W, L>>,
     buffer: &Arc<Mutex<Buffer<T, E, PredicateError>>>,
     snapshot: Arc<StreamSnapshot<T, E>>,
     predicate: &G,
@@ -292,22 +293,7 @@ where
         PredicateError: Send + Sync + 'static,
         G: Fn(&T) -> Result<bool, PredicateError> + Send + Sync + 'static,
     {
-        let buffer = Arc::new(Mutex::new(Buffer::new()));
-
-        let weak_buffer = Arc::downgrade(&buffer);
-        let weak_core = Arc::downgrade(&self.core);
-        let callback: Arc<dyn Fn() + Send + Sync> =
-            Arc::new(move || observe(&weak_core, &weak_buffer, &predicate));
-
-        let lease = self.subscribe(callback.clone());
-        callback();
-
-        StoreStream {
-            buffer,
-            lease,
-            cancellation: cancellation.map(|token| token.cancelled()),
-            done: false,
-        }
+        shared_observer(&self.core, cancellation, predicate)
     }
 }
 
@@ -337,20 +323,64 @@ where
         PredicateError: 'static,
         G: Fn(&T) -> Result<bool, PredicateError> + 'static,
     {
-        let buffer = Arc::new(Mutex::new(Buffer::new()));
-        let weak_buffer = Arc::downgrade(&buffer);
-        let weak_core = Arc::downgrade(&self.core);
-        let callback: Arc<dyn Fn()> =
-            Arc::new(move || observe(&weak_core, &weak_buffer, &predicate));
+        local_observer(&self.core, cancellation, predicate)
+    }
+}
 
-        let lease = self.subscribe(callback.clone());
-        callback();
+pub(super) fn shared_observer<T, E, PredicateError, W, G>(
+    core: &Arc<ObservationCore<T, E, W, dyn Fn() + Send + Sync>>,
+    cancellation: Option<CancellationToken<E>>,
+    predicate: G,
+) -> StoreStream<T, E, PredicateError>
+where
+    T: Send + Sync + 'static,
+    E: Send + Sync + 'static,
+    PredicateError: Send + Sync + 'static,
+    W: Send + 'static,
+    G: Fn(&T) -> Result<bool, PredicateError> + Send + Sync + 'static,
+{
+    let buffer = Arc::new(Mutex::new(Buffer::new()));
 
-        StoreStream {
-            buffer,
-            lease,
-            cancellation: cancellation.map(|token| token.cancelled()),
-            done: false,
-        }
+    let weak_buffer = Arc::downgrade(&buffer);
+    let weak_core = Arc::downgrade(core);
+    let callback: Arc<dyn Fn() + Send + Sync> =
+        Arc::new(move || observe(&weak_core, &weak_buffer, &predicate));
+
+    let lease = core.subscribe(callback.clone());
+    callback();
+
+    StoreStream {
+        buffer,
+        lease,
+        cancellation: cancellation.map(|token| token.cancelled()),
+        done: false,
+    }
+}
+
+pub(super) fn local_observer<T, E, PredicateError, W, G>(
+    core: &Arc<ObservationCore<T, E, W, dyn Fn()>>,
+    cancellation: Option<CancellationToken<E>>,
+    predicate: G,
+) -> StoreStream<T, E, PredicateError, dyn Fn()>
+where
+    T: 'static,
+    E: 'static,
+    PredicateError: 'static,
+    W: 'static,
+    G: Fn(&T) -> Result<bool, PredicateError> + 'static,
+{
+    let buffer = Arc::new(Mutex::new(Buffer::new()));
+    let weak_buffer = Arc::downgrade(&buffer);
+    let weak_core = Arc::downgrade(core);
+    let callback: Arc<dyn Fn()> = Arc::new(move || observe(&weak_core, &weak_buffer, &predicate));
+
+    let lease = core.subscribe(callback.clone());
+    callback();
+
+    StoreStream {
+        buffer,
+        lease,
+        cancellation: cancellation.map(|token| token.cancelled()),
+        done: false,
     }
 }

@@ -1,4 +1,5 @@
 //! Readable cancellation with weak waiter registrations and unlocked wakeups.
+use super::ReactiveFailure;
 use core::{
     future::Future,
     pin::Pin,
@@ -12,6 +13,8 @@ use std::sync::{
 /// Why an operation stopped, preserving an optional caller-owned cause.
 #[derive(Debug)]
 pub enum CancellationReason<E> {
+    /// A composed operation failed; all child tokens retain this exact failure.
+    Failure(Arc<ReactiveFailure<E>>),
     /// Cancellation requested through the caller's source.
     Caller(Option<Arc<E>>),
     /// A newer operation owns the store.

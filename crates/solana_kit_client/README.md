@@ -24,6 +24,11 @@ complete RPC contexts, and owns both inputs with bounded pending results. See th
 [slot tracking contract](../../docs/parity/slot-tracking-stream.md) for mapper errors,
 source lifetimes, and the unexecuted source handoff.
 
+`reactive::slot_tracking::SlotTrackingStore` adds a retained-context connection
+combining fresh initial and subscription sources. It filters by slot, settles a
+stale refresh with the retained Arc, and cancels both inputs on the first failure.
+See the [composed slot-store contract](../../docs/architecture/slot-tracking-store.md).
+
 `rest` owns provider HTTP methods, explicit absent/JSON/form bodies, ordered
 decoded path/query pairs, bounded JSON admission and `Transport<D>`. Each provider
 owns its destination identity. Concrete adapters map that identity to approved
