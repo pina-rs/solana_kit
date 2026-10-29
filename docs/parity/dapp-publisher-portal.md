@@ -1,11 +1,12 @@
 # Publisher portal protocol
 
-This source-only stack proposal reconciles portal commits
+This stack reconciles portal commits
 `7e807c506e286b12a641fe90222cdb470415f895` and
 `f9b3414961438df24864adaba29374c58aebbfe3` onto the verified upper-layer tree
-`b5994c603b19aa6bdc63234293b7ac1c6c69cc55`. That upper layer's CI remains pending
-at this source handoff; this is not a merged-main or runtime receipt. The earlier
-Bae-based branch and ignored source evidence remain preserved. Production portal
+`b5994c603b19aa6bdc63234293b7ac1c6c69cc55`. Root verification unit 1074 executed
+the resulting `7c3ca4243bf655ca1217bd15eb0f55a745859169` producer natively.
+This record does not establish a merged-main identity or completion of OS CI.
+The earlier Bae-based branch and ignored source evidence remain preserved. Production portal
 code still matches retained `3bdb3c2793f84ce10835463d57b28f303731d00d`.
 It adds the optional `portal` feature
 to the same unpublished `solana_kit_dapp_publisher` crate. Publishing remains
@@ -117,44 +118,63 @@ are not inserted inside publisher::cases. The unchanged global registry source
 and all existing case-producing modules preserve the entire base order as a prefix.
 
 The earlier Bae-based proposal declared v52/436 and remains frozen on its old
-branch. This stack proposal declares v53/443 by adding exactly four groups after
-the upper layer's v52/439 registry. Its 439-row golden reports remain untouched.
-These declarations are not execution receipts or claims that current main has
-that identity. All new portal tests, compiler checks and
-portable runtime checks remain **UNEXECUTED** by this source worker.
+branch. The integrated producer declares v53/443 by adding exactly four groups
+after the upper layer's v52/439 registry. Root unit 1074 then promoted the two
+actual native outputs, preserving all 439 preceding case IDs and their order.
+These identities describe this producer and its native execution, not current main.
 
-## Root execution handoff
+## Native verification and remaining execution
 
-Root first resolves the changed root and independent consumer dependency graphs
-authentically through Cargo under its resource lease; no lock is hand-edited.
-The next behavioral checks after that resolution are:
+Root unit 1074 resolved the root dependency graph through Cargo; its lock diff
+adds only serde, serde_json and solana_kit_client edges to the publisher package.
+The source worker preserved that genuine lockfile and both captured reports.
+Retained private receipts are under evidence/1074:
+
+| Receipt                                      | Observed result                                                                   |
+| -------------------------------------------- | --------------------------------------------------------------------------------- |
+| run-native-tests-b/tests.log                 | 5 attestation, 17 prepared and 24 portal tests passed; one Rustdoc example passed |
+| run-capture-positive-a/native-success.txt    | `solana-kit-core-v53: 443/443 cases passed`, exit 0                               |
+| run-capture-negative-a/native-corruption.txt | `solana-kit-core-v53: 442/443 cases passed`, exit 1                               |
+| run-strict-checks-a/conformance-tests.stdout | All conformance tests passed, including failure-continuation controls             |
+| run-strict-checks-a/completed.tsv            | conformance-tests, Clippy and docs each exited 0                                  |
+
+The portal test binary includes all 23 retained bodies and the additional
+every-upload-observation regression control. The intentional negative changes
+only `sha256-fips-abc` to `Err("SHA-256 digest mismatch")`; every portal group
+still passes. Root compared the first 439 case IDs against the retained base.
+The checked-in reports are verbatim copies of the actual captured stdout.
+Their SHA-256 digests are:
+
+| Report                | SHA-256                                                            |
+| --------------------- | ------------------------------------------------------------------ |
+| native-success.txt    | `52f726e0cc3bad5d657f843d181bfc45633d1ecad0444d2d3cbd95651e15c857` |
+| native-corruption.txt | `ba72e19405040ab1ad160ff96e34504d74f16ad4e0f3800b91439d385b7e13f6` |
+
+Root's native commands covered the following package checks; the documentation
+command used `RUSTDOCFLAGS='-D warnings'`:
 
 ```sh
 cargo +1.99.1 test --locked -p solana_kit_dapp_publisher --all-features
 cargo +1.99.1 test --locked -p solana_kit_conformance --all-features
 cargo +1.99.1 clippy --locked -p solana_kit_dapp_publisher -p solana_kit_conformance --all-targets --all-features -- -D warnings
+cargo +1.99.1 doc --locked --no-deps -p solana_kit_dapp_publisher --all-features
 ```
 
-For golden regeneration, run the actual conformance executable twice into
-separate retained receipt files using these exact producer commands:
+The two native producers used for the retained captures are:
 
 ```sh
 cargo +1.99.1 run --quiet -p solana_kit_conformance --locked
 cargo +1.99.1 run --quiet -p solana_kit_conformance --locked -- --corrupt-fixture
 ```
 
-Require canonical exit 0, corrupt exit 1, all retained prefix case names in order,
-and the four appended publisher portal IDs. The declared v53 proposal expects
-443/443 and 442/443; these are targets, not observed results. Compare the first
-439 case IDs against the immutable b5994c60 canonical/corrupt receipts before
-promotion, including the seven slot-store groups. Inspect real stdout before
-copying it verbatim into
-verification/conformance/evidence/native-success.txt and native-corruption.txt.
-Do not generate or substitute case text manually. Then `cargo +1.99.1 xtask all`
-executes browser/both WASI/production wasmi consumers and their corruption
-controls against the integrated suite. Root owns those runs, all receipts and
-actual golden promotion. No actual service request, upload, credential read or
-publisher/contact metadata disclosure is authorized by this source port.
+Browser, both WASI targets, production wasmi consumers and their corruption
+controls remain unexecuted for this integrated producer. Three-OS CI and the
+independent consumer dependency graphs also need qualification. Root owns those
+runs; `cargo +1.99.1 xtask all` is the integrated host-check handoff. Native
+success does not qualify those hosts or provide a new Dart oracle. The source
+worker performed no compiler or runtime execution. No actual service request,
+upload, credential read or publisher/contact metadata disclosure is authorized
+by this source port.
 
 ## Pinned source and licence
 

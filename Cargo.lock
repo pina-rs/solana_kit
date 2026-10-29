@@ -1748,6 +1748,9 @@ dependencies = [
 name = "solana_kit_dapp_publisher"
 version = "0.1.0"
 dependencies = [
+ "serde",
+ "serde_json",
+ "solana_kit_client",
  "solana_kit_core",
  "solana_kit_mpl_token_metadata",
 ]

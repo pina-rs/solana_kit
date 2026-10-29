@@ -88,8 +88,8 @@ native tests, one Rustdoc example, strict Clippy and documentation checks in roo
 verification unit 840. Unit 891 then executed the shared-source refactor: all 22
 native bodies, the Rustdoc example, strict Clippy and documentation checks passed.
 Its historical v51 execution passed the five groups within the 432-group native suite.
-Deliberate corruption passed 431 groups and exited one. Checked-in reports come
-from those executions. Native tests and shared conformance include the same
+Deliberate corruption passed 431 groups and exited one. Those reports qualified
+that historical checkpoint. Native tests and shared conformance include the same
 complete assertion bodies; cryptographic bodies have no conditional no-op path.
 No portable-host or cross-language execution is claimed for this new source.
 
@@ -97,6 +97,12 @@ The portal reconciliation preserves all twenty-three retained portal bodies and
 their predicates as Result-returning shared native/portable source. Four new
 portable groups cover routes, envelopes/admission, retry/deadlines and uploads.
 A CI unit control changes the independent expected procedure and verifies later
-real portal groups continue after that reported failure. The current proposal's
-tests, compiler and runtime checks are **UNEXECUTED** by this source worker.
-See the portal parity record for exact source anchors and execution handoff.
+real portal groups continue after that reported failure. Root unit 1074 executed
+the integrated `7c3ca424` producer: all 22 policy bodies, all 23 retained portal
+bodies, the uploader regression control and conformance tests passed natively.
+Strict Clippy and documentation checks passed. The v53 native suite passed
+443/443 groups; deliberate SHA-256 corruption passed 442/443 and exited one.
+Current checked-in reports are those actual captured outputs. Browser, both
+WASI targets, production wasmi and three-OS CI remain unqualified for this
+producer. This source worker ran no compiler or runtime checks.
+See the portal parity record for source anchors, native receipts and remaining checks.

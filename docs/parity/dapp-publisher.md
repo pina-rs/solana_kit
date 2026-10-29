@@ -77,9 +77,12 @@ Two authored conformance unit controls deliberately change the independent
 expected attestation literal and require the real shared assertion to return its
 specific failure. They then execute later real envelope/policy/occupied/budget
 groups and inspect their retained results. The existing workspace CI test command
-includes these controls. This source-only repair has not executed the controls,
-native bodies or portable hosts; its runtime and golden qualification remain
-pending Root/CI verification.
+includes these controls. Root verification unit 1074 subsequently executed the
+integrated `7c3ca424` producer: all 22 policy bodies and the conformance controls
+passed natively. Its v53/443 native suite passed every group; deliberate SHA-256
+corruption passed 442 groups and exited one. Current checked-in reports come
+from that execution. Browser, both WASI targets, production wasmi and three-OS
+CI remain unqualified for this producer.
 
 Unit 887 resolved the root and independent wasmi caller graphs through Cargo.
 The genuine inventory tool regenerated and checked the canonical ledgers from
@@ -89,7 +92,7 @@ all declaration IDs, pending states and other fields remain unchanged.
 Portable-host execution and new cross-language oracles remain unexecuted.
 Source formatting and per-file Monostyle checks establish no behavioral result.
 
-The next portal-only proposal is documented in [Publisher portal protocol](dapp-publisher-portal.md).
+The portal layer and its native verification are documented in [Publisher portal protocol](dapp-publisher-portal.md).
 It adds raw wire contracts and explicit retry/upload boundaries without claiming
 workflow orchestration. Resumable sessions/checkpoints, normalized translations,
 metadata/media, funding preflight and native CLI remain separate work. Existing
