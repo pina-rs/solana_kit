@@ -122,9 +122,10 @@ The shared `priority-fee-resolution` group retains the source pure-fee and buffe
 fixtures, with exact large/exponent inputs, simultaneous caps, fractional ceilings,
 cap rescue, zero cases, overflow and invalid buffer controls. Native public
 contracts and all six portable feature streams register the same group for
-browser, both WASI previews and the production interpreter. This source-only unit
-adds no RPC, signing, submission or Send-suite cases. Its current fixtures require
-compiled execution on every maintained host.
+browser, both WASI previews and the production interpreter. This unit adds no
+RPC, signing, submission or Send-suite cases. Native contracts, strict all-feature
+Clippy and API documentation pass. Current-source CI remains required for the
+six portable feature streams and generated installed app journeys.
 
 ## Complete DAS records
 
