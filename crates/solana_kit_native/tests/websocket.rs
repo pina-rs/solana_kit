@@ -304,20 +304,39 @@ async fn explicit_authentication_and_outgoing_boundary_keep_caller_policy() {
 async fn cancelled_connect_and_consuming_close_drop_owned_sockets() {
     let listener = websocket_support::listener().await;
     let endpoint = websocket_support::endpoint(&listener, false, "127.0.0.1");
+    let (headers_seen, headers) = oneshot::channel();
     let server = tokio::spawn(async move {
-        let (mut stream, _) = listener.accept().await.unwrap();
-        read_headers(&mut stream).await;
-        assert_eq!(eof(&mut stream).await, 0);
-    });
-    assert!(
-        timeout(
-            Duration::from_millis(DEADLINE_MS),
-            NativeWebSocket::connect(&endpoint, WsConfig::default())
+        let (mut stream, _) = fixture_phase("cancelled connect peer accept", listener.accept())
+            .await
+            .unwrap();
+        fixture_phase(
+            "cancelled connect request headers",
+            read_headers(&mut stream),
         )
+        .await;
+        headers_seen.send(()).unwrap();
+        assert_eq!(
+            fixture_phase("cancelled connect peer EOF", stream.read(&mut [0]))
+                .await
+                .expect("cancelled connect peer EOF read failed"),
+            0
+        );
+    });
+
+    let mut connecting = Box::pin(NativeWebSocket::connect(&endpoint, WsConfig::default()));
+    fixture_phase("connect remains pending until headers", async {
+        tokio::select! {
+            biased;
+            result = &mut connecting => panic!("connect completed before cancellation: {result:?}"),
+            observed = headers => observed.expect("peer did not observe complete request headers"),
+        }
+    })
+    .await;
+    drop(connecting);
+    fixture_phase("cancelled connect peer completion", server)
         .await
-        .is_err()
-    );
-    server.await.unwrap();
+        .unwrap();
+
     let listener = websocket_support::listener().await;
     let endpoint = websocket_support::endpoint(&listener, false, "127.0.0.1");
     let peer = tokio::spawn(async move {
