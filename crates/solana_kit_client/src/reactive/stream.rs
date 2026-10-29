@@ -49,7 +49,7 @@ pub enum StreamSnapshot<T, E> {
 }
 
 impl<T, E> StreamSnapshot<T, E> {
-    fn starting(&self, failure: Option<&Arc<ReactiveFailure<E>>>) -> (Self, bool) {
+    pub(super) fn starting(&self, failure: Option<&Arc<ReactiveFailure<E>>>) -> (Self, bool) {
         let data = self.data().cloned();
 
         let snapshot = match failure {

@@ -1,6 +1,6 @@
-//! Combines an initial RPC result with live values without regressing their slot.
+//! Slot-aware stream merging and a caller-driven composed reactive store.
 //!
-//! Both owned inputs are polled in the first round, subscription before initial.
+//! `SlotTrackingStream` polls both owned inputs in the first round, subscription before initial.
 //! Equal slots are accepted. Older values do not reach their mapper. Each input
 //! has one pending output, drained before more source work, so buffering is bounded.
 //!
@@ -8,6 +8,8 @@
 //! the watermark, matching the pinned Dart helper. Forwarding subscription mapper
 //! errors is a deliberate hardening of Dart's uncaught listener exception path.
 //! Rust panics are not converted to typed errors. No work runs until polled.
+//! `SlotTrackingStore` adds fresh source factories, retained refresh state and
+//! terminal shared-failure cancellation; its mapper advances the slot only on success.
 
 use crate::methods::Contextual;
 use core::{
@@ -16,6 +18,9 @@ use core::{
     task::{Context, Poll},
 };
 use futures_core::{Stream, stream::FusedStream};
+
+mod store;
+pub use store::{LocalSlotTrackingStore, SlotStoreDriver, SlotTrackingStore};
 
 /// A caller-polled merge with owned inputs and one pending result per source.
 ///
