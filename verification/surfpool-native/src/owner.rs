@@ -238,7 +238,14 @@ fn exit_observation(child: u32) -> Result<bool> {
 
     // SAFETY: these calls read process-group identifiers without signaling or reaping.
     let group = unsafe { libc::getpgid(pid) };
-    let group_error = std::io::Error::last_os_error();
+    let group_error = std::io::Error::last_os_error().raw_os_error();
+
+    group_observation(child, group, group_error)
+}
+
+/// A missing group remains pending only while WNOWAIT still recognizes the exact child.
+#[cfg(target_os = "macos")]
+fn group_observation(child: u32, group: libc::pid_t, group_error: Option<i32>) -> Result<bool> {
     // SAFETY: getpgrp reads the calling process's group identifier.
     if group == unsafe { libc::getpgrp() } {
         return Ok(false);
@@ -247,13 +254,13 @@ fn exit_observation(child: u32) -> Result<bool> {
     eprintln!(
         "owned observation: operation=getpgid group_matches=false missing={} errno={:?}",
         group == -1,
-        (group == -1).then(|| group_error.raw_os_error()).flatten()
+        (group == -1).then_some(group_error).flatten()
     );
 
-    // Darwin may stop exposing a PID's group after exit. Reobserve that exact
-    // kernel child once to distinguish this race from an actual group change.
-    if group == -1 && group_error.raw_os_error() == Some(libc::ESRCH) && kernel_exit(child)? {
-        return Ok(true);
+    // Missing group data does not establish exit. Preserve the exact child's
+    // pending or exited status without consuming it or extending the drain deadline.
+    if group == -1 && group_error == Some(libc::ESRCH) {
+        return kernel_exit(child);
     }
 
     Err(Error::Check("owned child process group changed"))
@@ -314,6 +321,7 @@ fn exit_observation(_child: u32) -> Result<bool> {
 #[cfg(all(test, target_os = "macos"))]
 mod tests {
     use super::*;
+    use std::os::unix::process::ExitStatusExt;
 
     #[tokio::test(flavor = "current_thread")]
     async fn close_rejects_unsuccessful_exit_and_retains_diagnostics_after_reaping() {
@@ -430,6 +438,16 @@ mod tests {
             .spawn()
             .unwrap();
         let running = exit_observation(child.id());
+
+        // Supply the lookup seam while retaining real kernel child/status ownership.
+        let missing_running = group_observation(child.id(), -1, Some(libc::ESRCH));
+        let denied_lookup = group_observation(child.id(), -1, Some(libc::EPERM));
+
+        // SAFETY: getpgrp only reads this process's group identifier.
+        let group = unsafe { libc::getpgrp() };
+        let different_group = if group == 1 { 2 } else { 1 };
+        let changed_group = group_observation(child.id(), different_group, None);
+
         child.kill().unwrap();
         let deadline = Instant::now() + Duration::from_secs(2);
 
@@ -439,16 +457,32 @@ mod tests {
         }
 
         let retained = exit_observation(child.id());
+        let missing_exited = group_observation(child.id(), -1, Some(libc::ESRCH));
         let status = child.wait().unwrap();
+        let missing_reaped = group_observation(child.id(), -1, Some(libc::ESRCH));
+
         assert!(matches!(running, Ok(false)));
+        assert!(matches!(missing_running, Ok(false)), "{missing_running:?}");
+        assert!(matches!(
+            denied_lookup,
+            Err(Error::Check("owned child process group changed"))
+        ));
+        assert!(matches!(
+            changed_group,
+            Err(Error::Check("owned child process group changed"))
+        ));
         assert!(matches!(retained, Ok(true)));
+        assert!(matches!(missing_exited, Ok(true)), "{missing_exited:?}");
         assert!(!status.success());
+        assert_eq!(status.signal(), Some(libc::SIGKILL));
+        assert!(missing_reaped.is_err(), "{missing_reaped:?}");
         assert!(exit_observation(child.id()).is_err());
     }
 
     #[test]
     fn observation_rejects_a_process_that_is_not_our_child() {
         assert!(exit_observation(std::process::id()).is_err());
+        assert!(group_observation(std::process::id(), -1, Some(libc::ESRCH)).is_err());
     }
 }
 
