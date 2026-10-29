@@ -100,6 +100,34 @@ transport future that retains `Send`. Strict all-feature Clippy and API
 documentation also pass. Isolated feature graphs and current-source CI remain
 required; real program execution is a separate integration check.
 
+`surfpool::discover_program_artifacts(name, &target_roots).await` selects the first
+same-root regular `deploy/<name>.so` and `deploy/<name>-keypair.json` pair in caller
+order. Supply absolute target directory paths explicitly. Names must be one nonempty
+filename stem; separators, controls, dot/dot-dot and Windows colon/prefix syntax reject.
+Every root is validated before filesystem access. Discovery neither sorts nor
+canonicalizes paths and performs no environment or ancestor search. Missing and
+nonregular candidates count as absent. Permission and other metadata errors return
+their candidate index, role and original typed cause, a stricter policy than Dart's
+existence checks. `ProgramArtifacts` owns private paths with explicit accessors and
+redacted Debug. Only the winning root's IDL presence is snapshotted.
+
+With both `surfpool` and `keys`, `surfpool::deploy_program(&surfnet, &artifacts, options)`
+reads a bounded Solana-keygen JSON array into zeroizing storage and verifies its
+64-byte seed/public-key pair through Core. A malformed selected key fails without
+falling back to another root. The signer, raw input and decoded bytes are dropped
+before program reads or RPC work. `DeployProgramOptions` defaults to a 1 KiB key-file
+cap plus the existing program, IDL and chunk limits, with explicit caller overrides.
+The raw input allocation is reserved once to avoid reallocating copied secret bytes;
+the read scratch and decoded array also use zeroizing storage. This does not promise
+erasure of copies held by the OS or dependency I/O machinery.
+
+Deployment reuses the explicit path API above. An IDL absent at discovery stays
+excluded if created later. A selected IDL removed later fails after program writes.
+Selected files replaced with nonregular files fail with typed errors. No process,
+runtime, key backup, fallback, retry or rollback is installed. These discovery and
+key-backed deployment source tests have not executed in this checkpoint. Earlier
+native checks do not establish the new feature combinations or artifact behavior.
+
 `NativeWebSocket::connect(endpoint, WsConfig::default()).await` opens one
 caller-owned text socket. The endpoint explicitly selects `ws://` or `wss://`.
 Use WSS for untrusted networks. There is no private-destination filter. Accept

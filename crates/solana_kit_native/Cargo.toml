@@ -12,7 +12,7 @@ description = "Bounded Tokio HTTP and WebSocket transports for off-chain Solana 
 
 [features]
 default = []
-keys = ["dep:solana_kit_core", "solana_kit_core/crypto", "dep:rustix"]
+keys = ["dep:solana_kit_core", "solana_kit_core/crypto", "dep:rustix", "dep:zeroize"]
 mwa = ["keys", "dep:solana_kit_wallet", "dep:serde_json", "dep:zeroize"]
 surfpool = ["dep:solana_kit_core", "dep:solana_kit_surfpool", "dep:serde", "dep:serde_json", "tokio/fs"]
 
