@@ -38,9 +38,12 @@ nullable fields cannot disappear. Required historical nulls remain explicit; the
 preserves absence versus present u32 and rejects explicit null.
 Block commitment uses the actual 32 confirmation-depth stake entries.
 
-Submission accepts exact caller-supplied wire bytes and selects canonical base58
-or base64 explicitly. It does not assume a legacy packet size or infer a message
-version, lifetime, expiry or durable nonce. Fees accept message bytes and encode
+Submission accepts exact caller-supplied bytes through `SignedWire::new`, validates
+complete signatures using the existing legacy/v0/v1 parser, and retains the primary
+signature before transport. It selects canonical base58 or base64 explicitly and
+rejects acknowledgements for another transaction. The larger V1 packet limit is
+preserved; lifetime, expiry and durable nonce state remain caller-owned.
+Fees accept message bytes and encode
 canonical base64. The caller owns transaction construction and signing. Returned
 send/airdrop signatures indicate node acceptance, never confirmation. The client
 never retries; maxRetries controls only the remote node's policy.

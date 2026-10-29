@@ -2,7 +2,7 @@
 use super::{Confirmation, Failure, Observer, Policy, WaitError, wait};
 use crate::{
     Client, Transport,
-    methods::submission::{SendConfig, SendTransaction, WireEncoding},
+    methods::submission::{SendConfig, SendTransaction, SignedWire, WireEncoding},
 };
 use alloc::boxed::Box;
 use core::{
@@ -35,12 +35,14 @@ where
 {
     let (wire, expected, confirmation) =
         prepare(transaction, policy).map_err(WaitError::Outcome)?;
+    let wire =
+        SignedWire::new(&wire).map_err(|error| WaitError::Outcome(Failure::Encoding(error)))?;
 
     config.preflight_commitment.get_or_insert(policy.commitment);
     let mut cancellation = core::pin::pin!(cancellation);
     let actual = {
         let mut send = core::pin::pin!(client.call(SendTransaction {
-            wire: &wire,
+            wire,
             encoding: WireEncoding::Base64,
             config,
         }));
@@ -49,7 +51,7 @@ where
                 return Poll::Ready(Err(Failure::Cancelled));
             }
 
-            send.as_mut().poll(cx).map_err(Failure::Rpc)
+            send.as_mut().poll(cx).map_err(Failure::submission_rpc)
         })
         .await
         .map_err(WaitError::Outcome)?

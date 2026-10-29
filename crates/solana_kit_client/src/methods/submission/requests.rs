@@ -1,5 +1,5 @@
 //! Typed submission requests keep wire encoding explicit.
-use super::SignatureStatus;
+use super::{SignatureStatus, SignedWire};
 use crate::methods::history::{parse, signature};
 use crate::{
     Error,
@@ -19,14 +19,15 @@ pub enum WireEncoding {
     Base64,
 }
 
-/// Submits opaque wire bytes without imposing a legacy packet-size limit.
+/// Submits exact signed wire and binds the acknowledgement to its primary signature.
 ///
-/// The node validates the transaction and version. The caller owns signing and
-/// lifetime metadata; no decode or re-signing occurs in this operation.
+/// Supports legacy/v0/v1 wire, including the larger V1 packet limit. The caller
+/// owns signing and lifetime metadata. A matching acknowledgement proves neither
+/// broadcast nor confirmation; a hostile node can still withhold the transaction.
 #[derive(Debug)]
 pub struct SendTransaction<'a> {
     /// Exact signed wire bytes, including any supported V1 envelope.
-    pub wire: &'a [u8],
+    pub wire: SignedWire<'a>,
     /// Explicit canonical wire encoding.
     pub encoding: WireEncoding,
     /// Optional node preflight/retry policy; the client itself never retries.
@@ -59,8 +60,8 @@ impl Serialize for SendTransaction<'_> {
             options: &'a SendConfig,
         }
         let encoded = match self.encoding {
-            WireEncoding::Base58 => bs58::encode(self.wire).into_string(),
-            WireEncoding::Base64 => STANDARD.encode(self.wire),
+            WireEncoding::Base58 => bs58::encode(self.wire.bytes()).into_string(),
+            WireEncoding::Base64 => STANDARD.encode(self.wire.bytes()),
         };
         (
             encoded,
@@ -76,7 +77,17 @@ impl Method for SendTransaction<'_> {
     type Response = Signature;
     const NAME: &'static str = "sendTransaction";
     fn decode(&self, json: &str) -> Result<Self::Response, Error> {
-        decode_signature(json)
+        let actual = decode_signature(json)?;
+        let expected = self.wire.signature();
+
+        if actual != expected {
+            return Err(Error::SubmissionSignatureMismatch {
+                expected,
+                actual: Box::new(actual),
+            });
+        }
+
+        Ok(actual)
     }
 }
 fn decode_signature(json: &str) -> Result<Signature, Error> {

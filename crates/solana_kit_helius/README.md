@@ -14,6 +14,12 @@ This changes regional routing and adds TLS setup to formerly plaintext calls;
 no latency equivalence is promised. Native REST composition rejects remote HTTP
 roots before connection, including manually supplied regional origins.
 
+Sender `Submission::wire` takes `SignedWire::new(&bytes)?` from the client crate.
+Both bare-string and JSON-RPC successes must parse canonically and equal the
+retained primary signature. Envelopes require `jsonrpc: "2.0"` and the exact
+request ID. The response is a typed `Acknowledgement(Signature)`. Matching identity
+does not prove broadcast, confirmation or finality.
+
 This crate is exclusively for off-chain application code. For Solana on-chain
 programs, use Pina or the official Solana program libraries.
 

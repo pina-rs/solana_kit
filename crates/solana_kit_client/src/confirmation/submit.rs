@@ -5,7 +5,7 @@ use super::{
 };
 use crate::{
     Client, Transport,
-    methods::submission::{SendConfig, SendTransaction, WireEncoding},
+    methods::submission::{SendConfig, SendTransaction, SignedWire, WireEncoding},
     subscriptions::{Clock, TextSocket},
 };
 use core::future::{Future, poll_fn};
@@ -121,6 +121,8 @@ where
         .preflight_commitment
         .get_or_insert(factory.policy.commitment);
     let mut timeout = core::pin::pin!(clock.sleep_until(factory.deadline));
+    let wire = SignedWire::new(wire)
+        .map_err(|error| FactoryFailure::Confirmation(Failure::Encoding(error)))?;
     let mut send = core::pin::pin!(client.call(SendTransaction {
         wire,
         encoding: WireEncoding::Base64,
@@ -132,7 +134,7 @@ where
 
         send.as_mut()
             .poll(cx)
-            .map_err(|error| FactoryFailure::Confirmation(Failure::Rpc(error)))
+            .map_err(|error| FactoryFailure::Confirmation(Failure::submission_rpc(error)))
     })
     .await
 }

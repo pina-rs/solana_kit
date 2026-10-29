@@ -5,7 +5,11 @@ use crate::{
     service::{Body, Error, Operation, Service, Verb},
 };
 use serde::{Deserialize, Serialize, Serializer};
-use solana_kit_client::methods::submission::{SendConfig, SendTransaction, WireEncoding};
+use solana_kit_client::methods::{
+    Method,
+    submission::{SendConfig, SendTransaction, SignedWire, WireEncoding},
+};
+use solana_kit_core::Signature;
 
 mod regions;
 pub use regions::{
@@ -28,7 +32,7 @@ pub enum Route {
 #[derive(Debug)]
 pub struct Submission<'a> {
     /// Exact signed transaction bytes, encoded once as base64 by the Kit owner.
-    pub wire: &'a [u8],
+    pub wire: SignedWire<'a>,
     /// Correlation ID supplied by the caller. The reference broadcast uses one.
     pub id: u32,
     /// Caller-controlled preflight option. The reference default is true.
@@ -65,6 +69,24 @@ impl Serialize for Submission<'_> {
     }
 }
 
+/// A canonical Sender acknowledgement bound to the submitted primary signature.
+///
+/// Identity correlation does not prove broadcast, confirmation or finality.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize)]
+#[serde(try_from = "String")]
+pub struct Acknowledgement(
+    /// Canonical primary signature reported for the submitted transaction.
+    pub Signature,
+);
+
+impl TryFrom<String> for Acknowledgement {
+    type Error = solana_kit_core::ParseError;
+
+    fn try_from(value: String) -> Result<Self, Self::Error> {
+        value.parse().map(Self)
+    }
+}
+
 #[derive(Deserialize)]
 struct Envelope {
     #[serde(default)]
@@ -72,13 +94,13 @@ struct Envelope {
     #[serde(default)]
     id: Field<u32>,
     #[serde(default)]
-    result: Field<String>,
+    result: Field<Box<serde_json::value::RawValue>>,
     #[serde(default)]
     error: Field<Box<serde_json::value::RawValue>>,
 }
 
 impl Operation for Submission<'_> {
-    type Response = String;
+    type Response = Acknowledgement;
     const SERVICE: Service = Service::Sender;
     const VERB: Verb = Verb::Post;
     const BODY: Body = Body::Json;
@@ -102,7 +124,7 @@ impl Operation for Submission<'_> {
             serde_json::from_slice(bytes).map_err(Error::Schema)?;
 
         if raw.get().starts_with('"') {
-            return serde_json::from_str(raw.get()).map_err(Error::Schema);
+            return self.acknowledgement(raw.get());
         }
 
         let envelope: Envelope = serde_json::from_str(raw.get()).map_err(Error::Schema)?;
@@ -113,15 +135,29 @@ impl Operation for Submission<'_> {
         }
 
         match envelope.result {
-            Field::Value(signature) => Ok(signature),
+            Field::Value(signature) => self.acknowledgement(signature.get()),
             _ => Err(schema("Sender result must contain a signature string")),
         }
     }
 }
 
+impl Submission<'_> {
+    /// Shares the RPC decoder so every Sender grammar enforces the same binding.
+    fn acknowledgement(&self, json: &str) -> Result<Acknowledgement, Error> {
+        SendTransaction {
+            wire: self.wire,
+            encoding: WireEncoding::Base64,
+            config: SendConfig::default(),
+        }
+        .decode(json)
+        .map(Acknowledgement)
+        .map_err(Error::Submission)
+    }
+}
+
 fn validate_identity(envelope: &Envelope, id: u32) -> Result<(), Error> {
     let version_matches = match &envelope.jsonrpc {
-        Field::Missing => true,
+        Field::Missing => false,
         Field::Value(version) => version == "2.0",
         Field::Null => false,
     };
@@ -131,7 +167,7 @@ fn validate_identity(envelope: &Envelope, id: u32) -> Result<(), Error> {
     }
 
     let id_matches = match &envelope.id {
-        Field::Missing => true,
+        Field::Missing => false,
         Field::Value(actual) => *actual == id,
         Field::Null => false,
     };

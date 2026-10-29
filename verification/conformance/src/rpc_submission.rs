@@ -1,4 +1,4 @@
-//! Fees, positional statuses and opaque submission use the public client.
+//! Fees, positional statuses and identity-bound submission use the public client.
 extern crate std;
 
 use crate::{
@@ -10,8 +10,8 @@ use solana_kit_client::{
     Error, Presence,
     methods::{Commitment, ReadConfig, submission::*},
 };
-use solana_kit_core::Address;
-use std::{format, vec};
+use solana_kit_core::{Address, Signature};
+use std::{format, vec, vec::Vec};
 
 pub(crate) fn operations() -> Result<(), &'static str> {
     fee_and_airdrop()?;
@@ -99,12 +99,23 @@ fn statuses() -> Result<(), &'static str> {
     )
 }
 
-/// Submission treats wire bytes as opaque while validating response signatures.
+/// Submission retains exact signed bytes and rejects foreign acknowledgements.
 fn submissions() -> Result<(), &'static str> {
-    let result = format!(r#""{SIG}""#);
+    use base64::{Engine, engine::general_purpose::STANDARD};
+    let wire = signed_wire(false);
+    let expected = Signature::from_bytes([7; 64]);
+    let result = format!(r#""{expected}""#);
+    let encoded = STANDARD.encode(&wire);
+
+    for invalid in [vec![], vec![0, 1, 2], vec![0; 4096]] {
+        require(
+            SignedWire::new(&invalid).is_err(),
+            "malformed signed wire accepted",
+        )?;
+    }
     let sent = call(
         SendTransaction {
-            wire: &[0, 1, 2],
+            wire: SignedWire::new(&wire).map_err(|_| "invalid submission wire")?,
             encoding: WireEncoding::Base64,
             config: SendConfig {
                 skip_preflight: Some(false),
@@ -116,20 +127,22 @@ fn submissions() -> Result<(), &'static str> {
         "sendTransaction",
         &format!(
             concat!(
-                r#"["AAEC",{{"encoding":"base64","skipPreflight":false,"#,
+                r#"["{encoded}",{{"encoding":"base64","skipPreflight":false,"#,
                 r#""preflightCommitment":"finalized","maxRetries":{0},"minContextSlot":{0}}}]"#
             ),
-            MAX
+            MAX,
+            encoded = encoded
         ),
         &result,
     )
     .map_err(|_| "submission failed")?;
-    require(sent == signature(), "submission signature changed")?;
-    let wire = vec![0; 4096];
-    let encoded = "1".repeat(4096);
+    require(sent == expected, "submission signature changed")?;
+    let wire = signed_wire(true);
+    require(wire.len() == 4096, "V1 packet fixture changed")?;
+    let encoded = bs58::encode(&wire).into_string();
     let sent = call(
         SendTransaction {
-            wire: &wire,
+            wire: SignedWire::new(&wire).map_err(|_| "invalid V1 wire")?,
             encoding: WireEncoding::Base58,
             config: SendConfig::default(),
         },
@@ -137,8 +150,49 @@ fn submissions() -> Result<(), &'static str> {
         &format!(r#"["{encoded}",{{"encoding":"base58"}}]"#),
         &result,
     )
-    .map_err(|_| "opaque 4096-byte submission rejected")?;
-    require(sent == signature(), "opaque submission signature changed")
+    .map_err(|_| "signed 4096-byte submission rejected")?;
+    require(sent == expected, "V1 submission signature changed")?;
+    let request = SendTransaction {
+        wire: SignedWire::new(&wire).map_err(|_| "invalid V1 wire")?,
+        encoding: WireEncoding::Base64,
+        config: SendConfig::default(),
+    };
+    let foreign = Signature::from_bytes([8; 64]);
+    let rejected = solana_kit_client::methods::Method::decode(&request, &format!(r#""{foreign}""#));
+    require(
+        matches!(rejected, Err(Error::SubmissionSignatureMismatch { expected: e, actual: a })
+        if e == expected && *a == foreign),
+        "foreign acknowledgement accepted",
+    )
+}
+
+/// Literal legacy and maximum-sized V1 fixtures do not use the SDK encoder.
+fn signed_wire(v1: bool) -> Vec<u8> {
+    let mut bytes = vec![];
+
+    if v1 {
+        bytes.extend([0x81, 1, 0, 1]);
+        bytes.extend([0; 4]);
+        bytes.extend([2; 32]);
+        bytes.extend([1, 2]);
+        bytes.extend([1; 32]);
+        bytes.extend([3; 32]);
+        bytes.extend([1, 0]);
+        bytes.extend(3922u16.to_le_bytes());
+        bytes.extend([0; 3922]);
+        bytes.extend([7; 64]);
+
+        return bytes;
+    }
+
+    bytes.push(1);
+    bytes.extend([7; 64]);
+    bytes.extend([1, 0, 0, 1]);
+    bytes.extend([1; 32]);
+    bytes.extend([2; 32]);
+    bytes.push(0);
+
+    bytes
 }
 
 fn failures() -> Result<(), &'static str> {
@@ -188,16 +242,19 @@ fn failures() -> Result<(), &'static str> {
 
 /// RPC preflight errors preserve raw numeric data rather than losing their cause.
 fn remote_preflight() -> Result<(), &'static str> {
+    use base64::{Engine, engine::general_purpose::STANDARD};
+    let wire = signed_wire(false);
+    let encoded = STANDARD.encode(&wire);
     let response =
         r#"{"jsonrpc":"2.0","id":1,"error":{"code":-32002,"message":"preflight","data":1e400}}"#;
     let error = framed(
         SendTransaction {
-            wire: &[],
+            wire: SignedWire::new(&wire).map_err(|_| "invalid preflight wire")?,
             encoding: WireEncoding::Base64,
             config: SendConfig::default(),
         },
         "sendTransaction",
-        r#"["",{"encoding":"base64"}]"#,
+        &format!(r#"["{encoded}",{{"encoding":"base64"}}]"#),
         response,
     );
     let Err(Error::Remote(value)) = error else {

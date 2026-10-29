@@ -5,6 +5,8 @@
 mod failure;
 mod requests;
 mod responses;
+mod wire;
 pub use failure::*;
 pub use requests::*;
 pub use responses::*;
+pub use wire::SignedWire;
