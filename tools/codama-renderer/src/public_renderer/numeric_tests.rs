@@ -60,6 +60,65 @@ fn imports_path(tree: &syn::UseTree, segments: &[&str]) -> bool {
 }
 
 #[test]
+fn emitted_codec_and_legacy_names_cannot_be_program_types() {
+    for name in ["Nullable", "Boolean", "Absence", "Number", "OwnedString"] {
+        let mut input = root();
+        input["program"]["definedTypes"][0]["name"] = json!(name);
+        let error = render_root(&input).unwrap_err().to_string();
+        assert!(
+            error.contains("generated namespace collision"),
+            "{name}: {error}"
+        );
+    }
+}
+
+#[test]
+fn fixed_text_import_names_cannot_be_program_types() {
+    let mut input = root();
+    input["program"]["definedTypes"][0] = json!({
+        "kind":"definedTypeNode", "name":"Utf8Config",
+        "type":{"kind":"fixedSizeTypeNode","size":1,
+            "type":{"kind":"stringTypeNode","encoding":"utf8"}}
+    });
+    let error = render_root(&input).unwrap_err().to_string();
+    assert!(error.contains("generated namespace collision"));
+}
+
+#[test]
+fn numeric_primitive_labels_and_internal_endian_do_not_reserve_type_names() {
+    for name in ["I32", "U128", "I128", "F32", "Endian"] {
+        let mut input = root();
+        input["program"]["definedTypes"][0]["name"] = json!(name);
+        let files = render_root(&input).unwrap();
+        let source = &files
+            .iter()
+            .find(|file| file.path == "numeric_contracts.rs")
+            .unwrap()
+            .source;
+        let syntax = syn::parse_file(source).unwrap();
+        assert!(
+            syntax
+                .items
+                .iter()
+                .any(|item| { matches!(item, syn::Item::Struct(item) if item.ident == name) })
+        );
+    }
+}
+
+#[test]
+fn nullable_component_names_remain_available_without_the_imports() {
+    for name in ["Nullable", "Boolean", "Absence"] {
+        let mut input = root();
+        input["program"]["definedTypes"]
+            .as_array_mut()
+            .unwrap()
+            .retain(|node| node["type"]["kind"] != "optionTypeNode");
+        input["program"]["definedTypes"][0]["name"] = json!(name);
+        assert!(render_root(&input).is_ok(), "{name}");
+    }
+}
+
+#[test]
 fn unknown_numeric_contracts_fail_before_any_files_are_returned() {
     for (key, value) in [("format", "u256"), ("endian", "middle")] {
         let mut input = root();
