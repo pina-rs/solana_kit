@@ -130,6 +130,67 @@ ten key-backed deployment cases pass alongside the seventeen file deployment
 contracts. Strict all-feature/all-target Clippy and API documentation also pass.
 Cancellation during the key read and real program execution remain unverified.
 
+## Optional Surfpool process ownership
+
+On native desktop hosts, `surfpool::process::OwnedSurfpool::spawn(command, options)`
+synchronously returns the owner of one `std::process::Child`. Supply an absolute
+executable or trusted foreground containment launcher, existing private runtime,
+matching CLI key file and payer address, caller-fresh genesis, three fixed ports,
+offline `SurfnetConfig`, explicit child environment and native RPC limits. All
+fallible path/configuration/client preparation precedes spawn. The child handle is
+retained immediately afterward. No key, port, executable or project is discovered.
+
+**Caller-established OS containment is required.** Stock Surfpool 1.7 attempts a
+cloud version request even with `--offline` and `NO_DNA`. Environment clearing is
+not a sandbox. The caller must deny external network and real-home access for the
+actual executable and descendants. The owner neither establishes nor certifies
+that boundary. A launcher must preserve foreground child ownership or supervise
+its contained descendants correctly; this owner controls only its direct child.
+
+The owner clears inherited/command environment, applies explicit values, then fixes
+`HOME`, `SNAP_REAL_HOME`, `USERPROFILE`, config and temp paths under the runtime.
+It removes the exact stock configuration override names: `SURFPOOL_NETWORK_HOST`,
+`SURFPOOL_STUDIO_HOST`, `SURFPOOL_PUBLIC_HOST`, `SURFPOOL_PUBLIC_RPC_URL`,
+`SURFPOOL_PUBLIC_WS_URL`, `SURFPOOL_PUBLIC_STUDIO_URL`, `SURFPOOL_DATASOURCE_RPC_URL`,
+`SURFPOOL_METRICS_ENABLED` and `SURFPOOL_METRICS_ADDR`. Platform key matching handles
+Windows' case-insensitive names. Unrelated explicit variables remain available;
+typed settings and the fixed runtime paths take precedence.
+
+Stdin/stdout/stderr become null, with no pipes, drain tasks or output capture. CLI
+logs use an explicit runtime path; no whole-directory disk quota is promised. The
+caller creates and later cleans the runtime. The owner never removes it or creates
+a payer or executor.
+
+`owner.wait_rpc_ready(timeout).await` uses one total deadline for complete requests
+and polling. It checks the retained child before/after RPC observations, requires
+the exact fresh genesis and validates the sealed startup task projection. Unknown,
+failed, unsealed or incomplete ready states reject. Known pending phases and typed
+connection/deadline failures may wait within that budget. RPC readiness does not
+prove WebSocket delivery or Studio ownership; stock Studio bind failure can be a
+warning. Fresh genesis protects against accidental collisions, not a malicious peer.
+
+`owner.close(ClosePolicy::default()).await` borrows the owner and returns a cached
+`CloseReceipt` only after nonblocking handle observation confirms reaping. A verified
+endpoint must pass a fresh genesis recheck before private `exit`. Graceful timeout
+leads to handle-based kill and bounded reaping. The receipt separates actual exit
+status, force termination and original shutdown request failures; confirmed cleanup
+does not mean successful application exit. Repeated close uses that receipt and
+never signals after reaping. Cleanup errors/timeouts retain the owner/runtime.
+
+Cancellation retains the child owner. An uncertain shutdown attempt is never
+automatically resent: cancellation during identity checking can lead to later
+force-kill even if exit was never sent. Each explicit resumed close receives fresh
+finite wait budgets. Async bounds do not promise hard real-time OS syscalls or
+scheduling. Drop only attempts handle kill and nonblocking reap; it cannot guarantee
+reaping, block, remove the runtime, spawn a detached task or create a cleanup runtime.
+Keep the owner and await close before treating directory cleanup as safe.
+
+The new process fixture and contract bodies are source-only and unexecuted. They
+re-enter the Rust integration test executable through an explicit child-mode flag,
+use fixed caller ports and loopback RPC, and need no shell, helper build or CI-only
+environment path. These synthetic fixtures do not establish stock 1.7 interoperability
+or OS containment on any platform; those remain separate admitted checks.
+
 `NativeWebSocket::connect(endpoint, WsConfig::default()).await` opens one
 caller-owned text socket. The endpoint explicitly selects `ws://` or `wss://`.
 Use WSS for untrusted networks. There is no private-destination filter. Accept
