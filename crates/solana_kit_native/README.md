@@ -97,8 +97,9 @@ the original typed I/O, JSON and portable deployment causes for explicit inspect
 Seventeen native contract cases cover explicit file/byte equivalence, deferred
 IDL access, literal JSON, partial writes, bounds, cancellation and a native
 transport future that retains `Send`. Strict all-feature Clippy and API
-documentation also pass. Isolated feature graphs and current-source CI remain
-required; real program execution is a separate integration check.
+documentation also pass. The file deployment phase passed all 49 CI checks,
+including installed desktop, Android and iOS journeys. Isolated feature graphs
+remain unexecuted; real program execution is a separate integration check.
 
 `surfpool::discover_program_artifacts(name, &target_roots).await` selects the first
 same-root regular `deploy/<name>.so` and `deploy/<name>-keypair.json` pair in caller
@@ -124,9 +125,10 @@ erasure of copies held by the OS or dependency I/O machinery.
 Deployment reuses the explicit path API above. An IDL absent at discovery stays
 excluded if created later. A selected IDL removed later fails after program writes.
 Selected files replaced with nonregular files fail with typed errors. No process,
-runtime, key backup, fallback, retry or rollback is installed. These discovery and
-key-backed deployment source tests have not executed in this checkpoint. Earlier
-native checks do not establish the new feature combinations or artifact behavior.
+runtime, key backup, fallback, retry or rollback is installed. Six discovery and
+ten key-backed deployment cases pass alongside the seventeen file deployment
+contracts. Strict all-feature/all-target Clippy and API documentation also pass.
+Cancellation during the key read and real program execution remain unverified.
 
 `NativeWebSocket::connect(endpoint, WsConfig::default()).await` opens one
 caller-owned text socket. The endpoint explicitly selects `ws://` or `wss://`.
