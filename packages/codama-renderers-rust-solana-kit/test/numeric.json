@@ -9,8 +9,21 @@
       {
         "kind": "instructionArgumentNode",
         "name": "discriminator",
-        "type": { "kind": "numberTypeNode", "format": "u8", "endian": "le" },
-        "defaultValue": { "kind": "numberValueNode", "number": 1 },
+        "type": { "kind": "numberTypeNode", "format": "u32", "endian": "be" },
+        "defaultValue": { "kind": "numberValueNode", "number": 16909060 },
+        "defaultValueStrategy": "omitted"
+      }
+    ],
+    "discriminators": [{ "kind": "fieldDiscriminatorNode", "name": "discriminator" }]
+  }, {
+    "kind": "instructionNode",
+    "name": "pong",
+    "arguments": [
+      {
+        "kind": "instructionArgumentNode",
+        "name": "discriminator",
+        "type": { "kind": "numberTypeNode", "format": "u32", "endian": "be" },
+        "defaultValue": { "kind": "numberValueNode", "number": 16909061 },
         "defaultValueStrategy": "omitted"
       }
     ],

@@ -5,6 +5,8 @@ use solana_kit_core::codecs::{Decoder, Encoder, Limits};
 const LIMITS: Limits = Limits::new(256, 256);
 const U128_HIGH_BIT: u128 = 1 << (u128::BITS - 1);
 const U16_PREFIXED_TRUE: [u8; 3] = [0, 1, 1];
+const PING_TAG: [u8; 4] = [1, 2, 3, 4];
+const PONG_TAG: [u8; 4] = [1, 2, 3, 5];
 
 fn check<T, C>(codec: C, value: T, bytes: &[u8])
 where
@@ -118,9 +120,53 @@ fn reject_prefixes() {
     );
 }
 
+fn instruction_tags() {
+    check(n::PingCodec, n::Ping {}, &PING_TAG);
+    check(n::PongCodec, n::Pong {}, &PONG_TAG);
+    let ping = n::Ping {}.instruction(&[], LIMITS).unwrap();
+    let pong = n::Pong {}.instruction(&[], LIMITS).unwrap();
+    assert_eq!(ping.data, PING_TAG);
+    assert_eq!(pong.data, PONG_TAG);
+    assert_eq!(n::identify_instruction(&PING_TAG).unwrap(), PING_TAG);
+    assert_eq!(n::identify_instruction(&PONG_TAG).unwrap(), PONG_TAG);
+
+    assert!(matches!(
+        n::parse_instruction(&ping, LIMITS).unwrap(),
+        n::NumericContractsInstructionData::Ping(_)
+    ));
+    assert!(matches!(
+        n::parse_instruction(&pong, LIMITS).unwrap(),
+        n::NumericContractsInstructionData::Pong(_)
+    ));
+    assert!(n::Ping::parse(&pong, LIMITS).is_err());
+    assert!(n::Pong::parse(&ping, LIMITS).is_err());
+    reject_instruction_tags();
+}
+
+fn reject_instruction_tags() {
+    for length in 0..PING_TAG.len() {
+        assert!(n::identify_instruction(&PING_TAG[..length]).is_err());
+        assert!(
+            n::NumericContractsInstructionDataCodec
+                .decode(&PING_TAG[..length], LIMITS)
+                .is_err()
+        );
+    }
+
+    for bytes in [[4, 3, 2, 1], [5, 3, 2, 1], [1, 2, 3, 6]] {
+        assert!(n::identify_instruction(&bytes).is_err());
+        assert!(
+            n::NumericContractsInstructionDataCodec
+                .decode(&bytes, LIMITS)
+                .is_err()
+        );
+    }
+}
+
 pub(super) fn run() {
     integers();
     floats();
     prefixes();
     reject_prefixes();
+    instruction_tags();
 }

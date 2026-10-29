@@ -55,3 +55,39 @@ fn count_and_size_prefixes_reject_signed_and_floating_domains() {
         assert!(render_root(&size).is_err());
     }
 }
+
+/// Non-symmetric literals expose a dropped byte order in either dispatch variant.
+#[test]
+fn instruction_tags_keep_both_declared_byte_orders() {
+    for (endian, expected) in [
+        ("be", ["1, 2, 3, 4", "1, 2, 3, 5"]),
+        ("le", ["4, 3, 2, 1", "5, 3, 2, 1"]),
+    ] {
+        let mut input = root();
+
+        for instruction in input["program"]["instructions"].as_array_mut().unwrap() {
+            instruction["arguments"][0]["type"]["endian"] = json!(endian);
+        }
+
+        let files = render_root(&input).unwrap();
+        let source = &files[0].source;
+
+        for literal in expected {
+            assert!(source.contains(literal));
+        }
+    }
+}
+
+#[test]
+fn instruction_tags_reject_unsupported_formats_and_overflow() {
+    for format in ["u16", "u64", "i32", "u128", "i128", "f32"] {
+        let mut input = root();
+        input["program"]["instructions"][0]["arguments"][0]["type"]["format"] = json!(format);
+        assert!(render_root(&input).is_err());
+    }
+
+    let mut input = root();
+    input["program"]["instructions"][0]["arguments"][0]["defaultValue"]["number"] =
+        json!(u64::from(u32::MAX) + 1);
+    assert!(render_root(&input).is_err());
+}
