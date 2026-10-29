@@ -18,6 +18,12 @@ dropping it cancels its actual owned work. See the
 [reactive store contract](../../docs/architecture/reactive-stores.md) for source
 semantics, local callbacks and the current verification checkpoint.
 
+`reactive::slot_tracking::SlotTrackingStream` combines an initial RPC future with
+subscription values while rejecting older slots. It accepts equal slots, preserves
+complete RPC contexts, and owns both inputs with bounded pending results. See the
+[slot tracking contract](../../docs/parity/slot-tracking-stream.md) for mapper errors,
+source lifetimes, and the unexecuted source handoff.
+
 `rest` owns provider HTTP methods, explicit absent/JSON/form bodies, ordered
 decoded path/query pairs, bounded JSON admission and `Transport<D>`. Each provider
 owns its destination identity. Concrete adapters map that identity to approved

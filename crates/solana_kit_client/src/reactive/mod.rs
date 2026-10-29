@@ -7,6 +7,7 @@ mod action;
 mod bridge;
 mod cancellation;
 mod shared;
+pub mod slot_tracking;
 mod stream;
 
 pub use action::{ActionDispatch, ActionSnapshot, LocalReactiveActionStore, ReactiveActionStore};
