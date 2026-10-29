@@ -172,6 +172,19 @@ fn guest(sdk: &Path, app: &Path) -> Result<Vec<(PathBuf, String)>> {
         ("guest/flow/rpc/transfer.rs", "flow/rpc/transfer.rs"),
         ("guest/flow/rpc/submission.rs", "flow/rpc/submission.rs"),
         ("guest/flow/rpc/error.rs", "flow/rpc/error.rs"),
+        ("guest/flow/rpc/subscription.rs", "flow/rpc/subscription.rs"),
+        (
+            "guest/flow/rpc/subscription/delivery.rs",
+            "flow/rpc/subscription/delivery.rs",
+        ),
+        (
+            "guest/flow/rpc/subscription/panel.rs",
+            "flow/rpc/subscription/panel.rs",
+        ),
+        (
+            "guest/flow/rpc/subscription/transport.rs",
+            "flow/rpc/subscription/transport.rs",
+        ),
     ] {
         edits.push((
             app.join("src/wallet_fixture").join(destination),

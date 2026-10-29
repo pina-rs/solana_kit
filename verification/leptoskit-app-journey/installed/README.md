@@ -41,6 +41,37 @@ The initial and recovered balance checks retain their own named checkpoints.
 Identify each balance and signature capture by its checkpoint label rather than
 by a fixed capture number.
 
+The initial session and the saved-wallet relaunch also drive **Watch account
+updates**. The guest opens the granted validator WebSocket and uses the public
+SDK's typed `accountSubscribe` and `rootSubscribe` owners on that same socket.
+A separate public probe account receives three single airdrop requests. The
+controller independently confirms each request and checks its exact RPC balance;
+the payer, transfer recipient and saved wallet receive none of those credits.
+
+The first notification must update the native balance display. **Hold next
+account update** retains the second genuine SDK-decoded notification without
+committing it to that display. **Cancel account subscription** invalidates its
+delivery generation, awaits a true `accountUnsubscribe` acknowledgement, and then
+releases the held notification through the ordinary state reducer. The displayed
+balance must remain at the first credit. Removing that reducer's generation
+guard makes this step fail.
+
+After cancellation, the third credit must change the independent RPC balance.
+The controller then requires an actual root notification on the continuing
+socket beyond that transaction's slot and checks the frozen display again. A
+timer or an absence of notifications cannot satisfy this check. The named native
+captures and `subscription-initial.json` or `subscription-relaunched.json` retain
+the observed RPC balances, captured display text, transaction slot and root.
+An unsupported root subscription or missing acknowledgement fails the journey.
+
+**Close subscription socket** remains available while opening and throughout the
+probe. The controller attempts it after either assertion success or failure.
+The guest attempts both stream cancellations and a real socket close on every
+result, preserving cleanup failures alongside the original error. The existing
+native runtime still owns and joins the socket actor before application teardown.
+After process relaunch, a new probe must start with a waiting balance; the same
+positive update, cancellation race and late-credit checks run again.
+
 Relaunch never reconnects a wallet automatically: both sessions first require the
 ordinary selection controls and no connected account. Private wallet bytes remain
 inside the application sandbox. The controller only retains public addresses,
@@ -122,16 +153,19 @@ Both the run directory and application data directory must be absent initially.
 The generated macOS host uses the bundle-scoped Application Support directory shown
 above; iOS uses its installed sandbox directly. The controller removes the owned application data and ledger after closing
 the native session and joining the validator. CI
-retains only the native screenshot/accessibility report and process logs; it
+retains only the native screenshot/accessibility report, public subscription
+receipts and process logs; it
 never uploads ledger keypairs. The driver quits only the tested application.
 
 The workflow pins Agave 4.2.0 archives and checks their SHA-256 digests before
 execution. The native driver dependencies and framework revision are also pinned.
 Compilation, Clippy and protocol tests do not establish installed OS acceptance;
 the actual CI journey must pass for each platform. The save/relaunch/restore
-phases above are implemented but require their current-source CI execution before
-claiming installed acceptance. Subscription controls and installed cancellation
-remain separate acceptance work.
+and subscription/cancellation phases above are implemented in source but require
+their current-source CI execution before claiming installed acceptance. The new
+journeys and generation-guard regression remain **UNEXECUTED** until their actual
+compiler and macOS, Android and iOS runs are recorded. Browser subscription
+acceptance remains separate work.
 
 This is exclusively off-chain client verification. Use Pina or official Solana
 program libraries for on-chain programs.

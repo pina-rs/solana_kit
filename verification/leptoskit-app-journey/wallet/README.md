@@ -40,6 +40,15 @@ does not submit. Cancellation after submission preserves its uncertain outcome
 and signature. Ordinary RPC failures retain the selected key; cancellation
 disposes it. A host without RPC shows that capability as unavailable.
 
+**Watch account updates** uses the granted `solana.socket` service and the public
+SDK's typed account and root subscriptions. A dedicated public probe account
+keeps subscription credits separate from wallet and transfer effects. The app
+can hold one genuine decoded update across acknowledged cancellation, then pass
+it through the same delivery reducer to verify that its invalidated generation
+cannot change the visible balance. Root updates continue through the same event
+router after account cancellation. All exits attempt both unsubscribe operations
+and actual socket close before returning to the wallet panel.
+
 The application owns one bounded RPC action queue per selected wallet. Old
 callbacks cannot reach a replacement wallet. The complete panel scrolls so its
 actions and long transaction receipts remain reachable on smaller surfaces.
@@ -69,6 +78,6 @@ preparation does not establish guest compilation or an installed application run
 
 These source flows do not establish installed application acceptance. Full D1–D9,
 A1–A9 and I1–I9 still require actual RPC funding, transactions, confirmation,
-subscription controls, rejection/cancellation and replacement/unload evidence
+subscription, cancellation and replacement/unload evidence
 through the existing client transport owners. This source is exclusively an off-chain client;
 on-chain applications use Pina or official Solana program libraries.

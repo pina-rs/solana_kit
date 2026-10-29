@@ -2,12 +2,16 @@
 mod error;
 mod panel;
 mod submission;
+mod subscription;
 mod transfer;
 
 use super::{Action, AppError, LocalWalletCommands, LocalWalletEvents, failed, local, show};
 use error::Error;
 use futures::future::Either;
-use leptoskit_bridge::{MethodId, guest::Client as Plugin};
+use leptoskit_bridge::{
+    Event, MethodId,
+    guest::{Client as Plugin, Events},
+};
 use panel::{Intent, RpcAction};
 use solana_kit_client::{
     Client, Limits, TransportFailureKind,
@@ -15,7 +19,7 @@ use solana_kit_client::{
 };
 use solana_kit_core::Address;
 use solana_kit_leptoskit::{GuestHttp, GuestLocalWallet, wallet_ui::local_wallet_panel};
-use std::future::Future;
+use std::{collections::VecDeque, future::Future};
 
 type Rpc = Client<GuestHttp>;
 const REQUEST_TIMEOUT_MILLIS: u64 = 30_000;
@@ -25,10 +29,17 @@ struct Connected {
     status: String,
 }
 
+struct Routing<'a> {
+    events: &'a mut Events,
+    unrelated: &'a mut VecDeque<Event>,
+}
+
 /// The selected key and RPC action receiver share one lifetime. Closing the
 /// selection disposes old callbacks before another wallet can be selected.
 pub(super) async fn run(
     wallet: GuestLocalWallet,
+    events: &mut Events,
+    unrelated: &mut VecDeque<Event>,
     actions: &mut LocalWalletEvents,
     commands: &LocalWalletCommands,
     generation: &mut u64,
@@ -36,6 +47,7 @@ pub(super) async fn run(
     let client = available()?;
     let address = wallet.address().to_string();
     let (rpc_commands, mut rpc_actions) = panel::channel();
+    let mut routing = Routing { events, unrelated };
     let mut connected = Connected {
         wallet,
         status: "Local wallet connected; not saved automatically".to_owned(),
@@ -54,6 +66,7 @@ pub(super) async fn run(
             actions,
             commands,
             generation,
+            &mut routing,
         )
         .await?
         else {
@@ -72,6 +85,7 @@ async fn update(
     actions: &mut LocalWalletEvents,
     commands: &LocalWalletCommands,
     generation: &mut u64,
+    routing: &mut Routing<'_>,
 ) -> Result<Option<Connected>, AppError> {
     match intent {
         Intent::Wallet(Action::Cancel | Action::Disconnect) => {
@@ -109,6 +123,7 @@ async fn update(
                 actions,
                 commands,
                 generation,
+                routing,
             )
             .await?;
             connected = Connected { wallet, status };
@@ -134,6 +149,7 @@ async fn rpc_action(
     actions: &mut LocalWalletEvents,
     commands: &LocalWalletCommands,
     generation: &mut u64,
+    routing: &mut Routing<'_>,
 ) -> Result<(GuestLocalWallet, String), AppError> {
     match action {
         RpcAction::Balance => match bounded(balance(client, wallet.address()), actions).await {
@@ -144,11 +160,30 @@ async fn rpc_action(
             *generation = generation.checked_add(1).ok_or(Error::Generation)?;
             transfer::run(client, wallet, actions, commands, *generation).await
         }
+        RpcAction::Subscription => {
+            *generation = generation.checked_add(1).ok_or(Error::Generation)?;
+            match subscription::run(
+                &wallet.address().to_string(),
+                *generation,
+                routing,
+                actions,
+                commands,
+            )
+            .await
+            {
+                Ok(()) => Ok((wallet, "Subscription socket closed".into())),
+                Err(error) => retain(wallet, error).await,
+            }
+        }
     }
 }
 
 fn cancelled(error: &AppError) -> bool {
-    matches!(error.downcast_ref::<Error>(), Some(Error::Cancelled))
+    match error.downcast_ref::<Error>() {
+        Some(Error::Cancelled) => true,
+        Some(Error::SubscriptionCleanup { source, .. }) => cancelled(source),
+        _ => false,
+    }
 }
 
 async fn retain(

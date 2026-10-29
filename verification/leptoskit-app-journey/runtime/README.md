@@ -35,14 +35,22 @@ native I/O. Close aborts and joins HTTP, socket and timer jobs and the wallet
 worker, then drops the runtime outside its entered context. The actual
 interpreter remains owned by LeptosKit's closing application throughout cleanup.
 
-The fixture's generated guest offers balance reads and an explicitly approved
-local-validator SOL transfer through the typed SDK client. Compilation and
+The fixture's generated guest offers balance reads, an explicitly approved
+local-validator SOL transfer and typed account/root subscriptions through the
+public SDK client. Compilation and
 headless service tests do not establish an installed application journey.
 This runtime selection does not install Android's external wallet
 Intent capability; the original `prepare-wallet` selection continues to exercise
-that capability. Subscription controls and installed desktop,
-Android and iOS journeys remain separate acceptance work. A native runtime test
-or a generated guest build does not prove those journeys.
+that capability. The installed controller's subscription probe uses the real
+granted validator socket, acknowledged cancellation, a held genuine callback and
+continuing root notifications. Its initial and recovered-session runs remain
+**UNEXECUTED** until current-source macOS, Android and iOS artifacts are recorded.
+A native runtime test or a generated guest build does not prove those journeys.
+
+The normal runtime test suite imports the generated guest's actual delivery
+reducer and includes cancellation and replacement-generation regressions. Removing
+the generation check from `Delivery::apply` must fail those assertions. These
+new regressions are also **UNEXECUTED** until a compiler run is recorded.
 
 This is exclusively off-chain client verification. On-chain programs use Pina or
 official Solana program libraries.
