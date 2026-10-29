@@ -59,14 +59,27 @@ every body in five groups appended after the verified parent's 427-case prefix:
 
 Only native test shims select optional crypto; the shared cryptographic bodies
 cannot silently disappear through conformance feature mismatches. These bodies
-retain ordinary assertions: failure aborts the group/host instead of reporting a
-successful case. No runtime, network or program implementation is duplicated.
+return `Result<(), &'static str>` for their original behavioral conditions.
+Fixture construction, SDK failures and mismatched conditions propagate to the
+corresponding `CaseResult`; a failed group does not suppress later independent
+groups. Native test entry points use Rust's Result-returning test contract.
+No unwind catcher, runtime, network or program implementation is duplicated.
 
-The combined suite signature is `solana-kit-core-v51` with 432 groups. Unit 891
-executed the shared-source refactor: all 22 native bodies, one Rustdoc example,
+Historical verification unit 891 executed the shared-source refactor as
+`solana-kit-core-v51` with 432 groups: all 22 native bodies, one Rustdoc example,
 strict Clippy and documentation checks passed. The complete suite passed all
 432 groups; deliberate corruption passed 431 groups and exited one. Checked-in
-golden reports were copied from those executions.
+golden reports at that checkpoint were copied from those executions. Those
+identifiers describe that historical execution, not the current integrated suite
+or this subsequent failure-reporting repair.
+
+Two authored conformance unit controls deliberately change the independent
+expected attestation literal and require the real shared assertion to return its
+specific failure. They then execute later real envelope/policy/occupied/budget
+groups and inspect their retained results. The existing workspace CI test command
+includes these controls. This source-only repair has not executed the controls,
+native bodies or portable hosts; its runtime and golden qualification remain
+pending Root/CI verification.
 
 Unit 887 resolved the root and independent wasmi caller graphs through Cargo.
 The genuine inventory tool regenerated and checked the canonical ledgers from

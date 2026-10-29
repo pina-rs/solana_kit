@@ -1,4 +1,5 @@
 //! Independent raw Solana envelopes and Borsh bytes; no Kit compiler or metadata encoder.
+use super::checks::{Outcome, require};
 use alloc::{vec, vec::Vec};
 use solana_kit_core::{
     Address, Hash, Signature, codecs::Limits, crypto::Keypair, transaction::Version,
@@ -12,9 +13,16 @@ pub const LIMITS: Limits = Limits::new(4096, 16384);
 pub const COLLECTION: Address = Address::from_bytes([7; 32]);
 pub const BLOCKHASH: Hash = Hash::from_bytes([3; 32]);
 
-pub fn assert_rejected(bytes: &[u8], policy: PublicationPolicy, limits: Limits, error: Error) {
-    let actual = validate_prepared_transaction(bytes, policy, limits).unwrap_err();
-    assert_eq!(actual, error);
+pub fn assert_rejected(
+    bytes: &[u8],
+    policy: PublicationPolicy,
+    limits: Limits,
+    error: Error,
+) -> Outcome {
+    require(
+        validate_prepared_transaction(bytes, policy, limits).err() == Some(error),
+        "prepared transaction rejection mismatch",
+    )
 }
 
 pub fn payer() -> Keypair {
@@ -86,26 +94,36 @@ impl RawTransaction {
         }
     }
 
-    pub fn verification() -> Self {
-        Self {
+    pub fn verification() -> Result<Self, &'static str> {
+        Ok(Self {
             accounts: vec![
                 payer().address(),
                 PROGRAM,
-                find_metadata(mint().address()).unwrap().address(),
+                find_metadata(mint().address())
+                    .map_err(|_| "fixture mint metadata PDA failed")?
+                    .address(),
                 COLLECTION,
-                find_metadata(COLLECTION).unwrap().address(),
-                find_master_edition(COLLECTION).unwrap().address(),
+                find_metadata(COLLECTION)
+                    .map_err(|_| "fixture collection metadata PDA failed")?
+                    .address(),
+                find_master_edition(COLLECTION)
+                    .map_err(|_| "fixture collection edition PDA failed")?
+                    .address(),
             ],
             signers: 1,
             program: 1,
             data: vec![18],
             version: Version::Legacy,
             lookup: false,
-        }
+        })
     }
 
-    pub fn message(&self) -> Vec<u8> {
-        let readonly = u8::try_from(self.accounts.len()).unwrap() - self.signers;
+    pub fn message(&self) -> Result<Vec<u8>, &'static str> {
+        let account_count = u8::try_from(self.accounts.len())
+            .map_err(|_| "fixture account count exceeds one-byte envelope")?;
+        let readonly = account_count
+            .checked_sub(self.signers)
+            .ok_or("fixture signer count exceeds account count")?;
         let header = [self.signers, 0, readonly];
         let mut bytes = Vec::new();
 
@@ -124,7 +142,7 @@ impl RawTransaction {
             }
         }
 
-        bytes.push(u8::try_from(self.accounts.len()).unwrap());
+        bytes.push(account_count);
 
         for address in &self.accounts {
             bytes.extend_from_slice(address.as_bytes());
@@ -132,10 +150,20 @@ impl RawTransaction {
 
         if self.version == Version::V1 {
             bytes.extend_from_slice(&[self.program, 0]);
-            bytes.extend_from_slice(&u16::try_from(self.data.len()).unwrap().to_le_bytes());
+            bytes.extend_from_slice(
+                &u16::try_from(self.data.len())
+                    .map_err(|_| "fixture v1 data exceeds two-byte length")?
+                    .to_le_bytes(),
+            );
         } else {
             bytes.extend_from_slice(BLOCKHASH.as_bytes());
-            bytes.extend_from_slice(&[1, self.program, 0, u8::try_from(self.data.len()).unwrap()]);
+            bytes.extend_from_slice(&[
+                1,
+                self.program,
+                0,
+                u8::try_from(self.data.len())
+                    .map_err(|_| "fixture data exceeds one-byte length")?,
+            ]);
         }
 
         bytes.extend_from_slice(&self.data);
@@ -144,7 +172,7 @@ impl RawTransaction {
             self.lookups(&mut bytes);
         }
 
-        bytes
+        Ok(bytes)
     }
 
     fn lookups(&self, bytes: &mut Vec<u8>) {
@@ -156,8 +184,8 @@ impl RawTransaction {
         }
     }
 
-    pub fn wire(&self, signatures: &[(usize, Signature)]) -> Vec<u8> {
-        let message = self.message();
+    pub fn wire(&self, signatures: &[(usize, Signature)]) -> Result<Vec<u8>, &'static str> {
+        let message = self.message()?;
         let mut bytes = Vec::new();
 
         if self.version == Version::V1 {
@@ -178,10 +206,10 @@ impl RawTransaction {
             bytes.extend_from_slice(&message);
         }
 
-        bytes
+        Ok(bytes)
     }
 
-    pub fn signed_mint(&self) -> Vec<u8> {
-        self.wire(&[(1, mint().sign(&self.message()))])
+    pub fn signed_mint(&self) -> Result<Vec<u8>, &'static str> {
+        self.wire(&[(1, mint().sign(&self.message()?))])
     }
 }
