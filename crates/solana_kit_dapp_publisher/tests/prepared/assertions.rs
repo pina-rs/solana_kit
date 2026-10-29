@@ -1,6 +1,4 @@
 //! The caller signs a sealed exact message; policy failures precede that operation.
-#[path = "../support/checks.rs"]
-mod checks;
 #[path = "occupied_slots.rs"]
 pub(super) mod occupied_slots;
 #[path = "policy_cases.rs"]
@@ -8,7 +6,7 @@ pub(super) mod policy_cases;
 #[path = "../support/mod.rs"]
 mod support;
 
-use checks::{Outcome, require};
+use super::checks::{self, Outcome, require};
 use solana_kit_core::{
     Address, Hash, Signature,
     codecs::Limits,
@@ -257,7 +255,7 @@ pub fn attached_signatures_do_not_change_the_unsigned_slot_encoding_contract() -
     let unsigned =
         Transaction::decode(&fixture.wire(&[])?).map_err(|_| "unsigned fixture decoding failed")?;
     require(
-        unsigned.signatures() == &[None, None],
+        unsigned.signatures() == [None, None],
         "unsigned slots did not decode as empty",
     )?;
     require(

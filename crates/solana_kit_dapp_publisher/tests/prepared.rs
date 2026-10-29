@@ -4,3 +4,5 @@ extern crate alloc;
 
 #[path = "prepared/assertions.rs"]
 mod assertions;
+#[path = "support/checks.rs"]
+mod checks;
