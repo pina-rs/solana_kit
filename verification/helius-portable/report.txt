@@ -21,6 +21,11 @@ PASS signup-existing
 PASS signup-billing
 PASS signup-payment
 PASS signup-failures
+PASS signup-completion-existing
+PASS signup-completion-provisioning
+PASS signup-completion-outcomes
+PASS signup-completion-failures
+PASS signup-completion-cancellation
 PASS signup-signing
 PASS payment-plan-upgrade
 PASS payment-explicit-price
@@ -45,4 +50,4 @@ PASS transfer-models
 PASS payment-terms
 PASS auth-default-signing
 PASS auth-caller-signing
-PASS all 47 Helius contract groups
+PASS all 52 Helius contract groups
