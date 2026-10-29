@@ -22,6 +22,7 @@ pub mod sharing;
 pub mod signing;
 #[cfg(feature = "signup")]
 pub mod signup;
+pub mod smart_preparation;
 pub mod staking;
 pub mod subscriptions;
 pub mod v2;
@@ -31,14 +32,24 @@ pub mod wire;
 pub mod zk;
 
 /// Executes every maintained deterministic public-contract group.
-pub fn run_all() {
+pub fn run_all() -> smart_preparation::Outcome {
     for (name, body) in CASES {
         body();
         println!("PASS {name}");
     }
 
-    println!("PASS all {} Helius contract groups", CASES.len());
+    let (name, body) = SMART_CASE;
+    body()?;
+    println!("PASS {name}");
+    println!("PASS all {} Helius contract groups", CASES.len() + 1);
+    Ok(())
 }
+
+/// New fallible preparation group appended after the unchanged accepted registry.
+pub const SMART_CASE: (&str, fn() -> smart_preparation::Outcome) = (
+    "smart-transaction-preparation",
+    smart_preparation::preparation,
+);
 
 /// Maintained public behavior registry. Each host executes these exact bodies.
 pub const CASES: &[(&str, fn())] = &[

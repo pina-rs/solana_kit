@@ -38,6 +38,12 @@ Preconfirmation is an untrusted early signal, not transaction confirmation.
 
 ## Verification scope
 
+The next [unsigned smart-preparation source proposal](helius-smart-preparation.md)
+appends one fallible group after the unchanged accepted registry and adds a narrow
+native capture mode for authentic future report regeneration. Its new counts and
+tests are source proposals; this section's historical execution does not qualify
+the new preparation code, and no golden is updated by that source worker.
+
 The maintained runner imports the original public contract bodies. The base
 registry retains 35 groups, or 37 with cryptography. Checkout expands these to
 40 or 42 groups. The historical signup reports contain 44 or 47 groups; the

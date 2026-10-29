@@ -30,7 +30,7 @@ pub mod service;
 pub mod staking;
 /// Typed JSON subscription bridge through the shared bounded connection owner.
 pub mod subscriptions;
-/// Exact compute estimation, pure fee resolution and compute-unit buffering.
+/// Unsigned smart preparation, exact compute estimation and pure resource helpers.
 pub mod transactions;
 /// Wallet identity, balance and history services.
 pub mod wallet;

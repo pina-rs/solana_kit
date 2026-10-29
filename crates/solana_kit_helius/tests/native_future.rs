@@ -120,6 +120,7 @@ impl solana_kit_client::Transport for Native {
             }
             Some("getProgramAccounts") => r#"{"context":{"slot":100},"value":[]}"#,
             Some("simulateTransaction") => SIMULATION,
+            Some("getPriorityFeeEstimate") => r#"{"priorityFeeEstimate":2000}"#,
             other => panic!("unexpected native RPC operation {other:?}"),
         };
 
@@ -257,4 +258,52 @@ async fn compute_estimation_retains_send_on_native_executor() {
     assert_eq!(estimate.context.slot, 100);
     assert_eq!(estimate.value, 0);
     assert_eq!(exchanges.load(Ordering::SeqCst), 1);
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn unsigned_smart_preparation_retains_send_on_native_executor() {
+    use solana_kit_helius::transactions::{
+        SmartTransactionInput, SmartTransactionOptions, create_smart_transaction,
+    };
+
+    let exchanges = Arc::new(AtomicUsize::new(0));
+    let client = solana_kit_client::Client::new(
+        Native {
+            exchanges: Arc::clone(&exchanges),
+        },
+        solana_kit_client::Limits::default(),
+    );
+    let prepared = tokio::spawn(async move {
+        let lifetime = solana_kit_client::methods::BlockhashValue {
+            blockhash: solana_kit_core::Hash::from_bytes([7; 32]),
+            last_valid_block_height: 77,
+        };
+        create_smart_transaction(
+            &client,
+            SmartTransactionInput {
+                instructions: Vec::new(),
+                fee_payer: Some(solana_kit_core::Address::from_bytes([1; 32])),
+                signers: &[],
+                simulation_lifetime: &lifetime,
+                lookup_tables: &[],
+                compute_unit_limit: None,
+            },
+            SmartTransactionOptions::default(),
+        )
+        .await
+    })
+    .await
+    .expect("native task joined")
+    .expect("unsigned preparation completed");
+    assert_eq!(prepared.compute_units.get(), 1000);
+    assert_eq!(prepared.priority_fee.lamports, 2);
+    assert_eq!(prepared.transaction.message().instructions().len(), 2);
+    assert!(
+        prepared
+            .transaction
+            .signatures()
+            .iter()
+            .all(Option::is_none)
+    );
+    assert_eq!(exchanges.load(Ordering::SeqCst), 3);
 }

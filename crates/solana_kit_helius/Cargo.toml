@@ -24,6 +24,7 @@ percent-encoding = { version = "2.3.2", default-features = false, features = ["a
 serde = { version = "1.0.229", features = ["derive"] }
 serde_json = { version = "1.0.154", features = ["arbitrary_precision", "raw_value"] }
 solana_kit_client.workspace = true
+solana_kit_compute_budget.workspace = true
 solana_kit_core.workspace = true
 solana_kit_stake.workspace = true
 solana_kit_system.workspace = true
