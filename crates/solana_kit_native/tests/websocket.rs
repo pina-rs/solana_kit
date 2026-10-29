@@ -386,27 +386,25 @@ async fn pending_receive_is_woken_by_actual_peer_data() {
     });
     let waker = Waker::from(wakes.clone());
     let mut receive = Box::pin(socket.receive());
-    let first = std::future::poll_fn(|_| {
-        std::task::Poll::Ready(
-            receive
-                .as_mut()
-                .poll(&mut std::task::Context::from_waker(&waker)),
-        )
+    let mut context = std::task::Context::from_waker(&waker);
+    let first = receive.as_mut().poll(&mut context);
+
+    assert!(first.is_pending());
+    send_after_pending.send(()).unwrap();
+    let result = fixture_phase("custom receive wake to payload", async {
+        loop {
+            wakes.notification.notified().await;
+
+            if let std::task::Poll::Ready(result) = receive.as_mut().poll(&mut context) {
+                return result;
+            }
+        }
     })
     .await;
 
-    assert!(first.is_pending());
-    let notification = wakes.notification.notified();
-    send_after_pending.send(()).unwrap();
-    fixture_phase("registered receive wake callback", notification).await;
+    drop(receive);
     assert!(wakes.count.load(Ordering::SeqCst) > 0);
-    assert_eq!(
-        fixture_phase("wake payload", receive)
-            .await
-            .unwrap()
-            .as_deref(),
-        Some("wake")
-    );
+    assert_eq!(result.unwrap().as_deref(), Some("wake"));
     fixture_phase("wake consuming close", socket.close())
         .await
         .unwrap();
