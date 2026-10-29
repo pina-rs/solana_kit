@@ -279,11 +279,11 @@ mod tests {
 
     #[tokio::test(flavor = "current_thread")]
     async fn close_rejects_unsuccessful_exit_and_retains_diagnostics_after_reaping() {
-        rejected_exit("/usr/bin/false").await;
-        rejected_exit("/bin/sleep").await;
+        rejected_exit("/usr/bin/false", true).await;
+        rejected_exit("/bin/sleep", false).await;
     }
 
-    async fn rejected_exit(executable: &str) {
+    async fn rejected_exit(executable: &str, observe_exit_before_close: bool) {
         use solana_kit_core::Hash;
         use solana_kit_surfpool::config::Ports;
         use std::{num::NonZeroU16, path::PathBuf, process::Command, time::SystemTime};
@@ -338,6 +338,15 @@ mod tests {
             child: Some(child),
             logs: Logs::new(log),
         };
+
+        // WNOWAIT establishes natural exit without reaping; close still owns cleanup
+        // if the fixture precondition fails, before any assertion can unwind.
+        let observed = if observe_exit_before_close {
+            Some(owner.drain(KILL_WAIT).await)
+        } else {
+            None
+        };
+        let anchored = owner.child.as_ref().map(Child::id) == Some(child_id);
         let result = owner.close(false).await;
         let retained = directory.join("child.log").is_file();
         let released = owner.child.is_none();
@@ -347,11 +356,28 @@ mod tests {
             fs::remove_dir_all(directory).unwrap();
         }
 
-        assert!(matches!(
-            result,
-            Err(Error::Check("owned child exited unsuccessfully"))
-        ));
-        assert!(retained && released);
+        if let Some(observed) = observed {
+            assert!(
+                matches!(observed, Ok(true)),
+                "fixture {executable}: exit observation was {observed:?}; close returned {result:?}"
+            );
+        }
+
+        assert!(
+            anchored,
+            "fixture {executable}: child ownership changed before close"
+        );
+        assert!(
+            matches!(
+                &result,
+                Err(Error::Check("owned child exited unsuccessfully"))
+            ),
+            "fixture {executable}: close returned {result:?}"
+        );
+        assert!(
+            retained && released,
+            "fixture {executable}: retained={retained}, released={released}, close={result:?}"
+        );
         assert!(kernel_exit(child_id).is_err());
     }
 
