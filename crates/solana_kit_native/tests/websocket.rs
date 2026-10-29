@@ -12,6 +12,7 @@ use std::{
 };
 use tokio::{
     io::{AsyncReadExt, AsyncWriteExt},
+    sync::{Notify, oneshot},
     time::timeout,
 };
 use tokio_tungstenite::tungstenite::Message;
@@ -184,6 +185,23 @@ impl Wake for WakeCount {
     }
 }
 
+/// Records the receive's real callback and retains its notification until awaited.
+struct WakeSignal {
+    count: AtomicUsize,
+    notification: Notify,
+}
+
+impl Wake for WakeSignal {
+    fn wake(self: Arc<Self>) {
+        self.wake_by_ref();
+    }
+
+    fn wake_by_ref(self: &Arc<Self>) {
+        self.count.fetch_add(1, Ordering::SeqCst);
+        self.notification.notify_one();
+    }
+}
+
 #[tokio::test]
 async fn cancelled_receive_retains_owner_and_owner_drop_releases_repeated_peers() {
     for _ in 0..16 {
@@ -330,38 +348,67 @@ async fn cancelled_connect_and_consuming_close_drop_owned_sockets() {
 async fn pending_receive_is_woken_by_actual_peer_data() {
     let listener = websocket_support::listener().await;
     let endpoint = websocket_support::endpoint(&listener, false, "127.0.0.1");
+    let (send_after_pending, first_pending) = oneshot::channel();
     let peer = tokio::spawn(async move {
-        let (stream, _) = listener.accept().await.unwrap();
-        let mut peer = tokio_tungstenite::accept_async(stream).await.unwrap();
-        tokio::time::sleep(Duration::from_millis(DEADLINE_MS)).await;
-        peer.send(Message::Text("wake".into())).await.unwrap();
+        let (stream, _) = fixture_phase("wake peer accept", listener.accept())
+            .await
+            .unwrap();
+        let mut peer = fixture_phase("wake peer upgrade", tokio_tungstenite::accept_async(stream))
+            .await
+            .unwrap();
+        fixture_phase("receive first pending poll", first_pending)
+            .await
+            .expect("receive did not release peer send");
+        fixture_phase("wake peer send", peer.send(Message::Text("wake".into())))
+            .await
+            .unwrap();
         assert!(matches!(
-            peer.next().await.unwrap().unwrap(),
+            fixture_phase("wake peer close", peer.next())
+                .await
+                .unwrap()
+                .unwrap(),
             Message::Close(_)
         ));
-        peer.flush().await.unwrap();
+        fixture_phase("wake peer flush", peer.flush())
+            .await
+            .unwrap();
     });
-    let mut socket = NativeWebSocket::connect(&endpoint, WsConfig::default())
-        .await
-        .unwrap();
-    let wakes = Arc::new(WakeCount(AtomicUsize::new(0)));
+    let mut socket = fixture_phase(
+        "wake client connect",
+        NativeWebSocket::connect(&endpoint, WsConfig::default()),
+    )
+    .await
+    .unwrap();
+
+    let wakes = Arc::new(WakeSignal {
+        count: AtomicUsize::new(0),
+        notification: Notify::new(),
+    });
     let waker = Waker::from(wakes.clone());
     let mut receive = Box::pin(socket.receive());
-    let first = std::future::poll_fn(|_| {
-        std::task::Poll::Ready(
-            receive
-                .as_mut()
-                .poll(&mut std::task::Context::from_waker(&waker)),
-        )
+    let mut context = std::task::Context::from_waker(&waker);
+    let first = receive.as_mut().poll(&mut context);
+
+    assert!(first.is_pending());
+    send_after_pending.send(()).unwrap();
+    let result = fixture_phase("custom receive wake to payload", async {
+        loop {
+            wakes.notification.notified().await;
+
+            if let std::task::Poll::Ready(result) = receive.as_mut().poll(&mut context) {
+                return result;
+            }
+        }
     })
     .await;
 
-    assert!(first.is_pending());
-    tokio::time::sleep(Duration::from_millis(DEADLINE_MS * 2)).await;
-    assert!(wakes.0.load(Ordering::SeqCst) > 0);
-    assert_eq!(receive.await.unwrap().as_deref(), Some("wake"));
-    socket.close().await.unwrap();
-    peer.await.unwrap();
+    drop(receive);
+    assert!(wakes.count.load(Ordering::SeqCst) > 0);
+    assert_eq!(result.unwrap().as_deref(), Some("wake"));
+    fixture_phase("wake consuming close", socket.close())
+        .await
+        .unwrap();
+    fixture_phase("wake peer completion", peer).await.unwrap();
 }
 
 #[tokio::test]
