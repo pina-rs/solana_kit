@@ -1696,9 +1696,11 @@ dependencies = [
  "solana_kit_compute_budget",
  "solana_kit_core",
  "solana_kit_core_contracts_verification",
+ "solana_kit_dapp_publisher",
  "solana_kit_durable_nonce_verification",
  "solana_kit_jupiter",
  "solana_kit_memo",
+ "solana_kit_mpl_token_metadata",
  "solana_kit_pyth",
  "solana_kit_signers",
  "solana_kit_sns",
@@ -1740,6 +1742,14 @@ dependencies = [
  "serde_json",
  "solana_kit_client",
  "solana_kit_core",
+]
+
+[[package]]
+name = "solana_kit_dapp_publisher"
+version = "0.1.0"
+dependencies = [
+ "solana_kit_core",
+ "solana_kit_mpl_token_metadata",
 ]
 
 [[package]]

@@ -42,6 +42,7 @@ pub mod mwa_cases;
 mod nonce_cases;
 mod offchain;
 mod plan_cases;
+mod publisher;
 mod pyth;
 mod pyth_hermes;
 mod pyth_http;
@@ -84,9 +85,9 @@ pub mod system_client;
 use alloc::vec::Vec;
 
 /// Integrated core contract suite; execution receipts identify actual hosts.
-pub const SUITE_ID: &str = "solana-kit-core-v50";
+pub const SUITE_ID: &str = "solana-kit-core-v51";
 /// Exact current registrants, including all preserved and appended contract groups.
-pub const EXPECTED_CASE_COUNT: usize = 427;
+pub const EXPECTED_CASE_COUNT: usize = 432;
 
 /// Selects authentic fixtures or the intentionally incorrect hash oracle.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -197,6 +198,7 @@ pub fn run(mode: FixtureMode) -> Report {
     cases.extend(jupiter::swap_cases());
     cases.extend(sns::cases());
     cases.extend(surfpool::cases());
+    cases.extend(publisher::cases());
 
     Report {
         suite_id: SUITE_ID,

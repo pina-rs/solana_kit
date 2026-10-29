@@ -432,4 +432,9 @@ surfpool-error-budget: Ok(())
 surfpool-local-cancellation: Ok(())
 surfpool-config-deploy: Ok(())
 surfpool-method-manifest: Ok(())
-solana-kit-core-v50: 426/427 cases passed
+publisher-attestation-exact-json-and-verified-base64: Ok(())
+publisher-prepared-three-envelope-bytes-and-signatures: Ok(())
+publisher-prepared-policy-invariants-and-rejections: Ok(())
+publisher-occupied-signature-preservation: Ok(())
+publisher-shared-caller-budgets: Ok(())
+solana-kit-core-v51: 431/432 cases passed
