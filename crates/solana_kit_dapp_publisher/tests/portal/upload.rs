@@ -7,13 +7,16 @@ use solana_kit_dapp_publisher::portal::*;
 use std::{
     boxed::Box,
     cell::{Cell, RefCell},
-    future::{Future, Ready, ready},
+    future::Future,
     pin::Pin,
     string::String,
     task::{Context, Poll, Waker},
     vec,
     vec::Vec,
 };
+
+#[cfg(not(target_arch = "wasm32"))]
+use std::future::{Ready, ready};
 
 struct Observation {
     url: String,
@@ -199,7 +202,9 @@ pub fn body_limits_header_rejection_and_drop_are_enforced_before_or_during_uploa
     )
 }
 
+#[cfg(not(target_arch = "wasm32"))]
 struct Native;
+#[cfg(not(target_arch = "wasm32"))]
 impl Uploader for Native {
     type Upload<'a> = Ready<Result<(), TransportError>>;
     fn upload<'a>(&'a self, _: UploadRequest<'a>) -> Self::Upload<'a> {
@@ -207,6 +212,7 @@ impl Uploader for Native {
     }
 }
 
+#[cfg(not(target_arch = "wasm32"))]
 #[cfg_attr(test, test)]
 pub fn concrete_native_uploader_futures_preserve_send_without_imposing_it_on_local_uploaders()
 -> Outcome {

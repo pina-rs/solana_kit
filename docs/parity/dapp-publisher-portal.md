@@ -96,14 +96,18 @@ three adapter assertions are recorded for every invocation and checked fallibly
 by both original upload bodies; the pending poll also requires exactly one call.
 A CI unit control records a wrong URL, body or MIME followed by a valid upload
 and requires the earlier mismatch to remain visible. Both native Send-bound
-compile contracts remain intact. There is no unwind catcher or feature no-op.
+compile contracts remain intact and register only on non-Wasm targets. Their
+helpers and calls use the same explicit target condition. The 21 runtime bodies
+remain registered on every supported host; the two additional bodies prove native Send only.
+Wasm transport errors deliberately permit local error causes without Send.
+There is no unwind catcher or feature no-op.
 
-| Appended portable group                          | Retained bodies | Coverage                                                                  |
-| ------------------------------------------------ | --------------: | ------------------------------------------------------------------------- |
-| publisher-portal-thirteen-exact-routes           |               4 | All thirteen verbs/procedures, JSON/query/body forms and source variants  |
-| publisher-portal-envelopes-admission-and-absence |               9 | Seven boundary bodies plus null conflict and legitimate-null controls     |
-| publisher-portal-retry-deadline-and-cancellation |               7 | Six retry bodies plus Ready clock-advance deadline arbitration            |
-| publisher-portal-independent-binary-upload       |               3 | Independent uploader data, limits, cancellation and Send compile contract |
+| Appended portable group                          | Portable runtime bodies | Additional native witness | Coverage                                                                 |
+| ------------------------------------------------ | ----------------------: | ------------------------: | ------------------------------------------------------------------------ |
+| publisher-portal-thirteen-exact-routes           |                       4 |                         0 | All thirteen routes, JSON/query/body forms and source variants           |
+| publisher-portal-envelopes-admission-and-absence |                       8 |                         1 | Envelopes, budgets, typed absence, cancellation; native transport Send   |
+| publisher-portal-retry-deadline-and-cancellation |                       7 |                         0 | Retry, cancellation and Ready clock-advance deadline arbitration         |
+| publisher-portal-independent-binary-upload       |                       2 |                         1 | Independent uploader data, limits and cancellation; native uploader Send |
 
 The portal adapter nests under the existing publisher adapter and imports its
 single canonical private checks module. No duplicate file-loading declaration
@@ -175,6 +179,13 @@ success does not qualify those hosts or provide a new Dart oracle. The source
 worker performed no compiler or runtime execution. No actual service request,
 upload, credential read or publisher/contact metadata disclosure is authorized
 by this source port.
+
+The first four-host CI attempt at `4f4e50bf` failed browser compilation because
+the shared adapter tried to prove those native Send bounds on Wasm. The retained
+unit 1097 receipt is 131-four-host-failure.json. This source repair limits only
+those two witnesses and their helpers/registration to native targets. Every
+runtime predicate and all four case IDs, their order and captured goldens remain
+unchanged. Portable success and the repaired native compile still require CI.
 
 ## Pinned source and licence
 

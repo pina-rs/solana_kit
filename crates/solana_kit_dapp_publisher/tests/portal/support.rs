@@ -9,12 +9,15 @@ use std::{
     cell::{Cell, RefCell},
     collections::VecDeque,
     format,
-    future::{Future, Ready, ready},
+    future::Future,
     pin::Pin,
     rc::Rc,
     task::{Context, Poll, Waker},
     vec::Vec,
 };
+
+#[cfg(not(target_arch = "wasm32"))]
+use std::future::{Ready, ready};
 
 pub const BUDGETS: rest::Budgets = rest::Budgets {
     bytes: 4096,
@@ -104,8 +107,10 @@ pub fn complete<F: Future>(operation: F) -> Result<F::Output, &'static str> {
     }
 }
 
+#[cfg(not(target_arch = "wasm32"))]
 pub struct Native;
 
+#[cfg(not(target_arch = "wasm32"))]
 impl rest::Transport<PortalService> for Native {
     type Exchange<'a> = Ready<Result<Reply, TransportError>>;
 

@@ -4,7 +4,7 @@ use super::checks::{Outcome, require};
 use super::support::*;
 use solana_kit_client::{
     Presence,
-    rest::{self, Budgets, JsonError},
+    rest::{Budgets, JsonError},
 };
 use solana_kit_dapp_publisher::portal::*;
 use std::{
@@ -287,10 +287,11 @@ pub fn dropping_a_pending_portal_future_cancels_the_real_owned_exchange() -> Out
     )
 }
 
+#[cfg(not(target_arch = "wasm32"))]
 #[cfg_attr(test, test)]
 pub fn concrete_native_adapters_preserve_send_while_rc_adapters_remain_usable() -> Outcome {
     fn requires_send(_: impl Send) {}
-    let client = Client::new(Native, rest::Budgets::default());
+    let client = Client::new(Native, Budgets::default());
     requires_send(client.call(&CleanupRelease {
         release_id: "fixture".into(),
     }));

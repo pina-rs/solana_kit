@@ -1,4 +1,4 @@
-//! All retained portal predicates use the same fallible native/portable source bodies.
+//! Runtime predicates share fallible native/portable bodies; Send witnesses are native-only.
 
 #[path = "../../../crates/solana_kit_dapp_publisher/tests/portal/boundaries.rs"]
 mod boundaries;
@@ -45,6 +45,7 @@ fn envelopes() -> Outcome {
     boundaries::optional_backend_fields_keep_missing_null_false_and_exact_numbers_distinct()?;
     boundaries::request_and_response_budgets_fail_without_empty_success_or_unbounded_exchange()?;
     boundaries::dropping_a_pending_portal_future_cancels_the_real_owned_exchange()?;
+    #[cfg(not(target_arch = "wasm32"))]
     boundaries::concrete_native_adapters_preserve_send_while_rc_adapters_remain_usable()?;
     strict_boundaries::null_envelope_branches_cannot_masquerade_as_missing_fields()?;
     strict_boundaries::legitimate_nullable_backend_fields_still_survive_every_valid_envelope_form()
@@ -64,7 +65,10 @@ fn retries() -> Outcome {
 fn uploads() -> Outcome {
     upload::requesting_a_target_does_not_upload_and_uploading_cannot_access_portal_auth()?;
     upload::body_limits_header_rejection_and_drop_are_enforced_before_or_during_upload()?;
-    upload::concrete_native_uploader_futures_preserve_send_without_imposing_it_on_local_uploaders()
+    #[cfg(not(target_arch = "wasm32"))]
+    upload::concrete_native_uploader_futures_preserve_send_without_imposing_it_on_local_uploaders(
+    )?;
+    Ok(())
 }
 
 #[cfg(test)]

@@ -94,8 +94,10 @@ complete assertion bodies; cryptographic bodies have no conditional no-op path.
 No portable-host or cross-language execution is claimed for this new source.
 
 The portal reconciliation preserves all twenty-three retained portal bodies and
-their predicates as Result-returning shared native/portable source. Four new
-portable groups cover routes, envelopes/admission, retry/deadlines and uploads.
+their predicates as Result-returning source. Twenty-one runtime bodies are
+shared across hosts; two Send compile witnesses and their registration are
+native-only. Four portable groups cover routes, envelopes/admission,
+retry/deadlines and uploads, without claiming native Send on Wasm.
 A CI unit control changes the independent expected procedure and verifies later
 real portal groups continue after that reported failure. Root unit 1074 executed
 the integrated `7c3ca424` producer: all 22 policy bodies, all 23 retained portal
