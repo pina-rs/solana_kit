@@ -26,7 +26,7 @@ pub mod rpc_v2;
 pub mod sender;
 /// Caller-owned REST exchange contracts.
 pub mod service;
-/// Staking transaction preparation through the provider service.
+/// Local staking preparation with caller-owned RPC and signing.
 pub mod staking;
 /// Typed JSON subscription bridge through the shared bounded connection owner.
 pub mod subscriptions;

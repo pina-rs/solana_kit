@@ -235,9 +235,18 @@ reads rent and a recent blockhash through the existing RPC client. It returns a
 signed v0 transaction without submitting it. Changed messages and missing
 signatures reject; `crypto` additionally authenticates every signature.
 
+`StakeRequest::validator_vote` preserves the optional validator choice in the
+pinned Dart `CreateStakeTransactionRequest` and its custom-validator fixture.
+`Some(address)` selects that validator vote account; `None` retains
+`HELIUS_VALIDATOR`. Both instruction-only and signed transaction preparation
+carry that address into the readonly vote account of the delegation instruction.
+
 The unsupported draft staking REST routes and service slot are removed. The
 shared `staking-preparation` group checks instruction bytes, roles, request
-counts, overflow, signer failures, changed snapshots and cancellation.
+counts, default and custom validator selection, overflow, signer failures,
+changed snapshots and cancellation. Validator cases resolve the compiled vote
+account, retain owner and new-account signatures, and require one rent read or
+two RPC reads for instruction-only or transaction preparation, respectively.
 
 `staking::get_withdrawable_amount` replaces the draft provider route with one
 standard contextual RPC read of the account, Clock, Rent and Stake History.
