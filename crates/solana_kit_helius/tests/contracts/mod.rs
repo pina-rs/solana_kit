@@ -1,6 +1,7 @@
 //! Maintained public-contract bodies shared by ordinary tests and portable consumers.
 
 pub mod checkout;
+pub mod compute_units;
 pub mod das;
 pub mod enhanced;
 pub mod nested_models;
@@ -101,6 +102,7 @@ pub const CASES: &[(&str, fn())] = &[
     #[cfg(feature = "checkout")]
     ("payment-cancellation", payments::dropped_preparation),
     ("staking-preparation", staking::preparation),
+    ("compute-units-estimation", compute_units::estimation),
     (
         "wallet-and-enhanced-routes",
         rest_catalog::wallet_and_enhanced_routes,
