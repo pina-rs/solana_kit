@@ -126,7 +126,7 @@ async fn select(
                 return Ok(());
             };
 
-            rpc::run(wallet?, actions, commands, generation).await
+            rpc::run(wallet?, events, unrelated, actions, commands, generation).await
         }
 
         Action::Android if android => {

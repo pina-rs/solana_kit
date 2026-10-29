@@ -1,6 +1,7 @@
 //! Real OS controls, fresh native wallet entropy and independently checked ledger effects.
 mod effect;
 mod persistence;
+mod subscription;
 
 pub(crate) use persistence::Wallets;
 
@@ -59,6 +60,11 @@ pub(crate) fn run(
     tester.tap(&accessibility::action(platform, "Read balance"))?;
     tester.expect_visible(&Locator::text(format!("Balance: {balance} lamports")))?;
     tester.checkpoint("Initial payer balance checked before process termination")?;
+    subscription::run(tester, node, platform, "subscription-initial.json")?;
+    require(
+        node.rpc.balance(&transfer.payer)? == balance,
+        "subscription probe changed payer funds",
+    )?;
 
     node.alive()?;
     tester.tap(&accessibility::action(platform, "Disconnect wallet"))?;

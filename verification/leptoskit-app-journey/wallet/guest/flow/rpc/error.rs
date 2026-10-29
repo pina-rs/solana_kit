@@ -10,6 +10,11 @@ pub(super) enum Error {
     Generation,
     Deadline,
     Cancelled,
+    Subscription(&'static str),
+    SubscriptionCleanup {
+        source: AppError,
+        cleanup: AppError,
+    },
     MissingSignature,
     ReportedSignature {
         expected: Signature,
@@ -30,6 +35,13 @@ pub(super) enum Error {
 impl fmt::Display for Error {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
+            Self::Subscription(message) => formatter.write_str(message),
+            Self::SubscriptionCleanup { source, cleanup } => {
+                write!(
+                    formatter,
+                    "Subscription failed: {source}; cleanup failed: {cleanup}"
+                )
+            }
             Self::Submitted { signature, .. } => write!(
                 formatter,
                 "Transfer outcome uncertain for {signature}. Check its status before another transfer."
@@ -58,7 +70,9 @@ impl fmt::Display for Error {
 impl std::error::Error for Error {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match self {
-            Self::Submitted { source, .. } => Some(source.as_ref()),
+            Self::Submitted { source, .. } | Self::SubscriptionCleanup { source, .. } => {
+                Some(source.as_ref())
+            }
             _ => None,
         }
     }

@@ -9,6 +9,7 @@ use std::sync::{Arc, Mutex};
 pub(super) enum RpcAction {
     Balance,
     Transfer,
+    Subscription,
 }
 
 pub(super) enum Intent {
@@ -66,6 +67,12 @@ pub(super) fn view(
             "Review test SOL transfer",
             "transfer",
             RpcAction::Transfer,
+            rpc_commands,
+        ))
+        .child(button(
+            "Watch account updates",
+            "subscription",
+            RpcAction::Subscription,
             rpc_commands,
         ))
 }

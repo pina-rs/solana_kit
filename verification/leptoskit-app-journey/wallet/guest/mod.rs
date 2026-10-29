@@ -5,13 +5,14 @@ mod trace;
 use futures::{executor::LocalPool, task::LocalSpawnExt};
 use leptoskit::native::Element;
 use solana_kit_leptoskit::wallet_ui::{local_wallet_channel, local_wallet_panel};
-use std::cell::RefCell;
+use std::cell::{Cell, RefCell};
 
 type AppError = Box<dyn std::error::Error>;
 
 thread_local! {
     static POOL: RefCell<LocalPool> = RefCell::new(LocalPool::new());
     static VIEW: RefCell<Option<Element>> = const { RefCell::new(None) };
+    static REDRAW: Cell<bool> = const { Cell::new(false) };
     static FAILURE: RefCell<Option<AppError>> = const { RefCell::new(None) };
 }
 
@@ -28,6 +29,7 @@ fn show(element: Element, status: &str) {
         .class("w-full h-full")
         .child(element);
     VIEW.with_borrow_mut(|view| *view = Some(element));
+    REDRAW.with(|redraw| redraw.set(true));
 }
 
 /// Uses the generated app's public renderer and its existing ABI exports.
@@ -45,11 +47,15 @@ pub fn main() {
     poll();
 }
 
-/// Runs local work after real native/plugin wake or a dispatched UI action.
+/// Drive real wakes without repainting an unchanged snapshot, so background
+/// subscription traffic cannot keep native accessibility perpetually busy.
 pub fn poll() {
     POOL.with_borrow_mut(LocalPool::run_until_stalled);
     trace::poll();
-    leptoskit::guest::render();
+
+    if REDRAW.with(|redraw| redraw.replace(false)) {
+        leptoskit::guest::render();
+    }
 }
 
 /// Records only the node and handled state of an actual native press.

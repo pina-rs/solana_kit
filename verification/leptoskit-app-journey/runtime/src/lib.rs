@@ -41,3 +41,11 @@ fn native(_: impl std::error::Error) -> Error {
 
 #[cfg(test)]
 mod tests;
+
+#[cfg(test)]
+#[path = "../../wallet/guest/flow/rpc/subscription/delivery.rs"]
+mod subscription_delivery;
+
+#[cfg(test)]
+#[path = "../../wallet/guest/flow/rpc/subscription/activity.rs"]
+mod subscription_activity;

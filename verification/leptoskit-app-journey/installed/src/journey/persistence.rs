@@ -113,6 +113,14 @@ impl StoredWallet {
             "wallet recovery changed funds",
         )?;
 
+        if matches!(self.storage, Storage::Saved) {
+            super::subscription::run(tester, node, platform, "subscription-relaunched.json")?;
+            require(
+                node.rpc.balance(&self.address)? == balance,
+                "subscription probe changed recovered funds",
+            )?;
+        }
+
         tester.tap(&accessibility::action(platform, "Disconnect wallet"))?;
         tester.expect_visible(&accessibility::action(platform, "Create local wallet"))?;
         Ok(())
