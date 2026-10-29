@@ -12,8 +12,9 @@ description = "Bounded Tokio HTTP and WebSocket transports for off-chain Solana 
 
 [features]
 default = []
-keys = ["dep:solana_kit_core", "dep:rustix"]
+keys = ["dep:solana_kit_core", "solana_kit_core/crypto", "dep:rustix"]
 mwa = ["keys", "dep:solana_kit_wallet", "dep:serde_json", "dep:zeroize"]
+surfpool = ["dep:solana_kit_core", "dep:solana_kit_surfpool", "dep:serde", "dep:serde_json", "tokio/fs"]
 
 [dependencies]
 bytes = "=1.11.1"
@@ -21,9 +22,11 @@ futures-util = { version = "=0.3.34", default-features = false, features = ["sin
 http-body-util = "=0.1.3"
 hyper = { version = "=1.12.0", default-features = false, features = ["client", "http1", "server"] }
 hyper-util = { version = "=0.1.21", default-features = false, features = ["tokio"] }
-serde_json = { version = "1.0.154", default-features = false, features = ["alloc"], optional = true }
+serde = { version = "1.0.229", default-features = false, features = ["alloc"], optional = true }
+serde_json = { version = "1.0.154", default-features = false, features = ["alloc", "arbitrary_precision", "raw_value"], optional = true }
 solana_kit_client.workspace = true
-solana_kit_core = { workspace = true, features = ["crypto"], optional = true }
+solana_kit_core = { workspace = true, optional = true }
+solana_kit_surfpool = { workspace = true, optional = true }
 solana_kit_wallet = { workspace = true, features = ["mwa"], optional = true }
 tokio = { version = "=1.54.1", features = ["net", "time", "io-util", "macros"] }
 tokio-rustls = { version = "=0.26.6", default-features = false, features = ["ring", "tls12"] }

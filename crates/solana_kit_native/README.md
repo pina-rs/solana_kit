@@ -62,6 +62,42 @@ let client = Client::new(transport, Limits::default());
 Construction performs no network request. See the repository's native HTTP
 verification receipt for executed local controls and remaining platform limits.
 
+## Optional Surfpool file deployment
+
+Enable `surfpool` to call `surfpool::deploy(&surfnet, options)` with an existing
+`solana_kit_surfpool::Surfnet`. `surfpool::DeployOptions::new(program_id, source)`
+accepts exactly one `ProgramSource::Bytes(&bytes)` or `ProgramSource::Path(&path)`.
+The address is supplied explicitly. `idl_path` optionally selects an explicit
+Anchor IDL JSON file. This API does not discover artifacts or keypair files,
+search project/home directories, consult environment paths, or own a process.
+
+Program input defaults to at most 16 MiB and IDL input to at most 1 MiB. The
+caller can override `max_program_bytes`, `max_idl_bytes` and the nonzero
+`chunk_bytes` field. The default 3 KiB chunks reuse portable Surfnet deployment
+and its existing client wire budget. Program limits apply to borrowed bytes too.
+Native paths must name regular files. Tokio metadata checks reject known
+oversized files before reading; incremental reads catch growth and retain at
+most the selected limit in the vector plus a fixed 8 KiB read buffer. Allocation
+capacity and parsed JSON have additional bounded overhead. Callers supply
+trusted paths; concurrent path replacement is not prevented.
+
+Every program write succeeds before the IDL is opened or parsed. The IDL must
+be a JSON object. Unknown fields and exact integers are retained, and its
+`address` is overwritten with the supplied program address before registration.
+Literal keys matching serde_json's internal number/raw-value tokens remain object
+keys, including inside arrays. Parsing retains serde_json's existing nesting ceiling.
+Duplicate keys retain its last-wins behavior, with every earlier value validated.
+The returned address is the supplied one. A later IDL read, parse or RPC failure
+leaves earlier writes visible; there are no retries or rollback. Dropping the
+future drops its active RPC exchange and starts no later write or IDL access.
+An already submitted Tokio filesystem operation may finish after cancellation.
+Implicit diagnostics omit paths and content, while public error variants retain
+the original typed I/O, JSON and portable deployment causes for explicit inspection.
+
+This extension currently has source tests for explicit file/byte equivalence,
+deferred IDL access, exact JSON, partial writes, bounds and cancellation. These
+new tests and feature graphs have not executed in this source-only checkpoint.
+
 `NativeWebSocket::connect(endpoint, WsConfig::default()).await` opens one
 caller-owned text socket. The endpoint explicitly selects `ws://` or `wss://`.
 Use WSS for untrusted networks. There is no private-destination filter. Accept
