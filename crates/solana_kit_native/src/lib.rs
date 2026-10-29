@@ -12,6 +12,10 @@ mod tls;
 #[cfg(feature = "keys")]
 pub mod keys;
 
+/// Bounded deployment from explicit program bytes or native file paths.
+#[cfg(feature = "surfpool")]
+pub mod surfpool;
+
 pub use config::{ConfigError, HttpConfig};
 pub use hyper::http::{HeaderMap, HeaderName, HeaderValue};
 pub use rest::NativeRest;
