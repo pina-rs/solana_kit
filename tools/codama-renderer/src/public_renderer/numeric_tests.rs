@@ -70,7 +70,11 @@ fn instruction_tags_keep_both_declared_byte_orders() {
         }
 
         let files = render_root(&input).unwrap();
-        let source = &files[0].source;
+        let source = &files
+            .iter()
+            .find(|file| file.path == "numeric_contracts.rs")
+            .unwrap()
+            .source;
 
         for literal in expected {
             assert!(source.contains(literal));
