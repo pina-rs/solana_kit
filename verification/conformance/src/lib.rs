@@ -7,6 +7,7 @@
 //! A host must check [`Report::is_success`] and report every failing case. Use
 //! [`FixtureMode::CorruptHash`] as a negative control for the host's failure path.
 extern crate alloc;
+extern crate std;
 
 pub mod compute_budget;
 /// Accepted portable codec framing assertions shared by every host.
@@ -46,6 +47,7 @@ mod pyth_hermes;
 mod pyth_http;
 mod pyth_receiver;
 
+mod reactive_cases;
 mod registry;
 mod resources;
 /// Portable public RPC protocol fixtures without network I/O.
@@ -81,9 +83,9 @@ pub mod system_client;
 use alloc::vec::Vec;
 
 /// Integrated core contract suite; execution receipts identify actual hosts.
-pub const SUITE_ID: &str = "solana-kit-core-v48";
+pub const SUITE_ID: &str = "solana-kit-core-v49";
 /// Exact current registrants, including all preserved and appended contract groups.
-pub const EXPECTED_CASE_COUNT: usize = 406;
+pub const EXPECTED_CASE_COUNT: usize = 422;
 
 /// Selects authentic fixtures or the intentionally incorrect hash oracle.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -168,6 +170,7 @@ pub fn run(mode: FixtureMode) -> Report {
     cases.extend(compute_budget::cases());
 
     cases.extend(subscriptions::cases());
+    cases.extend(reactive_cases::cases());
     cases.extend(memo_associated_token::cases());
     cases.extend(framing_cases::cases());
     cases.extend(wallet_cases::cases());
