@@ -132,7 +132,7 @@ fn fixed_paths(isolated: &std::path::Path) -> io::Result<()> {
         ("TMP", "tmp"),
         ("TEMP", "tmp"),
     ] {
-        if PathBuf::from(env::var_os(name).unwrap()) != isolated.join(suffix) {
+        if env::var_os(name).unwrap() != isolated.join(suffix) {
             return Err(io::Error::other("explicit runtime paths were overridden"));
         }
     }
