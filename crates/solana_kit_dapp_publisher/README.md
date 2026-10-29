@@ -63,8 +63,10 @@ not authorize uploading application artifacts or publisher/contact metadata.
 The tests contain independent JSON, Borsh and legacy/v0/v1 envelope literals plus
 targeted policy rejection cases. The preceding `cff45f7` source passed all 22
 native tests, one Rustdoc example, strict Clippy and documentation checks in root
-verification unit 840. The subsequent shared-source refactor and five appended
-portable groups are unexecuted source proposals. The same complete assertion
-bodies are included by the ordinary native test entry points and shared
-conformance; cryptographic bodies have no conditional no-op path there.
+verification unit 840. Unit 891 then executed the shared-source refactor: all 22
+native bodies, the Rustdoc example, strict Clippy and documentation checks passed.
+The five appended groups passed within the complete 432-group native suite.
+Deliberate corruption passed 431 groups and exited one. Checked-in reports come
+from those executions. Native tests and shared conformance include the same
+complete assertion bodies; cryptographic bodies have no conditional no-op path.
 No portable-host or cross-language execution is claimed for this new source.

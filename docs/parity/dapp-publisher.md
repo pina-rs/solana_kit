@@ -42,7 +42,7 @@ Root verification unit 840 executed the frozen `cff45f7` producer: all 22 native
 test bodies, one Rustdoc example, strict Clippy and documentation checks passed.
 That historical result does not qualify the subsequent shared-source refactor.
 
-## Proposed shared conformance
+## Shared conformance
 
 The native test entry points include private assertion source modules, retaining
 the same 22 bodies and assertions. `verification/conformance/src/publisher.rs`
@@ -62,13 +62,19 @@ cannot silently disappear through conformance feature mismatches. These bodies
 retain ordinary assertions: failure aborts the group/host instead of reporting a
 successful case. No runtime, network or program implementation is duplicated.
 
-The combined suite signature is `solana-kit-core-v51` with 432 groups. The
-refactor, five new groups, portable-host execution, compiler checks and new
-cross-language oracles are **UNEXECUTED** in this source-worker slice. Existing
-golden reports remain unchanged from the parent's actual 427-group execution.
-Root owns the 432-group execution and genuine golden refresh, authentic lock and
-derived owner-ledger regeneration, and all actual execution. Source formatting
-and per-file Monostyle checks establish no behavioral result.
+The combined suite signature is `solana-kit-core-v51` with 432 groups. Unit 891
+executed the shared-source refactor: all 22 native bodies, one Rustdoc example,
+strict Clippy and documentation checks passed. The complete suite passed all
+432 groups; deliberate corruption passed 431 groups and exited one. Checked-in
+golden reports were copied from those executions.
+
+Unit 887 resolved the root and independent wasmi caller graphs through Cargo.
+The genuine inventory tool regenerated and checked the canonical ledgers from
+the clean pinned Dart checkout. Unit 886 verified exactly 573 owner-only changes;
+all declaration IDs, pending states and other fields remain unchanged.
+
+Portable-host execution and new cross-language oracles remain unexecuted.
+Source formatting and per-file Monostyle checks establish no behavioral result.
 
 Remaining publisher contracts include portal requests/translations and uploads,
 resumable sessions/checkpoints, retry/polling, metadata/media, funding preflight
