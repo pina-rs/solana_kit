@@ -49,7 +49,7 @@ impl fmt::Debug for ShutdownRequest {
             Self::Unconfirmed => "Unconfirmed",
             Self::Acknowledged => "Acknowledged",
             Self::Failed(_) => "Failed(redacted)",
-        });
+        })
     }
 }
 
