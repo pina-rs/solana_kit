@@ -145,7 +145,6 @@ pub enum DeployFile {
     /// IDL JSON input.
     Idl,
     /// Explicit keypair JSON input used by key-backed deployment.
-    #[cfg(feature = "keys")]
     Keypair,
 }
 
