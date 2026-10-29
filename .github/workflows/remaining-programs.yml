@@ -389,12 +389,17 @@ jobs:
       HELIUS_PACKAGE: solana_kit_helius_portable
       HELIUS_GUEST_PACKAGE: solana_kit_helius_guest
 
-      CARGO_TARGET_DIR: ${{ runner.temp }}/helius-${{ matrix.mode }}
-
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+
+      - name: Select this feature stream's isolated target
+        env:
+          HELIUS_MODE: ${{ matrix.mode }}
+
+        run: |
+          printf 'CARGO_TARGET_DIR=%s/helius-%s\n' "$RUNNER_TEMP" "$HELIUS_MODE" >> "$GITHUB_ENV"
 
       - uses: ./.github/actions/portable-program-hosts
 
