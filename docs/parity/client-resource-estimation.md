@@ -68,6 +68,9 @@ limits, missing and null usage, metric precedence, u64 capping, typed failures,
 and cancellation of a suspended adapter exchange. Native and WASI builds also
 assert that concrete Send transports retain Send estimation and tuning futures.
 
-At source handoff, the new test bodies are **UNEXECUTED**. Runtime verification and
-Cargo resolution belong to the coordinating gate. Formatting and the direct
-pinned style analyzer are source checks and do not prove runtime correctness.
+The native suite passes all 406 groups; deliberately corrupting the fixture
+passes 405 and exits with status one. Both checked-in reports were copied from
+those actual executions. All-feature client tests, strict all-target Clippy,
+API documentation, and authentic offline Cargo resolution also pass.
+Current-source browser, both WASI previews, production wasmi, and installed app
+CI remain required. These helpers do not establish real-validator execution.
