@@ -41,12 +41,15 @@ and signature. Ordinary RPC failures retain the selected key; cancellation
 disposes it. A host without RPC shows that capability as unavailable.
 
 **Watch account updates** uses the granted `solana.socket` service and the public
-SDK's typed account and root subscriptions. A dedicated public probe account
+SDK's typed account and processed-slot subscriptions. A dedicated public probe account
 keeps subscription credits separate from wallet and transfer effects. The app
 can hold one genuine decoded update across acknowledged cancellation, then pass
 it through the same delivery reducer to verify that its invalidated generation
-cannot change the visible balance. Root updates continue through the same event
-router after account cancellation. All exits attempt both unsubscribe operations
+cannot change the visible balance. Slot updates continue through the same event
+router after account cancellation. An explicit observation reads the confirmed
+probe balance through SDK HTTP, then publishes the first actual socket slot beyond
+that context. Background traffic drains without rebuilding the native panel.
+All exits attempt both unsubscribe operations
 and actual socket close before returning to the wallet panel.
 
 The application owns one bounded RPC action queue per selected wallet. Old

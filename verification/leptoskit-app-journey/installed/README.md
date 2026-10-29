@@ -43,7 +43,7 @@ by a fixed capture number.
 
 The initial session and the saved-wallet relaunch also drive **Watch account
 updates**. The guest opens the granted validator WebSocket and uses the public
-SDK's typed `accountSubscribe` and `rootSubscribe` owners on that same socket.
+SDK's typed `accountSubscribe` and `slotSubscribe` owners on that same socket.
 A separate public probe account receives three single airdrop requests. The
 controller independently confirms each request and checks its exact RPC balance;
 the payer, transfer recipient and saved wallet receive none of those credits.
@@ -57,12 +57,32 @@ balance must remain at the first credit. Removing that reducer's generation
 guard makes this step fail.
 
 After cancellation, the third credit must change the independent RPC balance.
-The controller then requires an actual root notification on the continuing
-socket beyond that transaction's slot and checks the frozen display again. A
-timer or an absence of notifications cannot satisfy this check. The named native
-captures and `subscription-initial.json` or `subscription-relaunched.json` retain
-the observed RPC balances, captured display text, transaction slot and root.
-An unsupported root subscription or missing acknowledgement fails the journey.
+The controller then selects **Observe later socket activity**. The guest reads
+the probe through the existing SDK HTTP client with confirmed commitment and
+retains that response's actual context and balance. Only a typed notification
+from the continuing socket with a strictly later processed slot completes the
+observation. The controller independently requires the SDK balance to match the
+late credit, its context to cover that transaction's slot, and the observed socket
+slot to exceed that context. The frozen display must still show the first credit.
+
+Background slot notifications continue to drain through the same event owner.
+They rebuild the native panel only when the explicitly requested observation
+first crosses its context. Account delivery and UI actions still trigger their
+ordinary renders. A native wake calls the guest renderer only when the displayed
+snapshot changed. The named captures and `subscription-initial.json` or
+`subscription-relaunched.json` retain the actual RPC balances, captured display
+text, late transaction slot, SDK balance context and subsequent socket slot.
+Missing acknowledgements or activity fail the journey within the existing bounds.
+
+The original `b9bbdb2` CI runs preserve the reason for this boundary: iOS reached
+the frozen balance and ignored held callback with root 8 while the late confirmed
+transaction was in slot 31. macOS still displayed a waiting root for late slot 18.
+A finalized-root condition added a separate finality requirement to a socket
+activity check. Android's failed capture already contained the expected waiting
+balance and Close control, while its root changed from 151 in the screenshot to
+177 in the paired XML. Driver lookups took 10–20 seconds during continuous panel
+redraws. The repaired marker publishes one slot observation and leaves background
+traffic out of the rendered state.
 
 **Close subscription socket** remains available while opening and throughout the
 probe. The controller attempts it after either assertion success or failure.
@@ -163,7 +183,7 @@ Compilation, Clippy and protocol tests do not establish installed OS acceptance;
 the actual CI journey must pass for each platform. The save/relaunch/restore
 and subscription/cancellation phases above are implemented in source but require
 their current-source CI execution before claiming installed acceptance. The new
-journeys and generation-guard regression remain **UNEXECUTED** until their actual
+activity boundary, quiet rendering and new regressions remain **UNEXECUTED** until their actual
 compiler and macOS, Android and iOS runs are recorded. Browser subscription
 acceptance remains separate work.
 

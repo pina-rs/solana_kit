@@ -174,6 +174,10 @@ fn guest(sdk: &Path, app: &Path) -> Result<Vec<(PathBuf, String)>> {
         ("guest/flow/rpc/error.rs", "flow/rpc/error.rs"),
         ("guest/flow/rpc/subscription.rs", "flow/rpc/subscription.rs"),
         (
+            "guest/flow/rpc/subscription/activity.rs",
+            "flow/rpc/subscription/activity.rs",
+        ),
+        (
             "guest/flow/rpc/subscription/delivery.rs",
             "flow/rpc/subscription/delivery.rs",
         ),

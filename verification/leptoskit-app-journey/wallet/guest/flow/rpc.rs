@@ -168,6 +168,7 @@ async fn rpc_action(
                 routing,
                 actions,
                 commands,
+                client,
             )
             .await
             {

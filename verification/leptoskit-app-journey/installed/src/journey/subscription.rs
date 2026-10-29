@@ -7,9 +7,17 @@ use std::{fs::OpenOptions, io::Write};
 
 const CREDIT: u64 = 1_000_000;
 const BALANCE: &str = "Subscription balance";
-const ROOT: &str = "Subscription root";
+const ACTIVITY_SLOT: &str = "Subscription activity slot";
+const OBSERVED_CONTEXT: &str = "Subscription observed context";
+const OBSERVED_BALANCE: &str = "Subscription observed RPC balance";
 
 struct Credit {
+    balance: u64,
+    slot: u64,
+}
+
+struct Activity {
+    context: u64,
     balance: u64,
     slot: u64,
 }
@@ -33,7 +41,7 @@ pub(super) fn run(
             "Close subscription socket",
         ))?;
         tester.expect_visible(&Locator::text("Subscription socket closed"))?;
-        tester.checkpoint("Owned account and root streams and their socket closed")
+        tester.checkpoint("Owned account and slot streams and their socket closed")
     })();
     crate::finish([result, failure_capture, cleanup])
 }
@@ -64,7 +72,12 @@ fn observe(
 
     let held = cancel(tester, node, platform, &account, accepted.balance)?;
     let late = credit(node, &account, held.balance)?;
-    let (root, displayed) = frozen_after_root(tester, node, &account, accepted.balance, &late)?;
+    tester.tap(&accessibility::action(
+        platform,
+        "Observe later socket activity",
+    ))?;
+    let (activity, displayed) =
+        frozen_after_activity(tester, node, &account, accepted.balance, &late)?;
 
     let evidence = json!({
         "account":account,
@@ -73,7 +86,9 @@ fn observe(
         "late_rpc_balance":late.balance,
         "cancelled_display":displayed,
         "late_transaction_slot":late.slot,
-        "same_socket_root":root,
+        "sdk_balance_context":activity.context,
+        "sdk_balance":activity.balance,
+        "same_socket_slot":activity.slot,
     });
     OpenOptions::new()
         .write(true)
@@ -83,33 +98,39 @@ fn observe(
     Ok(())
 }
 
-fn frozen_after_root(
+fn frozen_after_activity(
     tester: &mut NativeTester,
     node: &Validator,
     account: &str,
     balance: u64,
     late: &Credit,
-) -> Result<(u64, String)> {
-    tester.expect_visible(&root_after(late.slot))?;
+) -> Result<(Activity, String)> {
+    tester.expect_visible(&Locator::text("Same-socket slot activity observed"))?;
     expect_balance(tester, "Cancelled", balance)?;
-    tester.checkpoint("Later ledger credit and same-socket root leave cancelled balance frozen")?;
-    let root = accessibility::value(tester, ROOT)?
-        .parse::<u64>()
-        .map_err(|error| Error::Response(error.to_string()))?;
+    tester.checkpoint("Later ledger credit and same-socket slot leave cancelled balance frozen")?;
+    let activity = Activity {
+        context: captured_number(tester, OBSERVED_CONTEXT)?,
+        balance: captured_number(tester, OBSERVED_BALANCE)?,
+        slot: captured_number(tester, ACTIVITY_SLOT)?,
+    };
     let displayed = accessibility::value(tester, BALANCE)?;
     require(
         displayed == format!("Cancelled balance: {balance} lamports"),
-        "late root capture changed the cancelled display",
+        "late activity capture changed the cancelled display",
     )?;
     require(
-        root > late.slot,
-        "same-socket root did not pass the late transaction",
+        activity.context >= late.slot && activity.balance == late.balance,
+        "SDK observation did not cover the independently confirmed late credit",
+    )?;
+    require(
+        activity.slot > activity.context,
+        "same-socket slot did not pass the SDK observation",
     )?;
     require(
         node.rpc.balance(account)? == late.balance,
         "late probe ledger balance changed",
     )?;
-    Ok((root, displayed))
+    Ok((activity, displayed))
 }
 
 fn cancel(
@@ -142,10 +163,10 @@ fn expect_balance(tester: &NativeTester, prefix: &str, balance: u64) -> Result<(
     )
 }
 
-fn root_after(slot: u64) -> Locator {
-    Locator::Xpath(format!(
-        "//*[(@name='{ROOT}' or @identifier='{ROOT}' or @resource-id='{ROOT}' or @content-desc='{ROOT}') and (number(@value)>{slot} or number(@text)>{slot} or number(@label)>{slot})]"
-    ))
+fn captured_number(tester: &NativeTester, label: &str) -> Result<u64> {
+    accessibility::value(tester, label)?
+        .parse::<u64>()
+        .map_err(|error| Error::Response(error.to_string()))
 }
 
 /// Each credit executes once; only confirmation and balance observations poll.

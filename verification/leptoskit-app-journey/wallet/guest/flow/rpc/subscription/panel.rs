@@ -1,4 +1,5 @@
 //! Semantic native controls share one finite sender for this subscription lifetime.
+use super::activity::Activity;
 use super::{Action, AppError, Error, LocalWalletCommands, LocalWalletEvents, Phase, View};
 use futures::{StreamExt, channel::mpsc, future::Either};
 use leptoskit::native::{Element, EventOutcome, NativeEventSlot, NativeKind};
@@ -9,6 +10,7 @@ use std::sync::{Arc, Mutex};
 pub(super) enum Command {
     Hold,
     Cancel,
+    Observe,
     Close,
 }
 
@@ -48,21 +50,23 @@ pub(super) fn view(
         "Subscribed balance"
     };
 
-    let root = view
-        .root
-        .map_or_else(|| "waiting".to_owned(), |value| value.to_string());
     let mut panel = local_wallet_panel(Some(address), true, false, wallet)
         .child(
             Element::text(super::transport::ACCOUNT.to_string()).aria_label("Subscription account"),
         )
-        .child(Element::text(format!("{label}: {balance}")).aria_label("Subscription balance"))
-        .child(Element::text(root).aria_label("Subscription root"));
+        .child(Element::text(format!("{label}: {balance}")).aria_label("Subscription balance"));
+    panel = activity(panel, view.activity);
 
     let control = match view.phase {
         Phase::Live if view.delivery.balance.is_some() => {
             Some(("Hold next account update", Command::Hold))
         }
         Phase::Held(_) => Some(("Cancel account subscription", Command::Cancel)),
+
+        Phase::Cancelled if matches!(view.activity, Activity::Idle) => {
+            Some(("Observe later socket activity", Command::Observe))
+        }
+
         _ => None,
     };
 
@@ -75,6 +79,23 @@ pub(super) fn view(
         Command::Close,
         commands,
     ))
+}
+
+fn activity(panel: Element, activity: Activity) -> Element {
+    let (context, balance, slot) = match activity {
+        Activity::Idle => return panel,
+        Activity::Waiting { context, balance } => (context, balance, "waiting".to_owned()),
+        Activity::Observed {
+            context,
+            balance,
+            slot,
+        } => (context, balance, slot.to_string()),
+    };
+
+    panel
+        .child(Element::text(context.to_string()).aria_label("Subscription observed context"))
+        .child(Element::text(balance.to_string()).aria_label("Subscription observed RPC balance"))
+        .child(Element::text(slot).aria_label("Subscription activity slot"))
 }
 
 fn button(label: &str, command: Command, commands: &Commands) -> Element {

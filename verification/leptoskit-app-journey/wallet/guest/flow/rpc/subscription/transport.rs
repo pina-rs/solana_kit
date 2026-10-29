@@ -1,9 +1,9 @@
-//! One real socket routes typed account and root subscriptions together.
+//! One real socket routes typed account and processed-slot subscriptions together.
 use super::{AppError, Error, Routing, finish, timed};
 use solana_kit_client::{
     methods::{Commitment, accounts::AccountEncoding},
     subscriptions::{
-        Account, AccountConfig, Budget, Connection, Root, Status, Subscription, SubscriptionMethod,
+        Account, AccountConfig, Budget, Connection, Slot, Status, Subscription, SubscriptionMethod,
     },
 };
 use solana_kit_core::Address;
@@ -20,7 +20,7 @@ const UNRELATED_EVENTS: usize = 64;
 pub(super) struct Transport {
     pub owner: Connection,
     pub account: Subscription<Account>,
-    pub root: Subscription<Root>,
+    pub slots: Subscription<Slot>,
     pub generation: u64,
     socket: GuestWebSocket,
 }
@@ -38,12 +38,12 @@ impl Transport {
             ),
             ACK_DEADLINE,
         )?;
-        let root = owner.subscribe(Root, ACK_DEADLINE)?;
+        let slots = owner.subscribe(Slot, ACK_DEADLINE)?;
         let socket = GuestWebSocket::new("solana.socket", SOCKET_MESSAGES, FRAME_BYTES)?;
         Ok(Self {
             owner,
             account,
-            root,
+            slots,
             generation,
             socket,
         })
@@ -58,9 +58,9 @@ impl Transport {
 
         loop {
             let account = active(&mut self.owner, &self.account)?;
-            let root = active(&mut self.owner, &self.root)?;
+            let slots = active(&mut self.owner, &self.slots)?;
 
-            if account && root {
+            if account && slots {
                 return Ok(());
             }
 
@@ -130,16 +130,16 @@ impl Transport {
 
         loop {
             let account = self.owner.unsubscribe(&self.account, ACK_DEADLINE);
-            let root = self.owner.unsubscribe(&self.root, ACK_DEADLINE);
-            finish(account.map_err(Into::into), root.map_err(Into::into))?;
+            let slots = self.owner.unsubscribe(&self.slots, ACK_DEADLINE);
+            finish(account.map_err(Into::into), slots.map_err(Into::into))?;
             self.flush().await?;
 
-            if self.owner.settled(&self.account)? && self.owner.settled(&self.root)? {
+            if self.owner.settled(&self.account)? && self.owner.settled(&self.slots)? {
                 let account = self.owner.next(&self.account);
-                let root = self.owner.next(&self.root);
+                let slots = self.owner.next(&self.slots);
                 finish(
                     account.map_err(Into::into),
-                    root.map(|_| ()).map_err(Into::into),
+                    slots.map(|_| ()).map_err(Into::into),
                 )?;
 
                 return Ok(());

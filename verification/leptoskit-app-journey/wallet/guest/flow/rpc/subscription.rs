@@ -1,15 +1,18 @@
 //! Native controls exercise real updates, acknowledged cancellation and stale callbacks.
+mod activity;
 mod delivery;
 mod panel;
 mod transport;
 
 use super::{
     Action, AppError, Error, LocalWalletCommands, LocalWalletEvents, REQUEST_TIMEOUT_MILLIS,
-    Routing, show, sleep,
+    Routing, Rpc, bounded, read_config, show, sleep,
 };
+use activity::Activity;
 use delivery::{Delivery, Update};
 use futures::future::Either;
 use panel::Command;
+use solana_kit_client::methods::Balance;
 use solana_kit_client::subscriptions::Drain;
 use transport::Transport;
 
@@ -23,7 +26,7 @@ enum Phase {
 
 struct View {
     delivery: Delivery,
-    root: Option<u64>,
+    activity: Activity,
     phase: Phase,
 }
 
@@ -34,11 +37,25 @@ impl View {
             Phase::Live => "Account subscription active",
             Phase::Armed => "Waiting to hold a real subscription update",
             Phase::Held(_) => "Real subscription update held",
+
+            Phase::Cancelled if matches!(self.activity, Activity::Observed { .. }) => {
+                "Same-socket slot activity observed"
+            }
+
+            Phase::Cancelled if matches!(self.activity, Activity::Waiting { .. }) => {
+                "Waiting for later same-socket slot"
+            }
+
             Phase::Cancelled => "Held update ignored after cancellation",
         }
     }
 
-    fn drain(&mut self, transport: &mut Transport) -> Result<(), AppError> {
+    /// Each synchronous drain is bounded by the SDK queue budget. Both queues
+    /// are consumed even when no redraw is needed; the UI gets first poll of
+    /// its action channel before the next socket receive can admit more work.
+    fn drain(&mut self, transport: &mut Transport) -> Result<bool, AppError> {
+        let mut redraw = false;
+
         while let Drain::Notification(notification) = transport.owner.next(&transport.account)? {
             let update = Update {
                 generation: transport.generation,
@@ -46,13 +63,14 @@ impl View {
             };
 
             self.accept(update)?;
+            redraw = true;
         }
 
-        while let Drain::Notification(root) = transport.owner.next(&transport.root)? {
-            self.root = Some(root);
+        while let Drain::Notification(notification) = transport.owner.next(&transport.slots)? {
+            redraw |= self.activity.observe(notification.slot);
         }
 
-        Ok(())
+        Ok(redraw)
     }
 
     fn accept(&mut self, update: Update) -> Result<(), AppError> {
@@ -74,16 +92,24 @@ impl View {
         command: Command,
         transport: &mut Transport,
         routing: &mut Routing<'_>,
+        client: &Rpc,
+        actions: &mut LocalWalletEvents,
     ) -> Result<bool, AppError> {
         match (command, &self.phase) {
             (Command::Hold, Phase::Live) if self.delivery.balance.is_some() => {
                 self.phase = Phase::Armed;
             }
+
             (Command::Cancel, Phase::Held(update)) => {
                 let held = *update;
 
                 self.cancel(held, transport, routing).await?;
             }
+
+            (Command::Observe, Phase::Cancelled) if matches!(self.activity, Activity::Idle) => {
+                self.observe_activity(client, actions).await?;
+            }
+
             (Command::Close, _) => return Ok(true),
             _ => {
                 return Err(Error::Subscription("Subscription action is no longer current").into());
@@ -91,6 +117,23 @@ impl View {
         }
 
         Ok(false)
+    }
+
+    async fn observe_activity(
+        &mut self,
+        client: &Rpc,
+        actions: &mut LocalWalletEvents,
+    ) -> Result<(), AppError> {
+        let observed = bounded(
+            client.call(Balance(transport::ACCOUNT, read_config())),
+            actions,
+        )
+        .await?;
+        self.activity = Activity::Waiting {
+            context: observed.context.slot,
+            balance: observed.value,
+        };
+        Ok(())
     }
 
     /// Release a genuine callback after remote cleanup, so local generation
@@ -121,26 +164,36 @@ pub(super) async fn run(
     routing: &mut Routing<'_>,
     actions: &mut LocalWalletEvents,
     wallet_commands: &LocalWalletCommands,
+    client: &Rpc,
 ) -> Result<(), AppError> {
     let mut transport = Transport::new(generation)?;
-    let result = journey(address, &mut transport, routing, actions, wallet_commands).await;
+    let result = journey(
+        address,
+        &mut transport,
+        routing,
+        actions,
+        wallet_commands,
+        client,
+    )
+    .await;
     let cleanup = transport.close(routing).await;
     finish(result, cleanup)
 }
 
 /// UI intents cancel only their pending receive borrow; the application keeps
-/// queued events and routes continuing root updates through the same socket.
+/// queued events and routes continuing slot updates through the same socket.
 async fn journey(
     address: &str,
     transport: &mut Transport,
     routing: &mut Routing<'_>,
     actions: &mut LocalWalletEvents,
     wallet_commands: &LocalWalletCommands,
+    client: &Rpc,
 ) -> Result<(), AppError> {
     let (commands, mut input) = panel::channel();
     let mut view = View {
         delivery: Delivery::new(transport.generation),
-        root: None,
+        activity: Activity::Idle,
         phase: Phase::Opening,
     };
     show(
@@ -158,13 +211,19 @@ async fn journey(
     }
 
     view.phase = Phase::Live;
+    let mut redraw = true;
 
     loop {
-        view.drain(transport)?;
-        show(
-            panel::view(address, &view, wallet_commands, &commands),
-            view.status(),
-        );
+        redraw |= view.drain(transport)?;
+
+        if redraw {
+            show(
+                panel::view(address, &view, wallet_commands, &commands),
+                view.status(),
+            );
+            redraw = false;
+        }
+
         let action = panel::next(actions, &mut input);
         let event = transport.receive(routing);
 
@@ -176,9 +235,14 @@ async fn journey(
             Either::Left((command, _)) => command?,
         };
 
-        if view.command(command, transport, routing).await? {
+        if view
+            .command(command, transport, routing, client, actions)
+            .await?
+        {
             return Ok(());
         }
+
+        redraw = true;
     }
 }
 
