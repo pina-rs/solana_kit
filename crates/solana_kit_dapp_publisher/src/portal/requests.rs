@@ -43,6 +43,20 @@ pub enum IngestionSource {
 #[derive(Default, Serialize)]
 pub struct GetBlockData {}
 
+/// Fetch approved remote media through the portal, without forwarding portal credentials to it.
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct FetchRemoteFile {
+    /// Caller-approved absolute remote media location.
+    pub url: String,
+    /// Optional fallback name; absence omits the field.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub file_name: Option<String>,
+    /// Optional expected media type; absence omits the field.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub expected_mime_type: Option<String>,
+}
+
 /// Request a separate presigned upload capability; this operation uploads no bytes.
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]

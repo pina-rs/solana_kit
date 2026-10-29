@@ -10,8 +10,17 @@ The optional portal protocol also derives its fixed procedure/input names,
 envelope selection, explicit ingestion retry schedule and raw backend field
 catalog from that revision's `portal_client.dart`, `portal_workflow_client.dart`,
 `workflow_client.dart`, `portal_types.dart` and `portal_translators.dart`.
-Backend normalization, media hydration, session caching and CLI orchestration
-are outside this source slice.
+The portal protocol itself performs no backend normalization, media hydration,
+session caching or CLI orchestration.
+
+The optional ingestion/hydration coordinator derives its create/resume/poll and
+explicit cleanup behavior from `publication_workflow.dart` and `workflow_state.dart`;
+metadata schema, media ordering, MIME fallbacks and header-dimension algorithms
+derive from `release_metadata.dart`, `files.dart` and `publication_models.dart`.
+Persistent caller-owned checkpoints and pending-effect arbitration are original
+Rust boundary refinements. Complete transaction workflow execution, full model
+normalization and native CLI remain outside this slice. Kit provides SHA-256 and
+text codecs; no Dart handwritten cryptography implementation is copied.
 
 The original MIT notice is retained in `MIT-DART.txt`. New original Rust code
 uses the Unlicense. No upstream HTTP adapter, secret, CLI, handwritten cryptography

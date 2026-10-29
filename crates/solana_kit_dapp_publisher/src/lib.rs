@@ -5,9 +5,16 @@
 mod attestation;
 mod error;
 
+#[cfg(feature = "portal")]
+mod deadline;
+
 /// Bounded portal protocol with caller-owned destination, authentication and upload policy.
 #[cfg(feature = "portal")]
 pub mod portal;
+
+/// Resumable ingestion and metadata hydration with explicit caller-owned I/O.
+#[cfg(feature = "workflow")]
+pub mod workflow;
 
 #[cfg(feature = "crypto")]
 mod policy;

@@ -10,6 +10,8 @@ pub(super) mod portal;
 mod prepared;
 #[path = "../../../crates/solana_kit_dapp_publisher/tests/attestation/signatures.rs"]
 mod signatures;
+#[path = "publisher_workflow.rs"]
+pub(super) mod workflow;
 
 use crate::{CaseResult, case};
 use checks::Outcome;

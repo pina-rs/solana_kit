@@ -94,6 +94,8 @@ Source formatting and per-file Monostyle checks establish no behavioral result.
 
 The portal layer and its native verification are documented in [Publisher portal protocol](dapp-publisher-portal.md).
 It adds raw wire contracts and explicit retry/upload boundaries without claiming
-workflow orchestration. Resumable sessions/checkpoints, normalized translations,
-metadata/media, funding preflight and native CLI remain separate work. Existing
-canonical declaration IDs remain pending.
+workflow orchestration. The separate optional [ingestion and hydration layer](dapp-publisher-workflow.md)
+now reconciles resumable checkpoints and metadata/media as an unexecuted source
+proposal. Transaction/store completion, full normalized projections, funding
+preflight and native CLI remain separate work. Existing canonical declaration
+IDs remain pending.

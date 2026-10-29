@@ -29,6 +29,7 @@ macro_rules! operation {
 }
 
 operation!(GetBlockData, BlockData, "attestation.getBlockData", true);
+operation!(FetchRemoteFile, RemoteFilePayload, "fetchRemoteFile", true);
 operation!(
     CreateUploadTarget,
     PortalUploadTarget,

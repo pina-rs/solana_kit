@@ -5,11 +5,7 @@ use solana_kit_client::{
     rest::{JsonError, Transport},
     subscriptions::Clock,
 };
-use std::{
-    future::{Future, poll_fn},
-    pin::pin,
-    task::Poll,
-};
+use std::future::Future;
 
 /// Caller-selected backoff and absolute deadline in the supplied Clock's namespace.
 #[derive(Clone, Copy, Debug)]
@@ -92,38 +88,12 @@ async fn until<F: Future<Output = Result<R, Error>>, R, C: Clock>(
     clock: &C,
     deadline: u64,
 ) -> Result<R, Error> {
-    if clock.now() >= deadline {
-        return Err(Error::Deadline);
-    }
-
-    let mut operation = pin!(operation);
-    let mut timer = pin!(clock.sleep_until(deadline));
-    poll_fn(|cx| {
-        if clock.now() >= deadline {
-            return Poll::Ready(Err(Error::Deadline));
-        }
-
-        let timeout = timer.as_mut().poll(cx);
-
-        if clock.now() >= deadline {
-            return Poll::Ready(Err(Error::Deadline));
-        }
-
-        match timeout {
-            Poll::Ready(Ok(())) => return Poll::Ready(Err(Error::Deadline)),
-            Poll::Ready(Err(error)) => return Poll::Ready(Err(Error::Clock(error))),
-            Poll::Pending => {}
-        }
-
-        let result = operation.as_mut().poll(cx);
-
-        if clock.now() >= deadline {
-            return Poll::Ready(Err(Error::Deadline));
-        }
-
-        result
-    })
-    .await
+    crate::deadline::within(operation, clock, deadline)
+        .await
+        .map_err(|error| match error {
+            crate::deadline::Error::Clock(error) => Error::Clock(error),
+            crate::deadline::Error::Elapsed => Error::Deadline,
+        })?
 }
 
 fn retryable(error: &Error) -> bool {

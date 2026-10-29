@@ -17,6 +17,18 @@ pub struct BlockData {
     pub blockhash: String,
 }
 
+/// Portal-fetched media, still subject to decoded-byte and format validation.
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct RemoteFilePayload {
+    /// Untrusted base64 file bytes; no decoding or upload occurs on response parsing.
+    pub data: String,
+    /// Provider-reported file name.
+    pub file_name: String,
+    /// Provider-reported media type.
+    pub mime_type: String,
+}
+
 /// Separate presigned upload capability, never an approved PortalService origin.
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
