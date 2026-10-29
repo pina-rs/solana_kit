@@ -11,6 +11,7 @@ fn root() -> Value {
     json!({"kind":"rootNode","standard":"codama","version":"1.8.0","program":program})
 }
 
+/// Parsed expressions alone miss unresolved names, so the emitted use trees are checked too.
 #[test]
 fn numeric_ast_reaches_the_public_emitter_without_the_verification_feature() {
     let files = render_root(&root()).unwrap();
@@ -19,7 +20,7 @@ fn numeric_ast_reaches_the_public_emitter_without_the_verification_feature() {
         .find(|file| file.path == "numeric_contracts.rs")
         .unwrap()
         .source;
-    syn::parse_file(source).unwrap();
+    let syntax = syn::parse_file(source).unwrap();
 
     for format in ["i32", "u128", "i128", "f32"] {
         for endian in ["LE", "BE"] {
@@ -32,6 +33,30 @@ fn numeric_ast_reaches_the_public_emitter_without_the_verification_feature() {
     assert!(source.contains("Nullable"));
     assert!(source.contains("Boolean"));
     assert!(!source.contains("#[derive(Clone, Debug, Eq, PartialEq)]"));
+
+    for name in ["Nullable", "Boolean", "Absence"] {
+        assert!(
+            syntax.items.iter().any(|item| {
+                matches!(item, syn::Item::Use(import) if imports_path(
+                    &import.tree,
+                    &["solana_kit_core", "codecs", name]
+                ))
+            }),
+            "missing qualified codec import: {name}"
+        );
+    }
+}
+
+/// Type names in expressions do not prove that generated clients import them.
+fn imports_path(tree: &syn::UseTree, segments: &[&str]) -> bool {
+    match tree {
+        syn::UseTree::Path(path) => segments
+            .split_first()
+            .is_some_and(|(head, tail)| path.ident == *head && imports_path(&path.tree, tail)),
+        syn::UseTree::Group(group) => group.items.iter().any(|item| imports_path(item, segments)),
+        syn::UseTree::Name(name) => segments.len() == 1 && name.ident == segments[0],
+        syn::UseTree::Rename(_) | syn::UseTree::Glob(_) => false,
+    }
 }
 
 #[test]
