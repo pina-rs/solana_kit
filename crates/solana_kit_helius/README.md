@@ -67,6 +67,14 @@ factory binds the actual returned JWT to its approved Developer service adapter.
 Project keys remain separate from bearer tokens. Payment approval and submission
 remain with the application.
 
+After submission, borrow a `SignupAndPayResult::Pending` receipt with
+`auth::resume_signup_and_pay`. Supply separate checkout and project-discovery
+policies, monotonic time and sleep futures. Completion observes the existing
+intent, discovers its first project and reuses or creates its API key. Checkout
+timeout preserves the pending receipt; borrowing retains it on errors and drop.
+See the [completion contract](../../docs/parity/helius-signup-completion.md) for
+ownership and verification scope.
+
 The `signup` feature composes `checkout` with date parsing; ordinary protocol
 clients keep their original dependency graph. Billing windows
 require timestamps with explicit RFC3339 offsets. Preview errors propagate, zero

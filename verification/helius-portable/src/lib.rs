@@ -34,10 +34,10 @@ pub const REPORT: &str = include_str!("../report-base-crypto.txt");
 
 /// Number of independently listed contract groups in this feature configuration.
 #[cfg(all(feature = "crypto", feature = "signup"))]
-pub const COUNT: usize = 47;
+pub const COUNT: usize = 52;
 /// Number of non-signing contract groups when cryptography is excluded.
 #[cfg(all(not(feature = "crypto"), feature = "signup"))]
-pub const COUNT: usize = 44;
+pub const COUNT: usize = 49;
 
 /// Checkout-only count without cryptography or signup.
 #[cfg(all(not(feature = "crypto"), feature = "checkout", not(feature = "signup")))]

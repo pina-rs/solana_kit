@@ -32,9 +32,12 @@ pub mod zk;
 
 /// Executes every maintained deterministic public-contract group.
 pub fn run_all() {
-    for (_, body) in CASES {
+    for (name, body) in CASES {
         body();
+        println!("PASS {name}");
     }
+
+    println!("PASS all {} Helius contract groups", CASES.len());
 }
 
 /// Maintained public behavior registry. Each host executes these exact bodies.
@@ -90,6 +93,19 @@ pub const CASES: &[(&str, fn())] = &[
     ("signup-payment", signup::new_subscription),
     #[cfg(feature = "signup")]
     ("signup-failures", signup::checkout_failures),
+    #[cfg(feature = "signup")]
+    ("signup-completion-existing", signup::terminal_exits),
+    #[cfg(feature = "signup")]
+    (
+        "signup-completion-provisioning",
+        signup::completed_provisioning,
+    ),
+    #[cfg(feature = "signup")]
+    ("signup-completion-outcomes", signup::completion_outcomes),
+    #[cfg(feature = "signup")]
+    ("signup-completion-failures", signup::completion_failures),
+    #[cfg(feature = "signup")]
+    ("signup-completion-cancellation", signup::dropped_completion),
     #[cfg(all(feature = "crypto", feature = "signup"))]
     ("signup-signing", signup::signed_authentication),
     #[cfg(feature = "checkout")]

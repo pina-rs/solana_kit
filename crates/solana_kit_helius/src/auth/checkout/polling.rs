@@ -121,13 +121,13 @@ where
 }
 
 /// A monotonic observation window shared by pre- and post-exchange checks.
-struct PollClock {
+pub(crate) struct PollClock {
     previous: u64,
     deadline: u64,
 }
 
 impl PollClock {
-    fn new<E>(policy: PollPolicy, start: u64) -> Result<Self, PollError<E>> {
+    pub(crate) fn new<E>(policy: PollPolicy, start: u64) -> Result<Self, PollError<E>> {
         if policy.interval_ms == 0 || policy.max_polls == 0 {
             return Err(PollError::Policy);
         }
@@ -142,7 +142,7 @@ impl PollClock {
         })
     }
 
-    fn advance<E>(&mut self, tick: u64) -> Result<bool, PollError<E>> {
+    pub(crate) fn advance<E>(&mut self, tick: u64) -> Result<bool, PollError<E>> {
         if tick < self.previous {
             return Err(PollError::Policy);
         }
@@ -151,7 +151,7 @@ impl PollClock {
         Ok(tick < self.deadline)
     }
 
-    fn wake(&self, interval: u64) -> u64 {
+    pub(crate) fn wake(&self, interval: u64) -> u64 {
         self.previous.saturating_add(interval).min(self.deadline)
     }
 }
