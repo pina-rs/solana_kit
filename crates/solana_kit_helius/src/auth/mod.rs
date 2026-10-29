@@ -20,6 +20,8 @@ pub use plans::{BillingPeriod, InvalidPlan, Plan, PlanInfo};
 pub use results::*;
 #[cfg(feature = "signup")]
 pub use signup::{ContactField, SignupError, auth_signup};
+#[cfg(feature = "signup")]
+pub use signup::{SignupCompletionError, SignupCompletionPolicy, resume_signup_and_pay};
 #[cfg(feature = "checkout")]
 pub use urls::{build_endpoints, build_payment_url};
 mod payment_terms;

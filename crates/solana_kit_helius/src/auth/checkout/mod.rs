@@ -11,6 +11,8 @@ pub use models::*;
 pub use payment::{create_payment, pay_renewal};
 #[cfg(feature = "checkout")]
 pub use payment_models::{CreatePaymentRequest, PaymentError, PaymentPrice};
+#[cfg(feature = "signup")]
+pub(crate) use polling::PollClock;
 pub use polling::{PollError, PollOutcome, PollPolicy, poll_until_terminal};
 
 use super::{BillingPeriod, Plan};

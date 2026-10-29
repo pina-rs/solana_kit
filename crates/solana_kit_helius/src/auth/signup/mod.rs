@@ -1,9 +1,13 @@
 //! Unified signup leaves JWT binding, time, payment approval and submission with the caller.
 
 mod authenticate;
+mod completion;
+mod completion_error;
 mod error;
 mod payment;
 
+pub use completion::{SignupCompletionPolicy, resume_signup_and_pay};
+pub use completion_error::SignupCompletionError;
 pub use error::{ContactField, SignupError};
 
 use super::{

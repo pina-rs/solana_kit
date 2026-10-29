@@ -41,6 +41,10 @@ path = "../../crates/solana_kit_helius/tests/native_future.rs"
 name = "native_payment"
 path = "../../crates/solana_kit_helius/tests/native_payment.rs"
 
+[[test]]
+name = "native_signup_completion"
+path = "../../crates/solana_kit_helius/tests/native_signup_completion.rs"
+
 [profile.release]
 strip = "none"
 

@@ -40,11 +40,15 @@ Preconfirmation is an untrusted early signal, not transaction confirmation.
 
 The maintained runner imports the original public contract bodies. The base
 registry retains 35 groups, or 37 with cryptography. Checkout expands these to
-40 or 42 groups; signup expands them to 44 or 47. Six fixed report manifests guard
-names and counts. Seven native multi-thread tests require concrete REST,
+40 or 42 groups. The historical signup reports contain 44 or 47 groups; the
+[completion source unit](helius-signup-completion.md) expands the expected signup
+registry to 49 or 52, pending execution and report refresh. Six fixed report
+manifests guard names and counts. Seven existing native multi-thread tests require concrete REST,
 staking preparation, stake-discovery, unified-signup, checkout, renewal and
 compute-estimation futures to retain `Send`. Orchestration tests are feature-gated.
 Local `Rc` exchanges exercise local futures without a universal `Send` requirement.
+The new signup-completion native witness and its five portable groups remain
+unexecuted at this source handoff.
 
 The base suites passed native Rust, Chrome, both WASI previews and the production
 LeptosKit interpreter in [the foundation PR](https://github.com/pina-rs/solana_kit/pull/76).
@@ -181,8 +185,11 @@ These are explicit hardening and ownership choices.
 HTTP URI and percent encoding dependencies are optional with `checkout`.
 `signup` composes it with parsing-only date dependencies. The original default and
 crypto graphs remain separate. CI checks all six combinations on every target, including
-injected-Tokio rejection. Signup with payment submission and provisioning, and full
-declaration-level coverage remain unfinished. No live provider call is exercised.
+injected-Tokio rejection. Submitted payments can now resume through checkout and
+project/key provisioning using the [completion helper](helius-signup-completion.md).
+Approval and transaction submission remain application-owned. Completion runtime
+verification and full declaration-level coverage remain unfinished. No live
+provider call is exercised.
 
 ## Checkout creation, upgrades and renewals
 
