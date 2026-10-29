@@ -58,18 +58,18 @@ async fn verified_key_address_drives_ordered_writes_and_the_future_is_send() {
             .unwrap(),
         address
     );
-    let frames = observed.frames.lock().unwrap();
-    assert_eq!(frames.len(), 3);
+    {
+        let frames = observed.frames.lock().unwrap();
+        assert_eq!(frames.len(), 3);
 
-    for (frame, (hex, offset)) in frames.iter().zip([("0102", 0), ("0304", 2), ("ff", 4)]) {
-        assert_eq!(frame["method"], "surfnet_writeProgram");
-        assert_eq!(
-            frame["params"],
-            serde_json::json!([address.to_string(), hex, offset])
-        );
+        for (frame, (hex, offset)) in frames.iter().zip([("0102", 0), ("0304", 2), ("ff", 4)]) {
+            assert_eq!(frame["method"], "surfnet_writeProgram");
+            assert_eq!(
+                frame["params"],
+                serde_json::json!([address.to_string(), hex, offset])
+            );
+        }
     }
-
-    drop(frames);
     directory.finish().await;
 }
 
