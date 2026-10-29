@@ -1,10 +1,10 @@
 //! Concrete Rust types and codec expressions from normalized wire nodes.
-use super::{Program, Wire, extent};
+use super::{CountPrefix, Numeric, Program, Wire, extent};
 use crate::schema::Error;
 
 pub(super) fn rust_type(wire: &Wire) -> String {
     match wire {
-        Wire::Number(name) => (*name).to_owned(),
+        Wire::Number(number) => number.format.to_owned(),
         Wire::Link(name) => name.clone(),
         Wire::Address => "Address".to_owned(),
         Wire::Bool => "bool".to_owned(),
@@ -38,7 +38,7 @@ pub(super) fn value(wire: &Wire, name: &str) -> String {
 /// Each node chooses a concrete typed codec; recursive children share validation.
 pub(super) fn codec(wire: &Wire, program: &Program) -> Result<String, Error> {
     let output = match wire {
-        Wire::Number(name) => format!("Number::<{name}>::LE"),
+        Wire::Number(number) => number.codec(),
         Wire::Link(name) => format!("{name}Codec"),
         Wire::Address => address(),
         Wire::Bool => "Bool".to_owned(),
@@ -47,10 +47,16 @@ pub(super) fn codec(wire: &Wire, program: &Program) -> Result<String, Error> {
         Wire::FixedBytes(size) => format!("FixedBytes::<{size}>"),
         Wire::FixedText(size) => format!("FixedSize {{ item: Utf8Config::default(), size: {size}, decoded_size: None, allow_truncation: false, max_encoded_size: {size} }}"),
         Wire::ZeroableAddress => "Mapped::new(FixedBytes::<32>, |value: &Option<Address>| Ok::<_, Error>(value.map_or([0;32], |address| *address.as_bytes())), |bytes| Ok::<_, Error>((bytes != [0;32]).then_some(Address::from_bytes(bytes))))".to_owned(),
-        Wire::RemainderOption(item) => format!("OptionCodec::remainder({})", owned_codec(item, program)?),
+        Wire::RemainderOption(item) => {
+            format!("OptionCodec::remainder({})", owned_codec(item, program)?)
+        }
         #[cfg(feature = "verification")]
         Wire::TlvSequence(item) => super::tlv_output::codec(item, program)?,
-        Wire::HiddenPrefix { item, bytes } => format!("Affix {{ prefix: &[{}], item: {}, suffix: &[] }}", bytes.iter().map(u8::to_string).collect::<Vec<_>>().join(","), codec(item, program)?),
+        Wire::HiddenPrefix { item, bytes } => {
+            let prefix = bytes.iter().map(u8::to_string).collect::<Vec<_>>().join(",");
+            let inner = codec(item, program)?;
+            format!("Affix {{ prefix: &[{prefix}], item: {inner}, suffix: &[] }}")
+        }
         Wire::Option {
             item,
             prefix,
@@ -64,7 +70,9 @@ pub(super) fn codec(wire: &Wire, program: &Program) -> Result<String, Error> {
             owned_codec(item, program)?,
             extent::wire(program, item, &mut Vec::new())?.minimum
         ),
-        Wire::Tuple(a, b) => format!("Tuple({}, {})", owned_codec(a, program)?, owned_codec(b, program)?),
+        Wire::Tuple(a, b) => {
+            format!("Tuple({}, {})", owned_codec(a, program)?, owned_codec(b, program)?)
+        }
     };
 
     Ok(output)
@@ -93,18 +101,22 @@ fn address() -> String {
     "Mapped::new(FixedBytes::<32>, |value: &Address| Ok::<_, Error>(*value.as_bytes()), |bytes| Ok::<_, Error>(Address::from_bytes(bytes)))".to_owned()
 }
 
-fn option(item: &Wire, prefix: &str, fixed: bool, program: &Program) -> Result<String, Error> {
+fn option(item: &Wire, prefix: &Numeric, fixed: bool, program: &Program) -> Result<String, Error> {
     let inner = owned_codec(item, program)?;
 
+    if !prefix.legacy_option() {
+        return nullable(item, *prefix, fixed, program, &inner);
+    }
+
     if !fixed {
-        return Ok(format!("OptionCodec::{prefix}({inner})"));
+        return Ok(format!("OptionCodec::{}({inner})", prefix.format));
     }
 
     let width = extent::wire(program, item, &mut Vec::new())?
         .fixed
         .ok_or("fixed width missing")?;
 
-    if prefix == "u8" {
+    if prefix.format == "u8" {
         let size = width.checked_add(1).ok_or("fixed option overflow")?;
         return Ok(format!(
             "FixedSize {{ item: OptionCodec::u8({inner}), size: {size}, decoded_size: None, allow_truncation: false, max_encoded_size: {size} }}"
@@ -114,12 +126,43 @@ fn option(item: &Wire, prefix: &str, fixed: bool, program: &Program) -> Result<S
     Ok(format!("OptionCodec::c_option({inner}, {width})"))
 }
 
-fn count_prefix(prefix: &str) -> String {
-    match prefix {
-        "u32" => "Number::<u32>::LE".to_owned(),
-        "shortU16" => "Mapped::new(ShortU16, |value: &u32| u16::try_from(*value).map_err(|_| Error::Overflow), |value: u16| Ok::<_, Error>(u32::from(value)))".to_owned(),
-        "u64" => "Mapped::new(Number::<u64>::LE, |value: &u32| Ok::<_, Error>(u64::from(*value)), |value: u64| u32::try_from(value).map_err(|_| Error::Overflow))".to_owned(),
-        name => format!("Mapped::new(Number::<{name}>::LE, |value: &u32| {name}::try_from(*value).map_err(|_| Error::Overflow), |value: {name}| Ok::<_, Error>(u32::from(value)))"),
+fn nullable(
+    item: &Wire,
+    prefix: Numeric,
+    fixed: bool,
+    program: &Program,
+    inner: &str,
+) -> Result<String, Error> {
+    let absence = if fixed {
+        let width = extent::wire(program, item, &mut Vec::new())?
+            .fixed
+            .ok_or("fixed width missing")?;
+        format!("Absence::Zeroes({width})")
+    } else {
+        "Absence::Omit".to_owned()
+    };
+
+    let codec = count_prefix(&CountPrefix::Number(prefix));
+
+    Ok(format!(
+        "Nullable {{ item: {inner}, prefix: Some(Boolean({codec})), absence: {absence} }}"
+    ))
+}
+
+fn count_prefix(prefix: &CountPrefix) -> String {
+    let CountPrefix::Number(number) = prefix else {
+        return "Mapped::new(ShortU16, |value: &u32| u16::try_from(*value).map_err(|_| Error::Overflow), |value: u16| Ok::<_, Error>(u32::from(value)))".to_owned();
+    };
+    let codec = number.codec();
+
+    match number.format {
+        "u32" => codec,
+        "u64" => format!(
+            "Mapped::new({codec}, |value: &u32| Ok::<_, Error>(u64::from(*value)), |value: u64| u32::try_from(value).map_err(|_| Error::Overflow))"
+        ),
+        name => format!(
+            "Mapped::new({codec}, |value: &u32| {name}::try_from(*value).map_err(|_| Error::Overflow), |value: {name}| Ok::<_, Error>(u32::from(value)))"
+        ),
     }
 }
 
@@ -133,19 +176,22 @@ fn array(item: &Wire, count: Option<usize>, program: &Program) -> Result<String,
     ))
 }
 
-fn prefix_bytes(item: &Wire, prefix: &str, program: &Program) -> Result<String, Error> {
+fn prefix_bytes(item: &Wire, prefix: &Numeric, program: &Program) -> Result<String, Error> {
     let inner = codec(item, program)?;
     let prefix = prefix_codec(prefix);
     Ok(format!(
         "ByteSizePrefix {{ item:{inner},prefix:{prefix},consumption:FrameConsumption::Exact }}"
     ))
 }
-fn prefix_codec(prefix: &str) -> String {
-    if prefix == "u64" {
-        return "Number::<u64>::LE".to_owned();
+fn prefix_codec(prefix: &Numeric) -> String {
+    let codec = prefix.codec();
+    let format = prefix.format;
+
+    if format == "u64" {
+        return codec;
     }
 
     format!(
-        "Mapped::new(Number::<{prefix}>::LE, |value: &u64| {prefix}::try_from(*value).map_err(|_| Error::Overflow), |value: {prefix}| Ok::<_, Error>(u64::from(value)))"
+        "Mapped::new({codec}, |value: &u64| {format}::try_from(*value).map_err(|_| Error::Overflow), |value: {format}| Ok::<_, Error>(u64::from(value)))"
     )
 }

@@ -16,7 +16,7 @@ pub extern "C" fn leptoskit_main() {
         packed_counter_client::run(),
         packed_counter_client::CONTRACT_GROUPS
     );
-    let props = b"{\"text\":\"generated-client-contracts:8\"}";
+    let props = b"{\"text\":\"generated-client-contracts:9\"}";
 
     // The synchronous host copies the immutable borrowed bytes before returning.
     unsafe {

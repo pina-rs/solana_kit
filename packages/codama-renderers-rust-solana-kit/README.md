@@ -90,11 +90,12 @@ files and checks that a rejected IDL leaves generated source unchanged. Empty
 PATH is a tool-discovery control; an external execution-denial boundary is
 required to prove that no installed Rust executable can run.
 
-The maintained `verification/codama-consumer` fixture contains eight generated-client
+The maintained `verification/codama-consumer` fixture contains nine generated-client
 contract groups: literal bytes and malformed inputs, borrowed codec metadata,
 imported signing keys, complete account/event discriminator predicates, positional
 optional roles, omitted suffixes, literal defaults without PDA recipes, and
-collision-free PDA helpers including account-free programs. The `pda` feature is
+collision-free PDA helpers including account-free programs, and numeric layouts with
+both byte orders, 128-bit values, f32 bit patterns and checked prefixes. The `pda` feature is
 enabled in this consumer so those helpers must compile. `test:packed` requires concrete `CARGO`, `RUSTC`
 and `RUSTDOC` paths, executes those groups and runs strict Clippy. Its guest
 contains the same assertions behind the ordinary LeptosKit ABI; maintaining that

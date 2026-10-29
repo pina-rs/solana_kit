@@ -6,12 +6,15 @@ pub mod counter;
 pub mod empty_pda_contracts;
 #[path = "../generated/literal_contracts.rs"]
 pub mod literal_contracts;
+#[path = "../generated/numeric_contracts.rs"]
+pub mod numeric_contracts;
 #[path = "../generated/record_contracts.rs"]
 pub mod record_contracts;
 #[path = "../generated/resolver_contracts.rs"]
 pub mod resolver_contracts;
 
 mod contracts;
+mod numeric;
 
 use counter::{SetValue, SetValueCodec};
 use solana_kit_core::codecs::{Decoder, Encoder, Error, Limits, Number, PairError, Paired, Size};
@@ -22,7 +25,7 @@ const WIRE: [u8; 9] = [7, 8, 7, 6, 5, 4, 3, 2, 1];
 const LIMITS: Limits = Limits::new(128, 128);
 
 /// Number of assertion groups shared by every generated-client host.
-pub const CONTRACT_GROUPS: usize = 8;
+pub const CONTRACT_GROUPS: usize = 9;
 
 fn literal_wire() {
     let value = SetValue { value: VALUE };
@@ -96,6 +99,7 @@ pub fn run() -> usize {
     metadata_composition();
     imported_signer();
     contracts::run();
+    numeric::run();
 
     CONTRACT_GROUPS
 }

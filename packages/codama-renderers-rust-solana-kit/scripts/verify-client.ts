@@ -26,7 +26,7 @@ export function verifyGeneratedClient(consumer: string): void {
   execFileSync(rustc, ["--version", "--verbose"], { stdio: "inherit" });
   command(["generate-lockfile", "--offline"]);
   const output = command(["run", "--offline", "--locked", "--bin", "client"]);
-  equal(output.trim(), "generated-client-contracts:8");
+  equal(output.trim(), "generated-client-contracts:9");
   const lintArguments = [
     "clippy",
     "--verbose",
@@ -48,6 +48,7 @@ function prepareClient(consumer: string, repository: string): string {
       "Cargo.toml",
       "src/lib.rs",
       "src/contracts.rs",
+      "src/numeric.rs",
       "src/main.rs",
       "guest/Cargo.toml",
       "guest/src/lib.rs",
@@ -65,6 +66,7 @@ function prepareClient(consumer: string, repository: string): string {
       "counter.rs",
       "empty_pda_contracts.rs",
       "literal_contracts.rs",
+      "numeric_contracts.rs",
       "record_contracts.rs",
       "resolver_contracts.rs",
     ]

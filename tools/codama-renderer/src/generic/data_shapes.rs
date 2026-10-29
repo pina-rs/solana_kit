@@ -2,6 +2,7 @@
 use super::{Definition, Field, Shape, Variant, Wire, data, parse, wire};
 use crate::schema::Error;
 use serde_json::Value;
+use solana_kit_core::codecs::Endian;
 use std::collections::BTreeSet;
 
 #[cfg(feature = "verification")]
@@ -78,11 +79,12 @@ fn record(node: &Value) -> Result<Shape, Error> {
 /// Unique names and bounded cardinality keep every emitted match arm distinct.
 fn enumeration(name: &str, node: &Value, output: &mut Vec<Definition>) -> Result<Shape, Error> {
     parse::keys(node, &["kind", "size", "variants"])?;
-    let prefix = wire::unsigned(&node["size"])?;
+    let numeric = wire::unsigned(&node["size"])?;
+    let prefix = numeric.format;
     let mut variants = Vec::new();
     let mut names = BTreeSet::new();
 
-    if !["u8", "u16", "u32"].contains(&prefix) {
+    if numeric.endian != Endian::Little || !["u8", "u16", "u32"].contains(&prefix) {
         return Err("unsupported enum tag width".into());
     }
 

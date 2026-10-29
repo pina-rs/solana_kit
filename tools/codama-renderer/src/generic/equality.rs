@@ -32,7 +32,7 @@ fn floating_fields(fields: &[Field]) -> bool {
 
 fn floating(wire: &Wire) -> bool {
     match wire {
-        Wire::Number("f64") => true,
+        Wire::Number(number) => ["f32", "f64"].contains(&number.format),
         Wire::Option { item, .. }
         | Wire::Array { item, .. }
         | Wire::Prefix { item, .. }

@@ -1,5 +1,5 @@
 //! Checked widths and frame ownership for the finite normalized model.
-use super::{Field, Program, Shape, Wire};
+use super::{CountPrefix, Field, Numeric, Program, Shape, Wire};
 use crate::schema::Error;
 const ADDRESS_BYTES: usize = 32;
 const U32_BYTES: usize = 4;
@@ -81,7 +81,7 @@ fn portable(output: Extent) -> Result<Extent, Error> {
 
 fn wire_extent(program: &Program, value: &Wire, active: &mut Vec<String>) -> Result<Extent, Error> {
     match value {
-        Wire::Number(name) => Ok(Extent::fixed(width(name)?)),
+        Wire::Number(number) => Ok(Extent::fixed(width(number.format)?)),
         Wire::Bool => Ok(Extent::fixed(1)),
         Wire::Address => Ok(Extent::fixed(ADDRESS_BYTES)),
         Wire::FixedBytes(size) | Wire::FixedText(size) => Ok(Extent::fixed(*size)),
@@ -110,7 +110,7 @@ fn wire_extent(program: &Program, value: &Wire, active: &mut Vec<String>) -> Res
         Wire::Array { item, count } => array(program, item, *count, active),
         Wire::Prefix { item, prefix } => {
             wire(program, item, active)?;
-            Ok(Extent::variable(width(prefix)?, false))
+            Ok(Extent::variable(width(prefix.format)?, false))
         }
         Wire::Counted { item, prefix } => {
             array(program, item, None, active)?;
@@ -120,10 +120,10 @@ fn wire_extent(program: &Program, value: &Wire, active: &mut Vec<String>) -> Res
         Wire::Tuple(a, b) => wire(program, a, active)?.followed_by(wire(program, b, active)?),
     }
 }
-fn count_width(prefix: &str) -> Result<usize, Error> {
+fn count_width(prefix: &CountPrefix) -> Result<usize, Error> {
     match prefix {
-        "shortU16" => Ok(1),
-        _ => width(prefix),
+        CountPrefix::ShortU16 => Ok(1),
+        CountPrefix::Number(number) => width(number.format),
     }
 }
 
@@ -131,8 +131,9 @@ fn width(name: &str) -> Result<usize, Error> {
     match name {
         "u8" | "i8" => Ok(1),
         "u16" | "i16" => Ok(2),
-        "u32" => Ok(U32_BYTES),
+        "u32" | "i32" | "f32" => Ok(U32_BYTES),
         "u64" | "i64" | "f64" => Ok(U64_BYTES),
+        "u128" | "i128" => Ok(16),
         _ => Err("unsupported integer width".into()),
     }
 }
@@ -198,13 +199,13 @@ fn tagged(
 fn option(
     program: &Program,
     item: &Wire,
-    prefix: &str,
+    prefix: &Numeric,
     fixed: bool,
     active: &mut Vec<String>,
 ) -> Result<Extent, Error> {
     owned(item)?;
     let inner = wire(program, item, active)?;
-    let width = width(prefix)?;
+    let width = width(prefix.format)?;
 
     if !fixed {
         return Ok(Extent::variable(width, inner.tail));

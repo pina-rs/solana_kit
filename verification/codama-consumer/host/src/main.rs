@@ -6,7 +6,7 @@ use leptoskit_wasm::{WasmError, WasmHost};
 const WIDTH: f32 = 320.0;
 const HEIGHT: f32 = 480.0;
 const FUEL_BUDGET: u64 = 250_000_000;
-const EXPECTED: &str = "generated-client-contracts:8";
+const EXPECTED: &str = "generated-client-contracts:9";
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let path = std::env::args_os()

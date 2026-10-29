@@ -73,7 +73,7 @@ fn render_schema(root: &Value, policy: &Policy<'_>, public: bool) -> Result<Stri
     resolver_names(&program)?;
     super::layout::validate_data(&program)?;
     let mut output = super::emit::program(&program)?;
-    output.push_str(&super::traits_output::emit(&program)?);
+    output.push_str(&super::traits_output::emit(&program));
     output.push_str(&super::pda_output::emit(&program, &recipes, &defaults)?);
     Ok(output)
 }

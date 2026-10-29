@@ -181,4 +181,6 @@ fn append_docs(output: &mut String, docs: &[Value]) -> Result<(), schema::Error>
 }
 
 #[cfg(test)]
+mod numeric_tests;
+#[cfg(test)]
 mod tests;

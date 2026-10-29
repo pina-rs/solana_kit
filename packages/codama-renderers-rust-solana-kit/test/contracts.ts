@@ -1,5 +1,6 @@
 import { createFromJson } from "codama";
 import { counterRoot } from "./fixture.ts";
+import numeric from "./numeric.json" with { type: "json" };
 
 const PROGRAM = "11111111111111111111111111111111";
 
@@ -153,7 +154,7 @@ export function contractRoot() {
   return createFromJson(
     JSON.stringify({
       ...counterRoot(),
-      additionalPrograms: [recordProgram(), resolverProgram(), literalProgram(), emptyPda],
+      additionalPrograms: [recordProgram(), resolverProgram(), literalProgram(), emptyPda, numeric],
     }),
   ).getRoot();
 }
