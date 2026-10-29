@@ -64,10 +64,24 @@ impl V1Config {
         self
     }
 
+    /// Removes the explicit compute limit while preserving all other requests.
+    #[must_use]
+    pub const fn without_compute_unit_limit(mut self) -> Self {
+        self.compute_unit_limit = None;
+        self
+    }
+
     /// Sets the requested loaded accounts data byte limit.
     #[must_use]
     pub const fn with_loaded_accounts_data_limit(mut self, limit: u32) -> Self {
         self.loaded_accounts_data_limit = Some(limit);
+        self
+    }
+
+    /// Removes the explicit loaded data limit while preserving other requests.
+    #[must_use]
+    pub const fn without_loaded_accounts_data_limit(mut self) -> Self {
+        self.loaded_accounts_data_limit = None;
         self
     }
 

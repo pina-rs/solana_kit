@@ -20,6 +20,8 @@ mod json;
 pub mod plans;
 
 pub mod methods;
+#[cfg(feature = "resource-estimation")]
+pub mod resources;
 /// Provider REST requests and shared bounded JSON admission.
 pub mod rest;
 /// Caller-owned bounded subscription protocol.

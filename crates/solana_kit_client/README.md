@@ -5,6 +5,12 @@ not for Solana on-chain programs; use Pina or official Solana program libraries.
 It uses std and owned Kit values without a runtime, network, JavaScript or ambient
 randomness dependency. Native and local futures share one Client protocol owner.
 
+The optional `resource-estimation` feature adds `resources` for version-aware
+resource limits. It simulates an unsigned draft with maximum applicable budgets,
+preserves nonce lifetimes, and replaces provisional limits while retaining explicit
+ones. The caller owns the transport, deadline, and cancellation. See the
+[resource estimation contract](../../docs/parity/client-resource-estimation.md).
+
 `rest` owns provider HTTP methods, explicit absent/JSON/form bodies, ordered
 decoded path/query pairs, bounded JSON admission and `Transport<D>`. Each provider
 owns its destination identity. Concrete adapters map that identity to approved
