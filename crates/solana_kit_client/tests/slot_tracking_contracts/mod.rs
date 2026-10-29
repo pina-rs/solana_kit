@@ -25,6 +25,9 @@ pub enum Failure {
     SubscriptionMapper,
 }
 
+type InitialState<T> = Rc<RefCell<Option<Result<Contextual<T>, Failure>>>>;
+type SubscriptionQueue<T> = Rc<RefCell<VecDeque<Result<Contextual<T>, Failure>>>>;
+
 pub fn response<T>(slot: u64, value: T) -> Contextual<T> {
     Contextual {
         context: RpcContext {
@@ -50,14 +53,14 @@ where
 }
 
 pub struct Initial<T> {
-    state: Rc<RefCell<Option<Result<Contextual<T>, Failure>>>>,
+    state: InitialState<T>,
     polls: Rc<Cell<usize>>,
     drops: Rc<Cell<usize>>,
     _pin: PhantomPinned,
 }
 
 pub struct InitialControl<T> {
-    pub state: Rc<RefCell<Option<Result<Contextual<T>, Failure>>>>,
+    pub state: InitialState<T>,
     pub polls: Rc<Cell<usize>>,
     pub drops: Rc<Cell<usize>>,
 }
@@ -102,7 +105,7 @@ impl<T> Drop for Initial<T> {
 }
 
 pub struct Subscription<T> {
-    queue: Rc<RefCell<VecDeque<Result<Contextual<T>, Failure>>>>,
+    queue: SubscriptionQueue<T>,
     closed: Rc<Cell<bool>>,
     polls: Rc<Cell<usize>>,
     drops: Rc<Cell<usize>>,
@@ -110,7 +113,7 @@ pub struct Subscription<T> {
 }
 
 pub struct SubscriptionControl<T> {
-    pub queue: Rc<RefCell<VecDeque<Result<Contextual<T>, Failure>>>>,
+    pub queue: SubscriptionQueue<T>,
     pub closed: Rc<Cell<bool>>,
     pub polls: Rc<Cell<usize>>,
     pub drops: Rc<Cell<usize>>,
