@@ -38,4 +38,5 @@ PASS nested-asset
 PASS enhanced-models
 PASS transfer-models
 PASS payment-terms
-PASS all 40 Helius contract groups
+PASS smart-transaction-preparation
+PASS all 41 Helius contract groups
