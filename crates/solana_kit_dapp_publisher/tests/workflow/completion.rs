@@ -1,19 +1,9 @@
-#![cfg(feature = "workflow")]
-#![allow(dead_code)]
 //! Explicit completion methods keep mint, verification and store mutations caller-driven.
 
-#[path = "support/checks.rs"]
-mod checks;
-
-#[path = "workflow/fixtures.rs"]
-mod fixtures;
-
-#[path = "workflow/support.rs"]
-mod support;
-
-use checks::{Outcome, require};
-use fixtures::{
-    ADDRESS, ICON, METADATA, bundle, created, hydrate_steps, input, queued, ready, session,
+use super::{
+    checks::{Outcome, require},
+    fixtures::*,
+    support::*,
 };
 use serde_json::json as value;
 use solana_kit_client::Presence;
@@ -24,8 +14,7 @@ use solana_kit_dapp_publisher::{
         StoreSubmission, TransactionPurpose,
     },
 };
-use std::vec;
-use support::{Rig, Step, complete, json};
+use std::{string::ToString, vec};
 
 fn started() -> Result<(Rig, HydratedPublication), &'static str> {
     let mut steps = vec![created(), queued(), ready()];
@@ -62,8 +51,8 @@ fn push(rig: &Rig, payload: &str) {
     rig.portal.steps.borrow_mut().push_back(json(payload));
 }
 
-#[test]
-fn prepare_release_mint_uses_explicit_caller_inputs() -> Outcome {
+#[cfg_attr(test, test)]
+pub fn prepare_release_mint_uses_explicit_caller_inputs() -> Outcome {
     let (mut rig, hydrated) = started()?;
     push(
         &rig,
@@ -90,8 +79,8 @@ fn prepare_release_mint_uses_explicit_caller_inputs() -> Outcome {
     )
 }
 
-#[test]
-fn prepare_release_rejects_a_mismatched_publisher() -> Outcome {
+#[cfg_attr(test, test)]
+pub fn prepare_release_rejects_a_mismatched_publisher() -> Outcome {
     let (mut rig, hydrated) = started()?;
     let error = {
         let workflow = rig.workflow()?;
@@ -118,8 +107,8 @@ fn prepare_release_rejects_a_mismatched_publisher() -> Outcome {
     )
 }
 
-#[test]
-fn prepare_collection_requires_mint_saved_and_bundle_authority() -> Outcome {
+#[cfg_attr(test, test)]
+pub fn prepare_collection_requires_mint_saved_and_bundle_authority() -> Outcome {
     let (mut rig, hydrated) = started()?;
     let error = {
         let workflow = rig.workflow()?;
@@ -150,8 +139,8 @@ fn prepare_collection_requires_mint_saved_and_bundle_authority() -> Outcome {
     )
 }
 
-#[test]
-fn submit_records_intent_before_the_call_and_clears_it_after() -> Outcome {
+#[cfg_attr(test, test)]
+pub fn submit_records_intent_before_the_call_and_clears_it_after() -> Outcome {
     let (mut rig, hydrated) = started()?;
     push(&rig, r#"{"transactionSignature":"sig"}"#);
     let result = {
@@ -175,8 +164,8 @@ fn submit_records_intent_before_the_call_and_clears_it_after() -> Outcome {
     )
 }
 
-#[test]
-fn failed_submission_remains_uncertain_and_never_replays() -> Outcome {
+#[cfg_attr(test, test)]
+pub fn failed_submission_remains_uncertain_and_never_replays() -> Outcome {
     let (mut rig, hydrated) = started()?;
     rig.portal.steps.borrow_mut().push_back(Step::Fail);
     let error = {
@@ -210,8 +199,8 @@ fn failed_submission_remains_uncertain_and_never_replays() -> Outcome {
     )
 }
 
-#[test]
-fn save_release_data_requires_the_acknowledged_stage_and_mint() -> Outcome {
+#[cfg_attr(test, test)]
+pub fn save_release_data_requires_the_acknowledged_stage_and_mint() -> Outcome {
     let (mut rig, hydrated) = at_stage("MintSubmitted")?;
     push(&rig, r#"{"success":false}"#);
     let error = {
@@ -237,8 +226,8 @@ fn save_release_data_requires_the_acknowledged_stage_and_mint() -> Outcome {
     )
 }
 
-#[test]
-fn collection_verification_requires_the_matching_release() -> Outcome {
+#[cfg_attr(test, test)]
+pub fn collection_verification_requires_the_matching_release() -> Outcome {
     let (mut rig, hydrated) = at_stage("VerificationSubmitted")?;
     push(&rig, r#"{"success":true,"releaseId":"other"}"#);
     let error = {
@@ -253,8 +242,8 @@ fn collection_verification_requires_the_matching_release() -> Outcome {
     )
 }
 
-#[test]
-fn store_submission_is_stage_gated_and_records_uncertainty() -> Outcome {
+#[cfg_attr(test, test)]
+pub fn store_submission_is_stage_gated_and_records_uncertainty() -> Outcome {
     let (mut rig, hydrated) = started()?;
     let error = {
         let mut workflow = rig.workflow()?;
@@ -306,8 +295,8 @@ fn store_submission_is_stage_gated_and_records_uncertainty() -> Outcome {
     )
 }
 
-#[test]
-fn store_submission_accepts_a_verified_session_and_returns_the_ticket() -> Outcome {
+#[cfg_attr(test, test)]
+pub fn store_submission_accepts_a_verified_session_and_returns_the_ticket() -> Outcome {
     let (mut rig, hydrated) = at_stage("Verified")?;
     push(&rig, r#"{"hubspotTicketId":"ticket"}"#);
     let result = {

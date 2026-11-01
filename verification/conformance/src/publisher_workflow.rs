@@ -1,5 +1,8 @@
 //! Actual fallible workflow bodies preserve independent later groups after failure.
 
+#[path = "../../../crates/solana_kit_dapp_publisher/tests/workflow/completion.rs"]
+mod completion;
+
 #[path = "../../../crates/solana_kit_dapp_publisher/tests/workflow/failures.rs"]
 mod failures;
 #[path = "../../../crates/solana_kit_dapp_publisher/tests/workflow/fixtures.rs"]
@@ -17,7 +20,7 @@ use super::{checks, run_groups};
 use crate::CaseResult;
 use checks::Outcome;
 
-pub(crate) fn cases() -> [CaseResult; 4] {
+pub(crate) fn cases() -> [CaseResult; 5] {
     run_groups([
         ("publisher-workflow-new-resume-and-metadata", flows),
         (
@@ -26,7 +29,20 @@ pub(crate) fn cases() -> [CaseResult; 4] {
         ),
         ("publisher-workflow-apk-headers-and-admission", media),
         ("publisher-workflow-public-url-boundaries", public_urls),
+        ("publisher-workflow-completion-stages", completion_group),
     ])
+}
+
+fn completion_group() -> Outcome {
+    completion::prepare_release_mint_uses_explicit_caller_inputs()?;
+    completion::prepare_release_rejects_a_mismatched_publisher()?;
+    completion::prepare_collection_requires_mint_saved_and_bundle_authority()?;
+    completion::submit_records_intent_before_the_call_and_clears_it_after()?;
+    completion::failed_submission_remains_uncertain_and_never_replays()?;
+    completion::save_release_data_requires_the_acknowledged_stage_and_mint()?;
+    completion::collection_verification_requires_the_matching_release()?;
+    completion::store_submission_is_stage_gated_and_records_uncertainty()?;
+    completion::store_submission_accepts_a_verified_session_and_returns_the_ticket()
 }
 
 fn flows() -> Outcome {

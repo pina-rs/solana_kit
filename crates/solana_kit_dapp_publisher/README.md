@@ -93,9 +93,9 @@ must be query-free HTTPS and differ from presigned PUT capabilities. The feature
 preserves metadata schema 0.4.0, immutable APK hashing, six image header formats
 and exact public R2 reuse. It adds only portable URI parsing, with no HTTP client.
 
-The 32 retained workflow bodies now return fallible outcomes in four shared
-groups appended after the unchanged 443-case prefix. The proposed v54/447
-identity has no execution receipt; old goldens and locks remain untouched.
+The 41 retained workflow bodies now return fallible outcomes in five shared
+groups appended after the unchanged 443-case prefix. The current v55/448
+identity includes the completion group and is checked in.
 Native Send witnesses remain confined to the earlier portal's native coverage.
 Nine native completion bodies add caller-driven mint preparation, signed
 transaction submission, receipt save, collection verification and attested store
