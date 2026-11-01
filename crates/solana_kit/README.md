@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="https://raw.githubusercontent.com/pina-rs/solana_kit/main/assets/brand/solana-kit-mark.png" alt="Solana Kit" width="112" height="112">
+</p>
+
 # solana_kit
 
 This is a name-reservation placeholder for the Rust Solana Kit project at

@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="https://raw.githubusercontent.com/pina-rs/solana_kit/main/assets/brand/solana-kit-mark.png" alt="Solana Kit" width="112" height="112">
+</p>
+
 # Portable Anchor runtime
 
 `solana_kit_anchor` codes Anchor IDL 0.30 instructions, accounts and events

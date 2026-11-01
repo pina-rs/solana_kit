@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="https://raw.githubusercontent.com/pina-rs/solana_kit/main/assets/brand/solana-kit-mark.png" alt="Solana Kit" width="112" height="112">
+</p>
+
 # solana_kit_native
 
 Tokio HTTP/1 and text WebSocket transports with verified TLS for off-chain Solana application code.

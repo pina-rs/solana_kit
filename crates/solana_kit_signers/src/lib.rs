@@ -1,3 +1,9 @@
+#![doc(
+    html_logo_url = "https://raw.githubusercontent.com/pina-rs/solana_kit/main/assets/brand/solana-kit-mark.png"
+)]
+#![doc(
+    html_favicon_url = "https://raw.githubusercontent.com/pina-rs/solana_kit/main/assets/brand/solana-kit-favicon-32.png"
+)]
 //! Executor-neutral signing capabilities for off-chain application clients.
 //!
 //! Futures may retain local state. Native callers can require `Send` on each
