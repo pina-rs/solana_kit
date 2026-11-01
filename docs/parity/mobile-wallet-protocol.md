@@ -131,3 +131,12 @@ same derivation through authenticated ciphertext in every portable host.
 All 179 declaration rows remain partial. Entropy, IV uniqueness across both
 directions, time, persistence, nonce/replay policy and platform handover stay
 caller-owned. These portable protocol assertions do not complete platform parity.
+
+## Numeric transaction-version regression
+
+The public JSON-model case now decodes `["legacy", 0, 255]` both directly and
+through `serde_json::Value`, and rejects `-1`, `256`, `1.5`,
+`18446744073709551616`, booleans, null and objects through both paths. Numeric
+zero therefore remains `TransactionVersion::Number(0)` while the named variant
+retains arbitrary string content. This is test-only evidence; no production
+decoder or dependency selection changed.
