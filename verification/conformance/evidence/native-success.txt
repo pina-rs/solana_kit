@@ -444,4 +444,8 @@ publisher-prepared-three-envelope-bytes-and-signatures: Ok(())
 publisher-prepared-policy-invariants-and-rejections: Ok(())
 publisher-occupied-signature-preservation: Ok(())
 publisher-shared-caller-budgets: Ok(())
-solana-kit-core-v52: 439/439 cases passed
+publisher-portal-thirteen-exact-routes: Ok(())
+publisher-portal-envelopes-admission-and-absence: Ok(())
+publisher-portal-retry-deadline-and-cancellation: Ok(())
+publisher-portal-independent-binary-upload: Ok(())
+solana-kit-core-v53: 443/443 cases passed

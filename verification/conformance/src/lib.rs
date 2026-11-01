@@ -86,9 +86,9 @@ pub mod system_client;
 use alloc::vec::Vec;
 
 /// Integrated core contract suite; execution receipts identify actual hosts.
-pub const SUITE_ID: &str = "solana-kit-core-v52";
+pub const SUITE_ID: &str = "solana-kit-core-v53";
 /// Exact current registrants, including all preserved and appended contract groups.
-pub const EXPECTED_CASE_COUNT: usize = 439;
+pub const EXPECTED_CASE_COUNT: usize = 443;
 
 /// Selects authentic fixtures or the intentionally incorrect hash oracle.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -201,6 +201,7 @@ pub fn run(mode: FixtureMode) -> Report {
     cases.extend(sns::cases());
     cases.extend(surfpool::cases());
     cases.extend(publisher::cases());
+    cases.extend(publisher::portal::cases());
 
     Report {
         suite_id: SUITE_ID,
