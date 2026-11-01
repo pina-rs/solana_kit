@@ -96,6 +96,6 @@ The portal layer and its native verification are documented in [Publisher portal
 It adds raw wire contracts and explicit retry/upload boundaries without claiming
 workflow orchestration. The separate optional [ingestion and hydration layer](dapp-publisher-workflow.md)
 now reconciles resumable checkpoints and metadata/media as an unexecuted source
-proposal. Transaction/store completion, full normalized projections, funding
-preflight and native CLI remain separate work. Existing canonical declaration
+proposal. Transaction/store completion and a portable funding preflight are
+implemented; full normalized projections and the native CLI remain separate work. Existing canonical declaration
 IDs remain pending.
