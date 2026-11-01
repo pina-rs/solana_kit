@@ -1,5 +1,6 @@
-//! Ingestion and media hydration stop before transaction signing or store submission.
+//! Ingestion, hydration and explicit completion keep signing and submission caller-owned.
 
+mod completion;
 mod engine;
 mod error;
 mod hydrate;
@@ -11,6 +12,7 @@ mod source;
 mod state;
 mod timestamp;
 
+pub use completion::{MintPreparation, MintSave, StoreSubmission, TransactionPurpose};
 pub use engine::Workflow;
 pub use error::Error;
 pub use hydrate::HydratedPublication;

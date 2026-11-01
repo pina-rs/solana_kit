@@ -90,8 +90,11 @@ The 32 retained workflow bodies now return fallible outcomes in four shared
 groups appended after the unchanged 443-case prefix. The proposed v54/447
 identity has no execution receipt; old goldens and locks remain untouched.
 Native Send witnesses remain confined to the earlier portal's native coverage.
-Complete transaction/store orchestration, full normalization, funding preflight
-and native CLI remain later work.
+Nine native completion bodies add caller-driven mint preparation, signed
+transaction submission, receipt save, collection verification and attested store
+submission. Each mutation records durable intent before the call; no method signs,
+retries or enables normal publishing. Full normalized model/error/logging
+projection, funding preflight and the native CLI remain later work.
 Porting source does not authorize uploading application artifacts or contact data.
 
 The tests contain independent JSON, Borsh and legacy/v0/v1 envelope literals plus

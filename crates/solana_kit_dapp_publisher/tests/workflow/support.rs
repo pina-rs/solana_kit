@@ -131,6 +131,12 @@ impl rest::Transport<PortalService> for Portal {
         let effect = match request.path_segments.last().map(String::as_str) {
             Some("publication.createIngestionSession") => Some(Effect::CreateIngestion),
             Some("publication.createUploadTarget") => Some(Effect::CreateUploadTarget),
+            Some("publication.submitSignedTransaction") => Some(Effect::SubmitTransaction),
+            Some("publication.saveReleaseNftData") => Some(Effect::SaveReleaseNftData),
+            Some("publication.markReleaseCollectionAsVerified") => {
+                Some(Effect::MarkCollectionVerified)
+            }
+            Some("publication.submitToStore") => Some(Effect::SubmitStore),
             Some("publication.cleanupRelease") => Some(Effect::Cleanup),
             _ => None,
         };
