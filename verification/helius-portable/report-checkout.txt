@@ -40,4 +40,5 @@ PASS transfer-models
 PASS payment-terms
 PASS auth-default-signing
 PASS auth-caller-signing
-PASS all 42 Helius contract groups
+PASS smart-transaction-preparation
+PASS all 43 Helius contract groups

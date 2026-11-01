@@ -49,6 +49,17 @@ These pure helpers add no RPC or transaction composition. Their native contract
 fixtures, strict Clippy and API documentation pass. Current-source browser, WASI
 and production interpreter execution remain required in CI.
 
+`transactions::create_smart_transaction` prepares an **unsigned v0 transaction**.
+Supply owned instructions, payer identities, a real simulation blockhash/expiry
+and explicit lookup snapshots. It strips caller Compute Budget instructions and
+preflights the draft/final layout, then observes simulation, recommended account-key
+pricing and a fresh blockhash in that order. Final price and limit precede ordered
+user instructions; all signature slots remain empty. No signer, submitter, lookup
+discovery, retry or nonce workflow is added. Typed errors retain their stage and
+redact ordinary formatting. This reconciled source and its portable/native Send
+witnesses remain unexecuted locally. See the smart-preparation parity record for
+count proposals, fallible predicates and native golden-capture commands.
+
 DAS wire records follow the provider's partial-response contract. Applications
 that require complete records can convert `NftEdition`, `TokenAccount` and
 `TokenAccountList` through `TryFrom` into `CompleteNftEdition`,

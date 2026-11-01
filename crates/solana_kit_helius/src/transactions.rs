@@ -3,6 +3,7 @@
 mod compute_buffer;
 mod decimal;
 mod fees;
+mod smart_preparation;
 
 pub use compute_buffer::{
     ComputeUnitBuffer, ComputeUnitBufferError, MAX_SMART_TRANSACTION_COMPUTE_UNITS,
@@ -10,6 +11,11 @@ pub use compute_buffer::{
 };
 pub use fees::{
     PriorityFeeError, ResolvePriorityFeeInput, ResolvedPriorityFee, resolve_priority_fee,
+};
+pub use smart_preparation::{
+    PreparedSmartTransaction, SmartTransactionBuildError, SmartTransactionError,
+    SmartTransactionInput, SmartTransactionOptions, SmartTransactionStage,
+    create_smart_transaction,
 };
 
 use core::fmt;
