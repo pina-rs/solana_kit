@@ -3,7 +3,7 @@
 mod client;
 mod error;
 mod models;
-mod object;
+pub(crate) mod object;
 mod operations;
 mod requests;
 

@@ -9,11 +9,12 @@ publish = false
 readme = "README.md"
 repository = "https://github.com/pina-rs/solana_kit/tree/main/crates/solana_kit_dapp_publisher"
 rust-version.workspace = true
-description = "Portable dApp publication attestation, transaction policy and typed portal protocol"
+description = "Portable dApp publication policy, portal protocol and resumable metadata hydration"
 
 [features]
 default = []
 portal = ["dep:solana_kit_client", "dep:serde", "dep:serde_json"]
+workflow = ["portal", "crypto", "dep:http"]
 crypto = [
   "solana_kit_core/crypto",
   "solana_kit_core/text-codecs",
@@ -22,6 +23,7 @@ crypto = [
 ]
 
 [dependencies]
+http = { version = "1.5.0", optional = true }
 serde = { version = "1.0.229", features = ["derive"], optional = true }
 serde_json = { version = "1.0.154", features = ["arbitrary_precision", "raw_value"], optional = true }
 solana_kit_client = { workspace = true, optional = true }

@@ -78,8 +78,20 @@ decoding. Binary uploads use a separate caller-owned `Uploader`, approved origin
 explicit bytes/type/cap and one PUT; it receives no portal authentication object.
 Dropping futures drops owned exchanges and timers.
 
-Resumable workflows, normalization, metadata/media, funding preflight and native
-CLI remain later slices. The retained workflow producer is not integrated here.
+Enable `workflow` for caller-driven ingestion, resume, polling, metadata hydration
+and explicit cleanup. Callers own bounded source reads, atomic durable storage,
+Clock and the independent uploader. Pending effects are saved before admission;
+ambiguous outcomes stop resume before replay. Public metadata and receipt URLs
+must be query-free HTTPS and differ from presigned PUT capabilities. The feature
+preserves metadata schema 0.4.0, immutable APK hashing, six image header formats
+and exact public R2 reuse. It adds only portable URI parsing, with no HTTP client.
+
+The 32 retained workflow bodies now return fallible outcomes in four shared
+groups appended after the unchanged 443-case prefix. The proposed v54/447
+identity has no execution receipt; old goldens and locks remain untouched.
+Native Send witnesses remain confined to the earlier portal's native coverage.
+Complete transaction/store orchestration, full normalization, funding preflight
+and native CLI remain later work.
 Porting source does not authorize uploading application artifacts or contact data.
 
 The tests contain independent JSON, Borsh and legacy/v0/v1 envelope literals plus

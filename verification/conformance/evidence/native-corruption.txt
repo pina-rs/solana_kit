@@ -448,4 +448,8 @@ publisher-portal-thirteen-exact-routes: Ok(())
 publisher-portal-envelopes-admission-and-absence: Ok(())
 publisher-portal-retry-deadline-and-cancellation: Ok(())
 publisher-portal-independent-binary-upload: Ok(())
-solana-kit-core-v53: 442/443 cases passed
+publisher-workflow-new-resume-and-metadata: Ok(())
+publisher-workflow-durable-effects-and-cancellation: Ok(())
+publisher-workflow-apk-headers-and-admission: Ok(())
+publisher-workflow-public-url-boundaries: Ok(())
+solana-kit-core-v54: 446/447 cases passed

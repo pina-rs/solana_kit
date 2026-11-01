@@ -8,7 +8,7 @@ use serde::{
 use serde_json::value::RawValue;
 use solana_kit_client::Presence;
 
-pub(super) fn parse<T: DeserializeOwned>(raw: &str) -> Result<T, serde_json::Error> {
+pub(crate) fn parse<T: DeserializeOwned>(raw: &str) -> Result<T, serde_json::Error> {
     if !raw.trim_start().starts_with('{') {
         return Err(serde_json::Error::custom("expected a portal JSON object"));
     }

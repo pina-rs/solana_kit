@@ -20,6 +20,7 @@ pub struct UploadRequest<'a> {
 ///
 /// Implementations approve the target origin, deny redirects, bound any response,
 /// send one PUT with the supplied media type and cancel owned work on future Drop.
+/// Task-owning adapters retain capacity until actual termination is joined.
 /// No concrete network uploader is included in this slice.
 pub trait Uploader {
     /// Concrete local or native Send-capable future, without an imposed executor.
