@@ -56,6 +56,13 @@ Callers issue fresh request IDs and supply exact slot/blockhash values. They sig
 the returned bare JSON bytes. Verified attachment emits the canonical padded
 `base64(signature || JSON)` and cannot adopt a different signed message.
 
+Enable `cli` for pure publisher command resolution: valued/boolean/equals
+flags, new-version and resume validation, selector aliases, self-update policy,
+portal/API endpoint derivation with HTTPS and localhost checks, API-key
+environment/stdin selection, local/remote source selection and summary lines.
+It performs no file read, stdin read, keypair load, network request, signing or
+workflow execution; the native binary and concrete adapters remain later work.
+
 The default graph also exposes a caller-owned funding preflight. It resolves an
 explicit RPC endpoint, skips the check for local development, and otherwise names
 the default mainnet endpoint without contacting it. `check_signer_balance`
