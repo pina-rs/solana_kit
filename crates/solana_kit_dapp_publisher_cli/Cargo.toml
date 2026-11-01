@@ -1,0 +1,34 @@
+[package]
+name = "solana_kit_dapp_publisher_cli"
+version = "0.1.0"
+authors.workspace = true
+categories = ["command-line-utilities"]
+edition.workspace = true
+keywords = ["solana", "dapp-store", "publisher", "cli"]
+license.workspace = true
+publish = false
+readme = "README.md"
+repository = "https://github.com/pina-rs/solana_kit/tree/main/crates/solana_kit_dapp_publisher_cli"
+rust-version.workspace = true
+description = "Native publishing CLI for the Solana Kit dApp publisher"
+
+[[bin]]
+name = "solana-kit-publisher"
+path = "src/main.rs"
+doc = false
+
+[package.metadata.binstall]
+pkg-url = "{ repo }/releases/download/publisher-cli-v{ version }/solana-kit-publisher-{ target }-publisher-cli-v{ version }{ archive-suffix }"
+pkg-fmt = "tgz"
+bin-dir = "{ bin }{ binary-ext }"
+
+[dependencies]
+base64 = "0.22.1"
+getrandom = "0.3"
+http = "1.5.0"
+serde_json = "1.0"
+solana_kit_client = { workspace = true }
+solana_kit_core = { workspace = true, features = ["crypto", "text-codecs"] }
+solana_kit_dapp_publisher = { workspace = true, features = ["cli", "portal", "workflow", "crypto"] }
+time = { version = "=0.3.44", features = ["formatting"] }
+ureq = { version = "3.5.0", default-features = false, features = ["rustls"] }

@@ -228,6 +228,12 @@ path = "crates/solana_kit_surfpool"
 type = "cargo"
 publish = { enabled = false }
 
+[package.solana_kit_dapp_publisher_cli]
+path = "crates/solana_kit_dapp_publisher_cli"
+type = "cargo"
+changelog = false
+publish = { enabled = false }
+
 [package.solana_kit_dapp_publisher]
 path = "crates/solana_kit_dapp_publisher"
 type = "cargo"

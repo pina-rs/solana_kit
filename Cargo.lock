@@ -1757,6 +1757,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "solana_kit_dapp_publisher_cli"
+version = "0.1.0"
+dependencies = [
+ "base64 0.22.1",
+ "getrandom 0.3.4",
+ "http",
+ "serde_json",
+ "solana_kit_client",
+ "solana_kit_core",
+ "solana_kit_dapp_publisher",
+ "time",
+ "ureq",
+]
+
+[[package]]
 name = "solana_kit_durable_nonce_verification"
 version = "0.0.0"
 dependencies = [
@@ -2114,8 +2129,10 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "91e7d9e3bb61134e77bde20dd4825b97c010155709965fedf0f49bb138e52a9d"
 dependencies = [
  "deranged",
+ "itoa",
  "num-conv",
  "powerfmt",
+ "serde",
  "time-core",
  "time-macros",
 ]

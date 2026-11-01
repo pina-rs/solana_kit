@@ -11,6 +11,20 @@ Solana Kit is only for off-chain application code. Do not use it in Solana
 on-chain programs; use Pina or official Solana program libraries instead.
 `no_std + alloc` enables portable clients and does not imply on-chain support.
 
+## Publisher CLI
+
+`solana_kit_dapp_publisher_cli` installs the native `solana-kit-publisher`
+command:
+
+```sh
+cargo install --git https://github.com/pina-rs/solana_kit solana_kit_dapp_publisher_cli
+```
+
+Prebuilt macOS, Linux and Windows archives are uploaded to a draft GitHub release
+by the [`publisher CLI`](.github/workflows/publisher-cli.yml) workflow on a
+`publisher-cli-v*` tag. See the
+[CLI README](crates/solana_kit_dapp_publisher_cli/README.md) for usage.
+
 The first implemented slice is `solana_kit_core` 0.1.0: portable addresses,
 hashes, signatures, ordered instructions, account roles, bounded binary codecs,
 immutable legacy/v0/v1 transactions, account snapshots, sysvar layouts, program
