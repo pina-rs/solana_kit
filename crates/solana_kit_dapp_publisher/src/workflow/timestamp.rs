@@ -76,7 +76,8 @@ fn valid_date(year: u32, month: u32, day: u32) -> bool {
     let Some(days) = DAYS_PER_MONTH.get(index) else {
         return false;
     };
-    let leap = year % LEAP_PERIOD == 0 && (year % CENTURY != 0 || year % LEAP_CENTURY == 0);
+    let leap = year.is_multiple_of(LEAP_PERIOD)
+        && (!year.is_multiple_of(CENTURY) || year.is_multiple_of(LEAP_CENTURY));
     let days = *days + u32::from(month == 2 && leap);
     year != 0 && (1..=days).contains(&day)
 }

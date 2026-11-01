@@ -89,7 +89,7 @@ fn approve(uri: &Uri) -> Result<(), Error> {
     Ok(())
 }
 
-pub(super) fn public_r2(value: &str) -> bool {
+pub(in crate::workflow) fn public_r2(value: &str) -> bool {
     let Ok(uri) = public_uri(value) else {
         return false;
     };

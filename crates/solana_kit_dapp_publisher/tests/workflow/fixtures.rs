@@ -3,6 +3,7 @@
 use super::support::{Step, json};
 use serde_json::{Value, json};
 use solana_kit_dapp_publisher::portal::{CreateIngestionSession, IngestionSource};
+use std::{string::ToString, vec, vec::Vec};
 
 pub const GIF: &[u8] = b"GIF89a\x02\x00\x03\x00";
 pub const GIF_HASH: &str = "a39ba6aebc26432b0b646b0ca5b569fa7c114063f8afaf052744f1554d28cca8";

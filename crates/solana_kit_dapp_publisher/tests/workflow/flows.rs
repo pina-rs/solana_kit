@@ -8,6 +8,11 @@ use super::{
 use serde_json::{Value, json as json_value};
 use solana_kit_client::{Presence, rest};
 use solana_kit_dapp_publisher::workflow::{HydratedPublication, ResumeTarget, Stage, Workflow};
+use std::{
+    string::{String, ToString},
+    vec,
+    vec::Vec,
+};
 
 #[cfg_attr(test, test)]
 pub fn new_ingestion_polls_rehosts_media_and_uploads_the_complete_typed_document() -> Outcome {
@@ -352,7 +357,7 @@ fn assert_origin_behavior(uri: &str, image: &str, expected_uploads: usize) -> Ou
             == expected_document(image),
         "workflow flows predicate 34 mismatch",
     )?;
-    assert_origin_request_counts(rig, expected_uploads)
+    assert_origin_request_counts(&rig, expected_uploads)
 }
 
 fn assert_origin_request_counts(rig: &Rig, expected_uploads: usize) -> Outcome {

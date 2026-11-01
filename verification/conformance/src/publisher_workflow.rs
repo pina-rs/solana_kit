@@ -106,7 +106,7 @@ mod continuation {
 
     #[test]
     fn a_fake_intent_violation_cannot_be_accepted_as_a_provider_failure() -> Outcome {
-        let rig = support::Rig::new(vec![fixtures::created()]);
+        let rig = support::Rig::new(std::vec![fixtures::created()]);
         let result = support::complete(rig.client.call(&fixtures::input()))?;
         require(result.is_err(), "missing durable intent was accepted")?;
         require(

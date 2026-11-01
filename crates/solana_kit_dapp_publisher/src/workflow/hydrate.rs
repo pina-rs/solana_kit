@@ -165,7 +165,7 @@ where
             .metadata_uri
             .as_deref()
             .or_else(|| text(&session.metadata_uri))
-            .or_else(|| backend_uri(&bundle));
+            .or_else(|| backend_uri(bundle));
 
         if let Some(uri) = uri {
             return media::urls::public(uri);

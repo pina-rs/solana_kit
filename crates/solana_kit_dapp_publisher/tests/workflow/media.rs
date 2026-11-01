@@ -13,8 +13,13 @@ use solana_kit_dapp_publisher::{
     },
 };
 use std::{
+    borrow::ToOwned,
+    boxed::Box,
     cell::{Cell, RefCell},
     rc::Rc,
+    string::{String, ToString},
+    vec,
+    vec::Vec,
 };
 
 fn reader(rig: &Rig, bytes: &[u8]) -> Reader {

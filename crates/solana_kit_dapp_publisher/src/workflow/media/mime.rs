@@ -10,12 +10,12 @@ pub(crate) fn validate(mime: &str) -> Result<(), Error> {
     Ok(())
 }
 
-pub(super) fn normalized(value: &str) -> Option<String> {
+pub(in crate::workflow) fn normalized(value: &str) -> Option<String> {
     let value = value.split(';').next()?.trim().to_ascii_lowercase();
     (!value.is_empty()).then_some(value)
 }
 
-pub(super) fn infer(name: &str) -> &'static str {
+pub(in crate::workflow) fn infer(name: &str) -> &'static str {
     match name
         .rsplit('.')
         .next()
@@ -38,7 +38,7 @@ pub(super) fn infer(name: &str) -> &'static str {
 }
 
 /// A plain name extension wins; otherwise a cleaned MIME subtype falls back to bin.
-pub(super) fn extension(name: &str, mime: &str) -> String {
+pub(in crate::workflow) fn extension(name: &str, mime: &str) -> String {
     if let Some((_, extension)) = name.rsplit_once('.') {
         let extension = extension.trim();
 

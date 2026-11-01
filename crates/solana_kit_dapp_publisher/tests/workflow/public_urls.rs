@@ -9,7 +9,7 @@ use serde_json::{Value, json as json_value};
 use solana_kit_dapp_publisher::workflow::{
     Effect, Error, LocalApk, ResumeTarget, Snapshot, prepare_local_apk,
 };
-use std::{cell::RefCell, rc::Rc};
+use std::{cell::RefCell, rc::Rc, string::ToString, vec, vec::Vec};
 
 const SIGNED_UPLOAD: &str = "https://upload.invalid/put?signature=synthetic";
 const QUERY_PUBLIC: &str = "https://public.invalid/metadata.json?signature=synthetic";

@@ -210,27 +210,33 @@ calls the actual portal method without durable intent and requires the fake's
 original violation after the transport error. Both controls are real CI tests.
 
 All prior 443 case IDs and order remain an exact prefix. Four workflow groups
-append globally after the portal groups; the declared v54/447 identity is a source
-proposal, not an execution receipt. Existing success/corruption goldens and all
-lockfiles remain untouched. The prior 22 policy bodies and 23 portal native bodies
-are preserved. Historical Root unit 1074 describes a separate producer; it does
-not qualify this workflow or the shared deadline extraction. Portal CI records
-remain attached to their own source identity.
+append globally after the portal groups, producing the v54/447 identity. The prior
+22 policy bodies and 23 portal native bodies are preserved. Historical Root unit
+1074 describes a separate producer; it does not qualify this workflow or the
+shared deadline extraction. Portal CI records remain attached to their own source
+identity.
 
-All new compiler, native and portable-host checks remain **UNEXECUTED** by the
-source worker. After genuine dependency graph resolution, Root's first commands are:
+The repaired shared source now compiles inside the `no_std` conformance crate,
+including explicit `std`-item imports for the host-side test bodies. The native
+suite was executed on 2026-11-01:
 
 ```sh
 cargo +1.99.1 test --locked -p solana_kit_dapp_publisher --all-features
 cargo +1.99.1 test --locked -p solana_kit_conformance --all-features
+cargo +1.99.1 clippy --locked -p solana_kit_dapp_publisher --all-targets --all-features -- -D warnings
+cargo +1.99.1 run --locked -p solana_kit_conformance
+cargo +1.99.1 run --locked -p solana_kit_conformance -- --corrupt-fixture
 ```
 
-Root must capture actual native canonical and SHA-256-corrupt stdout, preserve the
-443-case prefix, and promote only genuine results. The source target is 447/447
-and 446/447 with exits 0/1, respectively; no such result has been observed here.
-Strict Clippy/docs, browser, both WASI targets, production wasmi, independent
-consumer locks and OS CI remain Root-owned. No canonical declaration ID or
-pending verdict changes. Root also owns source judging and derived inventories.
+All 32 workflow bodies, the policy and portal suites, and the Rustdoc example
+passed. The canonical run reported 447/447 with exit 0; the SHA-256-corrupt run
+reported 446/447 with exit 1. Both exact outputs are checked in as
+`verification/conformance/evidence/native-success.txt` and
+`native-corruption.txt`. Strict Clippy passed for the package.
+
+Browser, both WASI targets, production wasmi, independent consumer locks and
+three-OS CI remain unexecuted for this producer and are delegated to pull-request
+CI. No canonical declaration ID or pending verdict changes.
 
 The immediate next unit must add explicit context-bound mint/save/verify/attest/
 store completion methods around the existing policy seals, retaining checkpoint
