@@ -167,6 +167,31 @@ Audited members under `packages/solana_kit_dapp_publisher_cli/lib/src/`:
 | files.dart                | `14cb1663fc458a482d4da8777fb4e512095c7266aa84ccebe8b12e7513055ce0` |
 | publication_models.dart   | `d96e980f4fb2d388d0fb135813398cc4c26ecf071030dd5719d07d81edb0df5b` |
 
+## Completion methods
+
+The workflow now exposes the Dart core's explicit completion steps without
+owning signing, transaction submission or store authorization:
+
+- `prepare_release_mint` validates the prepared-mint stage, the bundle's app mint
+  and every caller input before requesting an unsigned release transaction.
+- `prepare_collection_verification` requires the mint-saved stage and resolves the
+  dApp, release mint, collection mint and collection authority from the persisted
+  session and bundle before requesting an unsigned verification transaction.
+- `submit_signed_transaction` accepts a fully signed caller transaction, records
+  `SubmitTransaction` before the call and clears it only after an acknowledged
+  response. A failure leaves the effect pending and blocks replay.
+- `save_release_nft_data` requires the mint-submitted stage, checks the mint and
+  app mint against the session/bundle and requires a true acknowledgment.
+- `mark_collection_verified` requires the verification-submitted stage and rejects
+  a response for another release.
+- `submit_to_store` requires the verified or attested stage and a caller-signed
+  attestation; a failure leaves `SubmitStore` pending for reconciliation.
+
+Prepared transactions are still untrusted proposals. No method signs, submits a
+transaction automatically, retries, creates an attestation or enables normal
+publishing. Callers must re-hydrate after each acknowledged mutation to read the
+backend stage.
+
 ## Verification and remaining work
 
 The retained 32 synthetic test bodies exercise start/resume, cached and R2
@@ -238,10 +263,14 @@ Browser, both WASI targets, production wasmi, independent consumer locks and
 three-OS CI remain unexecuted for this producer and are delegated to pull-request
 CI. No canonical declaration ID or pending verdict changes.
 
-The immediate next unit must add explicit context-bound mint/save/verify/attest/
-store completion methods around the existing policy seals, retaining checkpoint
-uncertainty. Complete publication-bundle validation before transaction preparation,
-full Dart normalized model/error/logging projection and automated
+The completion methods add nine independent native test bodies covering exact
+prepared request/procedure selection, stage rejection, publisher mismatch, acknowledged submission,
+failed-submission uncertainty, negative save acknowledgement, mismatched
+verification and store-submission stage/flag behavior. They are not yet part of
+the shared conformance prefix, so portable-host execution for these bodies
+remains pending.
+
+Full Dart normalized model/error/logging projection and automated
 uncertain-effect reconciliation are still incomplete. The native CLI seam is
 argument/env/stdin resolution, approved credentials, existing Kit signer/funding
 preflight, bounded SourceReader, atomic durable Storage, portal transport,

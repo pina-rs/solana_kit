@@ -16,6 +16,14 @@ pub enum Effect {
     CreateUploadTarget,
     /// Binary PUT has not been acknowledged durably.
     Upload,
+    /// A signed transaction submission has not been acknowledged durably.
+    SubmitTransaction,
+    /// The release-mint receipt has not been acknowledged durably.
+    SaveReleaseNftData,
+    /// Collection verification has not been acknowledged durably.
+    MarkCollectionVerified,
+    /// Store review submission has not been acknowledged durably.
+    SubmitStore,
     /// Explicit failed-release cleanup has not been acknowledged durably.
     Cleanup,
 }

@@ -42,7 +42,7 @@ pub fn session(metadata: Option<&str>, stage: &str) -> Step {
 pub fn bundle(icon: &str) -> Value {
     json!({
         "releaseId":"rel", "ingestionSessionId":"ing", "publicationSessionId":"pub",
-        "dapp": {"dappName":"Fixture", "description":"Long fixture", "subtitle":"Short fixture", "androidPackage":"test.fixture",
+        "dapp": {"id":"dapp","dappName":"Fixture", "description":"Long fixture", "subtitle":"Short fixture", "androidPackage":"test.fixture",
             "dappIconUrl":icon, "walletAddress":ADDRESS, "nftMintAddress":ADDRESS, "languages":["en-US"]},
         "publisher": {
             "name":"Synthetic Publisher", "website":"publisher.invalid/",
@@ -52,7 +52,7 @@ pub fn bundle(icon: &str) -> Value {
         "installFile": {"uri":"https://public.invalid/app.apk","mimeType":"application/vnd.android.package-archive","size":3,"sha256":ABC_HASH},
         "release": {"id":"rel","androidPackage":"test.fixture","versionName":"2.0","versionCode":9007199254740993u64,
             "minSdkVersion":MIN_SDK,"targetSdkVersion":TARGET_SDK,"certificateFingerprint":"synthetic-fingerprint",
-            "permissions":["INTERNET"],"locales":["en-US","fr"],"newInVersion":"New version"}
+            "permissions":["INTERNET"],"locales":["en-US","fr"],"newInVersion":"New version","nftMintAddress":ADDRESS}
     })
 }
 
