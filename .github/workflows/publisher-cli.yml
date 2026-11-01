@@ -1,0 +1,139 @@
+name: "publisher CLI"
+
+# Builds the native publisher CLI and uploads archives to a draft GitHub
+# release. Trigger with a `publisher-cli-vX.Y.Z` tag, or dispatch a dry run
+# against a branch to validate every target without publishing.
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag (publisher-cli-v0.1.0)"
+        required: true
+        type: string
+      dry_run:
+        description: "Build and archive every target without uploading"
+        required: false
+        type: boolean
+        default: false
+      checkout_ref:
+        description: "Ref to build instead of the tag (dry runs)"
+        required: false
+        type: string
+  push:
+    tags:
+      - "publisher-cli-v*"
+
+env:
+  RELEASE_TAG: ${{ inputs.tag || github.ref_name }}
+
+permissions:
+  contents: read
+
+jobs:
+  prepare:
+    name: prepare draft release
+    if: startsWith(inputs.tag || github.ref_name, 'publisher-cli-v')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: create draft release
+        if: inputs.dry_run != true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if ! gh release view "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release create "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" \
+              --draft --title "Publisher CLI $RELEASE_TAG" \
+              --notes "Native publisher CLI archives."
+          fi
+
+  upload_assets:
+    name: build ${{ matrix.target }}
+    needs: prepare
+    if: startsWith(inputs.tag || github.ref_name, 'publisher-cli-v')
+    permissions:
+      contents: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: aarch64-unknown-linux-gnu
+            os: ubuntu-24.04-arm
+          - target: aarch64-unknown-linux-musl
+            os: ubuntu-latest
+          - target: aarch64-apple-darwin
+            os: macos-14
+          - target: x86_64-unknown-linux-gnu
+            os: ubuntu-latest
+          - target: x86_64-unknown-linux-musl
+            os: ubuntu-latest
+          - target: x86_64-apple-darwin
+            os: macos-latest
+          - target: x86_64-pc-windows-msvc
+            os: windows-latest
+          - target: aarch64-pc-windows-msvc
+            os: windows-latest
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 45
+    steps:
+      - name: checkout release ref
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ inputs.checkout_ref || env.RELEASE_TAG }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: install pinned toolchain
+        shell: bash
+        run: |
+          rustup toolchain install 1.99.1 --profile minimal --component rustfmt --component clippy
+          rustup default 1.99.1
+
+      - name: setup cross toolchain
+        if: startsWith(matrix.os, 'ubuntu') && !contains(matrix.target, '-musl')
+        uses: taiki-e/setup-cross-toolchain-action@12b7ad4acfa95a1476779d6c06699b96ec1691f8 # v1.42.0
+        with:
+          target: ${{ matrix.target }}
+
+      - name: install cross
+        if: contains(matrix.target, '-musl')
+        uses: taiki-e/install-action@ab6895351a88b908e96a4697860d4ffea5e57dbe # v2.87.27
+        with:
+          tool: cross
+
+      - name: set static CRT linkage
+        if: endsWith(matrix.target, 'windows-msvc')
+        shell: bash
+        run: echo "RUSTFLAGS=${RUSTFLAGS} -C target-feature=+crt-static" >> "$GITHUB_ENV"
+
+      - name: upload binaries
+        uses: taiki-e/upload-rust-binary-action@f0d45ae91ee7b8ee928de7a9d04d893a08bcbec6 # v1.30.2
+        with:
+          bin: solana-kit-publisher
+          manifest-path: crates/solana_kit_dapp_publisher_cli/Cargo.toml
+          profile: release
+          ref: ${{ inputs.checkout_ref || format('refs/tags/{0}', env.RELEASE_TAG) }}
+          archive: solana-kit-publisher-$target-${{ env.RELEASE_TAG }}
+          target: ${{ matrix.target }}
+          tar: all
+          zip: windows
+          dry-run: ${{ inputs.dry_run == true }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+          checksum: sha256,sha512
+
+  publish_release:
+    name: publish CLI release
+    needs: upload_assets
+    if: inputs.dry_run != true && startsWith(inputs.tag || github.ref_name, 'publisher-cli-v')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: publish draft release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: gh release edit "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" --draft=false

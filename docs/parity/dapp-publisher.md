@@ -97,6 +97,11 @@ It adds raw wire contracts and explicit retry/upload boundaries without claiming
 workflow orchestration. The separate optional [ingestion and hydration layer](dapp-publisher-workflow.md)
 now reconciles resumable checkpoints and metadata/media as an unexecuted source
 proposal. Transaction/store completion, a portable funding preflight and the
-pure CLI argument/environment/endpoint resolution layer are implemented; full
-normalized projections, the binary and concrete CLI adapters remain separate work. Existing canonical declaration
+`solana_kit_dapp_publisher_cli` native binary are implemented. The binary resolves
+flags/environment, loads a Solana CLI keypair, performs the funding preflight,
+uploads a local APK or uses a remote URL, signs the prepared mint/verification
+transactions, creates the attestation and submits store review. A
+`publisher-cli-v*` workflow uploads downloadable archives; `cargo install --git`
+installs from the repository while the SDK dependency chain remains unpublished.
+Full normalized projections remain separate work. Existing canonical declaration
 IDs remain pending.
