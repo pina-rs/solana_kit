@@ -463,6 +463,35 @@ pub(super) fn json_models_preserve_omission_null_and_solana_address_validation()
     );
     let invalid: MwaAccount = serde_json::from_value(json!({"address":"dGVzdA=="})).unwrap();
     check_eq!(invalid.solana_address(), Err(Error::Json));
+    let raw = r#"{"supported_transaction_versions":["legacy",0,255]}"#;
+    let expected = vec![
+        TransactionVersion::Named("legacy".into()),
+        TransactionVersion::Number(0),
+        TransactionVersion::Number(255),
+    ];
+    let direct: WalletCapabilities =
+        serde_json::from_str(raw).map_err(|_| "direct wallet capabilities decode failed")?;
+    check!(direct.supported_transaction_versions == Some(expected.clone()));
+    let value: Value =
+        serde_json::from_str(raw).map_err(|_| "wallet capabilities JSON rejected")?;
+    let through_value: WalletCapabilities =
+        serde_json::from_value(value).map_err(|_| "value wallet capabilities decode failed")?;
+    check!(through_value.supported_transaction_versions == Some(expected));
+    for invalid in [
+        "-1",
+        "256",
+        "1.5",
+        "18446744073709551616",
+        "true",
+        "null",
+        "{}",
+    ] {
+        let raw = format!(r#"{{"supported_transaction_versions":[{invalid}]}}"#);
+        check!(serde_json::from_str::<WalletCapabilities>(&raw).is_err());
+        let value: Value =
+            serde_json::from_str(&raw).map_err(|_| "invalid-case JSON syntax rejected")?;
+        check!(serde_json::from_value::<WalletCapabilities>(value).is_err());
+    }
     let capabilities: WalletCapabilities = serde_json::from_value(
         json!({"supported_transaction_versions":["legacy",0],"max_messages_per_request":5}),
     )
