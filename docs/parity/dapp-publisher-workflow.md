@@ -194,7 +194,7 @@ backend stage.
 
 ## Verification and remaining work
 
-The retained 32 synthetic test bodies exercise start/resume, cached and R2
+The retained 41 synthetic test bodies exercise start/resume, cached and R2
 hydration, complete document fields, exact large numbers, six header layouts,
 one immutable local file read, poll bounds, typed invalid metadata/checkpoints,
 cancelled reads/exchanges/uploads, pending non-replay, failed durable receipts,
@@ -211,7 +211,7 @@ inspect every recorded durable write as well as PUT observations. All original
 twenty-six workflow bodies remain; their R2 matrix now rehosts query-bearing
 inputs instead of treating them as durable public locations.
 
-All 32 native entry points retain their behavioral conditions and return
+All 41 native entry points retain their behavioral conditions and return
 `Result<(), &'static str>`. The 170 original assertions become fallible predicates;
 fixture construction, missing observations and SDK errors propagate without
 unwinding a host. Fake portal/storage/upload guards retain their first violation,
@@ -226,6 +226,7 @@ explicitly native-only and unchanged.
 | publisher-workflow-durable-effects-and-cancellation |              11 |
 | publisher-workflow-apk-headers-and-admission        |               9 |
 | publisher-workflow-public-url-boundaries            |               6 |
+| publisher-workflow-completion-stages                |               9 |
 
 The shared adapter imports the same source and its parent's one canonical private
 checks module. Its failure-continuation control changes only the independent
@@ -234,8 +235,8 @@ failure and inspects the later durable/media/URL group outcomes. A second contro
 calls the actual portal method without durable intent and requires the fake's
 original violation after the transport error. Both controls are real CI tests.
 
-All prior 443 case IDs and order remain an exact prefix. Four workflow groups
-append globally after the portal groups, producing the v54/447 identity. The prior
+All prior 443 case IDs and order remain an exact prefix. Five workflow groups
+append globally after the portal groups, producing the v55/448 identity. The prior
 22 policy bodies and 23 portal native bodies are preserved. Historical Root unit
 1074 describes a separate producer; it does not qualify this workflow or the
 shared deadline extraction. Portal CI records remain attached to their own source
@@ -253,9 +254,9 @@ cargo +1.99.1 run --locked -p solana_kit_conformance
 cargo +1.99.1 run --locked -p solana_kit_conformance -- --corrupt-fixture
 ```
 
-All 32 workflow bodies, the policy and portal suites, and the Rustdoc example
-passed. The canonical run reported 447/447 with exit 0; the SHA-256-corrupt run
-reported 446/447 with exit 1. Both exact outputs are checked in as
+All 41 workflow bodies, the policy and portal suites, and the Rustdoc example
+passed. The canonical run reported 448/448 with exit 0; the SHA-256-corrupt run
+reported 447/448 with exit 1. Both exact outputs are checked in as
 `verification/conformance/evidence/native-success.txt` and
 `native-corruption.txt`. Strict Clippy passed for the package.
 
@@ -263,12 +264,12 @@ Browser, both WASI targets, production wasmi, independent consumer locks and
 three-OS CI remain unexecuted for this producer and are delegated to pull-request
 CI. No canonical declaration ID or pending verdict changes.
 
-The completion methods add nine independent native test bodies covering exact
+The completion methods add nine shared test bodies covering exact
 prepared request/procedure selection, stage rejection, publisher mismatch, acknowledged submission,
 failed-submission uncertainty, negative save acknowledgement, mismatched
-verification and store-submission stage/flag behavior. They are not yet part of
-the shared conformance prefix, so portable-host execution for these bodies
-remains pending.
+verification and store-submission stage/flag behavior. They are part of
+the appended `publisher-workflow-completion-stages` group, so every portable
+conformance host executes them.
 
 Full Dart normalized model/error/logging projection and automated
 uncertain-effect reconciliation are still incomplete. The native CLI seam is

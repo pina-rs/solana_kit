@@ -452,4 +452,5 @@ publisher-workflow-new-resume-and-metadata: Ok(())
 publisher-workflow-durable-effects-and-cancellation: Ok(())
 publisher-workflow-apk-headers-and-admission: Ok(())
 publisher-workflow-public-url-boundaries: Ok(())
-solana-kit-core-v54: 447/447 cases passed
+publisher-workflow-completion-stages: Ok(())
+solana-kit-core-v55: 448/448 cases passed

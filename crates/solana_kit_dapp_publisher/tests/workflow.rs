@@ -3,6 +3,9 @@
 #[path = "support/checks.rs"]
 mod checks;
 
+#[path = "workflow/completion.rs"]
+mod completion;
+
 #[path = "workflow/failures.rs"]
 mod failures;
 #[path = "workflow/fixtures.rs"]
