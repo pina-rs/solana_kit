@@ -56,6 +56,13 @@ Callers issue fresh request IDs and supply exact slot/blockhash values. They sig
 the returned bare JSON bytes. Verified attachment emits the canonical padded
 `base64(signature || JSON)` and cannot adopt a different signed message.
 
+The default graph also exposes a caller-owned funding preflight. It resolves an
+explicit RPC endpoint, skips the check for local development, and otherwise names
+the default mainnet endpoint without contacting it. `check_signer_balance`
+compares a caller-observed lamport balance with the 16,000,000-lamport minimum;
+`format_sol_amount` uses integer six-decimal rounding. RPC transport, deadlines,
+retries and failed-read warnings remain caller policy.
+
 Enable `portal` for thirteen fixed typed procedures over the existing Kit
 `rest::Transport<PortalService>` and explicit JSON budgets. The caller's transport
 owns its approved API root, authentication, TLS and cancellation. No default

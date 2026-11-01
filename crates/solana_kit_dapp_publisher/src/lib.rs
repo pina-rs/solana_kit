@@ -4,6 +4,7 @@
 
 mod attestation;
 mod error;
+pub mod funding;
 
 #[cfg(feature = "portal")]
 mod deadline;
@@ -21,6 +22,10 @@ mod policy;
 
 pub use attestation::{AttestationMessage, RequestId};
 pub use error::Error;
+pub use funding::{
+    DEFAULT_MAINNET_RPC_URL, FundingCheck, FundingError, MIN_PUBLICATION_SIGNER_BALANCE_LAMPORTS,
+    check_signer_balance, format_sol_amount, resolve_funding_rpc_url,
+};
 
 #[cfg(feature = "crypto")]
 pub use attestation::PublicationAttestation;
