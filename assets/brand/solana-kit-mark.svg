@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title">
+  <title id="title">Solana Kit</title>
+  <defs>
+    <linearGradient id="kit-gradient" gradientUnits="userSpaceOnUse" x1="96" y1="72" x2="424" y2="448">
+      <stop offset="0" stop-color="#A855F7"/>
+      <stop offset=".52" stop-color="#7C5CFF"/>
+      <stop offset="1" stop-color="#14F195"/>
+    </linearGradient>
+  </defs>
+  <g fill="url(#kit-gradient)">
+    <g transform="rotate(0 256 256)">
+      <rect x="212" y="60" width="88" height="160" rx="44" transform="rotate(-18 256 220)"/>
+    </g>
+    <g transform="rotate(120 256 256)">
+      <rect x="212" y="60" width="88" height="160" rx="44" transform="rotate(-18 256 220)"/>
+    </g>
+    <g transform="rotate(240 256 256)">
+      <rect x="212" y="60" width="88" height="160" rx="44" transform="rotate(-18 256 220)"/>
+    </g>
+    <circle cx="256" cy="256" r="26" fill="#14F195"/>
+  </g>
+</svg>

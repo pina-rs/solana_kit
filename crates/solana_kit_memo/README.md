@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="https://raw.githubusercontent.com/pina-rs/solana_kit/main/assets/brand/solana-kit-mark.png" alt="Solana Kit" width="112" height="112">
+</p>
+
 # Solana Kit Memo
 
 A handwritten, `no_std + alloc` off-chain Memo client using Kit-owned types.
