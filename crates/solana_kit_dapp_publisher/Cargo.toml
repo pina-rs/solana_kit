@@ -13,6 +13,7 @@ description = "Portable dApp publication policy, portal protocol and resumable m
 
 [features]
 default = []
+cli = ["dep:http"]
 portal = ["dep:solana_kit_client", "dep:serde", "dep:serde_json"]
 workflow = ["portal", "crypto", "dep:http"]
 crypto = [

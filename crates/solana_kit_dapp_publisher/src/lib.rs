@@ -3,6 +3,8 @@
 #![doc = include_str!("../README.md")]
 
 mod attestation;
+#[cfg(feature = "cli")]
+pub mod cli;
 mod error;
 pub mod funding;
 
