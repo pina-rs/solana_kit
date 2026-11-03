@@ -24,6 +24,7 @@ fn every_chapter_in_the_summary_builds() {
             "{name} was not copied into the site"
         );
     }
+
     assert!(out.path().join("theme/skribble.css").is_file());
     assert!(
         out.path()

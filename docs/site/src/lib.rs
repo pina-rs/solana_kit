@@ -21,6 +21,7 @@ use skribble_rough::FillStyle;
 use skribble_rough::Point;
 
 use crate::ink::Canvas;
+use crate::ink::Doodle;
 use crate::ink::Mark;
 use crate::ink::Palette;
 use crate::ink::Shape;
@@ -92,14 +93,9 @@ pub fn components() -> Components {
 
 #[component]
 fn Hero(start: String, children: Children) -> impl IntoView {
-    let mark = ink::doodle(
-        42.0,
-        45.0,
-        &ink::brand_mark(11),
-        Palette::Page,
-        Some("sk-hero-mark"),
-        None,
-    );
+    let mark = Doodle::new(ink::BRAND_WIDTH, ink::BRAND_HEIGHT, Palette::Page)
+        .class("sk-hero-mark")
+        .render(&ink::brand_mark(ink::BRAND_SEED));
     let arrow = hero_arrow();
 
     view! {
@@ -124,34 +120,45 @@ fn Hero(start: String, children: Children) -> impl IntoView {
     }
 }
 
-/// The looping arrow from the hero's note to its mark.
-fn hero_arrow() -> String {
-    let curve = ink::pen(31, 1.0, FillStyle::None, 5.0).curve(&[
-        Point::new(6.0, 58.0),
-        Point::new(18.0, 30.0),
-        Point::new(40.0, 22.0),
-        Point::new(62.0, 8.0),
-    ]);
-    let head = ink::pen(32, 0.8, FillStyle::None, 5.0).linear_path(
-        &[
-            Point::new(49.0, 7.0),
-            Point::new(63.0, 7.0),
-            Point::new(59.0, 20.0),
-        ],
-        false,
-    );
+/// The arrow's intrinsic width.
+const ARROW_WIDTH: f64 = 72.0;
+/// The arrow's intrinsic height.
+const ARROW_HEIGHT: f64 = 66.0;
+/// The arrow's shaft, sweeping up from the note to the mark.
+const ARROW_SHAFT: [(f64, f64); 4] = [(6.0, 58.0), (18.0, 30.0), (40.0, 22.0), (62.0, 8.0)];
+/// The arrow's head, at the top of the shaft.
+const ARROW_HEAD: [(f64, f64); 3] = [(49.0, 7.0), (63.0, 7.0), (59.0, 20.0)];
+/// The shaft's seed; the head is drawn from the next one.
+const ARROW_SEED: i64 = 31;
+/// How far the head wobbles; the shaft uses the default roughness.
+const ARROW_HEAD_ROUGHNESS: f64 = 0.8;
+/// The arrow's stroke width.
+const ARROW_STROKE: f64 = 2.4;
+/// The hachure gap the arrow's pens are built with; the arrow has no
+/// hachure, so it only keeps the random streams stable.
+const ARROW_GAP: f64 = 5.0;
 
-    ink::doodle(
-        72.0,
-        66.0,
-        &[
-            Mark::new(curve, Tone::Coral).width(2.4),
-            Mark::new(head, Tone::Coral).width(2.4),
-        ],
-        Palette::Page,
-        None,
-        None,
+/// The arrow from the hero's note up to its mark.
+fn hero_arrow() -> String {
+    let points = |points: &[(f64, f64)]| {
+        points
+            .iter()
+            .map(|&(x, y)| Point::new(x, y))
+            .collect::<Vec<_>>()
+    };
+    let shaft = ink::pen(ARROW_SEED, 1.0, FillStyle::None, ARROW_GAP).curve(&points(&ARROW_SHAFT));
+    let head = ink::pen(
+        ARROW_SEED + 1,
+        ARROW_HEAD_ROUGHNESS,
+        FillStyle::None,
+        ARROW_GAP,
     )
+    .linear_path(&points(&ARROW_HEAD), false);
+
+    Doodle::new(ARROW_WIDTH, ARROW_HEIGHT, Palette::Page).render(&[
+        Mark::new(shaft, Tone::Coral).width(ARROW_STROKE),
+        Mark::new(head, Tone::Coral).width(ARROW_STROKE),
+    ])
 }
 
 /// The kinds of hand-drawn emphasis `<Highlight>` draws.
@@ -195,26 +202,41 @@ impl std::str::FromStr for ToneName {
 /// A [`Tone`] read from a prop.
 struct ToneName(Tone);
 
+/// The seed `<Highlight>` draws with when it is not given one.
+const HIGHLIGHT_SEED: i64 = 7;
+/// How far a highlight wobbles.
+const HIGHLIGHT_ROUGHNESS: f64 = 1.2;
+/// How far a platform card's frame wobbles.
+const PLATFORM_ROUGHNESS: f64 = 1.8;
+/// The port `serve` listens on by default.
+const DEFAULT_PORT: u16 = 4410;
+
+/// Renders `<Highlight>`: `children` underlined, looped, or marked by hand.
 fn highlight(props: &Props<'_>, children: Children) -> Result<AnyView, PropError> {
     let kind = props.parse("kind")?.unwrap_or(HighlightKind::Underline);
+
     let default_tone = match kind {
         HighlightKind::Marker => Tone::Sun,
         HighlightKind::Underline | HighlightKind::Loop => Tone::Coral,
     };
+
     let tone = props
         .parse::<ToneName>("tone")?
         .map_or(default_tone, |tone| tone.0);
-    let seed = props.parse("seed")?.unwrap_or(7_i64);
+    let seed = props.parse("seed")?.unwrap_or(HIGHLIGHT_SEED);
 
     let (shape, fill, class) = match kind {
         HighlightKind::Underline => (Shape::Underline, FillStyle::None, "sk-highlight-underline"),
         HighlightKind::Loop => (Shape::Loop, FillStyle::None, "sk-highlight-loop"),
         HighlightKind::Marker => (Shape::Rectangle, FillStyle::Hachure, "sk-highlight-marker"),
     };
-    let mut paths = ink::draw(shape, Canvas::WORD, seed, 1.2, fill);
+
+    let mut paths = ink::draw(shape, Canvas::WORD, seed, HIGHLIGHT_ROUGHNESS, fill);
+
     if kind == HighlightKind::Marker {
         paths.outline.clear();
     }
+
     let svg = ink::overlay(&paths, Canvas::WORD);
     let style = format!("--sk-tone: var(--{})", tone.name());
 
@@ -231,7 +253,13 @@ fn highlight(props: &Props<'_>, children: Children) -> Result<AnyView, PropError
 fn Platform(name: String, krate: String, children: Children) -> impl IntoView {
     let seed = ink::seed_for(&name);
     let frame = ink::overlay(
-        &ink::draw(Shape::Rectangle, Canvas::CARD, seed, 1.8, FillStyle::None),
+        &ink::draw(
+            Shape::Rectangle,
+            Canvas::CARD,
+            seed,
+            PLATFORM_ROUGHNESS,
+            FillStyle::None,
+        ),
         Canvas::CARD,
     );
 
@@ -263,7 +291,7 @@ pub enum Cli {
         #[arg(long)]
         out: Option<PathBuf>,
         /// The port to listen on, on 127.0.0.1.
-        #[arg(long, default_value_t = 4410)]
+        #[arg(long, default_value_t = DEFAULT_PORT)]
         port: u16,
     },
 }

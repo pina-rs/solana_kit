@@ -13,6 +13,8 @@ solana_kit_system = { git = "https://github.com/pina-rs/solana_kit" }
 tokio = { version = "1", features = ["rt-multi-thread", "macros", "time"] }
 ```
 
+## Sign, send, and confirm
+
 <Steps>
 
 ### Sign
@@ -110,11 +112,13 @@ async fn confirm<T: Transport>(
         let Contextual { context, mut value } =
             client.call(SignatureStatuses(&[signature], None)).await?;
         let snapshot = Contextual { context, value: value.pop().flatten() };
+
         if let Some(outcome) = confirmation.observe(Event::Status { signature, snapshot }) {
             return Ok(outcome?);
         }
 
         let epoch = client.call(GetEpochInfo(Some(read))).await?;
+
         if let Some(outcome) = confirmation.observe(Event::Epoch(epoch)) {
             return Ok(outcome?);
         }

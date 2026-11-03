@@ -116,6 +116,7 @@ let mut socket = NativeWebSocket::connect("wss://rpc.invalid/", WsConfig::defaul
 let mut connection = Connection::new(GENERATION, Budget::default());
 
 let handle = connection.subscribe(Root, ACK_DEADLINE)?;
+
 while let Some(frame) = connection.outbound() {
     socket.send(std::str::from_utf8(&frame)?).await?;
 }
@@ -123,6 +124,7 @@ while let Some(frame) = connection.outbound() {
 // Feed every received text frame back in, tagged with this socket's generation.
 while let Some(text) = socket.receive().await? {
     connection.ingest(GENERATION, text.as_bytes())?;
+
     if let Drain::Notification(root) = connection.next(&handle)? {
         println!("new root: {root}");
         break;
@@ -130,6 +132,7 @@ while let Some(text) = socket.receive().await? {
 }
 
 connection.unsubscribe(&handle, ACK_DEADLINE)?;
+
 while let Some(frame) = connection.outbound() {
     socket.send(std::str::from_utf8(&frame)?).await?;
 }

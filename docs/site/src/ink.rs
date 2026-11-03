@@ -116,6 +116,9 @@ impl Palette {
     }
 }
 
+/// How many distinct seeds [`seed_for`] hands out.
+const SEED_RANGE: u32 = 100_000;
+
 /// A stable seed derived from `text` (FNV-1a), for ink that should differ
 /// between elements but never between builds.
 pub fn seed_for(text: &str) -> i64 {
@@ -125,7 +128,7 @@ pub fn seed_for(text: &str) -> i64 {
         hash = (hash ^ u32::from(unit)).wrapping_mul(0x0100_0193) & 0x7fff_ffff;
     }
 
-    i64::from(hash % 100_000 + 1)
+    i64::from(hash % SEED_RANGE + 1)
 }
 
 /// A generator whose outline and fill both replay from `seed`.
@@ -212,6 +215,26 @@ pub enum Shape {
     Loop,
 }
 
+/// Heights of the underline's four points, as fractions of the canvas.
+const UNDERLINE_HEIGHTS: [f64; 4] = [0.72, 0.62, 0.7, 0.58];
+/// Where the underline's two middle points sit across the canvas.
+const UNDERLINE_SPANS: [f64; 2] = [0.35, 0.7];
+
+/// How many segments the loop is drawn with.
+const LOOP_STEPS: u8 = 14;
+/// Where the loop starts, in half turns: just above the right-hand side, so
+/// its overshoot lands beside the word rather than over the line above.
+const LOOP_START: f64 = -0.1;
+/// How far the loop travels, in half turns: a full turn and a little more,
+/// so it overshoots where it closes.
+const LOOP_SWEEP: f64 = 2.15;
+/// How far each step wanders outwards, cycling every three steps.
+const LOOP_WANDER: f64 = 0.05;
+/// Shrinks the loop's width so its widest wander stays on the canvas.
+const LOOP_WIDTH_SHRINK: f64 = 1.1;
+/// Shrinks the loop's height so its overshoot stays on the canvas.
+const LOOP_HEIGHT_SCALE: f64 = 0.8;
+
 /// Draws `shape` inset inside `canvas`.
 pub fn draw(
     shape: Shape,
@@ -227,6 +250,7 @@ pub fn draw(
         inset,
         ..
     } = canvas;
+
     let drawable = match shape {
         Shape::Rectangle => {
             generator.rectangle(inset, inset, width - inset * 2.0, height - inset * 2.0)
@@ -239,37 +263,68 @@ pub fn draw(
         ),
         Shape::Rule => generator.line(inset, height / 2.0, width - inset, height / 2.0),
         Shape::Edge => generator.line(width / 2.0, inset, width / 2.0, height - inset),
-        Shape::Underline => generator.curve(&[
-            Point::new(inset, height * 0.72),
-            Point::new(width * 0.35, height * 0.62),
-            Point::new(width * 0.7, height * 0.7),
-            Point::new(width - inset, height * 0.58),
-        ]),
-        Shape::Loop => {
-            let points = (0..=14)
-                .map(|step| {
-                    let angle = -PI * 0.1 + f64::from(step) * (PI * 2.15 / 14.0);
-                    let wander = 1.0 + 0.05 * f64::from(step % 3);
-                    Point::new(
-                        width / 2.0 + (width / 2.0 - inset) / 1.1 * angle.cos() * wander,
-                        height / 2.0 + (height / 2.0 - inset) * 0.8 * angle.sin(),
-                    )
-                })
-                .collect::<Vec<_>>();
-            generator.curve(&points)
-        }
+        Shape::Underline => generator.curve(&underline_points(canvas)),
+        Shape::Loop => generator.curve(&loop_points(canvas)),
     };
 
     RoughSvgPaths::from_drawable(&drawable)
 }
+
+/// The curve a loose underline follows, from one end of the word to the
+/// other.
+fn underline_points(canvas: Canvas) -> [Point; 4] {
+    let Canvas {
+        width,
+        height,
+        inset,
+        ..
+    } = canvas;
+    let [first, second, third, last] = UNDERLINE_HEIGHTS.map(|fraction| height * fraction);
+    let [near, far] = UNDERLINE_SPANS.map(|fraction| width * fraction);
+
+    [
+        Point::new(inset, first),
+        Point::new(near, second),
+        Point::new(far, third),
+        Point::new(width - inset, last),
+    ]
+}
+
+/// The points a loop around a word passes through.
+fn loop_points(canvas: Canvas) -> Vec<Point> {
+    let Canvas {
+        width,
+        height,
+        inset,
+        ..
+    } = canvas;
+    let steps = f64::from(LOOP_STEPS);
+
+    (0..=LOOP_STEPS)
+        .map(|step| {
+            let angle = PI * LOOP_START + f64::from(step) * (PI * LOOP_SWEEP / steps);
+            let wander = 1.0 + LOOP_WANDER * f64::from(step % 3);
+
+            Point::new(
+                width / 2.0 + (width / 2.0 - inset) / LOOP_WIDTH_SHRINK * angle.cos() * wander,
+                height / 2.0 + (height / 2.0 - inset) * LOOP_HEIGHT_SCALE * angle.sin(),
+            )
+        })
+        .collect()
+}
+
+/// The width of every outline, in pixels; strokes keep it at any size.
+const OUTLINE_WIDTH: f64 = 2.0;
+/// The width of sketched fill lines, in pixels.
+const HATCH_WIDTH: f64 = 1.5;
 
 /// A standalone SVG file for a CSS mask: every group drawn in black.
 pub fn mask(paths: &RoughSvgPaths, canvas: Canvas) -> String {
     let elements = paths.to_path_elements(&PathElementOptions {
         stroke: "#000",
         fill: "#000",
-        stroke_width: 2.0,
-        sketch_width: 1.5,
+        stroke_width: OUTLINE_WIDTH,
+        sketch_width: HATCH_WIDTH,
         non_scaling_stroke: true,
     });
 
@@ -285,8 +340,8 @@ pub fn frame(paths: &RoughSvgPaths, canvas: Canvas, color: &str) -> String {
     let elements = paths.to_path_elements(&PathElementOptions {
         stroke: color,
         fill: color,
-        stroke_width: 2.0,
-        sketch_width: 1.5,
+        stroke_width: OUTLINE_WIDTH,
+        sketch_width: HATCH_WIDTH,
         non_scaling_stroke: true,
     });
 
@@ -323,22 +378,31 @@ pub fn overlay(paths: &RoughSvgPaths, canvas: Canvas) -> String {
         );
     }
 
-    for (data, class, width) in [
-        (&paths.sketch, "sk-ink-hatch", 1.5),
-        (&paths.outline, "sk-ink-outline", 2.0),
-    ] {
-        if !data.is_empty() {
-            let paint = if class == "sk-ink-hatch" {
-                "var(--sk-fill,currentColor)"
-            } else {
-                "currentColor"
-            };
-            let _ = write!(
-                svg,
-                r#"<path class="{class}" d="{data}" style="fill:none;stroke:{paint};stroke-width:{}px;stroke-linecap:round;stroke-linejoin:round" vector-effect="non-scaling-stroke"/>"#,
-                number(width)
-            );
+    let strokes = [
+        (
+            &paths.sketch,
+            "sk-ink-hatch",
+            "var(--sk-fill,currentColor)",
+            HATCH_WIDTH,
+        ),
+        (
+            &paths.outline,
+            "sk-ink-outline",
+            "currentColor",
+            OUTLINE_WIDTH,
+        ),
+    ];
+
+    for (data, class, paint, width) in strokes {
+        if data.is_empty() {
+            continue;
         }
+
+        let _ = write!(
+            svg,
+            r#"<path class="{class}" d="{data}" style="fill:none;stroke:{paint};stroke-width:{}px;stroke-linecap:round;stroke-linejoin:round" vector-effect="non-scaling-stroke"/>"#,
+            number(width)
+        );
     }
 
     svg.push_str("</svg>");
@@ -365,7 +429,7 @@ impl Mark {
             drawable,
             stroke,
             fill: None,
-            width: 2.0,
+            width: OUTLINE_WIDTH,
         }
     }
 
@@ -385,43 +449,94 @@ impl Mark {
 }
 
 /// A multi-coloured rough drawing at its intrinsic size.
-///
-/// `label` gives the drawing an accessible name; without one it is hidden
-/// from assistive technology.
-pub fn doodle(
-    width: f64,
-    height: f64,
-    marks: &[Mark],
-    palette: Palette,
-    class: Option<&str>,
-    label: Option<&str>,
-) -> String {
-    let mut svg = String::from("<svg");
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct Doodle<'a> {
+    /// The drawing's intrinsic width.
+    pub width: f64,
+    /// The drawing's intrinsic height.
+    pub height: f64,
+    /// How the drawing resolves its tones.
+    pub palette: Palette,
+    /// A CSS class for the `<svg>`.
+    pub class: Option<&'a str>,
+    /// An accessible name. Without one the drawing is hidden from assistive
+    /// technology.
+    pub label: Option<&'a str>,
+}
 
-    if palette != Palette::Page {
-        svg.push_str(r#" xmlns="http://www.w3.org/2000/svg""#);
-    }
-    if let Some(class) = class {
-        let _ = write!(svg, r#" class="{class}""#);
-    }
-    let _ = write!(
-        svg,
-        r#" viewBox="0 0 {w} {h}" width="{w}" height="{h}" focusable="false""#,
-        w = number(width),
-        h = number(height),
-    );
-    match label {
-        Some(label) => {
-            let _ = write!(svg, r#" role="img" aria-label="{label}""#);
+impl<'a> Doodle<'a> {
+    /// A decorative `width` by `height` drawing in `palette`.
+    pub fn new(width: f64, height: f64, palette: Palette) -> Self {
+        Self {
+            width,
+            height,
+            palette,
+            class: None,
+            label: None,
         }
-        None => svg.push_str(r#" aria-hidden="true""#),
     }
-    svg.push('>');
 
-    for mark in marks {
+    /// Adds a CSS class to the `<svg>`.
+    #[must_use]
+    pub fn class(mut self, class: &'a str) -> Self {
+        self.class = Some(class);
+        self
+    }
+
+    /// Names the drawing for assistive technology.
+    #[must_use]
+    pub fn label(mut self, label: &'a str) -> Self {
+        self.label = Some(label);
+        self
+    }
+
+    /// Renders `marks`, back to front, as an `<svg>`.
+    pub fn render(&self, marks: &[Mark]) -> String {
+        let mut svg = self.open();
+
+        for mark in marks {
+            self.paint(&mut svg, mark);
+        }
+
+        svg.push_str("</svg>");
+        svg
+    }
+
+    /// The opening `<svg …>` tag.
+    fn open(&self) -> String {
+        let mut svg = String::from("<svg");
+
+        if self.palette != Palette::Page {
+            svg.push_str(r#" xmlns="http://www.w3.org/2000/svg""#);
+        }
+
+        if let Some(class) = self.class {
+            let _ = write!(svg, r#" class="{class}""#);
+        }
+
+        let _ = write!(
+            svg,
+            r#" viewBox="0 0 {w} {h}" width="{w}" height="{h}" focusable="false""#,
+            w = number(self.width),
+            h = number(self.height),
+        );
+
+        match self.label {
+            Some(label) => {
+                let _ = write!(svg, r#" role="img" aria-label="{label}""#);
+            }
+            None => svg.push_str(r#" aria-hidden="true""#),
+        }
+
+        svg.push('>');
+        svg
+    }
+
+    /// Appends one mark's solid fill, sketched fill, and outline.
+    fn paint(&self, svg: &mut String, mark: &Mark) {
         let paths = RoughSvgPaths::from_drawable(&mark.drawable);
-        let fill = palette.paint(mark.fill.unwrap_or(mark.stroke));
-        let stroke = palette.paint(mark.stroke);
+        let fill = self.palette.paint(mark.fill.unwrap_or(mark.stroke));
+        let stroke = self.palette.paint(mark.stroke);
 
         if !paths.solid.is_empty() {
             let _ = write!(
@@ -430,6 +545,7 @@ pub fn doodle(
                 paths.solid
             );
         }
+
         if !paths.sketch.is_empty() {
             let _ = write!(
                 svg,
@@ -437,6 +553,7 @@ pub fn doodle(
                 paths.sketch
             );
         }
+
         if !paths.outline.is_empty() {
             let _ = write!(
                 svg,
@@ -446,46 +563,65 @@ pub fn doodle(
             );
         }
     }
-
-    svg.push_str("</svg>");
-    svg
 }
 
-/// The solana_kit mark, drawn by hand on a 42 by 45 canvas: Solana's three
-/// bars in mint, sky, and lilac, held in a pair of square brackets.
+/// The seed the site draws its mark with.
+pub const BRAND_SEED: i64 = 11;
+/// The mark's intrinsic width.
+pub const BRAND_WIDTH: f64 = 42.0;
+/// The mark's intrinsic height.
+pub const BRAND_HEIGHT: f64 = 45.0;
+
+/// Solana's top bar, a parallelogram leaning right.
+const MINT_BAR: [(f64, f64); 4] = [(13.0, 9.0), (35.0, 9.0), (29.0, 16.0), (7.0, 16.0)];
+/// Solana's middle bar, leaning left.
+const SKY_BAR: [(f64, f64); 4] = [(7.0, 19.0), (29.0, 19.0), (35.0, 26.0), (13.0, 26.0)];
+/// Solana's bottom bar, leaning right.
+const LILAC_BAR: [(f64, f64); 4] = [(13.0, 29.0), (35.0, 29.0), (29.0, 36.0), (7.0, 36.0)];
+/// The three bars with the tones they are filled in.
+const BRAND_BARS: [([(f64, f64); 4], Tone); 3] = [
+    (MINT_BAR, Tone::Mint),
+    (SKY_BAR, Tone::Sky),
+    (LILAC_BAR, Tone::Lilac),
+];
+/// The left bracket; the right one is its mirror image.
+const BRAND_BRACKET: [(f64, f64); 4] = [(5.0, 2.0), (1.5, 2.5), (1.5, 42.5), (5.0, 43.0)];
+/// How far the bars wobble.
+const BAR_ROUGHNESS: f64 = 0.6;
+/// The bars' outline width.
+const BAR_OUTLINE: f64 = 1.6;
+/// How far the brackets wobble.
+const BRACKET_ROUGHNESS: f64 = 0.5;
+/// The brackets' stroke width.
+const BRACKET_WIDTH: f64 = 2.4;
+/// The brackets' seeds start after the bars'.
+const BRACKET_SEED_OFFSET: i64 = 5;
+/// The hachure gap the mark's pens are built with; the mark has no
+/// hachure, so it only keeps the random streams stable.
+const BRAND_GAP: f64 = 5.0;
+
+/// The solana_kit mark, drawn by hand on a [`BRAND_WIDTH`] by
+/// [`BRAND_HEIGHT`] canvas: Solana's three bars in mint, sky, and lilac, held
+/// in a pair of square brackets.
 pub fn brand_mark(seed: i64) -> Vec<Mark> {
-    const BARS: [([(f64, f64); 4], Tone); 3] = [
-        (
-            [(13.0, 9.0), (35.0, 9.0), (29.0, 16.0), (7.0, 16.0)],
-            Tone::Mint,
-        ),
-        (
-            [(7.0, 19.0), (29.0, 19.0), (35.0, 26.0), (13.0, 26.0)],
-            Tone::Sky,
-        ),
-        (
-            [(13.0, 29.0), (35.0, 29.0), (29.0, 36.0), (7.0, 36.0)],
-            Tone::Lilac,
-        ),
-    ];
-    let mirror = |x: f64, left: bool| if left { x } else { 42.0 - x };
     let mut marks = Vec::new();
 
-    for (index, (points, tone)) in (0_i64..).zip(BARS) {
+    for (index, (points, tone)) in (0_i64..).zip(BRAND_BARS) {
         let points = points.map(|(x, y)| Point::new(x, y));
-        let drawable = pen(seed + index, 0.6, FillStyle::Solid, 5.0).polygon(&points);
-        marks.push(Mark::new(drawable, Tone::Ink).fill(tone).width(1.6));
+        let drawable =
+            pen(seed + index, BAR_ROUGHNESS, FillStyle::Solid, BRAND_GAP).polygon(&points);
+        marks.push(Mark::new(drawable, Tone::Ink).fill(tone).width(BAR_OUTLINE));
     }
 
     for (index, left) in (0_i64..).zip([true, false]) {
-        let points = [
-            Point::new(mirror(5.0, left), 2.0),
-            Point::new(mirror(1.5, left), 2.5),
-            Point::new(mirror(1.5, left), 42.5),
-            Point::new(mirror(5.0, left), 43.0),
-        ];
-        let drawable = pen(seed + 5 + index, 0.5, FillStyle::None, 5.0).linear_path(&points, false);
-        marks.push(Mark::new(drawable, Tone::Ink).width(2.4));
+        let points = BRAND_BRACKET.map(|(x, y)| {
+            let x = if left { x } else { BRAND_WIDTH - x };
+            Point::new(x, y)
+        });
+        let seed = seed + BRACKET_SEED_OFFSET + index;
+        let drawable =
+            pen(seed, BRACKET_ROUGHNESS, FillStyle::None, BRAND_GAP).linear_path(&points, false);
+        marks.push(Mark::new(drawable, Tone::Ink).width(BRACKET_WIDTH));
     }
 
     marks
@@ -493,64 +629,95 @@ pub fn brand_mark(seed: i64) -> Vec<Mark> {
 
 /// How many seeded variants of each mask shape the stylesheet cycles through.
 const VARIANTS: i64 = 4;
+/// The distance between one variant's seed and the next.
+const VARIANT_SEED_STEP: i64 = 11;
+
+/// How far boxes and cards wobble; large frames need more to show it.
+const FRAME_MASK_ROUGHNESS: f64 = 1.8;
+/// How far rules and edges wobble.
+const RULE_ROUGHNESS: f64 = 1.4;
+/// How far underlines wobble.
+const UNDERLINE_ROUGHNESS: f64 = 1.2;
+
+/// Every outline mask, by file name, with its canvas and roughness.
+const MASKS: [(&str, Shape, Canvas, f64); 7] = [
+    ("box", Shape::Rectangle, Canvas::BOX, FRAME_MASK_ROUGHNESS),
+    ("card", Shape::Rectangle, Canvas::CARD, FRAME_MASK_ROUGHNESS),
+    ("circle", Shape::Ellipse, Canvas::SQUARE, 1.0),
+    ("rule", Shape::Rule, Canvas::RULE, RULE_ROUGHNESS),
+    ("edge", Shape::Edge, Canvas::EDGE, RULE_ROUGHNESS),
+    (
+        "underline",
+        Shape::Underline,
+        Canvas::WORD,
+        UNDERLINE_ROUGHNESS,
+    ),
+    ("loop", Shape::Loop, Canvas::WORD, 1.0),
+];
+/// How far the hatched fill's border wobbles.
+const HATCH_ROUGHNESS: f64 = 1.0;
+/// Frames are drawn from their own seeds, so they differ from the masks.
+const FRAME_SEED_OFFSET: i64 = 3;
+/// How far a frame wobbles.
+const FRAME_ROUGHNESS: f64 = 1.5;
 
 /// Every file in `theme/ink`, by name: the masks the stylesheet uses and the
 /// brand mark on light and dark paper.
 pub fn files() -> Vec<(String, String)> {
     let mut files = Vec::new();
-    let mut add = |name: String, svg: String| files.push((name, svg));
 
     for variant in 1..=VARIANTS {
-        let seed = variant * 11;
-        let shapes = [
-            ("box", Shape::Rectangle, Canvas::BOX, 1.8),
-            ("card", Shape::Rectangle, Canvas::CARD, 1.8),
-            ("circle", Shape::Ellipse, Canvas::SQUARE, 1.0),
-            ("rule", Shape::Rule, Canvas::RULE, 1.4),
-            ("edge", Shape::Edge, Canvas::EDGE, 1.4),
-            ("underline", Shape::Underline, Canvas::WORD, 1.2),
-            ("loop", Shape::Loop, Canvas::WORD, 1.0),
-        ];
-
-        for (name, shape, canvas, roughness) in shapes {
-            let paths = draw(shape, canvas, seed, roughness, FillStyle::None);
-            add(format!("{name}-{variant}.svg"), mask(&paths, canvas));
-        }
-
-        let hatch = draw(Shape::Rectangle, Canvas::BOX, seed, 1.0, FillStyle::Hachure);
-        add(
-            format!("hatch-{variant}.svg"),
-            hatch_mask(&hatch, Canvas::BOX),
-        );
-
-        let outline = draw(
-            Shape::Rectangle,
-            Canvas::CARD,
-            seed + 3,
-            1.5,
-            FillStyle::None,
-        );
-        add(
-            format!("frame-{variant}-light.svg"),
-            frame(&outline, Canvas::CARD, Tone::Ink.light()),
-        );
-        add(
-            format!("frame-{variant}-dark.svg"),
-            frame(&outline, Canvas::CARD, Tone::Ink.dark()),
-        );
+        variant_files(variant, &mut files);
     }
 
-    let mark = brand_mark(11);
-    add(
-        "mark-light.svg".to_owned(),
-        doodle(42.0, 45.0, &mark, Palette::Light, None, Some("solana_kit")),
-    );
-    add(
-        "mark-dark.svg".to_owned(),
-        doodle(42.0, 45.0, &mark, Palette::Dark, None, Some("solana_kit")),
-    );
+    let mark = brand_mark(BRAND_SEED);
+
+    for (name, palette) in [("light", Palette::Light), ("dark", Palette::Dark)] {
+        let svg = Doodle::new(BRAND_WIDTH, BRAND_HEIGHT, palette)
+            .label("solana_kit")
+            .render(&mark);
+        files.push((format!("mark-{name}.svg"), svg));
+    }
 
     files
+}
+
+/// One seeded variant of every mask, the hatch, and the light and dark
+/// frames.
+fn variant_files(variant: i64, files: &mut Vec<(String, String)>) {
+    let seed = variant * VARIANT_SEED_STEP;
+
+    for (name, shape, canvas, roughness) in MASKS {
+        let paths = draw(shape, canvas, seed, roughness, FillStyle::None);
+        files.push((format!("{name}-{variant}.svg"), mask(&paths, canvas)));
+    }
+
+    let hatch = draw(
+        Shape::Rectangle,
+        Canvas::BOX,
+        seed,
+        HATCH_ROUGHNESS,
+        FillStyle::Hachure,
+    );
+    files.push((
+        format!("hatch-{variant}.svg"),
+        hatch_mask(&hatch, Canvas::BOX),
+    ));
+
+    let outline = draw(
+        Shape::Rectangle,
+        Canvas::CARD,
+        seed + FRAME_SEED_OFFSET,
+        FRAME_ROUGHNESS,
+        FillStyle::None,
+    );
+
+    for (name, tone) in [("light", Tone::Ink.light()), ("dark", Tone::Ink.dark())] {
+        files.push((
+            format!("frame-{variant}-{name}.svg"),
+            frame(&outline, Canvas::CARD, tone),
+        ));
+    }
 }
 
 /// Writes [`files`] into `dir` and returns how many there are.
@@ -561,8 +728,10 @@ pub fn write(dir: &Path) -> io::Result<usize> {
     fs::create_dir_all(dir)?;
 
     let files = files();
+
     for (name, svg) in &files {
         let path = dir.join(name);
+
         if fs::read_to_string(&path).ok().as_deref() != Some(svg.as_str()) {
             fs::write(path, svg)?;
         }
@@ -597,6 +766,7 @@ mod tests {
             if name.starts_with("mark-") {
                 continue;
             }
+
             assert!(svg.contains(r#"preserveAspectRatio="none""#), "{name}");
             assert!(svg.contains("non-scaling-stroke"), "{name}");
             assert!(svg.contains("<path"), "{name} draws nothing");
