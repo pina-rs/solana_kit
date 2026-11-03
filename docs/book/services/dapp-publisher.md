@@ -122,7 +122,7 @@ Before a new publication starts, the funding preflight reads the signer's balanc
 
 It does:
 
-- start or resume the publication workflow, and save each step to the checkpoint before calling the portal;
+- start or resume the publication workflow, and save each durable mutation's intent to the checkpoint before calling the portal;
 - validate each prepared mint and collection-verification transaction against the publication policy before signing it with your keypair;
 - create the attestation from the portal's block data, then submit the release for store review.
 

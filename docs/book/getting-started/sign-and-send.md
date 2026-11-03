@@ -2,7 +2,7 @@
 
 This page takes the transaction from [Build a transaction](build-a-transaction.md), signs it, submits it, and waits until it reaches the commitment you want. Each step is a separate call. The SDK never retries a submission and never decides on its own that a transaction is confirmed.
 
-The examples need `solana_kit_core` with `crypto`, plus `tokio` with the `time` feature for the polling delay:
+The examples need `solana_kit_core` and `solana_kit_signers` with `crypto`, plus `tokio` with the `time` feature for the polling delay:
 
 ```toml
 [dependencies]
@@ -10,6 +10,7 @@ solana_kit_core = { git = "https://github.com/pina-rs/solana_kit", features = ["
 solana_kit_client = { git = "https://github.com/pina-rs/solana_kit" }
 solana_kit_native = { git = "https://github.com/pina-rs/solana_kit" }
 solana_kit_system = { git = "https://github.com/pina-rs/solana_kit" }
+solana_kit_signers = { git = "https://github.com/pina-rs/solana_kit", features = ["crypto"] }
 tokio = { version = "1", features = ["rt-multi-thread", "macros", "time"] }
 ```
 
@@ -149,13 +150,48 @@ println!("confirmed");
 On a fresh keypair, request lamports before sending:
 
 ```rust
-use solana_kit_client::methods::submission::RequestAirdrop;
+use solana_kit_client::methods::{
+    history::ConfirmationStatus,
+    submission::RequestAirdrop,
+};
 
 let airdrop = client.call(RequestAirdrop(payer.address(), 1_000_000_000, None)).await?;
-confirm(&client, airdrop, lifetime).await?;
+wait_for_airdrop(&client, airdrop).await?;
 ```
 
-You do not know the airdrop transaction's own blockhash, so this passes the `lifetime` from a blockhash you fetched just before the request. Its `last_valid_block_height` serves as an approximate deadline.
+Do not pass the airdrop to `confirm`. The node picks the airdrop transaction's blockhash, so you do not know its lifetime, and a guessed lifetime can make `confirm` report a false `BlockHeightExceeded` while the airdrop is still valid. Poll its status alone, with a timeout of your own:
+
+```rust
+/// Polls the airdrop's status until it is confirmed, for at most 60 seconds.
+async fn wait_for_airdrop<T: Transport>(
+    client: &Client<T>,
+    signature: Signature,
+) -> Result<(), Box<dyn std::error::Error>> {
+    const ATTEMPTS: u32 = 120;
+
+    for _ in 0..ATTEMPTS {
+        let Contextual { mut value, .. } =
+            client.call(SignatureStatuses(&[signature], None)).await?;
+
+        if let Some(status) = value.pop().flatten() {
+            if let Some(failure) = status.err {
+                return Err(failure.into());
+            }
+
+            if matches!(
+                status.confirmation_status,
+                Some(ConfirmationStatus::Confirmed | ConfirmationStatus::Finalized)
+            ) {
+                return Ok(());
+            }
+        }
+
+        tokio::time::sleep(Duration::from_millis(500)).await;
+    }
+
+    Err("the airdrop was not confirmed within 60 seconds".into())
+}
+```
 
 Public devnet airdrops are rate limited and often fail. A local validator (`solana-test-validator`, at `http://127.0.0.1:8899`) or [Surfpool](../services/surfpool.md) is more reliable for development. `NativeHttp` accepts plain `http://` endpoints, so point it at the local URL.
 

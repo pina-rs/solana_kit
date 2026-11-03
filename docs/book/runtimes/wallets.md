@@ -17,7 +17,7 @@ Wallet support is split into layers so that each runtime pulls in only what it n
 
 `solana_kit_wallet` is `no_std` plus `alloc`. Its main types:
 
-- **`Wallet`** is the trait a backend implements: `version`, `name`, `icon`, `chains`, `features` and `accounts`. Each getter returns an owned snapshot.
+- **`Wallet`** is the trait a backend implements: `version`, `name`, `icon`, `chains`, `features` and `accounts`. `version`, `name` and `icon` return borrowed references; `chains`, `features` and `accounts` return owned snapshots, so they stay valid if the backend's metadata changes.
 - **`WalletFeatures`** is a typed map from a feature identifier to a concrete backend type. `features.feature::<T>(identifier)` returns `Some(&T)` only when the type matches.
 - **Capability traits** each have their own associated future type: `Connect`, `Disconnect`, `Events`, `SignTransaction`, `SignAndSendTransaction`, `SignAndSendAllTransactions`, `SignMessage`, `SignIn` and `SignOffchainMessage`.
 - **`WalletRegistry`** is a caller-owned registry. `register` returns a `Registration` guard. Dropping the guard removes only that entry.
@@ -79,7 +79,10 @@ use std::rc::Rc;
 
 // Keep discovery alive for as long as the page talks to wallets.
 let discovery = Rc::new(WalletDiscovery::start(WalletRegistry::new())?);
-let wallet = discovery.wallets().remove(0);
+let Some(wallet) = discovery.wallets().into_iter().next() else {
+    // No wallet extension registered: show a "no wallet found" state instead.
+    return Ok(());
+};
 
 let controller = WalletController::new(discovery.clone(), "solana:mainnet".into())?;
 controller.connect(wallet, false)?.await?;

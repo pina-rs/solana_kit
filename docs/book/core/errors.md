@@ -1,6 +1,6 @@
 # Errors
 
-Solana Kit uses plain Rust error enums at each boundary, and each enum keeps the original facts. A codec error says which constant failed and at which offset. An RPC error keeps the node's exact JSON. A program error keeps the custom code without guessing which instruction raised it. A shared layer, `solana_kit_core::errors`, maps these onto the stable numeric codes from the reference Solana Kit, for logging and cross-language diagnostics.
+Solana Kit uses plain Rust error enums at each boundary, and each enum keeps the original facts. A codec error says which constant failed and at which offset. An RPC error keeps the node's code and message, and its `data` field as raw JSON. A program error keeps the custom code without guessing which instruction raised it. A shared layer, `solana_kit_core::errors`, maps these onto the stable numeric codes from the reference Solana Kit, for logging and cross-language diagnostics.
 
 ## Error types by layer
 

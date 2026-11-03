@@ -106,16 +106,22 @@ let _ = handle.await; // the peer now sees the connection close
 This example is adapted from the loopback test `tests/websocket_subscriptions.rs`:
 
 ```rust
-use solana_kit_client::subscriptions::{Budget, Connection, Drain, Root};
+use std::time::{Duration, Instant};
+
+use solana_kit_client::subscriptions::{Budget, Connection, Drain, Root, Status};
 use solana_kit_native::{NativeWebSocket, WsConfig};
 
 const GENERATION: u64 = 1;
-const ACK_DEADLINE: u64 = 100; // in your own monotonic ticks
+// Acknowledgement timeout, in the milliseconds `now` counts.
+const ACK_TIMEOUT: u64 = 5_000;
+
+let started = Instant::now();
+let now = || u64::try_from(started.elapsed().as_millis()).unwrap_or(u64::MAX);
 
 let mut socket = NativeWebSocket::connect("wss://rpc.invalid/", WsConfig::default()).await?;
 let mut connection = Connection::new(GENERATION, Budget::default());
 
-let handle = connection.subscribe(Root, ACK_DEADLINE)?;
+let handle = connection.subscribe(Root, now() + ACK_TIMEOUT)?;
 
 while let Some(frame) = connection.outbound() {
     socket.send(std::str::from_utf8(&frame)?).await?;
@@ -131,15 +137,31 @@ while let Some(text) = socket.receive().await? {
     }
 }
 
-connection.unsubscribe(&handle, ACK_DEADLINE)?;
+// Unsubscribing only queues the request. Keep reading until the node
+// acknowledges it or the deadline passes, then close the socket.
+let deadline = now() + ACK_TIMEOUT;
+connection.unsubscribe(&handle, deadline)?;
 
 while let Some(frame) = connection.outbound() {
     socket.send(std::str::from_utf8(&frame)?).await?;
 }
+
+while connection.status(&handle)? == Status::Unsubscribing {
+    connection.tick(now(), deadline)?;
+
+    if let Ok(received) = tokio::time::timeout(Duration::from_millis(100), socket.receive()).await {
+        let Some(text) = received? else { break };
+        connection.ingest(GENERATION, text.as_bytes())?;
+    }
+}
+
+// Reports a missed acknowledgement as an error.
+connection.next(&handle)?;
+connection.forget(handle)?;
 socket.close().await?;
 ```
 
-You own the clock. Drive acknowledgement deadlines with `connection.tick(now, cleanup_deadline)`. If `ingest` fails for the current generation, drop the socket. [Subscriptions](../core/subscriptions.md) covers the `Connection` contract in full.
+You own the clock: here `now` counts milliseconds since the connection opened, and `connection.tick(now, cleanup_deadline)` turns a missed acknowledgement into an error. If `ingest` fails for the current generation, drop the socket. [Subscriptions](../core/subscriptions.md) covers the `Connection` contract in full.
 
 `WsConfig` holds the socket's limits:
 

@@ -72,6 +72,7 @@
 	--sk-box-inset: -3.57% -1.72%;
 	--sk-card-inset: -2.08% -1.28%;
 	--sk-hatch-tone: var(--sk-sun);
+	--sk-marker-opacity: 0.85;
 
 	/* leptoskit_docs' own properties, mapped onto the paper. */
 	--lk-font-display: var(--sk-font);
@@ -131,6 +132,7 @@
 		--sk-tok-a: #f09bbb;
 		--lk-code-bg: #141017;
 		--sk-hatch-tone: color-mix(in srgb, var(--sk-sun) 45%, transparent);
+		--sk-marker-opacity: 0.5;
 
 		color-scheme: dark;
 	}
@@ -162,6 +164,7 @@
 	--sk-tok-a: #f09bbb;
 	--lk-code-bg: #141017;
 	--sk-hatch-tone: color-mix(in srgb, var(--sk-sun) 45%, transparent);
+	--sk-marker-opacity: 0.5;
 
 	color-scheme: dark;
 }
@@ -1126,8 +1129,8 @@ a.lk-card .lk-card-title::after {
 
 .sk-highlight-marker .sk-highlight-ink {
 	inset: 0.15em -0.2em 0;
-	--sk-fill: var(--sk-hatch-tone);
-	opacity: 0.85;
+	--sk-fill: var(--sk-tone);
+	opacity: var(--sk-marker-opacity);
 }
 
 /* Platforms ---------------------------------------------------------------- */

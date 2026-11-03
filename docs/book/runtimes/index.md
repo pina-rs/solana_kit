@@ -1,6 +1,6 @@
 # Choosing a runtime
 
-The portable crates (`solana_kit_core`, `solana_kit_client` and the program clients) have no networking code. You choose where your code runs by adding one adapter crate. That crate owns the HTTP and WebSocket transport for its host. Every adapter implements the same `solana_kit_client::Transport` trait, so your RPC code is identical everywhere. Only the line that constructs the transport changes.
+The portable crates (`solana_kit_core`, `solana_kit_client` and the program clients) have no networking code. You choose where your code runs by adding one adapter crate. That crate owns the HTTP and WebSocket transport for its host. Every HTTP adapter (`NativeHttp`, `BrowserHttp`, `WasiHttp`, `GuestHttp`) implements the same `solana_kit_client::Transport` trait, so your RPC code is identical everywhere and only the line that constructs the transport changes. WebSockets take a separate path: each adapter's socket implements `solana_kit_client::subscriptions::TextSocket` for the subscription `Session`, not `Transport`.
 
 <Platforms>
 
@@ -140,7 +140,7 @@ cargo xtask wasi
 cargo xtask leptoskit
 ```
 
-The browser, WASI and LeptosKit journeys need `CHROME`, `CHROMEDRIVER` and `WASMTIME` paths. See [Verification](../contributing/verification.md) for the full setup. This suite covers the portable core. Each transport has its own separate CI workflow.
+`cargo xtask browser` needs `CHROME` and `CHROMEDRIVER` set to the Chrome binary and its matching driver, and `cargo xtask wasi` needs `WASMTIME` set to Wasmtime 50.0.0. `cargo xtask native` and `cargo xtask leptoskit` need neither. See [Verification](../contributing/verification.md) for the full setup. This suite covers the portable core. Each transport has its own separate CI workflow.
 
 <Callout kind="note" title="Off-chain only">
 

@@ -101,7 +101,7 @@ The crate models 36 Bubblegum instructions and the `TreeConfig` and `Voucher` ac
 | `tree`    | `TreeAccounts` with `create_v1` and `create_v2`, using Account Compression's tree sizing.                        |
 | `das`     | `DasApi`, `get_asset_with_proof`, `bind_asset_proof`, and `HeliusDasClient` over your own `solana_kit_client` transport. |
 
-`LeafAccounts` builds owner-or-delegate leaf operations (`burn`, `transfer`, `delegate`). You choose who signs with `LeafAuthority`, and you supply the proof nodes. They are appended as readonly, non-signer accounts.
+`LeafAccounts` builds leaf operations: `burn`, `transfer`, and `delegate`. For `burn` and `transfer` you choose who signs with `LeafAuthority`, the owner or the delegate. `delegate` always signs as the owner; a delegate cannot re-delegate. For all three you supply the proof nodes, which are appended as readonly, non-signer accounts.
 
 ```rust
 use solana_kit_core::{Address, codecs::Limits};

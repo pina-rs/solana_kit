@@ -1,6 +1,6 @@
 # Jupiter
 
-`solana_kit_jupiter` is a client for Jupiter's Swap API v2, Price API v3 and Token API v2. It reuses the SDK's bounded REST transport and owns nothing else: no executor, origin, credentials, retry loop or background task. You supply a `rest::Transport<Service>`. It approves the Jupiter service root, adds an optional `x-api-key`, denies redirects, and enforces receive limits and deadlines.
+`solana_kit_jupiter` is a client for Jupiter's Swap API v2, Price API v3 and Token API v2. It reuses the SDK's bounded REST transport and owns nothing else: no executor, origin, credentials, retry loop or background task. You supply a `rest::Transport<Service>`, and that transport must approve the Jupiter service root, add any `x-api-key`, deny redirects, and enforce receive limits and deadlines. `solana_kit_jupiter` builds each request and hands it to the transport; it applies none of these policies itself.
 
 > [!NOTE]
 > The crate is unpublished (`publish = false`). Its conformance groups exercise request wire forms, precision, decoding and cancellation against local fixtures. They make no live Jupiter requests.
