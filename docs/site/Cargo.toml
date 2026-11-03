@@ -1,0 +1,22 @@
+[package]
+name = "solana_kit_docs_site"
+version = "0.0.0"
+authors = ["Ifiok Jr. <ifiokotung@gmail.com>"]
+edition = "2024"
+license = "Unlicense"
+publish = false
+description = "The solana_kit documentation site: the book in docs/book, built with leptoskit_docs and drawn by hand with skribble's rough engine."
+
+# The site builds outside the SDK workspace so its leptos and tree-sitter
+# dependencies never enter the SDK's lockfile.
+[workspace]
+
+[dependencies]
+clap = { version = "4", features = ["derive"] }
+leptos = { version = "0.9.0-rc0", features = ["ssr"] }
+# Neither crate is published at a usable version yet; pin the source.
+leptoskit_docs = { git = "https://github.com/ifiokjr/leptoskit", rev = "b4993867e8d5afacab1b9e22f84ec5ab7146e547" }
+skribble_rough = { git = "https://github.com/openbudgetfun/skribble", rev = "f0ca99fe52c97488936bc37b2aa21f1f759ac419" }
+
+[dev-dependencies]
+tempfile = "3"

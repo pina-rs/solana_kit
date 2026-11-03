@@ -1,0 +1,86 @@
+name: docs
+
+# Builds the documentation site in docs/book with docs/site on every pull
+# request that touches it, and deploys it to GitHub Pages from main. The
+# site is served at https://kit.pina.rs/ (docs/book/CNAME); GitHub redirects
+# https://pina-rs.github.io/solana_kit/ there.
+on:
+  pull_request:
+    paths:
+      - "docs/book/**"
+      - "docs/site/**"
+      - ".github/workflows/docs.yml"
+  push:
+    branches: [main]
+    paths:
+      - "docs/book/**"
+      - "docs/site/**"
+      - ".github/workflows/docs.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: docs-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Install pinned Rust tools
+        shell: bash
+
+        run: |
+          rustup toolchain install 1.99.1 --profile minimal --component rustfmt --component clippy
+
+      - name: Check, test, and build the site
+        shell: bash
+
+        run: |
+          cargo +1.99.1 fmt --manifest-path docs/site/Cargo.toml --check
+
+          cargo +1.99.1 clippy --manifest-path docs/site/Cargo.toml --all-targets --locked -- \
+            -D warnings
+
+          cargo +1.99.1 test --manifest-path docs/site/Cargo.toml --locked
+
+          cargo +1.99.1 run --manifest-path docs/site/Cargo.toml --locked -- build \
+            --out "$RUNNER_TEMP/site"
+
+          test -f "$RUNNER_TEMP/site/CNAME"
+
+      - name: Upload the site
+        if: github.event_name != 'pull_request'
+        uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
+        with:
+          path: ${{ runner.temp }}/site
+
+  deploy:
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    needs: build
+    runs-on: ubuntu-24.04
+
+    permissions:
+      pages: write
+      id-token: write
+
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    concurrency:
+      group: pages
+      cancel-in-progress: false
+
+    steps:
+      - uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d # v6.0.0
+
+      - id: deployment
+        uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5.0.1
