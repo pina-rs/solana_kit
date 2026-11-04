@@ -1,10 +1,12 @@
 # Current Phase 2 and Phase 3 reconciliation
 
-This additive receipt reconciles the source audit with the implementation at
-`65c502f9044d320ec809fc0b45670b7860a8b4e3` on 2026-11-04. The Dart reference
-remains `0138bb956d2d81ccc0c56edc602401c0df2f2b46`. Historical slice receipts
-retain their original counts and limits; their outstanding lists are not a
-current implementation inventory.
+This additive receipt originally reconciled the source audit with the
+implementation at `65c502f9044d320ec809fc0b45670b7860a8b4e3` on 2026-11-04.
+The Dart reference remains `0138bb956d2d81ccc0c56edc602401c0df2f2b46`.
+Historical slice receipts retain their original counts and limits; their
+outstanding lists are not a current implementation inventory. The execution
+section below is updated for the later v56/455 integration while keeping the
+original v55/448 result as historical evidence.
 
 ## Implemented families and executable evidence
 
@@ -44,17 +46,29 @@ merging remain documented in the owning receipts.
 
 ## Current execution and limits
 
-The unchanged `solana-kit-core-v55` shared suite passed 448/448 natively, in real
-Chrome, in both Wasmtime previews and in the actual pinned LeptosKit interpreter.
-Each corrupt-fixture run returned 447/448 and exit 1. Import/dependency negative
-controls, the interpreter's one-fuel control and a fresh packaged-core consumer
-passed through `cargo xtask all` at this source checkpoint. See the
-[runtime receipt](../verification/runtimes.md).
+At the original `65c502f9` checkpoint, the then-current `solana-kit-core-v55`
+shared suite passed 448/448 natively, in real Chrome, in both Wasmtime previews
+and in the actual pinned LeptosKit interpreter. Each corrupt-fixture run returned
+447/448 and exit 1. Import/dependency negative controls, the interpreter's
+one-fuel control and a fresh packaged-core consumer passed through
+`cargo xtask all` at that checkpoint. Those counts are historical evidence for
+that source, not the current suite.
 
-The later grinding/decompilation tests have native execution and Wasm compilation
-evidence. The explicit configuration tests also have real Chrome wallet fixture
-execution. They were not appended to the shared suite, so its portable execution
-does not prove those new operations on every host.
+The current shared suite is `solana-kit-core-v56` with 455 cases. It passes
+455/455 natively, in actual Chrome, in both Wasmtime 50 previews and in the
+pinned LeptosKit interpreter. The corruption control is 454/455 and exits 1,
+with only `sha256-fips-abc` failing. The first 448 report rows remain the
+captured v55 prefix. The seven appended groups cover grinding and cancellation,
+legacy/v0/v1 message decompilation, explicit signer configuration, Token plans,
+typed parsed-account families, fixed-point composition, and test-support
+exchanges. Import/dependency controls, the one-fuel control and a fresh
+packaged-core consumer passed in the same invocation. See the [parity-completion runtime receipt](../verification/parity-completion-runtime.md) and the [current runtime receipt](../verification/runtimes.md).
+
+At the earlier checkpoint the grinding/decompilation tests had only native
+execution and Wasm compilation evidence, and the explicit configuration tests
+had real Chrome wallet fixture execution but were not in the shared suite. The
+v56 integration subsequently appended all seven groups, including those three,
+and executed them on every named host.
 
 The [installed wallet receipt](../verification/installed-wallet-current.md)
 records two complete current-source iOS controller runs, including native wallet
