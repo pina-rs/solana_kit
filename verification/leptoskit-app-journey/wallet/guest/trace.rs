@@ -1,4 +1,4 @@
-//! Verification-only receipts carry node identities and action kinds, never payloads.
+//! Verification-only receipts carry action kinds and explicit public journey data.
 use leptoskit_bridge::{
     Error, MethodId,
     guest::{Call, Client},

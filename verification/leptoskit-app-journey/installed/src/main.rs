@@ -49,7 +49,11 @@ fn main() -> Result<()> {
 }
 
 /// The maintained local-wallet journey remains the default controller path.
-fn local(launch: &launch::Launch, node: &mut validator::Validator, platform: Platform) -> Result<()> {
+fn local(
+    launch: &launch::Launch,
+    node: &mut validator::Validator,
+    platform: Platform,
+) -> Result<()> {
     let wallets = NativeTester::run(launch.options(), |tester| {
         let wallets = journey::run(tester, node, platform)?;
         launch.stop_app(tester)?;

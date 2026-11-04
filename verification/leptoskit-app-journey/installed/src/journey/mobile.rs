@@ -1,8 +1,6 @@
 //! An independently installed wallet approves every signature; the generated
 //! app owns the granted RPC, submission and subscription work.
-use super::{
-    AMOUNT, FUNDING, Transfer, accessibility, effect, fund, public_bytes, subscription,
-};
+use super::{AMOUNT, FUNDING, Transfer, accessibility, effect, fund, public_bytes, subscription};
 use crate::{Error, Result, android, require, wallet};
 use ed25519_dalek::{Signature as Ed25519Signature, VerifyingKey};
 use leptoskit_testing::native::{Locator, NativeTester, Platform};
@@ -59,7 +57,7 @@ pub(crate) fn initial(
     tester.checkpoint("External wallet transfer confirmed by the owned ledger")?;
 
     subscription::run(tester, node, platform, "subscription-mwa-initial.json")?;
-    pending_cancel(tester, node, platform, &transfer, balance)?;
+    pending_cancel(tester, node, platform, external, &transfer, balance)?;
     reconnect(tester, platform, external, &payer)?;
     disconnect(tester, platform)?;
     retain(tester, external, "mwa-initial")?;
@@ -78,7 +76,10 @@ pub(crate) fn relaunch(
     selection(tester, platform)?;
     connect(tester, platform, external)?;
     let payer = address(tester)?;
-    require(payer == state.payer, "relaunch authorized a different account")?;
+    require(
+        payer == state.payer,
+        "relaunch authorized a different account",
+    )?;
     read_balance(tester, platform, state.balance)?;
     tester.checkpoint("Relaunched app restored the same external public account")?;
     message(tester, platform, external, 1)?;
@@ -93,11 +94,7 @@ fn selection(tester: &NativeTester, platform: Platform) -> Result<()> {
     Ok(())
 }
 
-fn connect(
-    tester: &mut NativeTester,
-    platform: Platform,
-    external: &External<'_>,
-) -> Result<()> {
+fn connect(tester: &mut NativeTester, platform: Platform, external: &External<'_>) -> Result<()> {
     tester.tap(&accessibility::action(platform, "Connect Android wallet"))?;
     wallet::authorize(tester)?;
     wallet::app(tester, external.app)?;
@@ -141,6 +138,10 @@ fn reject(
     external: &External<'_>,
     transfer: &Transfer,
 ) -> Result<()> {
+    let payer_before = node
+        .rpc
+        .balance(&transfer.payer)
+        .map_err(|error| Error::Response(error.to_string()))?;
     tester.tap(&accessibility::action(
         platform,
         "Review external wallet transfer",
@@ -151,10 +152,18 @@ fn reject(
     tester.expect_visible(&Locator::text("Transfer rejected; nothing submitted"))?;
     tester.checkpoint("External wallet rejected the transfer without submission")?;
     require(
-        node.rpc.balance(&transfer.recipient).map_err(|error| {
-            Error::Response(error.to_string())
-        })? == transfer.before,
+        node.rpc
+            .balance(&transfer.recipient)
+            .map_err(|error| Error::Response(error.to_string()))?
+            == transfer.before,
         "rejection changed the recipient",
+    )?;
+    require(
+        node.rpc
+            .balance(&transfer.payer)
+            .map_err(|error| Error::Response(error.to_string()))?
+            == payer_before,
+        "rejection changed the payer",
     )?;
     let signatures = node
         .rpc
@@ -207,12 +216,17 @@ fn pending_cancel(
     tester: &mut NativeTester,
     node: &super::Validator,
     platform: Platform,
+    external: &External<'_>,
     transfer: &Transfer,
     payer_balance: u64,
 ) -> Result<()> {
     tester.tap(&accessibility::action(platform, "Request wallet signature"))?;
     tester.expect_visible(&accessibility::action(platform, "Cancel request"))?;
-    tester.checkpoint("Pending external wallet request before cancellation")?;
+    wallet::present(tester)?;
+    tester.expect_visible(&Locator::text("SIGN MESSAGE(S)"))?;
+    tester.checkpoint("External wallet signing prompt pending before cancellation")?;
+    wallet::app(tester, external.app)?;
+    tester.expect_visible(&accessibility::action(platform, "Cancel request"))?;
     tester.tap(&accessibility::action(platform, "Cancel request"))?;
     tester.expect_visible(&Locator::text(CHOOSE))?;
     tester.checkpoint("Pending wallet request cancelled and session unloaded")?;
@@ -298,7 +312,13 @@ fn verify_rejected(receipt: &str, transfer: &Transfer) -> Result<()> {
     let amount = AMOUNT.to_string();
     let parts = line.split_whitespace().collect::<Vec<_>>();
     require(
-        parts == ["rejected", transfer.payer.as_str(), transfer.recipient.as_str(), &amount],
+        parts
+            == [
+                "rejected",
+                transfer.payer.as_str(),
+                transfer.recipient.as_str(),
+                &amount,
+            ],
         "rejection receipt does not match the reviewed transfer",
     )
 }

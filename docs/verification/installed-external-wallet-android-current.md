@@ -136,11 +136,16 @@ path and a second, independently installed wallet UI:
   the socket close. Run 3 recorded 1,000,000/2,000,000/3,000,000 lamports, late
   transaction slot 119, SDK context slot 119, and same-socket slot 121. The
   wallet's ledger balance was unchanged by the subscription.
-- **Pending cancellation.** The app starts a wallet signature request and shows
-  its real `Cancel request` control. Cancellation disposes the pending call and
-  the wallet lease; the app returns to `Choose a wallet`. The controller
+- **Cancellation before dispatch.** These three invocations cancelled during
+  the fixture's 15-second switch window, before the wallet call was polled.
+  The app returns to `Choose a wallet` and closes the wallet lease. The controller
   requires the approved post-transfer recipient and payer balances to remain
   unchanged.
+  They do not prove cancellation of an actual pending wallet prompt. The
+  reviewed controller now requires the external wallet's `SIGN MESSAGE(S)`
+  prompt before returning to the app to cancel; that stronger path needs a new
+  installed execution. It also compares the payer balance across rejection,
+  which the earlier controller checked only for the recipient.
 - **Fresh authorization after cancellation.** A new association authorizes the
   same public account again, proving the cancelled session left no stale
   authority.
@@ -167,7 +172,7 @@ at 0 when properties were present, so a genuine wallet's first frame failed
 ordering and the pending authorization closed with `MwaError::Protocol`. The
 existing loopback peers used 0, which hid the mismatch.
 
-`NativeAssociation::establish` now starts the receive counter at 1 for both the
+The shared native `establish_wallet` path now starts the receive counter at 1 for both the
 local and reflector transports. The local and reflector test peers encode
 properties at 1 and replies at 2, and the wallet crate's encrypted memory
 session test uses the same real counters. The fix is covered by a changeset and

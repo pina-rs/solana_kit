@@ -64,9 +64,7 @@ fn command(adb: &Path, device: &str, arguments: &[&str], timeout: Duration) -> R
             let _ = child.wait();
             let _ = std::fs::remove_file(&path);
 
-            return Err(Error::Response(
-                "wallet package inspection deadline".into(),
-            ));
+            return Err(Error::Response("wallet package inspection deadline".into()));
         }
 
         thread::sleep(POLL);

@@ -21,7 +21,7 @@ use solana_kit_leptoskit::{
     GuestMobileWallet, WalletSessionError, wallet_ui::mobile_wallet_panel,
 };
 use solana_kit_system::{TransferSol, TransferSolAccounts};
-use solana_kit_wallet::mwa::Method;
+use solana_kit_wallet::mwa::{Method, ProtocolError};
 use std::{
     collections::VecDeque,
     sync::{Arc, Mutex},
@@ -486,7 +486,9 @@ async fn sign_transaction(
 
     let result = match result {
         Ok(result) => result,
-        Err(WalletSessionError::Rejected(_)) => return Ok(Some(SignatureOutcome::Declined)),
+        Err(WalletSessionError::Rejected(error)) if error.code == ProtocolError::NOT_SIGNED => {
+            return Ok(Some(SignatureOutcome::Declined));
+        }
         Err(error) => return Err(error.into()),
     };
     let signed = single_payload(&result)?;
