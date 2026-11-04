@@ -118,10 +118,11 @@ fn entries(bytes: &[u8]) -> Result<Vec<(String, &[u8])>> {
                 bytes.len() >= offset + 2 * BLOCK && bytes[offset..].iter().all(|byte| *byte == 0),
                 "invalid tar end marker"
             );
+
             return Ok(entries);
         }
 
-        match parse_header(header)? {
+        let next = match parse_header(header)? {
             Header::LongName { size } => {
                 ensure!(
                     pending_long_name.is_none(),
@@ -129,43 +130,55 @@ fn entries(bytes: &[u8]) -> Result<Vec<(String, &[u8])>> {
                 );
                 let (payload, next) = payload(bytes, offset, size)?;
                 pending_long_name = Some(long_name(payload)?);
-                offset = next;
+
+                next
             }
             Header::Regular { name, size } => {
-                let name = match pending_long_name.take() {
-                    Some(long) => {
-                        ensure!(
-                            name.as_bytes() == &long.as_bytes()[..NAME_LENGTH],
-                            "ambiguous GNU long-name metadata"
-                        );
-                        long
-                    }
-                    None => name,
-                };
-                let prefix = name.split('/').next().context("archive has no root")?;
-                let expected_root = root.get_or_insert_with(|| prefix.to_owned());
-                member_path(&name, expected_root)?;
-                ensure!(
-                    seen.insert(name.clone()),
-                    "duplicate archive member: {name}"
-                );
+                let name = effective_name(name, pending_long_name.take())?;
+                validate_member(&name, &mut root, &mut seen)?;
                 let (content, next) = payload(bytes, offset, size)?;
                 entries.push((name, content));
-                offset = next;
+
+                next
             }
-        }
+        };
+        offset = next;
     }
+}
+
+/// Applies one long-name record only when the next header carries its truncated name.
+fn effective_name(name: String, long: Option<String>) -> Result<String> {
+    let Some(long) = long else {
+        return Ok(name);
+    };
+    ensure!(
+        name.as_bytes() == &long.as_bytes()[..NAME_LENGTH],
+        "ambiguous GNU long-name metadata"
+    );
+
+    Ok(long)
+}
+
+/// Requires one root, one safe relative path and one effective member name.
+fn validate_member(
+    name: &str,
+    root: &mut Option<String>,
+    seen: &mut BTreeSet<String>,
+) -> Result<()> {
+    let prefix = name.split('/').next().context("archive has no root")?;
+    let expected_root = root.get_or_insert_with(|| prefix.to_owned());
+    member_path(name, expected_root)?;
+    ensure!(
+        seen.insert(name.to_owned()),
+        "duplicate archive member: {name}"
+    );
+
+    Ok(())
 }
 
 /// Validates a complete header before interpreting its name, size or type.
 fn parse_header(header: &[u8]) -> Result<Header> {
-    let ustar = &header[257..263] == b"ustar\0" && &header[263..265] == b"00";
-    let gnu = &header[257..265] == b"ustar  \0";
-    ensure!(ustar || gnu, "unsupported tar header format");
-    ensure!(
-        !gnu || header[345..].iter().all(|byte| *byte == 0),
-        "unsupported GNU extension data"
-    );
+    let (ustar, gnu) = header_format(header)?;
     let kind = header[TYPE_OFFSET];
     ensure!(
         kind != b'K',
@@ -175,11 +188,11 @@ fn parse_header(header: &[u8]) -> Result<Header> {
         matches!(kind, 0 | b'0' | b'L'),
         "archive contains a nonregular member"
     );
-    let checksum = header_checksum(header);
     ensure!(
-        octal(&header[148..156])? == checksum,
+        octal(&header[148..156])? == header_checksum(header),
         "tar header checksum mismatch"
     );
+
     let name = field(&header[..NAME_LENGTH])?;
     let size = usize::try_from(octal(&header[124..136])?)?;
     ensure!(
@@ -188,18 +201,42 @@ fn parse_header(header: &[u8]) -> Result<Header> {
     );
 
     if kind == b'L' {
-        ensure!(gnu, "GNU long-name metadata requires a GNU header");
-        ensure!(
-            name == LONG_LINK_NAME,
-            "unexpected GNU long-name metadata header"
-        );
-        ensure!(
-            (2..=LONG_NAME_LIMIT + 1).contains(&size),
-            "GNU long-name metadata exceeds its bound"
-        );
-        return Ok(Header::LongName { size });
+        return long_name_header(gnu, name, size);
     }
 
+    regular_header(ustar, name, size, header)
+}
+
+/// Accepts USTAR and GNU headers while rejecting unknown GNU extension data.
+fn header_format(header: &[u8]) -> Result<(bool, bool)> {
+    let ustar = &header[257..263] == b"ustar\0" && &header[263..265] == b"00";
+    let gnu = &header[257..265] == b"ustar  \0";
+    ensure!(ustar || gnu, "unsupported tar header format");
+    ensure!(
+        !gnu || header[345..].iter().all(|byte| *byte == 0),
+        "unsupported GNU extension data"
+    );
+
+    Ok((ustar, gnu))
+}
+
+/// Requires the exact GNU metadata marker and its bounded payload size.
+fn long_name_header(gnu: bool, name: &str, size: usize) -> Result<Header> {
+    ensure!(gnu, "GNU long-name metadata requires a GNU header");
+    ensure!(
+        name == LONG_LINK_NAME,
+        "unexpected GNU long-name metadata header"
+    );
+    ensure!(
+        (2..=LONG_NAME_LIMIT + 1).contains(&size),
+        "GNU long-name metadata exceeds its bound"
+    );
+
+    Ok(Header::LongName { size })
+}
+
+/// Joins an actual USTAR prefix without accepting GNU prefix data.
+fn regular_header(ustar: bool, name: &str, size: usize, header: &[u8]) -> Result<Header> {
     let prefix = if ustar { field(&header[345..500])? } else { "" };
     let name = if prefix.is_empty() {
         name.to_owned()
