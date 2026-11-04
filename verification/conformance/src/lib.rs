@@ -15,6 +15,7 @@ pub mod framing;
 pub mod memo_associated_token;
 
 mod accounts_sysvars;
+mod address_family;
 mod addresses;
 mod anchor_cases;
 mod codec_size;
@@ -90,9 +91,9 @@ pub mod system_client;
 use alloc::vec::Vec;
 
 /// Integrated core contract suite; execution receipts identify actual hosts.
-pub const SUITE_ID: &str = "solana-kit-core-v59";
+pub const SUITE_ID: &str = "solana-kit-core-v60";
 /// Exact current registrants, including all preserved and appended contract groups.
-pub const EXPECTED_CASE_COUNT: usize = 476;
+pub const EXPECTED_CASE_COUNT: usize = 480;
 
 /// Selects authentic fixtures or the intentionally incorrect hash oracle.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -211,6 +212,7 @@ pub fn run(mode: FixtureMode) -> Report {
     cases.extend(publisher::publication::cases());
     cases.extend(error_catalog::cases());
     cases.extend(error_contracts::cases());
+    cases.extend(address_family::cases());
 
     Report {
         suite_id: SUITE_ID,

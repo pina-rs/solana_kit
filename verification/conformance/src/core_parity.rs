@@ -3,7 +3,7 @@
 #[path = "../../../crates/solana_kit_core/tests/core_parity/bigints.rs"]
 mod bigints;
 #[path = "../../../crates/solana_kit_core/tests/core_parity/constants.rs"]
-mod constants;
+pub(crate) mod constants;
 #[path = "../../../crates/solana_kit_core/tests/core_parity/dynamic.rs"]
 mod dynamic;
 #[path = "../../../crates/solana_kit_core/tests/core_parity/fixed_points.rs"]

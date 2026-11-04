@@ -4,7 +4,7 @@ use super::{EXPECTED_CASE_COUNT, FixtureMode, SUITE_ID, run};
 
 const CAPTURED_V55: &str = include_str!("../evidence/parity-completion-prefix-v55.txt");
 const CURRENT_SUCCESS: &str = include_str!("../evidence/native-success.txt");
-const APPENDED_NAMES: [&str; 28] = [
+const APPENDED_NAMES: [&str; 32] = [
     "grind-entropy-cancellation",
     "message-decompile-roundtrip",
     "signer-explicit-config",
@@ -33,6 +33,10 @@ const APPENDED_NAMES: [&str; 28] = [
     "error-execution-source-oracle",
     "error-json-rpc-projection",
     "error-simulation-unwrap",
+    "address-constant-rejects-wrong-literal",
+    "curve-classification-rejects-wrong-expected",
+    "curve-compressed-point-classification",
+    "native-loader-source-literal-invalid",
 ];
 
 #[test]

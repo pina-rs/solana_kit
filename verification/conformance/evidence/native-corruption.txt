@@ -481,4 +481,8 @@ error-rpc-enum-offset-callback: Ok(())
 error-execution-source-oracle: Ok(())
 error-json-rpc-projection: Ok(())
 error-simulation-unwrap: Ok(())
-solana-kit-core-v59: 475/476 cases passed
+address-constant-rejects-wrong-literal: Ok(())
+curve-classification-rejects-wrong-expected: Ok(())
+curve-compressed-point-classification: Ok(())
+native-loader-source-literal-invalid: Ok(())
+solana-kit-core-v60: 479/480 cases passed

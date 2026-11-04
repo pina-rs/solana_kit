@@ -1,5 +1,5 @@
 //! Literal constants are checked against independently pinned base58 text.
-use alloc::string::ToString;
+use alloc::string::{String, ToString};
 use solana_kit_core::{Address, address_constants};
 
 const LITERALS: &[(Address, &str)] = &[
@@ -147,6 +147,58 @@ const LITERALS: &[(Address, &str)] = &[
         address_constants::USDT_MINT,
         "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB",
     ),
+    (
+        address_constants::SYSVAR_OWNER,
+        "Sysvar1111111111111111111111111111111111111",
+    ),
+    (
+        address_constants::SYSVAR_CLOCK,
+        "SysvarC1ock11111111111111111111111111111111",
+    ),
+    (
+        address_constants::SYSVAR_EPOCH_REWARDS,
+        "SysvarEpochRewards1111111111111111111111111",
+    ),
+    (
+        address_constants::SYSVAR_EPOCH_SCHEDULE,
+        "SysvarEpochSchedu1e111111111111111111111111",
+    ),
+    (
+        address_constants::SYSVAR_FEES,
+        "SysvarFees111111111111111111111111111111111",
+    ),
+    (
+        address_constants::SYSVAR_INSTRUCTIONS,
+        "Sysvar1nstructions1111111111111111111111111",
+    ),
+    (
+        address_constants::SYSVAR_LAST_RESTART_SLOT,
+        "SysvarLastRestartS1ot1111111111111111111111",
+    ),
+    (
+        address_constants::SYSVAR_RECENT_BLOCKHASHES,
+        "SysvarRecentB1ockHashes11111111111111111111",
+    ),
+    (
+        address_constants::SYSVAR_RENT,
+        "SysvarRent111111111111111111111111111111111",
+    ),
+    (
+        address_constants::SYSVAR_REWARDS,
+        "SysvarRewards111111111111111111111111111111",
+    ),
+    (
+        address_constants::SYSVAR_SLOT_HASHES,
+        "SysvarS1otHashes111111111111111111111111111",
+    ),
+    (
+        address_constants::SYSVAR_SLOT_HISTORY,
+        "SysvarS1otHistory11111111111111111111111111",
+    ),
+    (
+        address_constants::SYSVAR_STAKE_HISTORY,
+        "SysvarStakeHistory1111111111111111111111111",
+    ),
 ];
 
 pub fn constant_literals() {
@@ -154,4 +206,25 @@ pub fn constant_literals() {
         assert_eq!(*actual, expected.parse().unwrap());
         assert_eq!(actual.to_string(), *expected);
     }
+}
+
+/// Negative control: changing one expected sysvar literal must fail the same comparison.
+pub fn rejects_mutated_literal() -> Result<(), &'static str> {
+    // The first appended sysvar alias follows the original 36 pinned pairs.
+    const SYSVAR_OWNER_INDEX: usize = 36;
+    let Some(&(actual, expected)) = LITERALS.get(SYSVAR_OWNER_INDEX) else {
+        return Err("pinned sysvar control index is absent");
+    };
+    let mut mutated = expected.as_bytes().to_vec();
+    mutated[0] = b'T';
+    let mutated = String::from_utf8(mutated).map_err(|_| "mutated literal is not UTF-8")?;
+    let parsed: Address = mutated
+        .parse()
+        .map_err(|_| "mutated literal is not an address")?;
+
+    if actual == parsed {
+        return Err("mutated sysvar literal matched the constant");
+    }
+
+    Ok(())
 }
