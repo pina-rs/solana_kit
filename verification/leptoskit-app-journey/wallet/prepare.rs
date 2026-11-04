@@ -1,6 +1,8 @@
 //! Adds wallet source to a real public-generator workspace, retaining its hosts.
 #[path = "framework.rs"]
 mod framework;
+#[path = "members.rs"]
+mod members;
 #[path = "native_config.rs"]
 mod native_config;
 use std::{
@@ -60,8 +62,8 @@ fn prepare(project: &Path, runtime: NativeRuntime) -> Result<()> {
 /// Hold every edit until the generated guest, hosts and dependency shapes agree.
 /// A changed template must fail before any member receives a partial adaptation.
 fn plan(sdk: &Path, project: &Path, runtime: NativeRuntime) -> Result<Vec<(PathBuf, String)>> {
-    let app = project.join("solana_wallet_app_app");
-    let mut edits = guest(sdk, &app)?;
+    let members = members::detect(project)?;
+    let mut edits = guest(sdk, &project.join(members.app))?;
 
     for platform in ["macos", "android", "ios", "windows", "linux"] {
         let path = project.join(platform).join("Cargo.toml");
@@ -75,7 +77,11 @@ fn plan(sdk: &Path, project: &Path, runtime: NativeRuntime) -> Result<Vec<(PathB
     let contents = fs::read_to_string(&config)?;
     edits.push((config, native_config::select(&contents, runtime.plugin())?));
 
-    for member in [".", "solana_wallet_app_backend", "solana_wallet_app_shared"] {
+    for member in [
+        Path::new("."),
+        members.backend.as_path(),
+        members.shared.as_path(),
+    ] {
         let path = project.join(member).join("Cargo.toml");
         edits.push((path.clone(), fs::read_to_string(path)?));
     }
@@ -273,16 +279,5 @@ fn dependency_entry(contents: &str, dependency: &str, section: &str) -> Result<S
 }
 
 #[cfg(test)]
-mod tests {
-    use super::guest_entry;
-
-    #[test]
-    fn upgrades_previous_guest_event_and_is_idempotent() {
-        let previous = "wallet_fixture::main();\nlet result = leptoskit::guest::dispatch(node, kind, ptr, len);\n\twallet_fixture::poll();\n\tresult\n}";
-        let upgraded = guest_entry(previous).unwrap();
-
-        assert!(upgraded.contains("wallet_fixture::event(node, kind, result);"));
-        assert_eq!(guest_entry(&upgraded).unwrap(), upgraded);
-        assert!(guest_entry("wallet_fixture::main();\nwallet_fixture::poll();").is_err());
-    }
-}
+#[path = "prepare_tests.rs"]
+mod tests;

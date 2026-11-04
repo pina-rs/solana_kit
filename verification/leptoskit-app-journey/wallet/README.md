@@ -73,6 +73,12 @@ leptoskit build --platform android
 leptoskit build --platform ios
 ```
 
+Custom generator names, including hyphenated names, are supported. The preparer reads
+`leptoskit.toml` and the generated root and member manifests to find the actual
+`_app`, `_backend` and `_shared` crates rather than assuming the example name.
+It never rewrites the generated native bundle identities, so the public CLI
+remains the only owner of those platform files.
+
 The preparer checks the SDK's framework revision and the actual generated member
 layout before writing any files. It retains target-specific host dependency
 sections and fails on unknown template shapes or existing source overrides.
