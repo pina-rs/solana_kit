@@ -102,7 +102,7 @@ pub fn translates_ready_ingestion_identity_and_progress() -> Outcome {
 #[cfg_attr(test, test)]
 pub fn translates_ready_ingestion_bundle_and_source() -> Outcome {
     let projected = ready_ingestion();
-    let bundle = projected.bundle.as_ref().expect("attached bundle");
+    let bundle = projected.bundle.as_ref().ok_or("missing attached bundle")?;
 
     assert_eq!(bundle.ingestion_session_id, "ing-3");
     assert_eq!(bundle.publication_session_id, "pub-3");
@@ -111,7 +111,7 @@ pub fn translates_ready_ingestion_bundle_and_source() -> Outcome {
         projected
             .publication_session
             .as_ref()
-            .expect("attached session")
+            .ok_or("missing attached session")?
             .id,
         "pub-3"
     );
@@ -258,7 +258,7 @@ pub fn explicit_attachments_replace_embedded_records() -> Outcome {
         projected
             .publication_session
             .as_ref()
-            .expect("embedded session")
+            .ok_or("missing embedded session")?
             .checkpoint,
         PublicationCheckpoint::MintSubmitted
     );
@@ -280,7 +280,10 @@ pub fn metadata_uri_prefers_the_session_then_the_release_record() -> Outcome {
         }
     }));
     let projected = translate_backend_ingestion_session(&backend, None);
-    let bundle = projected.bundle.as_ref().expect("bundle");
+    let bundle = projected
+        .bundle
+        .as_ref()
+        .ok_or("missing projected bundle")?;
     assert_eq!(
         bundle.metadata.release_metadata_uri.as_deref(),
         Some("https://meta.example/session.json")
@@ -304,7 +307,7 @@ pub fn metadata_uri_prefers_the_session_then_the_release_record() -> Outcome {
         fallback
             .bundle
             .as_ref()
-            .expect("bundle")
+            .ok_or("missing fallback bundle")?
             .metadata
             .release_metadata_uri
             .as_deref(),

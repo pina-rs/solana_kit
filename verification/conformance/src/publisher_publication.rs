@@ -2,8 +2,8 @@
 
 /// Reports a changed projection comparison as an error instead of unwinding a guest.
 ///
-/// Native builds keep the standard assertion; portable execution receives the
-/// first failed comparison as a static report entry so later groups still run.
+/// The publisher's integration target keeps standard assertions. The shared
+/// suite receives the first failed comparison as an error on every host.
 macro_rules! assert_eq {
     ($left:expr, $right:expr $(,)?) => {
         if $left != $right {
@@ -133,6 +133,21 @@ fn session_group() -> Outcome {
     session::markers_can_be_normalized_directly()
 }
 
+/// Exercise the same assertion adapter used by the included projection bodies.
+#[cfg(test)]
+fn changed_expected_release_version() -> Outcome {
+    const WRONG_VERSION: &str = "deliberately incorrect version";
+    let projected = support::map_backend_bundle_to_publication_bundle(
+        &support::bundle(support::source_bundle()),
+        None,
+        support::PortalSourceKind::PortalUpload,
+    );
+
+    assert_eq!(projected.release.version_name, WRONG_VERSION);
+
+    Ok(())
+}
+
 #[cfg(test)]
 mod continuation {
     /// The continuation controls must keep the standard test assertions.
@@ -149,9 +164,10 @@ mod continuation {
         };
     }
 
-    use super::checks;
     use super::*;
 
+    const VERSION_MISMATCH: &str =
+        "projection assertion failed: projected.release.version_name != WRONG_VERSION";
     const CAPTURED: &str = include_str!("../evidence/native-success.txt");
     const APPENDED: [&str; 4] = [
         "publisher-publication-bundle-source-projection",
@@ -159,20 +175,6 @@ mod continuation {
         "publisher-publication-ingestion-projection",
         "publisher-publication-session-checkpoint-precedence",
     ];
-
-    /// The portable continuation control changes only this independent expected literal.
-    fn changed_expected_release_version() -> Outcome {
-        let projected = support::map_backend_bundle_to_publication_bundle(
-            &support::bundle(support::source_bundle()),
-            None,
-            support::PortalSourceKind::PortalUpload,
-        );
-
-        checks::require(
-            projected.release.version_name == "deliberately incorrect version",
-            "release version name mismatch",
-        )
-    }
 
     #[test]
     fn appended_groups_match_the_committed_and_live_reports() {
@@ -229,7 +231,7 @@ mod continuation {
 
         assert_eq!(
             cases[0].outcome,
-            Err("release version name mismatch"),
+            Err(VERSION_MISMATCH),
             "the changed expected literal did not report its own failure"
         );
         assert_eq!(cases[1].name, "later-bundle-assertions");
@@ -252,7 +254,7 @@ mod continuation {
         assert_eq!(cases[0].outcome, Ok(()));
         assert_eq!(
             cases[1].outcome,
-            Err("release version name mismatch"),
+            Err(VERSION_MISMATCH),
             "the changed expected literal did not report its own failure"
         );
         assert_eq!(cases[2].name, "later-session-assertions");

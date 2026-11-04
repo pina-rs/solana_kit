@@ -60,7 +60,7 @@ pub fn ingestion_progress_never_promotes_provider_text() -> Outcome {
         })),
         None,
     );
-    let progress = detail.progress().expect("reported detail");
+    let progress = detail.progress().ok_or("missing reported progress")?;
     assert_eq!(progress, IngestionProgress::ReportedDetail);
     assert_eq!(progress.message(), "Portal ingestion is running");
     assert!(!progress.message().contains("provider detail"));
