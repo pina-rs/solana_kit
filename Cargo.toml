@@ -45,6 +45,7 @@ members = [
   "xtask",
 ]
 exclude = [
+  "docs/site",
   "verification/confirmation-factories",
   "verification/core-contracts-portable",
   "verification/durable-nonce",
