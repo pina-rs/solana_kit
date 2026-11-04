@@ -107,7 +107,12 @@ feature Wasm compilation. Rust 1.89 Clippy is unavailable because that installed
 toolchain lacks the component. No component or policy was changed.
 
 This is headless interpreter, lifecycle and network proof. Swift and Kotlin pump
-and awaited-close hooks and generated desktop, Android and iOS HTTP journeys remain
-future work. Registry publication requires compatible published upstream crates;
-component publishing remains disabled. The unchanged portable protocol and
-five-host conformance receipts remain separate evidence.
+and awaited-close hooks remain future work. Generated desktop, Android and iOS
+local-wallet applications now execute `Client<GuestHttp>` balance calls in the
+[installed iOS](installed-wallet-current.md),
+[Android](installed-wallet-android-current.md) and
+[macOS](installed-wallet-macos-current.md) receipts. Those are local-wallet
+journeys, not external MWA or remote-reflector acceptance. Registry publication
+requires compatible published upstream crates; component publishing remains
+disabled. The unchanged portable protocol and five-host conformance receipts
+remain separate evidence.

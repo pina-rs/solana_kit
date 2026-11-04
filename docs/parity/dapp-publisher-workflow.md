@@ -96,6 +96,45 @@ decoded-byte and JSON admission bounds are independent. APK/media source caps
 are nonzero and at most 64 MiB. No operation silently retries here; the earlier
 explicit protocol ingestion retry helper remains independently available.
 
+## Accepted failed-start reconciliation contract
+
+The pinned Dart `startPublication` wraps the start path in `on Object catch`,
+recovers a release identity through the ingestion session, calls
+`cleanupFailedRelease` once and, on `preservedSubmitted`, rehydrates through
+`recoverPublicationResult` (`publication_workflow.dart:185-235,540-606`). Rust
+does not port that automatic catch/recovery. The accepted caller contract is the
+explicit sequence `Workflow::cleanup_failed` -> `CleanupOutcome::PreservedSubmitted`
+-> `Workflow::resume`; this is a deliberate substitution, not byte-for-byte
+automatic behavior.
+
+The contract is source-grounded in the persisted workflow state:
+
+- `cleanup_failed` requires a known persisted release identity
+  (`engine.rs:185-188`) and refuses a pending `Effect::Cleanup` (`:177-179`) or
+  an already acknowledged deletion/preserved submission (`:181-183`).
+- It persists `Effect::Cleanup` before the single call (`:190`) and clears
+  pending only after an acknowledged `deleted`/`preservedSubmitted` outcome
+  (`:193-201`). Unknown outcomes fail.
+- `resume` and `Snapshot::admit` reject any pending effect before network work
+  (`engine.rs:130-157`, `snapshot.rs:156-158`), so a selector cannot bypass
+  uncertainty.
+- `hydrate` binds the submitted session to the persisted release, ingestion and
+  publication identities (`hydrate.rs:80-124,373-417`) and rejects a preserved
+  submission whose correlated stage is not `Submitted` (`:109-111`).
+- Metadata comes from the acknowledged cache, session or bundle
+  (`hydrate.rs:157-179`); a submitted release without metadata fails rather than
+  uploading, and no store submission follows. Cleanup also clears any pending
+  upload intent (`engine.rs:189`).
+
+`crates/solana_kit_dapp_publisher/tests/workflow/failures.rs::preserved_submitted_cleanup_reconciles_without_resubmitting_to_store`
+executes start failure, explicit cleanup, preserved-submitted resume, and asserts
+no `publication.submitToStore` procedure and no upload observation. The body is
+included in the shared `publisher-workflow-durable-effects-and-cancellation`
+group and now executes on all five hosts in the
+[v57/459 publication receipt](../verification/publication-runtime.md). Normal CLI
+registry enablement remains under RW-07; no automatic destructive cleanup, broad
+catch/replay or additional production wrapper is added.
+
 ## Files and metadata
 
 `prepare_local_apk` accepts a local-only reader token and public file name. One
@@ -347,8 +386,10 @@ absent/null/blank/unknown values, caller-supplied timestamps, source inference,
 attached ingestion records, metadata URI precedence, progress messages,
 cleanup outcomes and diagnostic redaction. They live in
 `crates/solana_kit_dapp_publisher/tests/publication.rs`, use independently
-authored JSON and string literals, and are not registered in the shared
-conformance suite. The checked-in v55/448 shared identity and all canonical
+authored JSON and string literals, and also execute in four appended portable
+groups in the v57/459 shared suite; the
+[publication runtime receipt](../verification/publication-runtime.md) records the
+five-host run. The earlier v55/448 identity remains historical. All canonical
 declaration IDs/statuses remain unchanged. No Dart oracle was executed for these
 bodies, and no actual portal request, upload or publication occurred.
 
@@ -369,12 +410,14 @@ The publisher package executed 131 test bodies (11 unit, 5 attestation, 24
 portal, 17 prepared, 32 publication, 41 workflow and one Rustdoc example); the
 CLI executed five unit bodies. The style gate scored 2,110 files with repository
 readability 97.15 and complexity 98.50, and every file remained at or above 90.
-These results qualify the local source only; browser, both WASI targets,
-production wasmi, three-OS CI and independent consumer locks remain unexecuted.
+These local package and CLI results qualify the local source only; the shared
+publisher groups have the separate five-host receipt above. Production wasmi,
+three-OS CI and independent consumer locks remain unexecuted.
 
-Automated uncertain-effect reconciliation remains incomplete. The native CLI
-seam is argument/env/stdin resolution, approved credentials, existing Kit
-signer/funding preflight, bounded SourceReader, atomic durable Storage, portal
+The source's automatic catch/cleanup/recovery is deliberately not implemented;
+the accepted caller-explicit cleanup/resume contract is documented above. The
+native CLI seam is argument/env/stdin resolution, approved credentials, existing
+Kit signer/funding preflight, bounded SourceReader, atomic durable Storage, portal
 transport, independent PUT adapter and progress/summary output. Normalized
 projections remain a library read model and do not enable normal publishing; no
 CLI or image framework is represented by a stub or claimed as complete here.

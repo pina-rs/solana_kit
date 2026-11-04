@@ -73,7 +73,7 @@ These results are inputs to the backlog, not completion claims.
 
 | Area                 | Current executed evidence                                                                                                                                                                                                                                                                                                                             |
 | -------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Portable conformance | `solana-kit-core-v56` passes 455/455 natively, in Chrome, both Wasmtime 50 previews and the pinned LeptosKit interpreter; corruption is 454/455. [Receipt](../verification/parity-completion-runtime.md)                                                                                                                                              |
+| Portable conformance | `solana-kit-core-v57` passes 459/459 natively, in Chrome, both Wasmtime 50 previews and the pinned LeptosKit interpreter; corruption is 458/459. The first 455 v56 cases are preserved. [Receipt](../verification/publication-runtime.md)                                                                                                             |
 | Program clients      | 17 owned-validator tests pass for builtins and pinned external programs. [Receipt](../verification/program-integration.md)                                                                                                                                                                                                                            |
 | Codama package       | Packed NPM consumer, 9 NPM tests, 116 generator tests and the exact 9 groups on native/Chrome/WASI/LeptosKit. [Receipt](../verification/codama-package-current.md)                                                                                                                                                                                    |
 | Native wallet        | iOS controller twice, Android controller twice on a fresh API 35 arm64 emulator, and a three-process macOS computer-use journey with independent ledger/state oracles. [iOS](../verification/installed-wallet-current.md), [Android](../verification/installed-wallet-android-current.md), [macOS](../verification/installed-wallet-macos-current.md) |
@@ -393,8 +393,8 @@ parity link. No production code change unless the run exposes a defect.
 
 ### RW-06 Publisher start reconciliation and normal CLI enablement
 
-**Kind.** Deliberate safe caller contract with one bounded source-parity gap;
-normal CLI registry install is an external release prerequisite.
+**Kind.** Deliberate accepted caller contract; normal CLI registry install
+remains an external release prerequisite under RW-07.
 
 **Acceptance criterion.** Phase 8 publisher package behavior and release
 readiness; the package-capability definition of done.
@@ -419,13 +419,25 @@ snapshot/session/release at `engine.rs:125-157`. The workflow receipt says it
 does not invent automatic uncertain-effect reconciliation, and the book says the
 CLI never replays an ambiguous step.
 
-Judgment: automatic deletion of a failed release is destructive and should not be
-ported as a default. Automatic recovery of a **preserved submitted** release is
-safe and is not behaviorally equivalent to requiring the caller to resume
-manually. The smallest honest closure is either an explicit, typed
-`reconcile_start` helper that performs the source's fallback lookup, one cleanup,
-and preserved-submission hydration, or a recorded decision that the
-caller-explicit `resume` contract is the accepted substitution.
+**Accepted decision.** The parent accepts the caller-explicit
+`cleanup_failed` -> `CleanupOutcome::PreservedSubmitted` -> `resume` sequence as
+the replacement for the source's automatic catch/cleanup/recovery. It is a
+deliberate caller contract, not byte-for-byte automatic behavior: no destructive
+cleanup runs from `Drop` or a broad error handler, and no ambiguous mutation is
+replayed. `engine.rs:159-203` requires a known persisted `release_id`, refuses a
+pending `Effect::Cleanup`, refuses an already acknowledged deletion or preserved
+submission, persists `Effect::Cleanup` before the single call, and records
+`deleted`/`preserved_submitted` only after an acknowledged outcome. `resume`
+(`:130-157`) and `Snapshot::admit` reject pending effects before network work.
+`hydrate.rs:80-124,373-417` binds the submitted session to the persisted release,
+ingestion and publication identities; a preserved submission whose correlated
+stage is not `Submitted` is invalid. On the preserved-submitted path, metadata
+comes from the acknowledged cache, session or bundle (`:157-179`), so no upload
+or store submit is issued. The exact path is
+`tests/workflow/failures.rs::preserved_submitted_cleanup_reconciles_without_resubmitting_to_store`;
+it is included in `publisher-workflow-durable-effects-and-cancellation` and now
+executes on all five hosts in the v57/459 receipt. The decision is recorded in
+[the workflow record](../parity/dapp-publisher-workflow.md).
 
 **Normal CLI enablement.** The native binary is implemented and usable from a
 checkout or archive (`cargo install --git`, prebuilt `publisher-cli-v*`). The
@@ -439,13 +451,16 @@ missing CLI command. It is covered by RW-07.
 cargo test -p solana_kit_dapp_publisher --features workflow --test workflow --offline
 ```
 
-Result at `79444fb8`: 41 passed, 0 failed. There is no Rust test for the source's
-automatic catch/cleanup/recovery path because that path is intentionally absent.
+Result at `79444fb8` and on this unit's rerun: 41 passed, 0 failed. The
+preserved-submission test also asserts no `publication.submitToStore` procedure
+and no upload observation. The source's automatic catch/cleanup/recovery path
+remains intentionally unported and therefore has no Rust test; the accepted
+caller path does.
 
-**Next minimal unit.** Add a decision entry (or a typed `reconcile_start` helper
-with simulated cleanup/preserved-submission fixtures) and keep the destructive
-auto-cleanup out of `Drop`/broad error handling. Do not add retries or automatic
-replay of an ambiguous mutation.
+**Next minimal unit.** None for the recovery decision; it is recorded above and
+in the workflow record. CLI registry enablement stays under RW-07. Do not add
+automatic destructive cleanup, a broad catch/replay, or a redundant production
+wrapper.
 
 ### RW-07 Whole-workspace registry and package release rehearsal
 
@@ -571,15 +586,16 @@ artifact as an external blocker, not a code failure.
 
 ### RW-10 Fixed-point residual reconciliation
 
-**Kind.** Stale scoped evidence plus deliberate presentation substitutions. The
-implementation and executable evidence already exist.
+**Kind.** Reconciled scoped reasons plus deliberate presentation substitutions;
+canonical adjudication remains open. The implementation and executable evidence
+already exist.
 
 **Acceptance criterion.** Phase 2 exact numeric behavior and malformed/overflow
 controls.
 
-**Current finding.** `docs/parity/fixed-points-remaining.tsv` still names five
-IDs, but [the composition note](../parity/fixed-point-composition.md) records
-current evidence for all five:
+**Current finding.** `docs/parity/fixed-points-remaining.tsv` names five IDs;
+their reason text now points at the executable evidence and
+[the composition note](../parity/fixed-point-composition.md):
 
 - `binaryFixedPointToNumber` and `decimalFixedPointToNumber` have literal Dart
   oracle comparisons for finite, extreme, cancellation, subnormal, underflow and
@@ -592,9 +608,11 @@ current evidence for all five:
   `Paired`/`Mapped` composition. The tests execute callback errors, offsets,
   width mismatch, truncation, trailing bytes and budgets.
 
-The old remaining TSV is not current gap evidence. The 126-entry receipt and
-canonical rows still need adjudication, and the package/Phase 2 are not claimed
-complete.
+The old remaining TSV is no longer current gap evidence. This unit refreshed only
+the five reason/notes texts in that file and the 126-entry receipt; the IDs
+remain `remaining`, and counts, source hashes and status are unchanged. The
+126-entry receipt and canonical rows still need adjudication, and the
+package/Phase 2 are not claimed complete.
 
 **Owning code/source.** `crates/solana_kit_core/src/fixed_points/`,
 `crates/solana_kit_core/tests/fixed_point_numbers.rs`,
@@ -610,29 +628,30 @@ cargo test -p solana_kit_core --features fixed-points \
   --test fixed_point_numbers --test fixed_point_composition --offline
 ```
 
-Result at `79444fb8`: 6 + 6 passed, 0 failed.
+Result at `79444fb8` and on this unit's rerun: 6 + 6 passed, 0 failed.
 
-**Next minimal unit.** Regenerate or supersede `fixed-points-remaining.tsv` from
-the composition note, record the accepted presentation deviations, and map the
-five IDs in the adjudication source. No production codec or floating-point
-change is required.
+**Next minimal unit.** The scoped reason refresh is complete. Map the five IDs in
+the adjudication source under RW-01; no production codec or floating-point change
+is required.
 
 ### RW-11 Numeric width and alphabet residuals
 
-**Kind.** Stale scoped evidence plus deliberate UTF-16 substitution. This item
-was corrected during this audit: it is not a missing generic BigInt codec.
+**Kind.** Reconciled scoped reasons plus deliberate UTF-16 substitution;
+canonical adjudication remains open. This item was corrected during this audit:
+it is not a missing generic BigInt codec.
 
 **Acceptance criterion.** Phase 2 exact integer/string codecs.
 
-**Current finding.** `docs/parity/numeric-string-codecs-remaining.tsv` says four
-`readBigInt*`/`writeBigInt*` helpers lack arbitrary caller-selected widths. The
-current implementation already provides exactly that contract:
+**Current finding.** `docs/parity/numeric-string-codecs-remaining.tsv` and the
+88-entry scoped receipt previously said four `readBigInt*`/`writeBigInt*`
+helpers lack arbitrary caller-selected widths. That reason is now stale: the
+current implementation provides exactly that contract.
 `crates/solana_kit_core/src/codecs/big_number.rs` exposes
 `BigNumber<BigUint>` and `BigNumber<BigInt>` with an explicit nonzero byte width
 and endian, including range/truncation/trailing checks. The
 `core_parity/bigints.rs` tests exercise 2-, 3- and 33-byte widths and rejection
-paths. That receipt is therefore stale for those four IDs; the rows still need
-canonical evidence adjudication, not a new codec.
+paths. This unit refreshed the four rows' reason text only; they remain partial
+pending canonical evidence adjudication, not because a codec is missing.
 
 The three `getBaseXCodec`/`getBaseXEncoder`/`getBaseXDecoder` rows remain partial
 for a different reason: non-BMP alphabets index Dart UTF-16 code units and can
@@ -651,47 +670,45 @@ pinned Dart `packages/solana_kit_codecs_numbers/lib/src/utils.dart:154-219` and
 cargo test -p solana_kit_core --features bigint-codecs --test core_parity --offline
 ```
 
-The external consumer in `numeric-string-codecs.md` already implements a checked
-three-byte numeric codec; extend that pattern rather than adding another integer
-implementation.
+Result on this unit's rerun: 13 passed, 0 failed. The external consumer in
+`numeric-string-codecs.md` already implements a checked three-byte numeric codec;
+extend that pattern rather than adding another integer implementation.
 
-**Next minimal unit.** Update the scoped numeric receipt and adjudication mapping
-to point the four BigInt IDs at `BigNumber` and its exact tests, then record the
-BaseX non-BMP substitution. No production codec change is required unless a
-missing width/endian case is found.
+**Next minimal unit.** The scoped reason refresh is complete. Adjudicate the four
+BigInt IDs and the three BaseX IDs under RW-01. No production codec change is
+required unless a missing width/endian case is found; do not copy the Dart
+lone-surrogate result.
 
 ### RW-12 Current documentation drift
 
 **Kind.** Documentation/evidence. Phase 8 requires API and docs to agree.
 
-**Current finding.** These current-looking files still describe earlier states:
+**Executed follow-up.** This unit corrected the named current-looking claims in
+one docs-only change:
 
-- `docs/verification/leptoskit-http.md:110-111` says generated desktop, Android
-  and iOS HTTP journeys are future work. The installed wallet receipts execute
-  `Client<GuestHttp>` in generated apps.
-- `docs/parity/mobile-wallet-protocol.md` says platform handover, transports,
-  Android Intents and UI remain pending. Local transport, Android handover and
-  the wallet control surface are implemented; external-wallet and remote
-  reflector evidence remain the real gaps.
-- `docs/parity/dapp-publisher.md:92` says portable-host execution remains
-  unexecuted. The workflow groups are now in the shared conformance suite.
-- `docs/parity/subscriptions.md:36` says its isolated cases were not added to
-  the shared suite. `subscription-runtime.md` records four appended groups.
-- `docs/parity/numeric-string-codecs.md` still says arbitrary multiword BigInt
-  widths are not public, although `BigNumber` now provides them (RW-11).
-- `docs/parity/fixed-points-remaining.tsv` still gives "unevidenced" reasons for
-  the five IDs that `fixed-point-composition.md` now covers (RW-10).
-- `docs/book/runtimes/wasi.md:130` still points at an awaiting-execution status
-  for the public socket/clock path; RW-05 must supply the receipt first.
-- `docs/architecture/design.md:290` still says generated mobile HTTP journeys
-  remain future work.
-- `docs/planning/tasks.md` is an old checklist and is not a current status
-  authority.
+- `leptoskit-http.md` now records installed local-wallet `Client<GuestHttp>`
+  journeys and keeps external MWA/remote-reflector acceptance separate.
+- `design.md` no longer calls those installed journeys future work.
+- `mobile-wallet-protocol.md` records local transport, Android handover and the
+  wallet control surface as implemented while leaving external-wallet and
+  remote-reflector evidence unaccepted at this snapshot.
+- `dapp-publisher.md` links the v57/459 five-host receipt and keeps the
+  cross-language signature oracle unexecuted.
+- `subscriptions.md` links the four appended portable groups.
+- `numeric-string-codecs.md` and both numeric scoped receipts describe the
+  existing `BigNumber` widths (RW-11).
+- `fixed-points-remaining.tsv` and `fixed-points.tsv` reasons point at the
+  composition/presentation tests and note (RW-10).
+- `docs/book/runtimes/wasi.md` was already corrected with the RW-05 receipt.
 
-**Next minimal unit.** After RW-03/RW-05/RW-06 close their evidence, correct
-these files in one docs-only change, preserving each historical count and
-explicitly labeling old evidence. Do not use a stale file as proof that current
-code is absent.
+`docs/planning/tasks.md` remains an old checklist and is not a current status
+authority. Historical counts and receipts stay labeled as historical.
+
+**Current finding.** No named stale claim remains in this scoped set. Broader
+documentation drift outside the list is separate work.
+
+**Next minimal unit.** None for these files; future docs work should name the
+specific stale claim and its current evidence.
 
 ### RW-13 Mac2 automation admin prerequisite
 
@@ -719,40 +736,44 @@ functional computer-use proof distinct from the automated driver route.
 
 ## Classification before coding
 
-| Finding                                               | Classification                                   | Action                                                                  |
-| ----------------------------------------------------- | ------------------------------------------------ | ----------------------------------------------------------------------- |
-| Automatic failed-release deletion                     | Deliberate safe substitution                     | Do not port as default; require an explicit caller action               |
-| Automatic preserved-submission recovery               | Bounded source-parity gap                        | Add typed reconcile helper or record the caller-explicit decision       |
-| MWA local transport / Android handover / wallet UI    | Implemented; external-wallet proof absent        | Run RW-03; do not rewrite the transport                                 |
-| MWA remote reflector                                  | Missing source behavior                          | Implement RW-04 or accept local-only scope explicitly                   |
-| Publication projections                               | Implemented; shared-host proof absent            | RW-02                                                                   |
-| WASI public socket/clock                              | Implemented; named-host receipt absent           | RW-05                                                                   |
-| Linux/Windows                                         | CI jobs exist; no executed evidence              | RW-08                                                                   |
-| Registry/release                                      | Release prerequisite                             | RW-07; CLI code is not missing                                          |
-| Fixed-point conversions and callback constructors     | Already implemented/evidenced; scoped list stale | Update the receipt/adjudication; do not restore the Dart numerical bugs |
-| Arbitrary-width BigInt codecs                         | Already implemented; scoped receipt stale        | Update the receipt/adjudication; do not add another codec               |
-| Non-BMP BaseX alphabets                               | Deliberate UTF-8 boundary                        | Keep the safe Rust behavior; record the difference                      |
-| Subscription pooling, coalescing, autoping, reconnect | Not required by the stated acceptance            | Keep caller-owned transport; do not add speculative machinery           |
-| Mac2/XCTest                                           | Admin prerequisite                               | RW-13; do not retry sudo                                                |
-| Historic `*-remaining.tsv` lists                      | Historical slice evidence                        | Do not count as current gaps; use canonical IDs for RW-01               |
+| Finding                                               | Classification                                   | Action                                                            |
+| ----------------------------------------------------- | ------------------------------------------------ | ----------------------------------------------------------------- |
+| Automatic failed-release deletion                     | Deliberate safe substitution                     | Do not port as default; require an explicit caller action         |
+| Automatic preserved-submission recovery               | Accepted caller-explicit contract                | Recorded decision; use cleanup/resume, no automatic recovery      |
+| MWA local transport / Android handover / wallet UI    | Implemented; local-wallet evidence exists        | Keep local paths; RW-03 remains for external-wallet proof         |
+| MWA remote reflector                                  | Missing source behavior                          | Implement RW-04 or accept local-only scope explicitly             |
+| Publication projections                               | Implemented; five-host proof recorded            | RW-02 closed; preserve the receipt                                |
+| WASI public socket/clock                              | Implemented; named-host receipt recorded         | RW-05 closed for the named host; broader hosts remain open        |
+| Linux/Windows                                         | CI jobs exist; no executed evidence              | RW-08                                                             |
+| Registry/release                                      | Release prerequisite                             | RW-07; CLI code is not missing                                    |
+| Fixed-point conversions and callback constructors     | Already implemented/evidenced; reasons refreshed | Adjudicate canonical rows; do not restore the Dart numerical bugs |
+| Arbitrary-width BigInt codecs                         | Already implemented; reasons refreshed           | Adjudicate canonical rows; do not add another codec               |
+| Non-BMP BaseX alphabets                               | Deliberate UTF-16 boundary                       | Keep the safe Rust behavior; record the difference                |
+| Subscription pooling, coalescing, autoping, reconnect | Not required by the stated acceptance            | Keep caller-owned transport; do not add speculative machinery     |
+| Mac2/XCTest                                           | Admin prerequisite                               | RW-13; do not retry sudo                                          |
+| Historic `*-remaining.tsv` lists                      | Historical slice evidence                        | Do not count as current gaps; use canonical IDs for RW-01         |
 
 ## Achievable order
 
 1. **RW-01a**: adjudication manifest plus the twelve-address pilot. This unlocks
    honest incremental closure and prevents a later mass-promotion pass.
-2. **RW-02**: publication projections in the shared suite. Small, independent,
-   and closes a clear evidence hole.
-3. **RW-05**: WASI socket/clock named-host receipt. The harness already exists.
+2. **RW-02**: publication projections in the shared suite. Closed by the
+   v57/459 five-host receipt.
+3. **RW-05**: WASI socket/clock named-host receipt. Closed for its named host;
+   broader WASI hosts remain open.
 4. **RW-03**: external Android wallet acceptance. This is the largest genuine
    Phase 7 behavior proof still absent; it may reveal small implementation fixes.
 5. **RW-04**: remote reflector transport, unless a local-only decision is made.
-6. **RW-06**: publisher reconciliation decision or typed helper.
+6. **RW-06**: publisher reconciliation decision. The caller-explicit
+   cleanup/resume contract is accepted; CLI registry enablement stays in RW-07.
 7. **RW-08**: Linux/Windows CI evidence; can run in parallel with the above.
 8. **RW-07**: full release rehearsal, after the release metadata and evidence
    decisions are stable.
-9. **RW-09/RW-10/RW-11**: program breadth and the two stale numeric receipts.
-   RW-10 and RW-11 are evidence reconciliation, not codec implementation.
-10. **RW-12/RW-13**: documentation alignment and the Mac2 admin prerequisite.
+9. **RW-09/RW-10/RW-11**: program breadth and canonical numeric adjudication.
+   The RW-10/RW-11 scoped reason refresh is complete; neither is a codec
+   implementation task.
+10. **RW-12/RW-13**: the named RW-12 documentation claims are reconciled; the
+    Mac2 admin prerequisite remains.
 11. **RW-01b onward**: phase-ordered ledger closure, starting with Phase 2 then
     Phase 3, 4/5, 6, 7 and 8. Do not start with generated-program rows; they are
     the largest tranche and need the adjudication mechanism proven first.

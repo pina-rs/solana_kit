@@ -114,11 +114,13 @@ runtime execution. A Rust 1.89 release-profile attempt failed to load its host
 serde-derive dylib on this machine. Development-profile proofs do not establish
 release-profile support for that compiler and host combination.
 
-Platform association handover, Android intents, browser discovery, wallet UI,
-installed desktop or mobile wallet journeys, and public reflector operation remain
-pending. The owned loopback native reflector transport is recorded separately in
-the [remote reflector receipt](mwa-remote-reflector.md). This unit does not claim
-full MWA platform parity.
+Local transport lifecycle, Android availability/Intent handover and the guest
+wallet control surface are implemented. The installed iOS, Android and macOS
+receipts exercise the local wallet controller, not an external MWA wallet.
+Native remote-reflector transport has owned TLS evidence in the
+[remote reflector receipt](mwa-remote-reflector.md). External-wallet MWA and
+public-reflector interoperability remain unaccepted; browser association/discovery
+is a separate scope. This unit does not claim full MWA platform parity.
 
 ## Portable protocol execution
 

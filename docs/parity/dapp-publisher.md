@@ -77,19 +77,23 @@ Two authored conformance unit controls deliberately change the independent
 expected attestation literal and require the real shared assertion to return its
 specific failure. They then execute later real envelope/policy/occupied/budget
 groups and inspect their retained results. The existing workspace CI test command
-includes these controls. Root verification unit 1074 subsequently executed the
+includes these controls. Root verification unit 1074 historically executed the
 integrated `7c3ca424` producer: all 22 policy bodies and the conformance controls
 passed natively. Its v53/443 native suite passed every group; deliberate SHA-256
-corruption passed 442 groups and exited one. Current checked-in reports come
-from that execution. Browser, both WASI targets, production wasmi and three-OS
-CI remain unqualified for this producer.
+corruption passed 442 groups and exited one. The checked-in reports at that
+checkpoint came from that execution; they are not the current reports. Browser,
+both WASI targets, production wasmi and three-OS CI remained unqualified for that
+producer.
 
 Unit 887 resolved the root and independent wasmi caller graphs through Cargo.
 The genuine inventory tool regenerated and checked the canonical ledgers from
 the clean pinned Dart checkout. Unit 886 verified exactly 573 owner-only changes;
 all declaration IDs, pending states and other fields remain unchanged.
 
-Portable-host execution and new cross-language oracles remain unexecuted.
+Portable-host execution for the shared publisher policy, portal, workflow and
+publication-projection groups is now recorded by the [v57/459 publication runtime receipt](../verification/publication-runtime.md): native, Chrome, both Wasmtime
+previews and the pinned LeptosKit host pass 459/459, with the 458/459 deliberate
+hash control. The new cross-language Dart signature oracle remains unexecuted.
 Source formatting and per-file Monostyle checks establish no behavioral result.
 
 The portal layer and its native verification are documented in [Publisher portal protocol](dapp-publisher-portal.md).
