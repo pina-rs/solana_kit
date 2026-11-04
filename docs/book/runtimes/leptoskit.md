@@ -5,29 +5,29 @@
 ## How the pieces fit
 
 ```text
- guest (interpreted Wasm)                  native host
- ┌────────────────────────────┐           ┌──────────────────────────────────┐
- │ Client<GuestHttp>          │  plugin   │ HttpDriver / HttpHost            │
- │   GuestHttp::new("rpc")  ──┼── call ──▶│   "rpc" → NativeHttp(endpoint,   │
- │                            │           │            headers, TLS, timeout)│
- │ your executor + leptoskit_ │◀─ reply ──┼   next_completion → deliver      │
- │ poll export                │           │                                  │
- └────────────────────────────┘           └──────────────────────────────────┘
+guest (interpreted Wasm)                  native host
+┌────────────────────────────┐           ┌──────────────────────────────────┐
+│ Client<GuestHttp>          │  plugin   │ HttpDriver / HttpHost            │
+│   GuestHttp::new("rpc")  ──┼── call ──▶│   "rpc" → NativeHttp(endpoint,   │
+│                            │           │            headers, TLS, timeout)│
+│ your executor + leptoskit_ │◀─ reply ──┼   next_completion → deliver      │
+│ poll export                │           │                                  │
+└────────────────────────────┘           └──────────────────────────────────┘
 ```
 
 The host decides which named services exist and where each one connects. A guest that names an uninstalled or ungranted service gets a typed failure, never fabricated data.
 
 ## Features
 
-| Feature | Side | Adds |
-| --- | --- | --- |
-| `guest` | Guest | `GuestHttp`, `GuestRest`, `GuestWebSocket` and `GuestSubscriptionSocket`. Enables `leptoskit_bridge/guest`. |
-| `host` | Native host | `HttpDriver`, `HttpHost`, `HostLimits`, `Routed`, `SocketDriver`. Pulls in `solana_kit_native` and Tokio. |
-| `wallet-ui` | Native host | `wallet_ui::wallet_panel` and `wallet_ui::panel_channel`, an accessible wallet picker and status view. |
-| `wallet-browser-ui` | Browser bundle | `wallet_ui::BrowserWalletView` over real browser wallet discovery. |
-| `wallet-platform` | Android guest | `GuestWalletPlatform`: wallet availability, association Intent launch and host entropy. |
-| `wallet-session` | Guest | `GuestMobileWallet` and `GuestLocalWallet`. |
-| `wallet-host` | Native host | `wallet_service`, the native wallet service those guest types talk to. |
+| Feature             | Side           | Adds                                                                                                        |
+| ------------------- | -------------- | ----------------------------------------------------------------------------------------------------------- |
+| `guest`             | Guest          | `GuestHttp`, `GuestRest`, `GuestWebSocket` and `GuestSubscriptionSocket`. Enables `leptoskit_bridge/guest`. |
+| `host`              | Native host    | `HttpDriver`, `HttpHost`, `HostLimits`, `Routed`, `SocketDriver`. Pulls in `solana_kit_native` and Tokio.   |
+| `wallet-ui`         | Native host    | `wallet_ui::wallet_panel` and `wallet_ui::panel_channel`, an accessible wallet picker and status view.      |
+| `wallet-browser-ui` | Browser bundle | `wallet_ui::BrowserWalletView` over real browser wallet discovery.                                          |
+| `wallet-platform`   | Android guest  | `GuestWalletPlatform`: wallet availability, association Intent launch and host entropy.                     |
+| `wallet-session`    | Guest          | `GuestMobileWallet` and `GuestLocalWallet`.                                                                 |
+| `wallet-host`       | Native host    | `wallet_service`, the native wallet service those guest types talk to.                                      |
 
 Enable `guest` only in the interpreted guest, never in a browser bundle. A browser page uses [Browser](browser.md) directly.
 
@@ -137,11 +137,11 @@ The wallet features add a native wallet picker (`wallet-ui`), an Android Mobile 
 
 ## Status
 
-| Capability | Status |
-| --- | --- |
-| `GuestHttp` with `HttpHost` and `HttpDriver` | A real Rust guest runs in a headless `WasmHost` in CI: HTTPS, denial, status, body limit, deadline and cancellation |
-| `GuestWebSocket`, `SocketDriver`, `GuestSubscriptionSocket` | Source extension; the crate README marks it as not yet executed |
-| `GuestRest`, `install_rest` | Source extension; real provider journeys are pending |
-| Generated desktop, Android and iOS apps | The `generated-wallet` CI workflow builds a LeptosKit-generated wallet app and drives it on macOS, an iOS simulator and an Android emulator. The crate README still lists the full set of installed journeys as required. |
+| Capability                                                  | Status                                                                                                                                                                                                                    |
+| ----------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `GuestHttp` with `HttpHost` and `HttpDriver`                | A real Rust guest runs in a headless `WasmHost` in CI: HTTPS, denial, status, body limit, deadline and cancellation                                                                                                       |
+| `GuestWebSocket`, `SocketDriver`, `GuestSubscriptionSocket` | Source extension; the crate README marks it as not yet executed                                                                                                                                                           |
+| `GuestRest`, `install_rest`                                 | Source extension; real provider journeys are pending                                                                                                                                                                      |
+| Generated desktop, Android and iOS apps                     | The `generated-wallet` CI workflow builds a LeptosKit-generated wallet app and drives it on macOS, an iOS simulator and an Android emulator. The crate README still lists the full set of installed journeys as required. |
 
 The receipts are [LeptosKit HTTP](https://github.com/pina-rs/solana_kit/blob/main/docs/verification/leptoskit-http.md) and [LeptosKit async](https://github.com/pina-rs/solana_kit/blob/main/docs/verification/leptoskit-async.md). The generated app source is in [`verification/leptoskit-app-journey`](https://github.com/pina-rs/solana_kit/tree/main/verification/leptoskit-app-journey).

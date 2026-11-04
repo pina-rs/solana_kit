@@ -76,10 +76,10 @@ fn sign_metadata(mint: Address, creator: Address) -> Result<(), Box<dyn std::err
 
 Token Metadata accounts often have more bytes than their encoded value. You pick how to handle the extra bytes with an `AllocationPolicy`:
 
-| Policy         | Trailing bytes                                                          |
-| -------------- | ----------------------------------------------------------------------- |
-| `Exact`        | Rejected.                                                               |
-| `ZeroPadding`  | Accepted only if all zero, and kept byte for byte.                      |
+| Policy         | Trailing bytes                                                                                                |
+| -------------- | ------------------------------------------------------------------------------------------------------------- |
+| `Exact`        | Rejected.                                                                                                     |
+| `ZeroPadding`  | Accepted only if all zero, and kept byte for byte.                                                            |
 | `PreserveTail` | Kept as they are, without interpretation. Use this for `Metadata`, whose last byte can be a nonzero fee flag. |
 
 `decode_metadata(account, policy, limits)` returns `Account<Allocated<Metadata>>`. Other decoders include `decode_edition`, `decode_master_edition_v1`, `decode_master_edition_v2`, and `decode_reservation_list_v1`. `AllocatedCodec` wraps the same codecs for typed RPC account helpers. Missing fields from an older, shorter account version are an error, never a made-up default.
@@ -94,12 +94,12 @@ With `pda`, the ten pinned recipes are available, each with a `_with_program` va
 
 The crate models 36 Bubblegum instructions and the `TreeConfig` and `Voucher` accounts (`decode_tree_config`, `decode_voucher`). It also has several optional features:
 
-| Feature   | Adds                                                                                                            |
-| --------- | --------------------------------------------------------------------------------------------------------------- |
+| Feature   | Adds                                                                                                                                                         |
+| --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `pda`     | `find_tree_authority`, `find_leaf_asset_id`, `find_voucher`, `find_bubblegum_signer`, `find_mpl_core_cpi_signer`, `LeafAccounts::derive`, and mint builders. |
-| `hashing` | Keccak-256 leaf and metadata hashing (`hash_leaf_v1`, `hash_metadata`, and others), `MerkleTree`, and `verify_proof`. |
-| `tree`    | `TreeAccounts` with `create_v1` and `create_v2`, using Account Compression's tree sizing.                        |
-| `das`     | `DasApi`, `get_asset_with_proof`, `bind_asset_proof`, and `HeliusDasClient` over your own `solana_kit_client` transport. |
+| `hashing` | Keccak-256 leaf and metadata hashing (`hash_leaf_v1`, `hash_metadata`, and others), `MerkleTree`, and `verify_proof`.                                        |
+| `tree`    | `TreeAccounts` with `create_v1` and `create_v2`, using Account Compression's tree sizing.                                                                    |
+| `das`     | `DasApi`, `get_asset_with_proof`, `bind_asset_proof`, and `HeliusDasClient` over your own `solana_kit_client` transport.                                     |
 
 `LeafAccounts` builds leaf operations: `burn`, `transfer`, and `delegate`. For `burn` and `transfer` you choose who signs with `LeafAuthority`, the owner or the delegate. `delegate` always signs as the owner; a delegate cannot re-delegate. For all three you supply the proof nodes, which are appended as readonly, non-signer accounts.
 

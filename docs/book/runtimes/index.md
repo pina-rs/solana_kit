@@ -32,12 +32,12 @@ An interpreted Wasm guest calls named services that a native host owns.
 
 ## Compare the runtimes
 
-| Runtime | Target | Crate | HTTP | WebSocket | Status |
-| --- | --- | --- | --- | --- | --- |
-| Native | Host targets with Tokio | `solana_kit_native` | `NativeHttp`: HTTP/1 over Hyper, rustls TLS | `NativeWebSocket`: WS and WSS text sockets | HTTP and WebSocket run in CI on Ubuntu, macOS and Windows |
-| Browser | `wasm32-unknown-unknown` in a browser Window | `solana_kit_browser` | `BrowserHttp`: Window Fetch | `BrowserWebSocket`: browser WebSocket | HTTP and text sockets run in CI in Chrome; workers, webviews and mobile browsers are unverified |
-| WASI | `wasm32-wasip2` | `solana_kit_wasi` | `WasiHttp`: `wasi:http` | `WasiWebSocket` (feature `websocket`): `wasi:sockets` plus guest TLS | HTTP runs under Wasmtime 50; the socket path is newer and still partly pending |
-| LeptosKit | Interpreted `wasm32-unknown-unknown` guest plus a native host | `solana_kit_leptoskit` | `GuestHttp` in the guest, `HttpDriver` or `HttpHost` in the host | `GuestWebSocket` and `SocketDriver` | Guest HTTP runs headless in CI; sockets and installed-app journeys are still pending |
+| Runtime   | Target                                                        | Crate                  | HTTP                                                             | WebSocket                                                            | Status                                                                                          |
+| --------- | ------------------------------------------------------------- | ---------------------- | ---------------------------------------------------------------- | -------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| Native    | Host targets with Tokio                                       | `solana_kit_native`    | `NativeHttp`: HTTP/1 over Hyper, rustls TLS                      | `NativeWebSocket`: WS and WSS text sockets                           | HTTP and WebSocket run in CI on Ubuntu, macOS and Windows                                       |
+| Browser   | `wasm32-unknown-unknown` in a browser Window                  | `solana_kit_browser`   | `BrowserHttp`: Window Fetch                                      | `BrowserWebSocket`: browser WebSocket                                | HTTP and text sockets run in CI in Chrome; workers, webviews and mobile browsers are unverified |
+| WASI      | `wasm32-wasip2`                                               | `solana_kit_wasi`      | `WasiHttp`: `wasi:http`                                          | `WasiWebSocket` (feature `websocket`): `wasi:sockets` plus guest TLS | HTTP runs under Wasmtime 50; the socket path is newer and still partly pending                  |
+| LeptosKit | Interpreted `wasm32-unknown-unknown` guest plus a native host | `solana_kit_leptoskit` | `GuestHttp` in the guest, `HttpDriver` or `HttpHost` in the host | `GuestWebSocket` and `SocketDriver`                                  | Guest HTTP runs headless in CI; sockets and installed-app journeys are still pending            |
 
 Preview1 (`wasm32-wasip1`) and plain Wasm without a browser still compile the portable client, but no networking adapter exists for them.
 

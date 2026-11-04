@@ -28,11 +28,11 @@ fn transfer(from: Address, to: Address) -> Instruction {
 
 You must give every locally compiled message an explicit `Lifetime`:
 
-| Variant | Use |
-| --- | --- |
+| Variant                                                      | Use                                                                                 |
+| ------------------------------------------------------------ | ----------------------------------------------------------------------------------- |
 | `Lifetime::Blockhash { blockhash, last_valid_block_height }` | A recent blockhash. The expiry height is local metadata and is not part of the wire |
-| `Lifetime::DurableNonce(DurableNonce)` | A durable nonce token plus its account and authority |
-| `Lifetime::Unresolved(Hash)` | Produced only by decoding. The wire carries the token but not its meaning |
+| `Lifetime::DurableNonce(DurableNonce)`                       | A durable nonce token plus its account and authority                                |
+| `Lifetime::Unresolved(Hash)`                                 | Produced only by decoding. The wire carries the token but not its meaning           |
 
 Compiling with `Unresolved` fails with `Error::UnresolvedLifetime`. Get a blockhash and its last valid height from `getLatestBlockhash`; see [RPC](rpc.md).
 
@@ -194,15 +194,15 @@ A signature being present does not prove it is authentic. Call `verify()`.
 
 Every operation in this module returns `transaction::Error`. The common cases are:
 
-| Variant | Cause |
-| --- | --- |
-| `UnresolvedLifetime` | You compiled with `Lifetime::Unresolved` |
-| `PacketTooLarge` | The packet exceeds 1232 bytes (legacy/v0) or 4096 bytes (v1) |
-| `WritableProgram` | An invoked program is writable or is also the payer |
-| `InvalidLookup`, `InvalidNonceAdvance` | A bad lookup origin or snapshot, or a missing or different nonce advance |
-| `InvalidConfig`, `InvalidV1Limits` | Bad v1 configuration or limits |
-| `UnknownSigner`, `ChangedMessage`, `MissingSignature`, `InvalidSignature` | Signature slot and verification failures |
-| `Truncated`, `TrailingBytes`, `InvalidLength`, `UnsupportedVersion`, `InvalidHeader`, `InvalidIndex` | Malformed wire |
+| Variant                                                                                              | Cause                                                                    |
+| ---------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------ |
+| `UnresolvedLifetime`                                                                                 | You compiled with `Lifetime::Unresolved`                                 |
+| `PacketTooLarge`                                                                                     | The packet exceeds 1232 bytes (legacy/v0) or 4096 bytes (v1)             |
+| `WritableProgram`                                                                                    | An invoked program is writable or is also the payer                      |
+| `InvalidLookup`, `InvalidNonceAdvance`                                                               | A bad lookup origin or snapshot, or a missing or different nonce advance |
+| `InvalidConfig`, `InvalidV1Limits`                                                                   | Bad v1 configuration or limits                                           |
+| `UnknownSigner`, `ChangedMessage`, `MissingSignature`, `InvalidSignature`                            | Signature slot and verification failures                                 |
+| `Truncated`, `TrailingBytes`, `InvalidLength`, `UnsupportedVersion`, `InvalidHeader`, `InvalidIndex` | Malformed wire                                                           |
 
 ## Status
 

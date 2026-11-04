@@ -10,23 +10,23 @@ Solana Kit is a set of small Rust crates for off-chain Solana applications. A po
 Dependencies point one way, from adapters and program clients down to the core.
 
 ```text
-            program clients (solana_kit_system, solana_kit_token, ...)
-                         |
-                         v
- adapters  --->  solana_kit_client  --->  solana_kit_core  <---  solana_kit_signers
- (native, browser,        (typed RPC,          (values, codecs,         (async signer
-  wasi, leptoskit)         subscriptions,       accounts, messages,      capabilities)
-                           confirmation)        transactions, errors)
+           program clients (solana_kit_system, solana_kit_token, ...)
+                        |
+                        v
+adapters  --->  solana_kit_client  --->  solana_kit_core  <---  solana_kit_signers
+(native, browser,        (typed RPC,          (values, codecs,         (async signer
+ wasi, leptoskit)         subscriptions,       accounts, messages,      capabilities)
+                          confirmation)        transactions, errors)
 ```
 
-| Layer | Crates | Responsibility |
-| --- | --- | --- |
-| Core | `solana_kit_core` | Addresses, hashes, signatures, instructions, bounded binary codecs, account snapshots, sysvar layouts, legacy/v0/v1 messages and transactions, off-chain messages, program errors, shared error codes, instruction plans. Deterministic crypto behind the `crypto` feature. |
-| Signers | `solana_kit_signers` | Message, partial, modifying and sending signer traits, and composition of several signers. |
-| Client | `solana_kit_client` | `Client<T>` with the typed RPC catalog, the subscription protocol owner, confirmation strategies, account fetch helpers and transaction introspection. |
-| Adapters | `solana_kit_native`, `solana_kit_browser`, `solana_kit_wasi`, `solana_kit_leptoskit` | Concrete HTTP and WebSocket transports, clocks and entropy for one host each. |
-| Program clients | `solana_kit_system`, `solana_kit_token`, `solana_kit_token_2022`, `solana_kit_compute_budget`, and others | Instruction builders, account codecs, PDAs and custom errors for one program. |
-| Wallets and services | `solana_kit_wallet`, `solana_kit_helius`, `solana_kit_jupiter`, `solana_kit_pyth`, `solana_kit_surfpool`, and others | Wallet protocols and third-party integrations. |
+| Layer                | Crates                                                                                                               | Responsibility                                                                                                                                                                                                                                                              |
+| -------------------- | -------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Core                 | `solana_kit_core`                                                                                                    | Addresses, hashes, signatures, instructions, bounded binary codecs, account snapshots, sysvar layouts, legacy/v0/v1 messages and transactions, off-chain messages, program errors, shared error codes, instruction plans. Deterministic crypto behind the `crypto` feature. |
+| Signers              | `solana_kit_signers`                                                                                                 | Message, partial, modifying and sending signer traits, and composition of several signers.                                                                                                                                                                                  |
+| Client               | `solana_kit_client`                                                                                                  | `Client<T>` with the typed RPC catalog, the subscription protocol owner, confirmation strategies, account fetch helpers and transaction introspection.                                                                                                                      |
+| Adapters             | `solana_kit_native`, `solana_kit_browser`, `solana_kit_wasi`, `solana_kit_leptoskit`                                 | Concrete HTTP and WebSocket transports, clocks and entropy for one host each.                                                                                                                                                                                               |
+| Program clients      | `solana_kit_system`, `solana_kit_token`, `solana_kit_token_2022`, `solana_kit_compute_budget`, and others            | Instruction builders, account codecs, PDAs and custom errors for one program.                                                                                                                                                                                               |
+| Wallets and services | `solana_kit_wallet`, `solana_kit_helius`, `solana_kit_jupiter`, `solana_kit_pyth`, `solana_kit_surfpool`, and others | Wallet protocols and third-party integrations.                                                                                                                                                                                                                              |
 
 The `solana_kit` umbrella crate is published as version 0.0.0. It only reserves the name and exports no APIs, so depend on the component crates directly. See [Installation](../getting-started/installation.md) and the [crate reference](../reference/crates.md).
 
@@ -34,13 +34,13 @@ The `solana_kit` umbrella crate is published as version 0.0.0. It only reserves 
 
 `solana_kit_core` is `#![no_std]` with `alloc` and `#![forbid(unsafe_code)]`. With default features, its only dependency is `bs58`. It has no executor, network, filesystem, JavaScript or random-number source. Optional features add more:
 
-| Feature | Adds |
-| --- | --- |
-| `crypto` | SHA-256, program-derived addresses, deterministic Ed25519 `Keypair` signing and strict verification |
-| `keccak` | Keccak-256 |
-| `bigint-codecs` | Arbitrary-width integer codecs through `num-bigint` |
-| `text-codecs` | Base64 text codec |
-| `fixed-points` | Exact decimal and binary fixed-point arithmetic |
+| Feature         | Adds                                                                                                |
+| --------------- | --------------------------------------------------------------------------------------------------- |
+| `crypto`        | SHA-256, program-derived addresses, deterministic Ed25519 `Keypair` signing and strict verification |
+| `keccak`        | Keccak-256                                                                                          |
+| `bigint-codecs` | Arbitrary-width integer codecs through `num-bigint`                                                 |
+| `text-codecs`   | Base64 text codec                                                                                   |
+| `fixed-points`  | Exact decimal and binary fixed-point arithmetic                                                     |
 
 `solana_kit_signers` and most program client crates are also `no_std + alloc`. `solana_kit_client` uses `std`, but it has no runtime and no network dependency. The client does not promise `no_std` RPC.
 

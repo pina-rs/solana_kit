@@ -73,13 +73,13 @@ When the build succeeds, go to the [Quick start](quick-start.md) and make your f
 
 Start with these. Program and service clients live in their own crates; see [Crates](../reference/crates.md) for the full list.
 
-| Crate | What it gives you | `no_std + alloc` |
-| --- | --- | --- |
-| `solana_kit_core` | Addresses, hashes, signatures, instructions, codecs, account snapshots, sysvars, legacy/v0/v1 messages and transactions | Yes |
-| `solana_kit_client` | Typed JSON-RPC `Client` and the `Transport` trait, with no runtime or network of its own | No, needs `std` |
-| `solana_kit_native` | `NativeHttp` and `NativeWebSocket` transports on Tokio, with verified TLS | No |
-| `solana_kit_system` | System Program instruction builders, parsers, nonce account codec and errors | Yes |
-| `solana_kit_signers` | Asynchronous signer capability traits and composition | Yes |
+| Crate                | What it gives you                                                                                                       | `no_std + alloc` |
+| -------------------- | ----------------------------------------------------------------------------------------------------------------------- | ---------------- |
+| `solana_kit_core`    | Addresses, hashes, signatures, instructions, codecs, account snapshots, sysvars, legacy/v0/v1 messages and transactions | Yes              |
+| `solana_kit_client`  | Typed JSON-RPC `Client` and the `Transport` trait, with no runtime or network of its own                                | No, needs `std`  |
+| `solana_kit_native`  | `NativeHttp` and `NativeWebSocket` transports on Tokio, with verified TLS                                               | No               |
+| `solana_kit_system`  | System Program instruction builders, parsers, nonce account codec and errors                                            | Yes              |
+| `solana_kit_signers` | Asynchronous signer capability traits and composition                                                                   | Yes              |
 
 `solana_kit_client` never starts a runtime and never opens a socket itself. A transport crate does the I/O: `solana_kit_native` on native hosts, `solana_kit_browser` in the browser, `solana_kit_wasi` on WASI Preview 2, and `solana_kit_leptoskit` inside LeptosKit apps.
 
@@ -87,34 +87,34 @@ Start with these. Program and service clients live in their own crates; see [Cra
 
 Every feature is off by default. There is no `std` feature: crates that are portable are always `no_std + alloc`, and `solana_kit_client` always uses `std`.
 
-| Crate | Feature | Adds |
-| --- | --- | --- |
-| `solana_kit_core` | `crypto` | SHA-256, program-derived addresses, Ed25519 `Keypair` signing and verification, `Transaction::sign` and `verify` |
-| `solana_kit_core` | `keccak` | Keccak-256 |
-| `solana_kit_core` | `fixed-points` | Exact decimal and binary fixed-point numbers |
-| `solana_kit_core` | `bigint-codecs` | Arbitrary-width integer codecs |
-| `solana_kit_core` | `text-codecs` | Base64 text codecs |
-| `solana_kit_client` | `confirmation-factories` | Ready-made signature confirmation over a WebSocket session plus HTTP |
-| `solana_kit_client` | `reactive` | Caller-driven reactive stores and streams |
-| `solana_kit_client` | `resource-estimation` | Compute and resource limit estimation by simulation |
-| `solana_kit_native` | `keys` | `keys::NativeEntropy` for key generation and `keys::write_keypair_new` for keypair file backups |
-| `solana_kit_native` | `surfpool` | Surfpool program deployment helpers |
-| `solana_kit_native` | `mwa` | Mobile Wallet Adapter transport |
-| `solana_kit_signers` | `crypto` | Signer traits implemented for core's `Keypair` |
-| `solana_kit_browser` | `keys`, `wallet` | Browser entropy and browser wallet support |
-| `solana_kit_wasi` | `websocket` | WASI WebSocket transport |
+| Crate                | Feature                  | Adds                                                                                                             |
+| -------------------- | ------------------------ | ---------------------------------------------------------------------------------------------------------------- |
+| `solana_kit_core`    | `crypto`                 | SHA-256, program-derived addresses, Ed25519 `Keypair` signing and verification, `Transaction::sign` and `verify` |
+| `solana_kit_core`    | `keccak`                 | Keccak-256                                                                                                       |
+| `solana_kit_core`    | `fixed-points`           | Exact decimal and binary fixed-point numbers                                                                     |
+| `solana_kit_core`    | `bigint-codecs`          | Arbitrary-width integer codecs                                                                                   |
+| `solana_kit_core`    | `text-codecs`            | Base64 text codecs                                                                                               |
+| `solana_kit_client`  | `confirmation-factories` | Ready-made signature confirmation over a WebSocket session plus HTTP                                             |
+| `solana_kit_client`  | `reactive`               | Caller-driven reactive stores and streams                                                                        |
+| `solana_kit_client`  | `resource-estimation`    | Compute and resource limit estimation by simulation                                                              |
+| `solana_kit_native`  | `keys`                   | `keys::NativeEntropy` for key generation and `keys::write_keypair_new` for keypair file backups                  |
+| `solana_kit_native`  | `surfpool`               | Surfpool program deployment helpers                                                                              |
+| `solana_kit_native`  | `mwa`                    | Mobile Wallet Adapter transport                                                                                  |
+| `solana_kit_signers` | `crypto`                 | Signer traits implemented for core's `Keypair`                                                                   |
+| `solana_kit_browser` | `keys`, `wallet`         | Browser entropy and browser wallet support                                                                       |
+| `solana_kit_wasi`    | `websocket`              | WASI WebSocket transport                                                                                         |
 
 Most applications that sign transactions enable `solana_kit_core/crypto`. Without it you can still build and inspect messages, but you cannot sign locally or derive program addresses.
 
 ## Targets
 
-| Target | Portable crates | Transport |
-| --- | --- | --- |
-| Native | Yes | `solana_kit_native` on Tokio |
-| `wasm32-unknown-unknown` (browser) | Yes | `solana_kit_browser` (Window Fetch and WebSocket) |
-| `wasm32-wasip1` | Yes | None; WASI HTTP needs Preview 2 |
-| `wasm32-wasip2` | Yes | `solana_kit_wasi` (`WasiHttp`) |
-| LeptosKit interpreted guest | Yes | `solana_kit_leptoskit` |
+| Target                             | Portable crates | Transport                                         |
+| ---------------------------------- | --------------- | ------------------------------------------------- |
+| Native                             | Yes             | `solana_kit_native` on Tokio                      |
+| `wasm32-unknown-unknown` (browser) | Yes             | `solana_kit_browser` (Window Fetch and WebSocket) |
+| `wasm32-wasip1`                    | Yes             | None; WASI HTTP needs Preview 2                   |
+| `wasm32-wasip2`                    | Yes             | `solana_kit_wasi` (`WasiHttp`)                    |
+| LeptosKit interpreted guest        | Yes             | `solana_kit_leptoskit`                            |
 
 "Portable crates" means `solana_kit_core`, `solana_kit_client`, `solana_kit_system` and `solana_kit_signers`. Each one compiles for every target above with no JavaScript or host imports. [Choosing a runtime](../runtimes/index.md) explains each transport and what has been verified on each host.
 

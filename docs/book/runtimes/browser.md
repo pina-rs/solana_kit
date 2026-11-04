@@ -22,9 +22,9 @@ The crate exports its API only on `wasm32-unknown-unknown`. Compiling for that t
 
 Optional features:
 
-| Feature | Adds |
-| --- | --- |
-| `keys` | `keys::BrowserEntropy`, Web Crypto `getRandomValues` for `ExportableKeypair::generate` |
+| Feature  | Adds                                                                                                        |
+| -------- | ----------------------------------------------------------------------------------------------------------- |
+| `keys`   | `keys::BrowserEntropy`, Web Crypto `getRandomValues` for `ExportableKeypair::generate`                      |
 | `wallet` | `wallet::WalletDiscovery`, `wallet::WalletController` and a typed wallet signer (see [Wallets](wallets.md)) |
 
 ## Make an RPC call
@@ -56,10 +56,10 @@ wasm_bindgen_futures::spawn_local(async {
 
 `HttpConfig` has two fields:
 
-| Field | Default | Meaning |
-| --- | --- | --- |
-| `headers` | empty | `(name, value)` pairs sent with each request. Unsafe headers are rejected. |
-| `exchange_timeout` | 30 s | Total deadline, including streamed body reception. |
+| Field              | Default | Meaning                                                                    |
+| ------------------ | ------- | -------------------------------------------------------------------------- |
+| `headers`          | empty   | `(name, value)` pairs sent with each request. Unsafe headers are rejected. |
+| `exchange_timeout` | 30 s    | Total deadline, including streamed body reception.                         |
 
 ## What Fetch does for you, and what it does not
 
@@ -99,14 +99,14 @@ For typed subscriptions, pair the socket with an independent `solana_kit_client:
 
 `WsConfig` fields:
 
-| Field | Default | Meaning |
-| --- | --- | --- |
-| `protocols` | empty | Subprotocol offers (at most 16). |
-| `queue_messages` | 64 | Messages held in the receive queue. |
-| `queue_bytes` | 1 MiB | Payload bytes held in the receive queue. |
-| `message_bytes` | 256 KiB | Largest incoming or outgoing message. |
-| `buffered_bytes` | 1 MiB | Largest browser `bufferedAmount` after a send. |
-| `operation_timeout` | 30 s | Per-operation deadline; a quiet socket past it is ended. |
+| Field               | Default | Meaning                                                  |
+| ------------------- | ------- | -------------------------------------------------------- |
+| `protocols`         | empty   | Subprotocol offers (at most 16).                         |
+| `queue_messages`    | 64      | Messages held in the receive queue.                      |
+| `queue_bytes`       | 1 MiB   | Payload bytes held in the receive queue.                 |
+| `message_bytes`     | 256 KiB | Largest incoming or outgoing message.                    |
+| `buffered_bytes`    | 1 MiB   | Largest browser `bufferedAmount` after a send.           |
+| `operation_timeout` | 30 s    | Per-operation deadline; a quiet socket past it is ended. |
 
 <Callout kind="warning" title="Browsers cannot send Authorization headers on WebSockets">
 
@@ -118,13 +118,13 @@ Cancelling `receive()` keeps the socket and its queued messages. `close(self)` c
 
 ## Status
 
-| Capability | Status |
-| --- | --- |
-| `BrowserHttp` | Runs in CI in pinned Chrome 155 against a local Rust fixture: typed `getBalance`, body limits, gzip, deadlines, cancellation, redirects and CORS |
-| `BrowserWebSocket` text sockets | Run in CI in a Chrome Window |
-| `BrowserSubscriptionSocket`, `receive_frame()` and binary frames | Source extension; needs browser replay |
-| `BrowserRest` (provider REST routes) | Source extension; needs a browser driver and real peer replay |
-| `wallet` and `keys` features | Tests run in CI in Chrome against a fixture wallet |
-| Web Workers, native webviews, mobile browsers | Unverified |
+| Capability                                                       | Status                                                                                                                                           |
+| ---------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `BrowserHttp`                                                    | Runs in CI in pinned Chrome 155 against a local Rust fixture: typed `getBalance`, body limits, gzip, deadlines, cancellation, redirects and CORS |
+| `BrowserWebSocket` text sockets                                  | Run in CI in a Chrome Window                                                                                                                     |
+| `BrowserSubscriptionSocket`, `receive_frame()` and binary frames | Source extension; needs browser replay                                                                                                           |
+| `BrowserRest` (provider REST routes)                             | Source extension; needs a browser driver and real peer replay                                                                                    |
+| `wallet` and `keys` features                                     | Tests run in CI in Chrome against a fixture wallet                                                                                               |
+| Web Workers, native webviews, mobile browsers                    | Unverified                                                                                                                                       |
 
 The receipts are [browser HTTP](https://github.com/pina-rs/solana_kit/blob/main/docs/verification/browser-http.md) and [browser WebSocket](https://github.com/pina-rs/solana_kit/blob/main/docs/verification/browser-websocket.md). The design notes are in [`docs/architecture`](https://github.com/pina-rs/solana_kit/tree/main/docs/architecture).

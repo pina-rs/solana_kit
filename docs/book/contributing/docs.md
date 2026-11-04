@@ -20,17 +20,17 @@ The build is strict. An unknown component, an unknown or missing attribute, an u
 
 ## Layout
 
-| Path | Contents |
-| --- | --- |
-| `docs/book/SUMMARY.md` | The table of contents. Only pages listed here are built and linkable. |
-| `docs/book/readme.md` | The home page |
-| `docs/book/<section>/*.md` | Pages, grouped by sidebar section |
-| `docs/book/theme/skribble.css` | The paper-and-ink stylesheet |
-| `docs/book/theme/fonts/` | Skribble Noto Sketch and Skribble Mono Playful (`.woff`), each with its OFL license |
-| `docs/book/theme/ink/` | Generated SVG ink. Gitignored. |
-| `docs/site/src/lib.rs` | Site configuration, custom components and the CLI |
-| `docs/site/src/ink.rs` | The rough-ink generator |
-| `docs/dist/` | Build output. Gitignored. |
+| Path                           | Contents                                                                            |
+| ------------------------------ | ----------------------------------------------------------------------------------- |
+| `docs/book/SUMMARY.md`         | The table of contents. Only pages listed here are built and linkable.               |
+| `docs/book/readme.md`          | The home page                                                                       |
+| `docs/book/<section>/*.md`     | Pages, grouped by sidebar section                                                   |
+| `docs/book/theme/skribble.css` | The paper-and-ink stylesheet                                                        |
+| `docs/book/theme/fonts/`       | Skribble Noto Sketch and Skribble Mono Playful (`.woff`), each with its OFL license |
+| `docs/book/theme/ink/`         | Generated SVG ink. Gitignored.                                                      |
+| `docs/site/src/lib.rs`         | Site configuration, custom components and the CLI                                   |
+| `docs/site/src/ink.rs`         | The rough-ink generator                                                             |
+| `docs/dist/`                   | Build output. Gitignored.                                                           |
 
 To add a page, create the Markdown file and add a line for it under the right heading in `SUMMARY.md`.
 
@@ -140,11 +140,11 @@ A portable Rust Solana client.
 
 Draws a hand-made underline, loop or marker behind a word or phrase.
 
-| Attribute | Values | Default |
-| --- | --- | --- |
-| `kind` | `underline`, `loop`, `marker` | `underline` |
-| `tone` | `ink`, `coral`, `sun`, `lilac`, `mint`, `sky`, `pink` | `sun` for `marker`, otherwise `coral` |
-| `seed` | An integer that picks the wobble | `7` |
+| Attribute | Values                                                | Default                               |
+| --------- | ----------------------------------------------------- | ------------------------------------- |
+| `kind`    | `underline`, `loop`, `marker`                         | `underline`                           |
+| `tone`    | `ink`, `coral`, `sun`, `lilac`, `mint`, `sky`, `pink` | `sun` for `marker`, otherwise `coral` |
+| `seed`    | An integer that picks the wobble                      | `7`                                   |
 
 ```markdown
 Runs on <Highlight kind="loop">every</Highlight> host, and <Highlight kind="marker" tone="mint" seed="3">stays bounded</Highlight>.

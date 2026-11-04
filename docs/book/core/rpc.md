@@ -48,14 +48,14 @@ Methods that the node answers in the context of a slot return `Contextual<T>`, w
 
 All 54 methods in the pinned reference catalog have typed implementations.
 
-| Module | Methods |
-| --- | --- |
-| `methods` | `Balance` (getBalance), `LatestBlockhash`, `AccountInfo` (full base64 getAccountInfo) |
-| `methods::node` (19) | `Slot`, `BlockHeight`, `GetEpochInfo`, `GetEpochSchedule`, `GetHealth`, `Version`, `Identity`, `GenesisHash`, `ClusterNodes`, `SlotLeader`, `SlotLeaders`, `LeaderSchedule`, `BlockProduction`, `TransactionCount`, `RecentPerformanceSamples`, `HighestSnapshotSlot`, `MaxRetransmitSlot`, `MaxShredInsertSlot`, `AgGenesisCert` |
-| `methods::economics` (8) | Inflation governor, rate and reward, `Supply`, largest accounts, `RecentPrioritizationFees`, vote accounts, stake minimum delegation |
-| `methods::accounts` and `methods::tokens` (9) | `MultipleAccounts`, `ProgramAccounts`, `MinimumBalanceForRentExemption`, `BlockhashValid` (isBlockhashValid), `TokenAccountBalance`, `TokenSupply`, `TokenLargestAccounts`, `TokenAccountsByOwner`, `TokenAccountsByDelegate` |
-| `methods::history`, `methods::transaction_results`, `methods::address_history` | `Blocks`, `BlocksWithLimit`, `BlockTime`, `BlockCommitment`, `FirstAvailableBlock`, `MinimumLedgerSlot`, `SignaturesForAddress`, `Transaction`, `Block`, `TransactionsForAddress` |
-| `methods::submission`, `methods::simulation` | `SendTransaction`, `SignatureStatuses`, `FeeForMessage`, `RequestAirdrop`, `SimulateTransaction` |
+| Module                                                                         | Methods                                                                                                                                                                                                                                                                                                                           |
+| ------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `methods`                                                                      | `Balance` (getBalance), `LatestBlockhash`, `AccountInfo` (full base64 getAccountInfo)                                                                                                                                                                                                                                             |
+| `methods::node` (19)                                                           | `Slot`, `BlockHeight`, `GetEpochInfo`, `GetEpochSchedule`, `GetHealth`, `Version`, `Identity`, `GenesisHash`, `ClusterNodes`, `SlotLeader`, `SlotLeaders`, `LeaderSchedule`, `BlockProduction`, `TransactionCount`, `RecentPerformanceSamples`, `HighestSnapshotSlot`, `MaxRetransmitSlot`, `MaxShredInsertSlot`, `AgGenesisCert` |
+| `methods::economics` (8)                                                       | Inflation governor, rate and reward, `Supply`, largest accounts, `RecentPrioritizationFees`, vote accounts, stake minimum delegation                                                                                                                                                                                              |
+| `methods::accounts` and `methods::tokens` (9)                                  | `MultipleAccounts`, `ProgramAccounts`, `MinimumBalanceForRentExemption`, `BlockhashValid` (isBlockhashValid), `TokenAccountBalance`, `TokenSupply`, `TokenLargestAccounts`, `TokenAccountsByOwner`, `TokenAccountsByDelegate`                                                                                                     |
+| `methods::history`, `methods::transaction_results`, `methods::address_history` | `Blocks`, `BlocksWithLimit`, `BlockTime`, `BlockCommitment`, `FirstAvailableBlock`, `MinimumLedgerSlot`, `SignaturesForAddress`, `Transaction`, `Block`, `TransactionsForAddress`                                                                                                                                                 |
+| `methods::submission`, `methods::simulation`                                   | `SendTransaction`, `SignatureStatuses`, `FeeForMessage`, `RequestAirdrop`, `SimulateTransaction`                                                                                                                                                                                                                                  |
 
 Some details to know:
 
@@ -156,18 +156,18 @@ impl Method for ProviderStatus {
 
 `client.call` returns `solana_kit_client::Error`:
 
-| Variant | Meaning |
-| --- | --- |
-| `Transport(TransportError)` | The adapter failed. Its `TransportFailureKind` and original cause are kept |
-| `Status(u16)` | The HTTP status was outside 200 to 299 |
-| `BodyLimit`, `DepthLimit` | The byte or JSON nesting budget was exceeded |
-| `Json`, `Envelope` | The JSON or the JSON-RPC envelope was malformed |
-| `Correlation` | The reply belongs to another request |
-| `Remote(RemoteError)` | The node returned a JSON-RPC error. `code`, `message` and `data` are kept exactly |
-| `Schema` | The result did not match the method's typed schema |
-| `SubmissionSignatureMismatch` | `sendTransaction` acknowledged a different signature |
-| `IdExhausted` | This client used up its request IDs |
-| `AccountData`, `AccountNotDecoded`, `DiagnosticContext` | Account payload and diagnostic boundary failures |
+| Variant                                                 | Meaning                                                                           |
+| ------------------------------------------------------- | --------------------------------------------------------------------------------- |
+| `Transport(TransportError)`                             | The adapter failed. Its `TransportFailureKind` and original cause are kept        |
+| `Status(u16)`                                           | The HTTP status was outside 200 to 299                                            |
+| `BodyLimit`, `DepthLimit`                               | The byte or JSON nesting budget was exceeded                                      |
+| `Json`, `Envelope`                                      | The JSON or the JSON-RPC envelope was malformed                                   |
+| `Correlation`                                           | The reply belongs to another request                                              |
+| `Remote(RemoteError)`                                   | The node returned a JSON-RPC error. `code`, `message` and `data` are kept exactly |
+| `Schema`                                                | The result did not match the method's typed schema                                |
+| `SubmissionSignatureMismatch`                           | `sendTransaction` acknowledged a different signature                              |
+| `IdExhausted`                                           | This client used up its request IDs                                               |
+| `AccountData`, `AccountNotDecoded`, `DiagnosticContext` | Account payload and diagnostic boundary failures                                  |
 
 `RemoteError.data` keeps the difference between missing and explicit `null`. It also keeps the exact JSON text, including numbers too large for a float. To map errors onto stable numeric codes, see [Errors](errors.md).
 

@@ -36,14 +36,14 @@ fn budget() -> Result<(), Error> {
 
 The helpers work on an existing `&[Instruction]` and return a new `Vec<Instruction>`. They follow the pinned Dart message helpers:
 
-| Function                               | Behavior                                                                                  |
-| -------------------------------------- | ----------------------------------------------------------------------------------------- |
-| `find_compute_unit_limit`              | Returns `(index, units)` of the first limit instruction, if any.                          |
-| `find_compute_unit_price`              | Returns `(index, micro_lamports)` of the first price instruction, if any.                 |
-| `update_or_append_compute_unit_limit`  | Replaces the first limit with `update(old)`, or appends one. Later duplicates stay as is. |
-| `update_or_append_compute_unit_price`  | The same for the price, keeping full `u64` precision.                                     |
-| `append_compute_unit_price`            | Always appends a price, even if one exists.                                               |
-| `fill_provisory_compute_unit_limit`    | Adds a limit of `PROVISORY_COMPUTE_UNIT_LIMIT` (0) only when none exists.                 |
+| Function                              | Behavior                                                                                  |
+| ------------------------------------- | ----------------------------------------------------------------------------------------- |
+| `find_compute_unit_limit`             | Returns `(index, units)` of the first limit instruction, if any.                          |
+| `find_compute_unit_price`             | Returns `(index, micro_lamports)` of the first price instruction, if any.                 |
+| `update_or_append_compute_unit_limit` | Replaces the first limit with `update(old)`, or appends one. Later duplicates stay as is. |
+| `update_or_append_compute_unit_price` | The same for the price, keeping full `u64` precision.                                     |
+| `append_compute_unit_price`           | Always appends a price, even if one exists.                                               |
+| `fill_provisory_compute_unit_limit`   | Adds a limit of `PROVISORY_COMPUTE_UNIT_LIMIT` (0) only when none exists.                 |
 
 ```rust
 use solana_kit_core::{Instruction, codecs::Error};

@@ -6,17 +6,17 @@
 
 Nine typed families are available. Each request type implements `SubscriptionMethod`.
 
-| Request | RPC method | Stability |
-| --- | --- | --- |
-| `Account(address, config)` | `accountSubscribe` | Stable |
-| `Program(program, config)` | `programSubscribe` | Stable |
-| `Logs(filter, config)` | `logsSubscribe` | Stable |
-| `SignatureNotifications(signature, config)` | `signatureSubscribe` | Stable. Finishes after its execution notification |
-| `Root` | `rootSubscribe` | Stable |
-| `Slot` | `slotSubscribe` | Stable |
-| `Block(filter, config)` | `blockSubscribe` | Unstable on the node |
-| `Vote` | `voteSubscribe` | Unstable on the node |
-| `SlotsUpdates` | `slotsUpdatesSubscribe` | Unstable on the node |
+| Request                                     | RPC method              | Stability                                         |
+| ------------------------------------------- | ----------------------- | ------------------------------------------------- |
+| `Account(address, config)`                  | `accountSubscribe`      | Stable                                            |
+| `Program(program, config)`                  | `programSubscribe`      | Stable                                            |
+| `Logs(filter, config)`                      | `logsSubscribe`         | Stable                                            |
+| `SignatureNotifications(signature, config)` | `signatureSubscribe`    | Stable. Finishes after its execution notification |
+| `Root`                                      | `rootSubscribe`         | Stable                                            |
+| `Slot`                                      | `slotSubscribe`         | Stable                                            |
+| `Block(filter, config)`                     | `blockSubscribe`        | Unstable on the node                              |
+| `Vote`                                      | `voteSubscribe`         | Unstable on the node                              |
+| `SlotsUpdates`                              | `slotsUpdatesSubscribe` | Unstable on the node                              |
 
 ## Driving a connection
 
@@ -79,18 +79,18 @@ The SDK never reconnects or replays on its own. When you open a new socket, call
 
 `Session<S>` wraps a `Connection` around one socket that implements `TextSocket`. It exposes poll-style operations (`poll_flush`, `poll_next`, `poll_shutdown`) that you drive from your own executor. It creates no task, channel or reconnect loop. Socket adapters exist per host:
 
-| Host | Adapter |
-| --- | --- |
+| Host           | Adapter                                                                                     |
+| -------------- | ------------------------------------------------------------------------------------------- |
 | Native (Tokio) | `NativeWebSocket` for use with a `Connection`, and `NativeSubscriptionSocket` for `Session` |
-| Browser | `BrowserSubscriptionSocket::from(BrowserWebSocket)` |
-| WASI | `WasiWebSocket` implements `TextSocket` directly |
-| LeptosKit | `GuestSubscriptionSocket` |
+| Browser        | `BrowserSubscriptionSocket::from(BrowserWebSocket)`                                         |
+| WASI           | `WasiWebSocket` implements `TextSocket` directly                                            |
+| LeptosKit      | `GuestSubscriptionSocket`                                                                   |
 
 The adapters are at different stages. Some socket paths are still marked source-only or unexecuted in their own READMEs. Check the [Native](../runtimes/native.md), [Browser](../runtimes/browser.md), [WASI](../runtimes/wasi.md) and [LeptosKit](../runtimes/leptoskit.md) pages before you depend on one.
 
 ## Transaction confirmation
 
-`solana_kit_client::confirmation` separates the confirmation *policy* from how you *observe* events.
+`solana_kit_client::confirmation` separates the confirmation _policy_ from how you _observe_ events.
 
 - `Confirmation::new(signature, lifetime, policy)` creates a single-use reducer. It rejects `Lifetime::Unresolved`, because received wire cannot establish expiry. `Policy` sets the target `commitment` (default `Confirmed`) and a `min_context_slot`.
 - `observe(Event)` feeds it one event: a `Status` lookup, a `Signature` notification, an `Epoch` block height, a validated `Nonce` state, or a `Timeout`. The result is `None` while undecided, `Some(Ok(()))` when confirmed, or `Some(Err(failure))`.

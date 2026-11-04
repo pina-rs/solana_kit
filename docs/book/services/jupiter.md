@@ -28,13 +28,13 @@ async fn search<T: Transport<Service>>(transport: T) -> Result<Vec<TokenItem>, E
 }
 ```
 
-| Method | Route | Notes |
-| --- | --- | --- |
-| `get_prices(&[Address])` | `GET /price/v3` | At most `MAX_PRICE_MINTS` (50) mints. Missing prices are omitted. |
-| `search_tokens(query, limit)` | `GET /tokens/v2/search` | Optional integer limit |
-| `tagged_tokens(tag)` | `GET /tokens/v2/tag` | Any provider tag, such as `verified` or `lfg` |
-| `category_tokens(category, interval, limit)` | `GET /tokens/v2/{category}/{interval}` | `Category` and `Interval` enums. `TokenLimit` is 1 to 100. |
-| `recent_tokens()` | `GET /tokens/v2/recent` | Provider order is preserved |
+| Method                                       | Route                                  | Notes                                                             |
+| -------------------------------------------- | -------------------------------------- | ----------------------------------------------------------------- |
+| `get_prices(&[Address])`                     | `GET /price/v3`                        | At most `MAX_PRICE_MINTS` (50) mints. Missing prices are omitted. |
+| `search_tokens(query, limit)`                | `GET /tokens/v2/search`                | Optional integer limit                                            |
+| `tagged_tokens(tag)`                         | `GET /tokens/v2/tag`                   | Any provider tag, such as `verified` or `lfg`                     |
+| `category_tokens(category, interval, limit)` | `GET /tokens/v2/{category}/{interval}` | `Category` and `Interval` enums. `TokenLimit` is 1 to 100.        |
+| `recent_tokens()`                            | `GET /tokens/v2/recent`                | Provider order is preserved                                       |
 
 Prices stay exact `serde_json::Number` values and never pass through a float. If a known field is malformed or overflows, decoding fails rather than leaving it absent. You can also decode stored responses yourself with `decode_prices` and `decode_tokens`. They apply the same JSON admission budgets.
 

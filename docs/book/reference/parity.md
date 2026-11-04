@@ -10,15 +10,15 @@ The pinned reference has 70 Dart packages plus one TypeScript Codama renderer: t
 
 ## The ledgers
 
-| File | What it records |
-| --- | --- |
-| [`docs/planning/parity.tsv`](https://github.com/pina-rs/solana_kit/blob/main/docs/planning/parity.tsv) | One row per top-level reference package (71), with its owning Rust crate and phase. Every row is currently `inventoried`. |
-| [`docs/parity/capabilities.tsv`](https://github.com/pina-rs/solana_kit/blob/main/docs/parity/capabilities.tsv) | Every public declaration extracted from the reference (17,948 rows), with a stable ID, owner, phase, status, evidence and delivery unit |
-| [`docs/parity/source-files.tsv`](https://github.com/pina-rs/solana_kit/blob/main/docs/parity/source-files.tsv) | SHA-256 and parser coverage for every reference source file |
-| [`docs/parity/delivery-units.md`](https://github.com/pina-rs/solana_kit/blob/main/docs/parity/delivery-units.md) | Source-order planning tranches of at most 200 IDs each |
-| `docs/parity/<area>.md` and `.tsv` | Per-area records: what is mapped, how it was verified and what remains |
-| [`docs/verification/`](https://github.com/pina-rs/solana_kit/tree/main/docs/verification) | Execution receipts: what ran, on which hosts, with which negative controls |
-| [`docs/planning/decisions.tsv`](https://github.com/pina-rs/solana_kit/blob/main/docs/planning/decisions.tsv) | Timestamped decision trail |
+| File                                                                                                             | What it records                                                                                                                         |
+| ---------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| [`docs/planning/parity.tsv`](https://github.com/pina-rs/solana_kit/blob/main/docs/planning/parity.tsv)           | One row per top-level reference package (71), with its owning Rust crate and phase. Every row is currently `inventoried`.               |
+| [`docs/parity/capabilities.tsv`](https://github.com/pina-rs/solana_kit/blob/main/docs/parity/capabilities.tsv)   | Every public declaration extracted from the reference (17,948 rows), with a stable ID, owner, phase, status, evidence and delivery unit |
+| [`docs/parity/source-files.tsv`](https://github.com/pina-rs/solana_kit/blob/main/docs/parity/source-files.tsv)   | SHA-256 and parser coverage for every reference source file                                                                             |
+| [`docs/parity/delivery-units.md`](https://github.com/pina-rs/solana_kit/blob/main/docs/parity/delivery-units.md) | Source-order planning tranches of at most 200 IDs each                                                                                  |
+| `docs/parity/<area>.md` and `.tsv`                                                                               | Per-area records: what is mapped, how it was verified and what remains                                                                  |
+| [`docs/verification/`](https://github.com/pina-rs/solana_kit/tree/main/docs/verification)                        | Execution receipts: what ran, on which hosts, with which negative controls                                                              |
+| [`docs/planning/decisions.tsv`](https://github.com/pina-rs/solana_kit/blob/main/docs/planning/decisions.tsv)     | Timestamped decision trail                                                                                                              |
 
 Capability IDs have this form:
 
@@ -35,14 +35,14 @@ The central `capabilities.tsv` is a worklist. An inventoried symbol is not imple
 
 The per-area ledgers use a richer vocabulary. The repository has no single glossary for these words. The meanings below summarize how the ledgers and their receipts use them:
 
-| Status | Meaning |
-| --- | --- |
-| `pending` | In scope, with no accepted Rust equivalent yet. Source mapping alone does not count. |
-| `partial` | A Rust equivalent exists for part of the behavior, or it exists but some required evidence (a host, a journey, an independent oracle) is still missing |
-| `implemented` | The Rust equivalent exists, with behavioral tests recorded in the area's receipt. It is still not full verification across every promised runtime. |
-| `implemented-bounded` | Implemented, with an explicit caller-supplied bound that the reference does not have (for example, fixed-point and numeric codec limits) |
-| `implemented-native; runtime parity pending` | Executed natively, with other hosts still to be shown (Anchor) |
-| `inventoried` | Package-level row only. Not a capability claim. |
+| Status                                       | Meaning                                                                                                                                                |
+| -------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `pending`                                    | In scope, with no accepted Rust equivalent yet. Source mapping alone does not count.                                                                   |
+| `partial`                                    | A Rust equivalent exists for part of the behavior, or it exists but some required evidence (a host, a journey, an independent oracle) is still missing |
+| `implemented`                                | The Rust equivalent exists, with behavioral tests recorded in the area's receipt. It is still not full verification across every promised runtime.     |
+| `implemented-bounded`                        | Implemented, with an explicit caller-supplied bound that the reference does not have (for example, fixed-point and numeric codec limits)               |
+| `implemented-native; runtime parity pending` | Executed natively, with other hosts still to be shown (Anchor)                                                                                         |
+| `inventoried`                                | Package-level row only. Not a capability claim.                                                                                                        |
 
 The project's bar for "complete" is in [`docs/planning/plan.md`](https://github.com/pina-rs/solana_kit/blob/main/docs/planning/plan.md). Every capability needs an implemented, behaviorally evidenced Rust equivalent, every public operation needs behavioral evidence, every promised runtime journey must run, and registry release preparation must succeed. A compiled placeholder, a skipped test or documentation alone cannot complete an entry.
 
@@ -53,16 +53,16 @@ The project's bar for "complete" is in [`docs/planning/plan.md`](https://github.
 
 A few area ledgers, as checked in:
 
-| Ledger | Status counts |
-| --- | --- |
-| `rpc-node.tsv` | 98 implemented, 12 pending |
-| `rpc-economics.tsv` | 39 implemented, 2 partial, 1 pending |
-| `rpc-history-submission.tsv` | 130 implemented, 16 pending |
-| `message-transactions.tsv` | 46 partial, 700 pending |
-| `fixed-points.tsv` | 121 implemented-bounded, 5 remaining |
-| `subscriptions.tsv` | 68 partial, 105 pending |
-| `wallet-standard.tsv` | 203 partial |
-| `anchor.tsv` | 120 implemented-native, runtime parity pending |
+| Ledger                        | Status counts                                                                |
+| ----------------------------- | ---------------------------------------------------------------------------- |
+| `rpc-node.tsv`                | 98 implemented, 12 pending                                                   |
+| `rpc-economics.tsv`           | 39 implemented, 2 partial, 1 pending                                         |
+| `rpc-history-submission.tsv`  | 130 implemented, 16 pending                                                  |
+| `message-transactions.tsv`    | 46 partial, 700 pending                                                      |
+| `fixed-points.tsv`            | 121 implemented-bounded, 5 remaining                                         |
+| `subscriptions.tsv`           | 68 partial, 105 pending                                                      |
+| `wallet-standard.tsv`         | 203 partial                                                                  |
+| `anchor.tsv`                  | 120 implemented-native, runtime parity pending                               |
 | `token.tsv`, `token-2022.tsv` | All pending in the source ledger. The runtime receipts record what executes. |
 
 These counts change with every unit of work. Read the files themselves for the current numbers. The service pages ([Helius](../services/helius.md), [Jupiter](../services/jupiter.md), [Pyth](../services/pyth.md), [Surfpool](../services/surfpool.md), [dApp Store publisher](../services/dapp-publisher.md)) each list their own parity records.

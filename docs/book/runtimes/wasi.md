@@ -65,12 +65,12 @@ The futures are local, so you can hold an `Rc` across `.await`.
 
 In WASI the embedding host, not your guest, runs the HTTP client. That changes who controls what:
 
-| Concern | Owner |
-| --- | --- |
-| Destination allowlist | The host. A denial reaches you as `TransportFailureKind::Denied`. |
-| DNS, TLS roots and certificate checks | The host. The guest cannot add roots or turn off validation. |
-| Response header and trailer parsing limits | The host. |
-| Body bytes copied into Rust | The guest, through the client's reply budget. |
+| Concern                                    | Owner                                                             |
+| ------------------------------------------ | ----------------------------------------------------------------- |
+| Destination allowlist                      | The host. A denial reaches you as `TransportFailureKind::Denied`. |
+| DNS, TLS roots and certificate checks      | The host. The guest cannot add roots or turn off validation.      |
+| Response header and trailer parsing limits | The host.                                                         |
+| Body bytes copied into Rust                | The guest, through the client's reply budget.                     |
 
 <Callout kind="warning" title="Wasmtime's CLI flag is not an allowlist">
 
@@ -124,12 +124,12 @@ reactor.block_on(session.shutdown(&clock, deadline))??;
 
 ## Status
 
-| Capability | Status |
-| --- | --- |
-| `WasiHttp` | Runs in CI under Wasmtime 50.0.0, both the CLI and a private embedded host: TLS, denial, early responses, deadlines, cancellation and Store replacement |
-| `WasiWebSocket`, `WasiClock` and a typed `Session` | A CI harness (`verification/wasi-text-sockets`) runs WS and WSS through Wasmtime 50. The crate README still marks the socket and clock path as awaiting full execution. |
-| `WasiRest` (provider REST routes) | Source extension; compilation and real REST replay are pending |
-| Other WASI hosts, installed mobile apps, OS DNS stalls | Unverified |
-| Preview1 networking | Not provided |
+| Capability                                             | Status                                                                                                                                                                  |
+| ------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `WasiHttp`                                             | Runs in CI under Wasmtime 50.0.0, both the CLI and a private embedded host: TLS, denial, early responses, deadlines, cancellation and Store replacement                 |
+| `WasiWebSocket`, `WasiClock` and a typed `Session`     | A CI harness (`verification/wasi-text-sockets`) runs WS and WSS through Wasmtime 50. The crate README still marks the socket and clock path as awaiting full execution. |
+| `WasiRest` (provider REST routes)                      | Source extension; compilation and real REST replay are pending                                                                                                          |
+| Other WASI hosts, installed mobile apps, OS DNS stalls | Unverified                                                                                                                                                              |
+| Preview1 networking                                    | Not provided                                                                                                                                                            |
 
 The receipts are [WASI host contract](https://github.com/pina-rs/solana_kit/blob/main/docs/verification/wasi-contract.md) and [WASI sockets](https://github.com/pina-rs/solana_kit/blob/main/docs/verification/wasi-sockets.md). The HTTP prototype's README is in [`verification/wasi-http-prototype`](https://github.com/pina-rs/solana_kit/tree/main/verification/wasi-http-prototype).

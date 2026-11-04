@@ -4,18 +4,18 @@ Solana Kit uses plain Rust error enums at each boundary, and each enum keeps the
 
 ## Error types by layer
 
-| Crate and module | Type | Covers |
-| --- | --- | --- |
-| `solana_kit_core::codecs` | `Error` | Truncation, budgets, trailing bytes, invalid tags, booleans, constants and UTF-8. See [Codecs](codecs.md) |
-| `solana_kit_core` | `ParseError` | Address, hash and signature text or byte length |
-| `solana_kit_core::accounts` | `AccountError` | `Missing`, `OwnerMismatch`, `DataSizeMismatch`, `Decode`. See [Accounts and sysvars](accounts.md) |
-| `solana_kit_core::transaction` | `Error` | Compile, wire and signature failures. See [Messages and transactions](transactions.md) |
-| `solana_kit_core::offchain` | `Error` | Off-chain message and envelope validation |
-| `solana_kit_core::crypto` | `PdaError`, `KeypairImportError`, `VerificationError` | Derivation, key import and verification |
-| `solana_kit_signers` | `Error` | Rejection, cancellation, conflicting or foreign signers, changed snapshots. See [Signers](signers.md) |
-| `solana_kit_client` | `Error`, `TransportError`, `RemoteError` | Transport, HTTP, JSON, correlation and remote JSON-RPC failures. See [RPC](rpc.md) |
-| `solana_kit_client::subscriptions` | `Failure`, `SessionError<E>` | Subscription protocol and socket failures. See [Subscriptions](subscriptions.md) |
-| `solana_kit_client::confirmation` | `Failure`, `WaitError` | Confirmation outcomes, kept separate from cleanup failures |
+| Crate and module                   | Type                                                  | Covers                                                                                                    |
+| ---------------------------------- | ----------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| `solana_kit_core::codecs`          | `Error`                                               | Truncation, budgets, trailing bytes, invalid tags, booleans, constants and UTF-8. See [Codecs](codecs.md) |
+| `solana_kit_core`                  | `ParseError`                                          | Address, hash and signature text or byte length                                                           |
+| `solana_kit_core::accounts`        | `AccountError`                                        | `Missing`, `OwnerMismatch`, `DataSizeMismatch`, `Decode`. See [Accounts and sysvars](accounts.md)         |
+| `solana_kit_core::transaction`     | `Error`                                               | Compile, wire and signature failures. See [Messages and transactions](transactions.md)                    |
+| `solana_kit_core::offchain`        | `Error`                                               | Off-chain message and envelope validation                                                                 |
+| `solana_kit_core::crypto`          | `PdaError`, `KeypairImportError`, `VerificationError` | Derivation, key import and verification                                                                   |
+| `solana_kit_signers`               | `Error`                                               | Rejection, cancellation, conflicting or foreign signers, changed snapshots. See [Signers](signers.md)     |
+| `solana_kit_client`                | `Error`, `TransportError`, `RemoteError`              | Transport, HTTP, JSON, correlation and remote JSON-RPC failures. See [RPC](rpc.md)                        |
+| `solana_kit_client::subscriptions` | `Failure`, `SessionError<E>`                          | Subscription protocol and socket failures. See [Subscriptions](subscriptions.md)                          |
+| `solana_kit_client::confirmation`  | `Failure`, `WaitError`                                | Confirmation outcomes, kept separate from cleanup failures                                                |
 
 All of these implement `core::error::Error`. Wrapping variants such as `AccountError::Decode` and `client::Error::Transport` expose the original error through `source()`.
 
