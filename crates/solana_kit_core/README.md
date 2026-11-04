@@ -39,6 +39,16 @@ There is no conversion that grants export to an existing non-exporting signer.
 zeroizes the temporary seed on success, failure and cancellation. Core selects
 no random source, storage API or executor. This is client application code only.
 
+`crypto::grind_keypairs` generates an exact number of exportable keys under a
+finite `GrindBudget` using caller-owned entropy. Validated `GrindPattern` prefix
+and suffix literals reject impossible base58 symbols before entropy is touched;
+`grind_keypairs_with` composes arbitrary caller predicates instead of embedding
+a regular-expression engine. Zero amounts consume no entropy, and entropy
+failure, budget exhaustion or future cancellation never return a partial
+success. Rejected and retained candidates drop their zeroizing signers.
+`crypto::constant_time_eq` compares slices through the audited `subtle`
+implementation; only a length mismatch may short-circuit.
+
 The `transaction` module compiles and strictly decodes immutable legacy/v0/v1
 messages and retains ordered signature slots. Complete legacy/v0 packets are
 bounded to 1232 bytes; complete V1 envelopes are bounded to 4096 bytes, inclusive.
@@ -50,6 +60,19 @@ because expiry height is absent from the wire. Optional `crypto` signs and
 verifies those frozen bytes; structural decoding alone does not authenticate
 signatures. Durable nonce lifecycle, full introspection, and
 general signer capabilities remain pending.
+
+`Message::decompile` rebuilds a typed `DecompiledMessage` from caller-owned
+`LookupTable` snapshots. It preserves version, payer, instruction order and data,
+duplicate positions, static signer/writable partitions, exact table/index
+provenance and inline V1 configuration. Loaded addresses follow runtime order:
+all writable lookups before readonly lookups. The lifetime is copied exactly, so
+decoded wire stays `Lifetime::Unresolved` until the caller supplies established
+expiry or nonce metadata through `DecompiledMessage::with_lifetime`; a nonce-shaped
+first instruction is never promoted to trusted metadata. `DecompiledMessage::compile`
+reuses the existing compiler and fails on unresolved lifetimes. Globally merged
+privileges and noncanonical received account ordering are not invertible;
+canonical Kit-compiled messages recompile to identical bytes. No RPC call or
+snapshot authentication is implied.
 
 `Instruction<InstructionAccount>` retains explicit `AccountLookupMeta` origins
 beside ordinary `AccountMeta` values. Compile these with

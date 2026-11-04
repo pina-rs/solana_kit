@@ -5,11 +5,16 @@ mod pda;
 use core::fmt;
 
 mod backup;
+mod grind;
 
 pub use backup::{Entropy, ExportableKeypair, KeypairBackup};
+pub use grind::{
+    GrindBudget, GrindError, GrindPattern, GrindPatternError, grind_keypairs, grind_keypairs_with,
+};
 
 use ed25519_dalek::Signer;
 use sha2::{Digest, Sha256};
+use subtle::ConstantTimeEq;
 
 use crate::{Address, Hash, Signature};
 
@@ -109,6 +114,16 @@ impl fmt::Display for KeypairImportError {
 }
 
 impl core::error::Error for KeypairImportError {}
+
+/// Compares two byte slices without leaking content through comparison timing.
+///
+/// The contents comparison delegates to the audited `subtle` constant-time slice
+/// implementation. A differing length returns `false` immediately, so the length
+/// itself is not treated as secret.
+#[must_use]
+pub fn constant_time_eq(left: &[u8], right: &[u8]) -> bool {
+    left.len() == right.len() && bool::from(left.ct_eq(right))
+}
 
 /// The address is not a valid key, or strict Ed25519 verification failed.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]

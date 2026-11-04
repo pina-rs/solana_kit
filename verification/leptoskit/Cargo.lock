@@ -858,6 +858,7 @@ dependencies = [
  "num-traits",
  "sha2",
  "sha3",
+ "subtle",
  "zeroize",
 ]
 

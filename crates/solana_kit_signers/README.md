@@ -36,6 +36,11 @@ core's deterministic `Keypair`. It also verifies accepted backend signatures.
 Without `crypto`, acceptance checks ownership, exact bytes, and nonzero slots.
 Applications must verify external signatures before trusting authenticity.
 
+`grind_keypair_signers` and `grind_keypair_signers_with` apply the core finite
+`GrindBudget` and caller-owned entropy, then convert every matched exportable key
+with `into_signer`. Returned keypair signers keep the existing message and
+partial transaction implementations without any backup/export capability.
+
 See the scoped parity receipt in `docs/parity/signer-capabilities.md`.
 
 Use `local::Registration` for heterogeneous local backends, or

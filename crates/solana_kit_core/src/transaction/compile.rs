@@ -12,7 +12,7 @@ use super::{
 mod collation;
 use collation::address_key;
 
-const MAX_ACCOUNTS: usize = 256;
+pub(super) const MAX_ACCOUNTS: usize = 256;
 
 #[derive(Clone, Copy)]
 struct Entry {
