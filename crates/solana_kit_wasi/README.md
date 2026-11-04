@@ -62,14 +62,17 @@ precise policy, resource baselines and host limits. Operating-system DNS stalls,
 uncancellable late resolver callbacks and local MSRV Preview2 execution remain
 unverified. Focused CI provisions the MSRV target and executes that component.
 
-The unverified REST source extension adds `WasiRest<D>` only on Preview2. Named
+`WasiRest<D>` is available only on Preview2. Named
 routes reuse existing `WasiHttp`, Reactor registrations, outgoing HTTP resources,
 concurrent upload/response progress, typed host denial and bounded body reception.
 Approved base queries remain first; decoded operation segments and ordered pairs
 are separately encoded. Body presence determines media type. Original RPC POST
 framing remains unchanged. The public provider consumer must run under its actual
-caller-driven component host. Preview1 has no networking adapter. Compilation,
-actual provider REST replay, resource checks and negative controls remain pending.
+caller-driven component host. Preview1 has no networking adapter. The
+[current transport receipt](../../docs/verification/provider-rest-current.md)
+records actual REST framing, denial, body bounds, malformed response and resource
+checks under the pinned embedding. Complete provider-operation replay remains
+separate from this transport execution.
 
 ## Framed WebSockets and subscription time
 

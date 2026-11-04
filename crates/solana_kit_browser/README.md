@@ -160,13 +160,14 @@ This feature targets Window-based off-chain application code. It does not add
 browser globals to WASI or interpreted LeptosKit guests. Native/mobile wallet
 handover and UI composition require their respective adapters. It is not an
 on-chain program API; use Pina or the official Solana program libraries there.
-The unverified REST source extension adds `BrowserRest<D>` over the existing
+`BrowserRest<D>` uses the existing
 Window Fetch owner. Named routes retain approved roots and configured headers.
 Encoded segments and ordered duplicate query pairs append to the approved base
 path and fixed query. Decoded dot segments and GET bodies are denied before Fetch.
 Each exchange derives content type from absent, JSON or form bytes, owns its
 abort controller and deadline, omits ambient credentials and referrers, rejects
 redirects and reuses bounded streamed reception. Browser CORS still applies.
-The new public provider consumer has actual Fetch calls with Rc across awaits.
-It still needs an admitted browser driver and real peer replay. Historical RPC
-or socket evidence does not verify this REST source.
+The [current transport receipt](../../docs/verification/provider-rest-current.md)
+records actual Fetch requests with Rc across awaits, route/body denial, response
+bounds and pending-exchange Drop in real Chrome. Complete provider-operation
+replay remains separate from these transport fixtures.

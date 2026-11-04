@@ -52,6 +52,25 @@ Compressed bytes remain encoded; parsed program payloads retain exact JSON.
 Raw token amounts parse decimal strings directly to u64, independently of display
 values. The original full-base64 AccountInfo contract remains available.
 
+Commitment is explicit per request. `Client::new` and an absent commitment use
+the node's default; they do not inject the Dart factory's `confirmed` default.
+To preserve that factory's read behavior, pass `Some(read)` using:
+
+```rust
+use solana_kit_client::methods::{Commitment, ReadConfig};
+
+let read = ReadConfig {
+    commitment: Some(Commitment::Confirmed),
+    ..ReadConfig::default()
+};
+assert_eq!(read.commitment, Some(Commitment::Confirmed));
+```
+
+Submission uses the separate `SendConfig::preflight_commitment` field.
+Identical calls are separate exchanges, each with its own correlation identity
+and cancellation owner. The client does not coalesce them implicitly. See the
+[default-policy differences](../../docs/parity/rpc-default-policy.md).
+
 Sysvar fetches compose the existing public account fetch and core decoder. This
 preserves the requested address, node context and complete account metadata while
 checking owner, size, trailing bytes and caller-selected decoding limits:

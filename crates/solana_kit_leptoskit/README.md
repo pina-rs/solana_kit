@@ -67,7 +67,7 @@ through this source pin. It does not establish successful current macOS or Andro
 installed execution. The historical HTTP receipt above does not verify this source
 pin or socket extension.
 
-The unverified REST source extension adds `GuestRest<D>` and
+The REST adapter provides `GuestRest<D>` and
 `HttpDriver::install_rest`. The application binds provider destinations to named
 host services. Each service owns a fixed `NativeRest<()>` root and caller policy.
 Additive method1 carries a bounded version1 REST request; original method0 and
@@ -75,8 +75,10 @@ its wire remain unchanged. Guest bytes carry no endpoint or headers. REST shares
 existing call ownership, Events routing, completion identities, retained capacity
 through native join and awaited driver shutdown. The REST request cap includes its
 complete binary frame, while the existing RPC cap still applies to its JSON body.
-Actual Rust guest/provider journeys, host routing and joined shutdown replay are
-required for each claimed runtime. The selected framework revision is public commit
+The [current transport receipt](../../docs/verification/provider-rest-current.md)
+records actual guest REST requests, denial, body bounds, application routing and
+joined shutdown under production wasmi. Complete provider-operation replay and
+installed-platform REST journeys remain separate. The selected framework revision is public commit
 `7437097c52aa68a3401bd378764e051ed4c9165a`, tree
 `f4048de8e271deaf882de45e476fba554f937890`. A source revision identifies the
 dependency; the individual transport receipts establish execution coverage.

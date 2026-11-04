@@ -240,7 +240,7 @@ Helius journey shares one physical JSON registration, forwards pre-ack binary,
 checks a quiet last-handle Drop wake and separately awaits actual close. These
 new bodies have not executed in this checkpoint.
 
-The unverified REST source extension adds `NativeRest<D>` over these same HTTP
+`NativeRest<D>` uses these same HTTP
 owners. Each named route owns an approved `NativeHttp` root, headers, TLS policy
 and deadlines. Remote REST roots require HTTPS at construction, before DNS or
 socket work, with no remote plaintext opt-in. Plain HTTP is limited to literal
@@ -252,7 +252,9 @@ segments are denied. Body presence owns its media type. The exchange retains its
 inline socket and driver, bounds response copies, follows no redirects and sends
 once. Normal REST errors redact request values while retaining the original cause
 chain for explicit inspection. Original fixed-POST RPC behavior remains separate.
-Current/MSRV compilation, quality and actual REST peer replay remain pending.
+The [current transport receipt](../../docs/verification/provider-rest-current.md)
+records actual native peer and TLS tests, formatting and quality checks.
+Provider-operation evidence remains separate from this transport execution.
 
 ## Optional mobile wallet transport
 
