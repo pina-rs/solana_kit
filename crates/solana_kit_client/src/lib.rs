@@ -26,6 +26,8 @@ mod json;
 pub mod plans;
 
 pub mod methods;
+#[cfg(feature = "parsed-accounts")]
+pub mod parsed;
 /// Caller-driven reactive action and stream stores.
 #[cfg(feature = "reactive")]
 pub mod reactive;
