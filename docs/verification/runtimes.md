@@ -59,21 +59,24 @@ dispatches a `Press` event and requires the corrupted report and second commit.
 The guest's small unsafe FFI wrappers implement that pinned synchronous copy ABI;
 core and the host harness forbid unsafe code.
 
-## Current v55 local execution
+## Current v56 local execution
 
-On 2026-11-04, `cargo +1.99.1 xtask all` passed at SDK source
-`65c502f9044d320ec809fc0b45670b7860a8b4e3`. Native Rust, Chrome and ChromeDriver
+On 2026-11-04, `cargo +1.99.1 xtask all` passed at signed executable
+`444dd895` (parent `a0cc1cf0`). Native Rust, Chrome and ChromeDriver
 156.0.8078.80, Wasmtime 50.0.0 Preview 1 and Preview 2, and the actual pinned
-LeptosKit host each executed 448/448 canonical cases and rejected only the
-corrupt hash at 447/448 with exit 1. The one-fuel control, exact imports,
+LeptosKit host each executed 455/455 canonical cases and rejected only the
+corrupt hash at 454/455 with exit 1. The one-fuel control, exact imports,
 dependency negative controls and fresh packaged-core consumer also passed.
 Actual command outputs and statuses are retained under `target/runtime-evidence/`.
 
-This unchanged suite includes its named portable cases. It does not imply
-cross-host execution of later grinding, decompilation or explicit signer
-configuration tests; their [current reconciliation](../parity/phase-two-three-current.md)
-records the separate evidence and limits. Installed iOS wallet execution is
-recorded [separately](installed-wallet-current.md).
+The appended seven groups exercise grinding and cancellation, legacy/v0/v1
+message decompilation, explicit per-call signer configuration, Token mint and
+associated-account plans, typed parsed-account families, direct fixed-point
+`Paired` composition, and scripted client exchanges. The
+[parity-completion runtime receipt](parity-completion-runtime.md) records the
+exact ledger and statuses. The first 448 report rows remain byte-identical to
+the captured v55 report. Installed iOS wallet execution is recorded
+[separately](installed-wallet-current.md).
 
 ## Historical v27 introspection integration
 
