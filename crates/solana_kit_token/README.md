@@ -18,6 +18,27 @@ Dart's mutable discriminator/data-only parsers, fetch helpers and wrapper contra
 are not claimed as equivalent. The additional ATA owner stays in its separate
 accepted crate. Validator and portable runtime execution remain separate gates.
 
+The optional `plans` feature adds the pinned handwritten helper layer:
+`create_mint_plan` builds an indivisible System `CreateAccount` then
+`InitializeMint2` pair; `mint_to_ata_plan` and `transfer_to_ata_plan` build a
+divisible ATA `CreateIdempotent` then `MintToChecked` or `TransferChecked` pair.
+`mint_to_ata_derived_plan` and `transfer_to_ata_derived_plan` synchronously
+replace the source's async ATA derivation. Configuration structs preserve the
+source's optional token, System and ATA program overrides and apply each
+configured identity to instruction metadata as well as the program address.
+The mint and transfer authorities are required readonly signers, matching the
+handwritten source helpers. Low-level builders remain available for explicit
+multisignature account assembly.
+
+The create-mint default uses the source's fixed 82-byte allocation and
+`1_461_600` lamport rent-exempt value. That value is not a live rent lookup;
+callers must pass `mint_account_lamports` when the target cluster requires a
+different amount. The helpers select no signer, blockhash, executor, network or
+transaction, and they add no balance, owner, delegate or rent validation.
+The default dependency closure remains Token to core to bs58. Enabling `plans`
+adds System and associated-token-account dependencies plus the existing ATA
+crypto derivation.
+
 Raw UTF8 keeps a leading BOM; the source Dart decoder removes it. Encoding bytes
 match. Batch constructors retain the source's empty account-list contract;
 arbitrary batch account assembly remains pending.

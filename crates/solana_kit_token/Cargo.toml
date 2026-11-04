@@ -10,4 +10,19 @@ rust-version.workspace = true
 description = "Bounded SPL Token codecs and instruction builders for off-chain clients"
 
 [dependencies]
+solana_kit_associated_token_account = { workspace = true, optional = true }
 solana_kit_core.workspace = true
+solana_kit_system = { workspace = true, optional = true }
+
+[features]
+default = []
+plans = [
+  "dep:solana_kit_associated_token_account",
+  "dep:solana_kit_system",
+  "solana_kit_associated_token_account/crypto",
+]
+
+[[test]]
+name = "plans"
+path = "tests/plans.rs"
+required-features = ["plans"]
