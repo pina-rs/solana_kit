@@ -54,12 +54,13 @@ one-fuel control and a fresh packaged-core consumer passed through
 `cargo xtask all` at that checkpoint. Those counts are historical evidence for
 that source, not the current suite.
 
-The current shared suite is `solana-kit-core-v58` with 461 cases. It passes
-461/461 natively, in actual Chrome, in both Wasmtime 50 previews and in the
-pinned LeptosKit interpreter. The corruption control is 460/461 and exits 1,
-with only `sha256-fips-abc` failing. The first 459 report rows remain
-byte-identical to the v57 report, which itself preserves the captured 448-row
-v55 prefix. The last two groups are the error-code catalog negative control and
+The current shared suite is `solana-kit-core-v59` with 476 cases. It passes
+476/476 natively, in actual Chrome, in both Wasmtime 50 previews and in the
+pinned LeptosKit interpreter. The corruption control is 475/476 and exits 1,
+with only `sha256-fips-abc` failing. The first 461 report rows remain
+byte-identical to the v58 report, which itself preserves the captured 448-row
+v55 prefix. The last fifteen groups are the error-contract controls and
+evidence; before them are the error-code catalog negative control and
 the exact 365-constant comparison. The four preceding appended groups cover
 normalized publication bundle/source projection, diagnostic redaction,
 ingestion translation, and session checkpoint precedence. The earlier seven

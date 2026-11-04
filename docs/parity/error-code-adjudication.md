@@ -91,10 +91,13 @@ mismatch.
 
 ## Execution
 
-The cases execute in `solana-kit-core-v58` at 461/461 on native Rust, real
+The cases executed in `solana-kit-core-v58` at 461/461 on native Rust, real
 Chrome, both Wasmtime 50 previews and the pinned LeptosKit host. The corruption
-control is 460/461 with only `sha256-fips-abc` failing. The checked-in reports
-hash as:
+control was 460/461 with only `sha256-fips-abc` failing. That run remains the
+historical receipt for these two catalog cases; the current v59/476 suite and
+the later declarations are recorded in the
+[error-contract runtime receipt](../verification/error-contracts-runtime.md).
+The checked-in v58 reports hashed as:
 
 ```text
 d17a4a66dbb79a5a913fa15f50619dd86851064361aa0c55b57955a0eef1f9e3  native-success.txt

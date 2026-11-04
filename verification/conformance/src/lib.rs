@@ -26,6 +26,7 @@ mod confirmation_cases;
 mod core_parity;
 mod cryptography;
 mod error_catalog;
+mod error_contracts;
 mod fixed_points;
 mod ordered_collections;
 
@@ -89,9 +90,9 @@ pub mod system_client;
 use alloc::vec::Vec;
 
 /// Integrated core contract suite; execution receipts identify actual hosts.
-pub const SUITE_ID: &str = "solana-kit-core-v58";
+pub const SUITE_ID: &str = "solana-kit-core-v59";
 /// Exact current registrants, including all preserved and appended contract groups.
-pub const EXPECTED_CASE_COUNT: usize = 461;
+pub const EXPECTED_CASE_COUNT: usize = 476;
 
 /// Selects authentic fixtures or the intentionally incorrect hash oracle.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -209,6 +210,7 @@ pub fn run(mode: FixtureMode) -> Report {
     cases.extend(parity_completion::cases());
     cases.extend(publisher::publication::cases());
     cases.extend(error_catalog::cases());
+    cases.extend(error_contracts::cases());
 
     Report {
         suite_id: SUITE_ID,

@@ -83,7 +83,7 @@ Dart oracle rows against the integrated public package with zero mismatches.
 
 Three portable groups entered the then-current shared 59-case suite natively, in
 Chrome, in Wasmtime Preview 1 and Preview 2, and in the pinned actual LeptosKit
-host. They remain in the current v58/461 suite. The
+host. They remain in the current v59/476 suite. The
 [runtime receipt](../verification/runtimes.md) records the executed source and
 artifact hashes. This bounded evidence does not complete Phase 2,
 installed-app journeys, or the seven partial capabilities documented in

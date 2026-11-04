@@ -1,5 +1,10 @@
 # Portable conformance runtime receipt
 
+> This receipt records the historical v58/461 run below. The current suite is
+> `solana-kit-core-v59` with 476 cases; the appended error-contract groups and
+> their actual five-host results are recorded in the
+> [error-contract runtime receipt](error-contracts-runtime.md).
+
 The shared suite executes the four normalized publication-projection groups and,
 from v58, the 365-constant error-code catalog. The publication groups reuse the
 32 existing native bodies; the catalog groups reuse the same shared body as the

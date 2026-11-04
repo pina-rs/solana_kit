@@ -107,7 +107,7 @@ mod tests {
             + fixed_mwa
             + checked_parity_completion_work(CRYPTO_WORK).unwrap();
         assert_eq!(next - allowance().unwrap(), 15_000_000);
-        assert_eq!(allowance().unwrap(), 15_280_000_000);
+        assert_eq!(allowance().unwrap(), 15_505_000_000);
         assert_eq!(MESSAGE_COUNT, 256);
         assert_eq!(
             MESSAGE_COUNT as u64 * CRYPTO_CALLS_PER_MESSAGE + FIXED_CRYPTO_CALLS,

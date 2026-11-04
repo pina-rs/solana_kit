@@ -4,7 +4,7 @@ use super::{EXPECTED_CASE_COUNT, FixtureMode, SUITE_ID, run};
 
 const CAPTURED_V55: &str = include_str!("../evidence/parity-completion-prefix-v55.txt");
 const CURRENT_SUCCESS: &str = include_str!("../evidence/native-success.txt");
-const APPENDED_NAMES: [&str; 13] = [
+const APPENDED_NAMES: [&str; 28] = [
     "grind-entropy-cancellation",
     "message-decompile-roundtrip",
     "signer-explicit-config",
@@ -18,6 +18,21 @@ const APPENDED_NAMES: [&str; 13] = [
     "publisher-publication-session-checkpoint-precedence",
     "error-code-catalog-rejects-wrong-literal",
     "error-code-catalog-exact-365",
+    "error-domain-rejects-wrong-range",
+    "error-code-enum-rejects-wrong-constant",
+    "error-execution-rejects-wrong-expected",
+    "error-domain-classification-25",
+    "error-code-enum-boundaries",
+    "error-diagnostic-source-contract",
+    "error-message-rejects-wrong-template",
+    "error-message-template-interpolation",
+    "error-context-key-conventions",
+    "error-context-wire-mounted-values",
+    "error-context-wire-literals",
+    "error-rpc-enum-offset-callback",
+    "error-execution-source-oracle",
+    "error-json-rpc-projection",
+    "error-simulation-unwrap",
 ];
 
 #[test]

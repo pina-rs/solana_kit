@@ -331,3 +331,62 @@ fn sensitive_nested_keys_and_message_growth_fail_before_exposure() {
         Err(ContextError::Limit)
     );
 }
+
+#[path = "shared_errors/diagnostic_contracts.rs"]
+mod diagnostic_contracts;
+#[path = "shared_errors/domain_contracts.rs"]
+mod domain_contracts;
+#[path = "shared_errors/enum_contracts.rs"]
+mod enum_contracts;
+#[path = "shared_errors/helper_contracts.rs"]
+mod helper_contracts;
+#[path = "shared_errors/message_contracts.rs"]
+mod message_contracts;
+
+#[test]
+fn pinned_domain_classification_covers_every_variant_and_gap() {
+    domain_contracts::exact(
+        include_str!("shared_errors/domains.tsv"),
+        include_str!("shared_errors/catalog.tsv"),
+    )
+    .unwrap();
+}
+
+#[test]
+fn wrong_domain_range_control_fails_before_the_exact_case() {
+    domain_contracts::rejects_wrong_range(
+        include_str!("shared_errors/domains.tsv"),
+        include_str!("shared_errors/catalog.tsv"),
+    )
+    .unwrap();
+}
+
+#[test]
+fn pinned_enum_from_value_and_value_boundaries() {
+    enum_contracts::exact(include_str!("shared_errors/catalog.tsv")).unwrap();
+}
+
+#[test]
+fn wrong_enum_constant_control_fails_before_the_exact_case() {
+    enum_contracts::rejects_wrong_constant(include_str!("shared_errors/catalog.tsv")).unwrap();
+}
+
+#[test]
+fn pinned_diagnostic_storage_display_and_sources() {
+    diagnostic_contracts::exact().unwrap();
+}
+
+#[test]
+fn pinned_message_templates_and_interpolation() {
+    message_contracts::exact(include_str!("shared_errors/catalog.tsv")).unwrap();
+}
+
+#[test]
+fn wrong_message_template_control_fails_before_the_exact_case() {
+    message_contracts::rejects_wrong_template(include_str!("shared_errors/catalog.tsv")).unwrap();
+}
+
+#[test]
+fn pinned_context_keys_and_helper_normalization() {
+    helper_contracts::exact(include_str!("shared_errors/error_keys.tsv")).unwrap();
+}
