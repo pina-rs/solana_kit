@@ -107,7 +107,7 @@ mod tests {
             + fixed_mwa
             + checked_parity_completion_work(CRYPTO_WORK).unwrap();
         assert_eq!(next - allowance().unwrap(), 15_000_000);
-        assert_eq!(allowance().unwrap(), 15_190_000_000);
+        assert_eq!(allowance().unwrap(), 15_250_000_000);
         assert_eq!(MESSAGE_COUNT, 256);
         assert_eq!(
             MESSAGE_COUNT as u64 * CRYPTO_CALLS_PER_MESSAGE + FIXED_CRYPTO_CALLS,
@@ -118,7 +118,10 @@ mod tests {
     #[test]
     fn accounts_for_every_appended_crypto_site() {
         assert_eq!(
-            CRYPTO_WORK.iter().map(|(_, count)| *count).collect::<Vec<_>>(),
+            CRYPTO_WORK
+                .iter()
+                .map(|(_, count)| *count)
+                .collect::<Vec<_>>(),
             [69, 5, 6],
             "appended crypto work ledger"
         );

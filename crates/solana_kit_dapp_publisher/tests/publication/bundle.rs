@@ -1,5 +1,7 @@
 //! Independently authored normalized-projection behavior.
 
+use std::{borrow::ToOwned, string::ToString, vec, vec::Vec};
+
 use super::support::*;
 
 const RELEASE_FILE_BYTES: u64 = 4096;
@@ -7,19 +9,21 @@ const INSTALL_FILE_BYTES: u64 = 12;
 const FALLBACK_INSTALL_BYTES: u64 = 2048;
 const EXPLICIT_VERSION_CODE: u64 = 7;
 
-#[test]
-fn maps_the_full_source_bundle() {
+#[cfg_attr(test, test)]
+pub fn maps_the_full_source_bundle() -> Outcome {
     let projected = map_backend_bundle_to_publication_bundle(
         &bundle(source_bundle()),
         Some("https://meta.example.com/rel-1.json"),
         PortalSourceKind::PortalUpload,
     );
 
-    assert_source_identity(&projected);
-    assert_source_release(&projected);
+    assert_source_identity(&projected)?;
+    assert_source_release(&projected)?;
+
+    Ok(())
 }
 
-fn assert_source_identity(projected: &PublicationBundle) {
+fn assert_source_identity(projected: &PublicationBundle) -> Outcome {
     assert_eq!(projected.ingestion_session_id, "ing-1");
     assert_eq!(projected.publication_session_id, "pub-1");
     assert_eq!(projected.release_id, "rel-1");
@@ -55,9 +59,11 @@ fn assert_source_identity(projected: &PublicationBundle) {
     );
     assert_eq!(projected.metadata.localized_strings.len(), 1);
     assert_eq!(projected.metadata.localized_strings[0].locale, "en-US");
+
+    Ok(())
 }
 
-fn assert_source_release(projected: &PublicationBundle) {
+fn assert_source_release(projected: &PublicationBundle) -> Outcome {
     assert_eq!(
         projected.signer_authority.app_mint_address,
         "App111111111111111111111111111111111111111"
@@ -92,10 +98,12 @@ fn assert_source_release(projected: &PublicationBundle) {
         projected.release.nft_mint_address(),
         projected.release.release_mint_address.as_deref()
     );
+
+    Ok(())
 }
 
-#[test]
-fn maps_an_empty_bundle_with_source_defaults() {
+#[cfg_attr(test, test)]
+pub fn maps_an_empty_bundle_with_source_defaults() -> Outcome {
     let projected = map_backend_bundle_to_publication_bundle(
         &bundle(json!({})),
         None,
@@ -120,10 +128,12 @@ fn maps_an_empty_bundle_with_source_defaults() {
     assert_eq!(projected.install_file.uri, "");
     assert_eq!(projected.install_file.mime_type, "application/octet-stream");
     assert_eq!(projected.install_file.size.as_u64(), Some(0));
+
+    Ok(())
 }
 
-#[test]
-fn publisher_kind_preserves_individual_and_unknown_values() {
+#[cfg_attr(test, test)]
+pub fn publisher_kind_preserves_individual_and_unknown_values() -> Outcome {
     let individual = map_backend_bundle_to_publication_bundle(
         &bundle(json!({"publisher": {"type": "individual"}})),
         None,
@@ -147,10 +157,12 @@ fn publisher_kind_preserves_individual_and_unknown_values() {
         PortalSourceKind::PortalUpload,
     );
     assert_eq!(absent.publisher.kind, PublisherKind::Organization);
+
+    Ok(())
 }
 
-#[test]
-fn description_and_contact_precedence_matches_the_source() {
+#[cfg_attr(test, test)]
+pub fn description_and_contact_precedence_matches_the_source() -> Outcome {
     let projected = map_backend_bundle_to_publication_bundle(
         &bundle(json!({
             "release": {
@@ -202,10 +214,12 @@ fn description_and_contact_precedence_matches_the_source() {
     assert_eq!(projected.dapp.support_email, "dapp@example.com");
     assert_eq!(projected.publisher.support_email, "dapp@example.com");
     assert!(projected.metadata.support_email.is_none());
+
+    Ok(())
 }
 
-#[test]
-fn blank_contact_fields_remain_distinct_from_missing_values() {
+#[cfg_attr(test, test)]
+pub fn blank_contact_fields_remain_distinct_from_missing_values() -> Outcome {
     let blank = map_backend_bundle_to_publication_bundle(
         &bundle(json!({
             "publisher": {"supportEmail": "", "email": "contact@example.com"},
@@ -218,10 +232,12 @@ fn blank_contact_fields_remain_distinct_from_missing_values() {
     assert_eq!(blank.publisher.support_email, "");
     assert_eq!(blank.dapp.support_email, "");
     assert_eq!(blank.metadata.support_email.as_deref(), Some(""));
+
+    Ok(())
 }
 
-#[test]
-fn description_fallback_uses_a_unicode_safe_utf16_bound() {
+#[cfg_attr(test, test)]
+pub fn description_fallback_uses_a_unicode_safe_utf16_bound() -> Outcome {
     let projected = map_backend_bundle_to_publication_bundle(
         &bundle(json!({
             "dapp": {"description": "a😀bcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"}
@@ -244,10 +260,12 @@ fn description_fallback_uses_a_unicode_safe_utf16_bound() {
             .len(),
         52
     );
+
+    Ok(())
 }
 
-#[test]
-fn media_is_projected_in_deterministic_source_order() {
+#[cfg_attr(test, test)]
+pub fn media_is_projected_in_deterministic_source_order() -> Outcome {
     let projected = map_backend_bundle_to_publication_bundle(
         &bundle(json!({
             "dapp": {
@@ -282,10 +300,12 @@ fn media_is_projected_in_deterministic_source_order() {
         ]
     );
     assert_eq!(MediaPurpose::FeatureGraphic.wire_name(), "featureGraphic");
+
+    Ok(())
 }
 
-#[test]
-fn install_and_release_file_fallbacks_are_independent_literals() {
+#[cfg_attr(test, test)]
+pub fn install_and_release_file_fallbacks_are_independent_literals() -> Outcome {
     let pinned = bundle(json!({
         "release": {
             "id": "rel-2",
@@ -327,10 +347,12 @@ fn install_and_release_file_fallbacks_are_independent_literals() {
         projected.release.release_file_hash.as_deref(),
         Some("release-hash")
     );
+
+    Ok(())
 }
 
-#[test]
-fn direct_install_file_details_infer_name_and_mime() {
+#[cfg_attr(test, test)]
+pub fn direct_install_file_details_infer_name_and_mime() -> Outcome {
     let direct = InstallFileDetails::from_backend(
         Some(
             &serde_json::from_value::<BackendRelease>(json!({
@@ -354,10 +376,12 @@ fn direct_install_file_details_infer_name_and_mime() {
     assert_eq!(direct.size.as_u64(), Some(INSTALL_FILE_BYTES));
     assert_eq!(direct.sha256.as_deref(), Some("install-hash"));
     assert_eq!(direct.canonical_url, direct.uri);
+
+    Ok(())
 }
 
-#[test]
-fn install_file_size_and_url_supply_release_fallbacks() {
+#[cfg_attr(test, test)]
+pub fn install_file_size_and_url_supply_release_fallbacks() -> Outcome {
     let projected = map_backend_bundle_to_publication_bundle(
         &bundle(json!({
             "release": {"releaseFileName": "app.apk"},
@@ -388,10 +412,12 @@ fn install_file_size_and_url_supply_release_fallbacks() {
         Some(FALLBACK_INSTALL_BYTES)
     );
     assert!(projected.release.release_file_hash.is_none());
+
+    Ok(())
 }
 
-#[test]
-fn signer_authority_preserves_booleans_roles_and_fallbacks() {
+#[cfg_attr(test, test)]
+pub fn signer_authority_preserves_booleans_roles_and_fallbacks() -> Outcome {
     let projected = map_backend_bundle_to_publication_bundle(
         &bundle(json!({
             "dapp": {
@@ -453,10 +479,12 @@ fn signer_authority_preserves_booleans_roles_and_fallbacks() {
         nulled.signer_authority.accepted_signer_roles,
         vec!["publisher".to_owned(), "payer".to_owned()]
     );
+
+    Ok(())
 }
 
-#[test]
-fn numbers_and_version_names_keep_exact_source_text() {
+#[cfg_attr(test, test)]
+pub fn numbers_and_version_names_keep_exact_source_text() -> Outcome {
     let version_code = bundle(json!({
         "release": {"versionCode": 9007199254740993_i64}
     }));
@@ -486,4 +514,6 @@ fn numbers_and_version_names_keep_exact_source_text() {
         PortalSourceKind::PortalUpload,
     );
     assert_eq!(projected.release.version_name, "");
+
+    Ok(())
 }

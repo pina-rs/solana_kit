@@ -82,8 +82,8 @@ All five narrow experiments have executed evidence. The
 [Phase 1 evidence matrix](../verification/phase-one.md) links their source,
 commands, pins, negative controls, and limits. `cargo xtask all` reproduces the
 shared portable suite, import/dependency gates, and a clean packaged-core consumer.
-The current v56 suite passes all 455 cases and rejects only the corrupt-hash
-case in the 454/455 negative run on native Rust, Chrome, both WASI previews, and the
+The current v57 suite passes all 459 cases and rejects only the corrupt-hash
+case in the 458/459 negative run on native Rust, Chrome, both WASI previews, and the
 actual pinned LeptosKit `WasmHost`. The
 [portable runtime receipt](../verification/runtimes.md)
 records this expanded suite. The [Token runtime receipt](../verification/token-runtime.md)
@@ -159,7 +159,7 @@ construction requirements from validation of externally received transactions.
 The immutable legacy/v0/v1 slice compiles owned instructions and lookup snapshots,
 preserves exact signed bytes, validates received protocol wire independently of
 local compiler restrictions, and signs/verifies through optional deterministic
-crypto. Transaction cases execute in the shared v56 suite, now 455 cases, including
+crypto. Transaction cases execute in the shared v57 suite, now 459 cases, including
 version-one message-first envelopes, inline configuration, exact 4096/4097-byte
 boundaries and signature tampering. Legacy/v0 retain their 1232-byte packet cap. The
 [transaction ledger](../parity/message-transactions.md) retains all 746 source

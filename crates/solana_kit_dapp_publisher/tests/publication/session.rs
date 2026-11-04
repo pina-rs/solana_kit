@@ -1,9 +1,11 @@
 //! Independently authored normalized-projection behavior.
 
+use std::{format, string::String};
+
 use super::support::*;
 
-#[test]
-fn checkpoint_stage_precedence_matches_the_pinned_translator() {
+#[cfg_attr(test, test)]
+pub fn checkpoint_stage_precedence_matches_the_pinned_translator() -> Outcome {
     let cases = [
         ("Submitted", PublicationCheckpoint::Submitted),
         ("Attested", PublicationCheckpoint::Verified),
@@ -20,10 +22,12 @@ fn checkpoint_stage_precedence_matches_the_pinned_translator() {
         assert_eq!(projected.checkpoint, expected, "stage {stage}");
         assert_eq!(projected.stage.wire_name(), stage);
     }
+
+    Ok(())
 }
 
-#[test]
-fn checkpoint_receipt_precedence_falls_through_failed_and_unknown_stages() {
+#[cfg_attr(test, test)]
+pub fn checkpoint_receipt_precedence_falls_through_failed_and_unknown_stages() -> Outcome {
     let cases = [
         (
             json!({"stage": "Failed", "hubspotTicketId": "HS-1"}),
@@ -56,10 +60,12 @@ fn checkpoint_receipt_precedence_falls_through_failed_and_unknown_stages() {
         let projected = translate_backend_publication_session(&publication_session(value), None);
         assert_eq!(projected.checkpoint, expected);
     }
+
+    Ok(())
 }
 
-#[test]
-fn checkpoint_receipt_precedence_orders_ticket_attestation_and_signatures() {
+#[cfg_attr(test, test)]
+pub fn checkpoint_receipt_precedence_orders_ticket_attestation_and_signatures() -> Outcome {
     let precedence = translate_backend_publication_session(
         &publication_session(json!({
             "stage": "Failed",
@@ -85,10 +91,12 @@ fn checkpoint_receipt_precedence_orders_ticket_attestation_and_signatures() {
         None,
     );
     assert_eq!(blanks.checkpoint, PublicationCheckpoint::Created);
+
+    Ok(())
 }
 
-#[test]
-fn absent_null_blank_and_unknown_stages_remain_distinct() {
+#[cfg_attr(test, test)]
+pub fn absent_null_blank_and_unknown_stages_remain_distinct() -> Outcome {
     let absent = translate_backend_publication_session(&publication_session(json!({})), None);
     assert_eq!(absent.stage, PublicationSessionStage::PreparedForMint);
     assert_eq!(absent.checkpoint, PublicationCheckpoint::BundleReady);
@@ -116,10 +124,12 @@ fn absent_null_blank_and_unknown_stages_remain_distinct() {
     assert_eq!(unknown.checkpoint, PublicationCheckpoint::MintSubmitted);
     assert_eq!(unknown.status, PublicationSessionStatus::Running);
     assert_eq!(unknown.stage.wire_name(), "FutureStage");
+
+    Ok(())
 }
 
-#[test]
-fn status_precedence_is_failed_then_completed_then_running() {
+#[cfg_attr(test, test)]
+pub fn status_precedence_is_failed_then_completed_then_running() -> Outcome {
     let failed = translate_backend_publication_session(
         &publication_session(json!({"stage": "Failed", "hubspotTicketId": "HS-1"})),
         None,
@@ -144,10 +154,12 @@ fn status_precedence_is_failed_then_completed_then_running() {
         None,
     );
     assert_eq!(blank_ticket.status, PublicationSessionStatus::Running);
+
+    Ok(())
 }
 
-#[test]
-fn publication_session_timestamps_never_sample_a_clock() {
+#[cfg_attr(test, test)]
+pub fn publication_session_timestamps_never_sample_a_clock() -> Outcome {
     let absent = translate_backend_publication_session(&publication_session(json!({})), None);
     assert!(absent.created.is_none());
     assert!(absent.updated.is_none());
@@ -172,10 +184,12 @@ fn publication_session_timestamps_never_sample_a_clock() {
     );
     assert_eq!(explicit.created.as_deref(), Some(""));
     assert_eq!(explicit.updated.as_deref(), Some("2026-01-02T00:00:00Z"));
+
+    Ok(())
 }
 
-#[test]
-fn publication_session_retains_error_text_only_as_explicit_data() {
+#[cfg_attr(test, test)]
+pub fn publication_session_retains_error_text_only_as_explicit_data() -> Outcome {
     let projected = translate_backend_publication_session(
         &publication_session(json!({
             "id": "pub-2",
@@ -204,10 +218,12 @@ fn publication_session_retains_error_text_only_as_explicit_data() {
     assert!(!diagnostic.contains("provider-secret-detail"));
     assert!(!diagnostic.contains("pub-2"));
     assert!(diagnostic.contains("checkpoint"));
+
+    Ok(())
 }
 
-#[test]
-fn checkpoint_wire_names_and_ordering_are_stable() {
+#[cfg_attr(test, test)]
+pub fn checkpoint_wire_names_and_ordering_are_stable() -> Outcome {
     let checkpoints = [
         PublicationCheckpoint::Created,
         PublicationCheckpoint::BundleReady,
@@ -254,10 +270,12 @@ fn checkpoint_wire_names_and_ordering_are_stable() {
         PublicationSessionStage::from_wire(Some("future-stage")),
         PublicationSessionStage::Unknown("future-stage".into())
     );
+
+    Ok(())
 }
 
-#[test]
-fn markers_can_be_normalized_directly() {
+#[cfg_attr(test, test)]
+pub fn markers_can_be_normalized_directly() -> Outcome {
     let session = publication_session(json!({
         "stage": "Verified",
         "hubspotTicketId": "ticket"
@@ -272,4 +290,6 @@ fn markers_can_be_normalized_directly() {
         normalize_publication_status(markers),
         PublicationSessionStatus::Completed
     );
+
+    Ok(())
 }

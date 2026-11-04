@@ -8,6 +8,8 @@ mod checks;
 pub(super) mod portal;
 #[path = "../../../crates/solana_kit_dapp_publisher/tests/prepared/assertions.rs"]
 mod prepared;
+#[path = "publisher_publication.rs"]
+pub(super) mod publication;
 #[path = "../../../crates/solana_kit_dapp_publisher/tests/attestation/signatures.rs"]
 mod signatures;
 #[path = "publisher_workflow.rs"]

@@ -1,9 +1,11 @@
 //! Independently authored normalized-projection behavior.
 
+use std::format;
+
 use super::support::*;
 
-#[test]
-fn progress_events_use_static_source_messages() {
+#[cfg_attr(test, test)]
+pub fn progress_events_use_static_source_messages() -> Outcome {
     assert_eq!(ProgressStep::MintSave.wire_name(), "mint.save");
     assert_eq!(
         ProgressEvent::new(ProgressStep::MintSave, ProgressStatus::Running).message(),
@@ -45,10 +47,12 @@ fn progress_events_use_static_source_messages() {
             .message()
             .contains("unrecognized")
     );
+
+    Ok(())
 }
 
-#[test]
-fn ingestion_progress_never_promotes_provider_text() {
+#[cfg_attr(test, test)]
+pub fn ingestion_progress_never_promotes_provider_text() -> Outcome {
     let detail = translate_backend_ingestion_session(
         &ingestion_session(json!({
             "status": "processing",
@@ -56,7 +60,7 @@ fn ingestion_progress_never_promotes_provider_text() {
         })),
         None,
     );
-    let progress = detail.progress().expect("reported detail");
+    let progress = detail.progress().ok_or("missing reported progress")?;
     assert_eq!(progress, IngestionProgress::ReportedDetail);
     assert_eq!(progress.message(), "Portal ingestion is running");
     assert!(!progress.message().contains("provider detail"));
@@ -86,10 +90,12 @@ fn ingestion_progress_never_promotes_provider_text() {
         None,
     );
     assert_eq!(failed.progress(), None);
+
+    Ok(())
 }
 
-#[test]
-fn debug_output_omits_provider_and_application_text() {
+#[cfg_attr(test, test)]
+pub fn debug_output_omits_provider_and_application_text() -> Outcome {
     let session = translate_backend_publication_session(
         &publication_session(json!({
             "id": "secret-id",
@@ -128,4 +134,6 @@ fn debug_output_omits_provider_and_application_text() {
         )
         .contains("secret-source")
     );
+
+    Ok(())
 }

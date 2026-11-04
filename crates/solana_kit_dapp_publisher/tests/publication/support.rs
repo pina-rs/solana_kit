@@ -1,6 +1,10 @@
 //! Shared fixtures and parsers for normalized-projection tests.
 
 use serde_json::Value;
+
+/// Fallible outcome shared by the four projection groups.
+pub(super) type Outcome = Result<(), &'static str>;
+
 pub(super) use serde_json::json;
 pub(super) use solana_kit_dapp_publisher::portal::{
     BackendIngestionSession, BackendInstallFile, BackendPublicationBundle,
