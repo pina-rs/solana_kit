@@ -104,9 +104,14 @@ reports `ClockError::DeadlineRange`. Readiness admission reports
 `ClockError::Capacity`. Both propagate as `SessionError::Clock`, distinct from a
 successfully elapsed deadline. No separate timer scheduler or executor exists.
 
-These socket/clock and `verification/wasi-subscriptions` source paths await
-admitted current/MSRV and named-host execution. They add no runtime acceptance.
-The application drives its Reactor and separately awaits Session shutdown.
-Ordinary P2 socket packaging also needs a WASI-capable C compiler and archiver
-for ring. The existing private fixture's loopback policy and original331 tests
-remain separate from installed-host, resolver-cancellation and broad WASI support.
+The socket and clock path, including a typed `Session`, executes in
+`verification/wasi-text-sockets` under Wasmtime 50.0.0 on macOS ARM64: real
+WS/WSS peers, explicit TLS trust/name negatives, frame bounds,
+quiet cancellation, CLI process unload and embedded Store
+destruction/replacement. The [current receipt](../../docs/verification/wasi-text-sockets-current.md)
+records the exact cases, imports and hashes. The application still drives its
+Reactor and separately awaits Session shutdown. Ordinary P2 socket packaging also
+needs a WASI-capable C compiler and archiver for ring. Linux and Windows, other
+WASI hosts, arbitrary OS DNS cancellation, installed-host coverage and broad WASI
+support remain unverified. The earlier `wasi-sockets` experiment remains separate
+historical evidence.

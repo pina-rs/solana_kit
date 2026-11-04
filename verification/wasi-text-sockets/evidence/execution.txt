@@ -1,0 +1,149 @@
+rustc 1.99.1 (58cf8f9c3 2026-10-13)
+wasmtime 50.0.0 (ebe5e8df1 2026-10-20)
+
+CLI MODES
+PASS plain: real peer assertions complete; exit=exit status: 0
+PASS session: real peer assertions complete; exit=exit status: 0
+PASS exchange: real peer assertions complete; exit=exit status: 0
+PASS duplex: real peer assertions complete; exit=exit status: 0
+PASS fragment: real peer assertions complete; exit=exit status: 0
+PASS corrupt: real peer assertions complete; exit=exit status: 1
+PASS wrong-ca: actual TLS rejection alert; exit=exit status: 0
+PASS wrong-name: actual TLS rejection alert; exit=exit status: 0
+PASS bad-upgrade: upgrade denied; exit=exit status: 0
+PASS oversized: real peer assertions complete; exit=exit status: 0
+PASS binary: real peer assertions complete; exit=exit status: 0
+PASS invalid-utf8: real peer assertions complete; exit=exit status: 0
+PASS masked: real peer assertions complete; exit=exit status: 0
+PASS abrupt: real peer assertions complete; exit=exit status: 0
+PASS cancel: real peer assertions complete; exit=exit status: 0
+PASS retain: real peer assertions complete; exit=exit status: 0
+PASS unload: real peer assertions complete; exit=signal: 9 (SIGKILL)
+PASS denied: no granted TCP connection; exit=exit status: 0
+
+EMBEDDED MODES
+POLICY TcpBind [::]:0 allowed=true
+POLICY TcpConnect [::1]:64807 allowed=true
+POLICY TcpBind 0.0.0.0:0 allowed=true
+POLICY TcpConnect 127.0.0.1:64807 allowed=true
+PASS embedded plain: resources before Store drop=1; tasks restored; real peer assertions complete; stdout=PASS plain
+POLICY TcpBind [::]:0 allowed=true
+POLICY TcpConnect [::1]:64810 allowed=true
+POLICY TcpBind 0.0.0.0:0 allowed=true
+POLICY TcpConnect 127.0.0.1:64810 allowed=true
+PASS embedded exchange: resources before Store drop=1; tasks restored; real peer assertions complete; stdout=PASS exchange
+POLICY TcpBind [::]:0 allowed=true
+POLICY TcpConnect [::1]:64813 allowed=true
+POLICY TcpBind 0.0.0.0:0 allowed=true
+POLICY TcpConnect 127.0.0.1:64813 allowed=true
+PASS embedded session: resources before Store drop=1; tasks restored; real peer assertions complete; stdout=PASS session
+POLICY TcpBind [::]:0 allowed=true
+POLICY TcpConnect [::1]:64816 allowed=true
+POLICY TcpBind 0.0.0.0:0 allowed=true
+POLICY TcpConnect 127.0.0.1:64816 allowed=true
+PASS embedded duplex: resources before Store drop=1; tasks restored; real peer assertions complete; stdout=PASS duplex
+POLICY TcpBind [::]:0 allowed=true
+POLICY TcpConnect [::1]:64820 allowed=true
+POLICY TcpBind 0.0.0.0:0 allowed=true
+POLICY TcpConnect 127.0.0.1:64820 allowed=true
+PASS embedded fragment: resources before Store drop=1; tasks restored; real peer assertions complete; stdout=PASS fragment
+POLICY TcpBind [::]:0 allowed=true
+POLICY TcpConnect [::1]:64826 allowed=true
+POLICY TcpBind 0.0.0.0:0 allowed=true
+POLICY TcpConnect 127.0.0.1:64826 allowed=true
+PASS embedded wrong-ca: resources before Store drop=1; tasks restored; actual TLS rejection alert; stdout=PASS wrong-ca
+POLICY TcpBind 0.0.0.0:0 allowed=true
+POLICY TcpConnect 127.0.0.1:64829 allowed=true
+PASS embedded wrong-name: resources before Store drop=1; tasks restored; actual TLS rejection alert; stdout=PASS wrong-name
+POLICY TcpBind [::]:0 allowed=true
+POLICY TcpConnect [::1]:64831 allowed=true
+POLICY TcpBind 0.0.0.0:0 allowed=true
+POLICY TcpConnect 127.0.0.1:64831 allowed=true
+PASS embedded oversized: resources before Store drop=1; tasks restored; real peer assertions complete; stdout=PASS oversized
+POLICY TcpBind [::]:0 allowed=true
+POLICY TcpConnect [::1]:64834 allowed=true
+POLICY TcpBind 0.0.0.0:0 allowed=true
+POLICY TcpConnect 127.0.0.1:64834 allowed=true
+PASS embedded binary: resources before Store drop=1; tasks restored; real peer assertions complete; stdout=PASS binary
+POLICY TcpBind [::]:0 allowed=true
+POLICY TcpConnect [::1]:64837 allowed=true
+POLICY TcpBind 0.0.0.0:0 allowed=true
+POLICY TcpConnect 127.0.0.1:64837 allowed=true
+PASS embedded invalid-utf8: resources before Store drop=1; tasks restored; real peer assertions complete; stdout=PASS invalid-utf8
+POLICY TcpBind [::]:0 allowed=true
+POLICY TcpConnect [::1]:64840 allowed=true
+POLICY TcpBind 0.0.0.0:0 allowed=true
+POLICY TcpConnect 127.0.0.1:64840 allowed=true
+PASS embedded masked: resources before Store drop=1; tasks restored; real peer assertions complete; stdout=PASS masked
+POLICY TcpBind [::]:0 allowed=true
+POLICY TcpConnect [::1]:64843 allowed=true
+POLICY TcpBind 0.0.0.0:0 allowed=true
+POLICY TcpConnect 127.0.0.1:64843 allowed=true
+PASS embedded abrupt: resources before Store drop=1; tasks restored; real peer assertions complete; stdout=PASS abrupt
+POLICY TcpBind [::]:0 allowed=true
+POLICY TcpConnect [::1]:64847 allowed=true
+POLICY TcpBind 0.0.0.0:0 allowed=true
+POLICY TcpConnect 127.0.0.1:64847 allowed=true
+PASS embedded cancel: resources before Store drop=1; tasks restored; real peer assertions complete; stdout=PENDING cancel
+PASS cancel
+POLICY TcpBind [::]:0 allowed=true
+POLICY TcpConnect [::1]:64850 allowed=true
+POLICY TcpBind 0.0.0.0:0 allowed=true
+POLICY TcpConnect 127.0.0.1:64850 allowed=true
+PASS embedded retain: resources before Store drop=1; tasks restored; real peer assertions complete; stdout=PENDING retain
+PASS retain
+POLICY TcpBind [::]:0 allowed=false
+POLICY TcpBind 0.0.0.0:0 allowed=false
+PASS embedded denied: resources before Store drop=1; tasks restored; no granted TCP connection; stdout=PASS denied
+POLICY TcpBind [::]:0 allowed=true
+POLICY TcpConnect [::1]:64874 allowed=true
+POLICY TcpBind 0.0.0.0:0 allowed=true
+POLICY TcpConnect 127.0.0.1:64874 allowed=true
+PASS embedded unload: resources before Store drop=9; tasks restored; real peer assertions complete; stdout=PENDING unload
+POLICY TcpBind [::]:0 allowed=true
+POLICY TcpConnect [::1]:64877 allowed=true
+POLICY TcpBind 0.0.0.0:0 allowed=true
+POLICY TcpConnect 127.0.0.1:64877 allowed=true
+PASS embedded exchange: resources before Store drop=1; tasks restored; real peer assertions complete; stdout=PASS exchange
+
+AUDIT
+IMPORTS
+wasi:cli/environment@0.2.12
+wasi:cli/exit@0.2.12
+wasi:cli/stderr@0.2.12
+wasi:cli/stdin@0.2.12
+wasi:cli/stdout@0.2.12
+wasi:cli/terminal-input@0.2.12
+wasi:cli/terminal-output@0.2.12
+wasi:cli/terminal-stderr@0.2.12
+wasi:cli/terminal-stdin@0.2.12
+wasi:cli/terminal-stdout@0.2.12
+wasi:clocks/monotonic-clock@0.2.12
+wasi:clocks/wall-clock@0.2.12
+wasi:io/error@0.2.12
+wasi:io/poll@0.2.12
+wasi:io/streams@0.2.12
+wasi:random/insecure-seed@0.2.12
+wasi:random/random@0.2.12
+wasi:sockets/instance-network@0.2.12
+wasi:sockets/ip-name-lookup@0.2.12
+wasi:sockets/network@0.2.12
+wasi:sockets/tcp-create-socket@0.2.12
+wasi:sockets/tcp@0.2.12
+
+PRODUCER "\u{2}\u{8}language\u{2}\u{3}C11\0\u{4}Rust\0\u{c}processed-by\u{6}\u{5}clang_22.1.0-wasi-sdk (https://github.com/llvm/llvm-project 4434dabb69916856b824f68a64b029c67175e532)\u{5}rustc\u{1d}1.99.1 (58cf8f9c3 2026-10-13)\u{b}Apple clang\u{1a}21.0.0 (clang-2100.3.34.2)\rwit-component\u{7}0.245.1\u{10}wit-bindgen-rust\u{6}0.58.0\rwit-bindgen-c\u{6}0.53.1"
+PRODUCER "\u{2}\u{8}language\u{1}\u{4}Rust\0\u{c}processed-by\u{1}\u{5}rustc\u{1d}1.96.0 (ac68faa20 2026-05-25)"
+PRODUCER "\u{1}\u{c}processed-by\u{1}\rwit-component\u{7}0.254.0"
+PRODUCER "\u{1}\u{c}processed-by\u{1}\rwit-component\u{7}0.254.0"
+PRODUCER "\u{1}\u{c}processed-by\u{1}\rwit-component\u{7}0.254.0"
+PASS valid forbidden-service component rejected
+
+GATES
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.37s
+clippy runner+audit: exit 0
+clippy guest wasm32-wasip2: exit 0
+doc solana_kit_wasi websocket wasm32-wasip2: exit 0
+dprint check: exit 0
+monochange check: 0 issues
+root cargo fmt --all --check: exit 0
+style: 2258 files; repository readability 97.24, complexity 98.54; every category >= 90
