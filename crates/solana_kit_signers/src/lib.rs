@@ -132,4 +132,9 @@ impl fmt::Display for Error {
 impl core::error::Error for Error {}
 
 #[cfg(feature = "crypto")]
+mod grind;
+#[cfg(feature = "crypto")]
+pub use grind::{grind_keypair_signers, grind_keypair_signers_with};
+
+#[cfg(feature = "crypto")]
 mod keypair;

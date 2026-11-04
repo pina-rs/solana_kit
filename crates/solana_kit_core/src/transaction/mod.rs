@@ -6,7 +6,9 @@
 
 mod compile;
 mod config;
+mod decompile;
 mod nonce;
+pub use decompile::DecompiledMessage;
 pub use nonce::{DurableNonce, NonceAdvance};
 mod v1;
 pub use config::{HeapSize, V1Config};
