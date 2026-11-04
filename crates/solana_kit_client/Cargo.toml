@@ -12,6 +12,7 @@ description = "Executor-neutral typed Solana RPC for off-chain applications"
 
 [features]
 confirmation-factories = ["dep:solana_kit_system"]
+parsed-accounts = []
 reactive = ["dep:futures-core"]
 resource-estimation = ["dep:solana_kit_compute_budget"]
 

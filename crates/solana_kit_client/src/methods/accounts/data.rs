@@ -39,6 +39,24 @@ pub struct ParsedAccount {
     pub space: Option<u64>,
 }
 
+#[cfg(feature = "parsed-accounts")]
+impl ParsedAccount {
+    /// Projects this exact parsed payload into a reference-derived typed family.
+    ///
+    /// The projection borrows the payload and never replaces or re-encodes it:
+    /// `program`, `parsed` and `space` stay exactly as the node reported them.
+    /// `limits` bounds the payload bytes and JSON nesting before typed
+    /// allocation, and duplicate object keys are rejected. Unknown parser names
+    /// and unknown discriminators are returned as explicit variants that retain
+    /// the original `parsed` JSON; no binary fallback is invented.
+    pub fn decode_typed(
+        &self,
+        limits: crate::Limits,
+    ) -> Result<crate::parsed::ParsedAccountData, Error> {
+        crate::parsed::decode(self, limits)
+    }
+}
+
 /// Account data with its representation and slice boundary explicit.
 #[derive(Debug)]
 pub enum AccountData {
