@@ -61,13 +61,14 @@ core and the host harness forbid unsafe code.
 
 ## Current v57 local execution
 
-On 2026-11-04, `cargo xtask all` passed in this checkout (`test/publication-portable`,
-parent `e05362ee`). Native Rust, Chrome and ChromeDriver 156.0.8078.80, Wasmtime
+On 2026-11-04, `cargo xtask all` passed at signed executable `16379ca9`
+(`test/publication-portable`, rebased onto `1d70bc37`). Native Rust,
+Chrome and ChromeDriver 156.0.8078.80, Wasmtime
 50.0.0 Preview 1 and Preview 2, and the actual pinned LeptosKit host each executed
 459/459 canonical cases and rejected only the corrupt hash at 458/459 with exit 1.
 The one-fuel control, exact imports, dependency negative controls and the fresh
 packaged-core consumer also passed. Actual command outputs and statuses were
-retained under `target/runtime-evidence/` for that execution.
+retained outside build targets at `/tmp/solana-kit-publication-parent-evidence/`.
 
 The four appended publication-projection groups exercise normalized bundle/source
 mapping, diagnostic redaction, ingestion translation, and session checkpoint

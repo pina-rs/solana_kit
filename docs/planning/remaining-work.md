@@ -189,6 +189,13 @@ partial count completes canonical rows.
 
 **Kind.** Evidence. The implementation already exists.
 
+**Executed follow-up.** RW-02 is now closed by the
+[publication runtime receipt](../verification/publication-runtime.md). All 32
+existing projection bodies execute in four appended v57 groups on native Rust,
+Chrome, both Wasmtime previews and the pinned LeptosKit host: 459/459 pass,
+with only the intended hash failure in the 458/459 control. The first 455 cases
+are preserved. Findings below describe the earlier audit snapshot.
+
 **Acceptance criterion.** Phase 8 runtime evidence is linked; the publisher
 package acceptance includes portable execution, not only native tests.
 

@@ -7,9 +7,12 @@ executed only the publisher attestation, portal and workflow families, so these
 projections had no Chrome, WASI or LeptosKit evidence. This change reuses every
 existing body in four appended portable groups; no production SDK source changed.
 
-The five-host execution below ran from the clean working tree of the change this
-receipt describes, whose parent commit is `e05362ee`. The signed branch-head SHA
-is reported with the pull request.
+The final five-host execution ran from signed executable
+`16379ca98e40e8d3aed937017e056b4bac4c1b60`, rebased onto `1d70bc37`. It
+includes the review fixes that return missing projected values as errors and
+exercise the portable assertion adapter with a deliberately wrong expected
+value. The documentation receipt follows that execution without changing SDK
+or conformance behavior.
 
 ## Suite identity and preserved order
 
@@ -79,14 +82,13 @@ pinned at `7437097c52aa68a3401bd378764e051ed4c9165a`. Artifact SHA-256 values fr
 that execution:
 
 ```text
-167a6d978f4212438b4401072b36642f37b2163c664474490509163f3ac1a7e4  wasm32-unknown-unknown release guest
-023e5c1ea1d327359e0051aa721b6dfe4d56427395beb6a304d19dbd478ef72b  wasm32-wasip1 debug command
-7dcc35ad1750e490c3bae988b21cc24cf08a8c96c78a978519baa4c8b2b36c1a  wasm32-wasip2 debug command
+8f7c8dd74bfcc0c23f7a154a758ab0d0e78ad8eec657eb3f010b35273b0ac6cb  wasm32-unknown-unknown release guest
+c1312ece1191e8fc9ce9622688f5d37bd0d8eb04f2f164f0c5c694fb17073e59  wasm32-wasip1 debug command
+b65efcbb6203447f7ca783bdfa4f580e52c28802f324d39bc738c0cff2fbc6c1  wasm32-wasip2 debug command
 ```
 
-The outer `cargo xtask all` process took 195.54 seconds of wall time on this
-machine. That figure includes compilation, Chrome startup and 224 Cargo graph
-queries; it is not a per-case timing or performance claim.
+The aggregate command includes compilation, Chrome startup and 224 Cargo graph
+queries. No per-case timing or performance measurement is claimed.
 
 ## Appended behavior
 
@@ -128,10 +130,22 @@ add only the ordinary-case allowance. The exact current total is
 No rate increased, and the appended crypto ledger is unchanged. This is finite
 source-owned accounting, not a measured minimum.
 
+## Final local gates
+
+After the review fixes, workspace tests passed 2,012 tests across 296 result
+groups. Workspace Clippy and Rustdoc passed with warnings denied; formatting,
+dprint, Monochange and the repository style gate passed. Style scored 2,260
+files, with every repository and per-file category at least 90. The interpreted
+host's four fuel tests and Clippy passed. Rust 1.89 passed the conformance tests
+and checks for all three Wasm targets. The inventory tool's 18 tests also pass
+with the expanded maintained report.
+
 ## Limits
 
 This is off-chain, host-neutral projection evidence. It adds no live wallet,
 validator, registry publication, store submission, external upload, installed
 device or network RPC claim. The suite count and receipt do not mark the whole SDK
 complete. Actual command outputs and statuses were captured under
-`target/runtime-evidence/` for this execution and are not committed.
+`target/runtime-evidence/` for this execution and retained, with the three Wasm
+artifacts, at `/tmp/solana-kit-publication-parent-evidence/` before target
+cleanup. Those disposable local artifacts are not committed.
