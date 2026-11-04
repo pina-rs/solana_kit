@@ -9,7 +9,7 @@ pressing its report each execute the whole suite. Wasmi 2 meters Wasm operations
 dynamic copying, and first-use lazy function translation. It does not meter
 elapsed time. The upstream application default and production source are unchanged.
 
-The prepared 461-case v58 suite receives **15,280,000,000 fuel per entry**.
+The prepared 476-case v59 suite receives **15,505,000,000 fuel per entry**.
 The host computes `15_000_000 × (EXPECTED_CASE_COUNT - 3) +
 5_000_000 × (MAX_BATCH + 1 + 3 × MESSAGE_COUNT + 4 + 573 + 80)` with checked arithmetic.
 These are pooled workload
@@ -19,7 +19,7 @@ overflow reject. A separate fresh guest with one fuel must trap with
 `OutOfFuel` before committing anything. Production host defaults are unchanged.
 
 The three separately accounted groups are the transaction batch and two message
-groups. The prepared total contains 458 ordinary groups and 257 authenticated
+groups. The prepared total contains 473 ordinary groups and 257 authenticated
 transactions, then accounts for 772 actual message crypto calls: 514 signing
 calls, 256 strict verification calls, and two key derivations. The batch signs
 256 distinct one-byte messages, and its comparison oracle signs all 256 again;
@@ -42,19 +42,20 @@ derivations, five signer key operations, and six derived associated-address
 searches. It is not a measured minimum and does not change the ordinary or crypto
 rates. The four appended publication-projection groups are pure deterministic
 projections with no crypto, so they receive only the unchanged ordinary-case
-allowance. The two appended error-code catalog groups only parse, compare and
-render pinned literals, so they also add only the existing ordinary-case rate.
+allowance. The two appended error-code catalog groups and fifteen error-contract groups
+only parse, compare and render pinned literals, so they also add only the
+existing ordinary-case rate.
 
-Current CI must execute all 461 canonical cases and the 460/461 sole-hash-corruption
+Current CI must execute all 476 canonical cases and the 475/476 sole-hash-corruption
 report through the actual pinned host. The earlier 108-case acceptance and 92-case
 minimum measurements below remain historical. No current-suite minimum,
 elapsed-time or SDK speed claim is made.
 
-The checked-in native reports record actual v58 execution: 461/461 canonical
-and 460/461 corrupted, with a failure exit for the corruption control. All
-preceding 459 result entries remain byte-identical. The five-host results for
+The checked-in native reports record actual v59 execution: 476/476 canonical
+and 475/476 corrupted, with a failure exit for the corruption control. All
+preceding 461 result entries remain byte-identical. The five-host results for
 this suite are recorded in the
-[publication runtime receipt](../../docs/verification/publication-runtime.md).
+[error-contract runtime receipt](../../docs/verification/error-contracts-runtime.md).
 
 The two Token groups and three confirmation groups add only ordinary work.
 The eight Surfpool groups also receive the unchanged ordinary-case allowance;

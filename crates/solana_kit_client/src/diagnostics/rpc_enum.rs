@@ -76,7 +76,9 @@ pub(super) fn enum_parts(json: &str) -> Result<(String, Option<Value>), Error> {
 
         Value::Object(values) if values.len() == 1 => {
             let (name, value) = values.into_iter().next().expect("one validated variant");
-            Ok((name, Some(value)))
+            // The source reads its nullable payload as `null`; an explicit JSON
+            // null is therefore absent for the callback, not a null fact.
+            Ok((name, (!value.is_null()).then_some(value)))
         }
 
         Value::Object(_) => Err(Error::Envelope),

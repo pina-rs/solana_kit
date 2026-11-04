@@ -19,17 +19,18 @@ declarations across **70** packages with extracted declarations. The
 
 | Phase | Declarations | Partial | Pending | Complete |
 | ----- | -----------: | ------: | ------: | -------: |
-| 2     |        1,387 |      23 |     997 |      367 |
+| 2     |        1,387 |      59 |     924 |      404 |
 | 3     |          746 |       0 |     746 |        0 |
 | 4     |        1,403 |       0 |   1,403 |        0 |
 | 5     |          262 |       0 |     262 |        0 |
 | 6     |        9,991 |       0 |   9,991 |        0 |
 | 7     |          751 |       0 |     751 |        0 |
 | 8     |        3,408 |       0 |   3,408 |        0 |
-| Total |       17,948 |      23 |  17,558 |      367 |
+| Total |       17,948 |      59 |  17,485 |      404 |
 
-These totals include the address pilot, the twelve numeric adjudications and the
-365 `SolanaErrorCode` name/integer claims.
+These totals include the address pilot, the twelve numeric adjudications, the
+365 `SolanaErrorCode` name/integer claims and the 73 remaining
+`solana_kit_errors` contracts (37 complete, 36 partial).
 All 71 package-disposition rows are `inventoried`, with no `implemented`,
 `verified`, or `blocked` claim. `rustc tools/check_plan.rs` reports
 `verified 71 unique package records and their planning states`.
@@ -40,8 +41,9 @@ manifest and reviews twelve address declarations: two complete, ten partial.
 The subsequent [numeric adjudication](../parity/numeric-adjudication.md) records
 twelve more partial declarations, and the
 [error-code adjudication](../parity/error-code-adjudication.md) records 365
-complete `SolanaErrorCode` name/integer claims. All 17,948 IDs and source hashes
-are preserved. RW-01a and this bounded RW-10/RW-11 batch are implemented;
+complete `SolanaErrorCode` name/integer claims, and the
+[error-contract adjudication](../parity/error-contracts-adjudication.md) reviews
+the other 73 declarations. All 17,948 IDs and source hashes are preserved. RW-01a and this bounded RW-10/RW-11 batch are implemented;
 family-by-family adjudication and the other backlog items remain open.
 
 Scoped receipts retain their own exact counts and are not canonical totals:
@@ -77,7 +79,7 @@ These results are inputs to the backlog, not completion claims.
 
 | Area                 | Current executed evidence                                                                                                                                                                                                                                                                                                                             |
 | -------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Portable conformance | `solana-kit-core-v58` passes 461/461 natively, in Chrome, both Wasmtime 50 previews and the pinned LeptosKit interpreter; corruption is 460/461. The first 459 v57 cases are preserved. [Receipt](../verification/publication-runtime.md)                                                                                                             |
+| Portable conformance | `solana-kit-core-v59` passes 476/476 natively, in Chrome, both Wasmtime 50 previews and the pinned LeptosKit interpreter; corruption is 475/476. The first 461 v58 cases are preserved. [Receipt](../verification/error-contracts-runtime.md)                                                                                                         |
 | Program clients      | 17 owned-validator tests pass for builtins and pinned external programs. [Receipt](../verification/program-integration.md)                                                                                                                                                                                                                            |
 | Codama package       | Packed NPM consumer, 9 NPM tests, 116 generator tests and the exact 9 groups on native/Chrome/WASI/LeptosKit. [Receipt](../verification/codama-package-current.md)                                                                                                                                                                                    |
 | Native wallet        | iOS controller twice, Android controller twice on a fresh API 35 arm64 emulator, and a three-process macOS computer-use journey with independent ledger/state oracles. [iOS](../verification/installed-wallet-current.md), [Android](../verification/installed-wallet-android-current.md), [macOS](../verification/installed-wallet-macos-current.md) |
@@ -136,13 +138,13 @@ for a matching ID; every other column is regenerated from the pinned source.
 manifest corruption in addition to missing, duplicate and invented rows.
 
 The committed reviews are the twelve address declarations (two complete, ten
-partial), twelve numeric/fixed-point declarations (all partial), and 365
-`SolanaErrorCode` declarations (all complete for exact name and integer only).
-The canonical ledger therefore has 367 complete, 23 partial and 17,558 pending
-rows. No package disposition is promoted: every package remains `inventoried`,
-and the 365 error-code rows do not claim the enum class, constructors, getters,
-domain constants, dynamic `SolanaError` behavior, or the other 73 declarations
-in that package.
+partial), twelve numeric/fixed-point declarations (all partial), 365
+`SolanaErrorCode` declarations (all complete for exact name and integer only),
+and the 73 remaining `solana_kit_errors` declarations (37 complete, 36 partial).
+The canonical ledger therefore has 404 complete, 59 partial and 17,485 pending
+rows. No package disposition is promoted: every package remains `inventoried`.
+The error reviews do not claim the enum class as a whole, later-phase
+integration or the package itself.
 
 **Owning code/source.** `tools/capability_inventory` (extractor and controls),
 all family receipt generators under `verification/` and `tools/codama-renderer`,
@@ -204,9 +206,10 @@ partial count completes canonical rows.
 **Executed follow-up.** RW-02 is now closed by the
 [publication runtime receipt](../verification/publication-runtime.md). All 32
 existing projection bodies execute in four appended groups on native Rust,
-Chrome, both Wasmtime previews and the pinned LeptosKit host: they pass in the
-current 461/461 v58 report, with only the intended hash failure in the 460/461
-control. The first 459 cases are preserved. Findings below describe the earlier audit snapshot.
+Chrome, both Wasmtime previews and the pinned LeptosKit host: they passed in the
+v58/461 report and still pass in the current v59/476 report, with only the
+intended hash failure in the corruption control. The first 461 cases are
+preserved. Findings below describe the earlier audit snapshot.
 
 **Acceptance criterion.** Phase 8 runtime evidence is linked; the publisher
 package acceptance includes portable execution, not only native tests.
@@ -803,8 +806,9 @@ functional computer-use proof distinct from the automated driver route.
 ## Achievable order
 
 1. **RW-01a**: adjudication manifest plus the twelve-address pilot are complete.
-   The error-code review adds 365 complete name/integer rows. Continue with
-   reviewed family-by-family adjudication under RW-01b.
+   The error reviews add 365 complete name/integer rows and 37 complete plus 36
+   partial contract rows. Continue with reviewed family-by-family adjudication
+   under RW-01b.
 2. **RW-02**: publication projections in the shared suite. Closed by the
    v58/461 five-host receipt.
 3. **RW-05**: WASI socket/clock named-host receipt. Closed for its named host;

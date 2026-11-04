@@ -317,3 +317,46 @@ fn retained_payloads_are_redacted_from_native_debug() {
         assert!(!format!("{failure:?}").contains("credential"));
     }
 }
+
+#[path = "shared_errors/context_contracts.rs"]
+mod context_contracts;
+#[path = "shared_errors/execution_contracts.rs"]
+mod execution_contracts;
+#[path = "shared_errors/rpc_contracts.rs"]
+mod rpc_contracts;
+#[path = "shared_errors/rpc_enum_contracts.rs"]
+mod rpc_enum_contracts;
+#[path = "shared_errors/simulation_contracts.rs"]
+mod simulation_contracts;
+
+#[test]
+fn pinned_context_wire_literals_and_mounted_values() {
+    context_contracts::context_literals(include_str!("shared_errors/context.txt")).unwrap();
+    context_contracts::context_extra(include_str!("shared_errors/context_extra.txt")).unwrap();
+}
+
+#[test]
+fn pinned_rpc_enum_offsets_and_nullable_payload() {
+    rpc_enum_contracts::rpc_enum().unwrap();
+}
+
+#[test]
+fn pinned_execution_oracle_and_boundaries() {
+    execution_contracts::execution(include_str!("shared_errors/execution.tsv")).unwrap();
+}
+
+#[test]
+fn wrong_execution_expected_value_control_fails_before_the_oracle() {
+    execution_contracts::rejects_wrong_execution(include_str!("shared_errors/execution.tsv"))
+        .unwrap();
+}
+
+#[test]
+fn pinned_json_rpc_projection_and_strict_envelopes() {
+    rpc_contracts::json_rpc().unwrap();
+}
+
+#[test]
+fn pinned_simulation_unwrap_identity() {
+    simulation_contracts::simulation().unwrap();
+}
