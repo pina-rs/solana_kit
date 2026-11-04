@@ -1,0 +1,26 @@
+[package]
+name = "solana_kit_test_support"
+version = "0.1.0"
+authors.workspace = true
+edition.workspace = true
+include = ["src/**", "tests/**", "README.md", "LICENSE"]
+license.workspace = true
+publish = false
+readme = "README.md"
+repository = "https://github.com/pina-rs/solana_kit/tree/main/crates/solana_kit_test_support"
+rust-version.workspace = true
+description = "Deterministic fixtures for testing public Solana Kit clients"
+
+[features]
+default = []
+crypto = ["solana_kit_core/crypto"]
+
+[dependencies]
+base64 = { version = "0.22.1", default-features = false, features = ["alloc"] }
+serde_json = "1.0.154"
+solana_kit_client.workspace = true
+solana_kit_core.workspace = true
+
+[dev-dependencies]
+futures = "=0.3.31"
+solana_kit_signers = { workspace = true, features = ["crypto"] }
