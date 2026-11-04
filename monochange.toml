@@ -112,6 +112,7 @@ publish = { enabled = false }
 path = "crates/solana_kit_wallet"
 type = "cargo"
 publish = { enabled = false }
+versioned_files = [{ path = "Cargo.toml", type = "cargo", fields = ["workspace.dependencies.solana_kit_wallet"] }]
 
 [package.solana_kit_wasi]
 path = "crates/solana_kit_wasi"

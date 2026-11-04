@@ -5,12 +5,21 @@ use serde::Deserialize;
 use serde_json::{Value, json};
 use sha2::{Digest, Sha256};
 use std::{
-    collections::BTreeMap,
+    collections::{BTreeMap, BTreeSet},
     fs,
     path::{Path, PathBuf},
 };
 
 mod index;
+
+/// One additional reviewed implementation archive in the same local registry.
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct Additional {
+    archive: PathBuf,
+    package: String,
+    version: String,
+}
 
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -25,29 +34,51 @@ struct Config {
     version: String,
     omit_archive: Option<String>,
     corrupt_archive: Option<String>,
+    #[serde(default)]
+    additions: Vec<Additional>,
 }
 
-/// Materializes only packages selected by the implementation archive's own lockfile.
+/// Materializes only packages selected by the implementation archives' combined lock input.
 pub(crate) fn run(path: &Path) -> Result<()> {
     let config: Config = serde_json::from_slice(&fs::read(path)?)?;
+    let selected = selected_archives(&config)?;
     let packages = locked_packages(&fs::read_to_string(&config.lockfile)?)?;
-    let selected = packages
-        .iter()
-        .filter(|package| {
-            package.get("name") == Some(&config.package)
-                && package.get("version") == Some(&config.version)
-        })
-        .count();
     ensure!(
-        selected == 1,
-        "lockfile must identify exactly one implementation package"
+        packages
+            .iter()
+            .filter(|package| {
+                package.get("name") == Some(&config.package)
+                    && package.get("version") == Some(&config.version)
+            })
+            .count()
+            == 1,
+        "lockfile must identify exactly one primary implementation package"
     );
     fs::create_dir(&config.destination).context("registry destination must be fresh")?;
     fs::create_dir(config.destination.join("index"))?;
     let mut receipts = Vec::new();
+    let mut installed = BTreeSet::new();
 
-    for package in packages {
-        receipts.push(index::install(&config, package)?);
+    for package in &packages {
+        let name = package
+            .get("name")
+            .context("lockfile package has no name")?;
+        let version = package
+            .get("version")
+            .context("lockfile package has no version")?;
+        let key = (name.clone(), version.clone());
+        let archive = selected.get(&key).map(PathBuf::as_path);
+
+        receipts.push(index::install(&config, package.clone(), archive)?);
+        installed.insert(key);
+    }
+
+    for ((name, version), archive) in &selected {
+        if !installed.contains(&(name.clone(), version.clone())) {
+            receipts.push(index::install_archive(
+                &config, name, version, archive, None,
+            )?);
+        }
     }
 
     fs::write(
@@ -57,6 +88,67 @@ pub(crate) fn run(path: &Path) -> Result<()> {
     println!(
         "registry-fixture: {} exact package archives",
         receipts.len()
+    );
+    Ok(())
+}
+
+/// Maps every reviewed implementation identity to its actual archive path.
+fn selected_archives(config: &Config) -> Result<BTreeMap<(String, String), PathBuf>> {
+    let mut selected = BTreeMap::new();
+    ensure!(
+        !config.package.is_empty() && !config.version.is_empty(),
+        "primary implementation identity is empty"
+    );
+    index_path(&config.package)?;
+    version(&config.version)?;
+    ensure!(
+        selected
+            .insert(
+                (config.package.clone(), config.version.clone()),
+                config.archive.clone()
+            )
+            .is_none(),
+        "duplicate implementation archive"
+    );
+
+    for addition in &config.additions {
+        ensure!(
+            !addition.package.is_empty() && !addition.version.is_empty(),
+            "additional implementation identity is empty"
+        );
+        index_path(&addition.package)?;
+        version(&addition.version)?;
+        ensure!(
+            selected
+                .insert(
+                    (addition.package.clone(), addition.version.clone()),
+                    addition.archive.clone()
+                )
+                .is_none(),
+            "duplicate implementation archive: {}",
+            addition.package
+        );
+    }
+
+    for archive in selected.values() {
+        ensure!(
+            fs::symlink_metadata(archive)?.is_file(),
+            "implementation archive is not regular: {}",
+            archive.display()
+        );
+    }
+
+    Ok(selected)
+}
+
+/// Keeps configured versions within a single archive filename component.
+fn version(value: &str) -> Result<()> {
+    ensure!(
+        !value.is_empty()
+            && value
+                .bytes()
+                .all(|byte| byte.is_ascii_alphanumeric() || b".+-".contains(&byte)),
+        "invalid registry package version"
     );
     Ok(())
 }
@@ -136,7 +228,17 @@ fn string<'a>(value: &'a Value, key: &str) -> Result<&'a str> {
 
 #[cfg(test)]
 mod tests {
-    use super::{index_path, locked_packages};
+    use super::{Config, index_path, locked_packages, selected_archives};
+
+    fn config(archive: &str, additions: &str) -> Config {
+        serde_json::from_str(&format!(
+            r#"{{"archive":"{archive}","lockfile":"lock","metadata":"metadata",
+            "cache":"cache","sparse_index":"index","destination":"destination",
+            "package":"core","version":"0.1.0","omit_archive":null,
+            "corrupt_archive":null,"additions":{additions}}}"#
+        ))
+        .unwrap()
+    }
 
     #[test]
     fn preserves_exact_lockfile_versions_and_checksums() {
@@ -145,5 +247,25 @@ mod tests {
         assert_eq!(packages[1]["checksum"], "abc");
         assert_eq!(index_path("bs58").unwrap().to_str(), Some("bs/58/bs58"));
         assert!(index_path("../escape").is_err());
+    }
+
+    #[test]
+    fn rejects_duplicate_and_unsafe_implementation_identities() {
+        let directory =
+            std::env::temp_dir().join(format!("registry-fixture-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&directory);
+        std::fs::create_dir(&directory).unwrap();
+        let archive = directory.join("core-0.1.0.crate");
+        std::fs::write(&archive, b"archive").unwrap();
+        let path = archive.to_str().unwrap();
+        let duplicate = format!(r#"[{{"archive":"{path}","package":"core","version":"0.1.0"}}]"#);
+        assert!(selected_archives(&config(path, &duplicate)).is_err());
+
+        let escaped = format!(r#"[{{"archive":"{path}","package":"../core","version":"0.1.0"}}]"#);
+        assert!(selected_archives(&config(path, &escaped)).is_err());
+        let escaped =
+            format!(r#"[{{"archive":"{path}","package":"other","version":"../escape"}}]"#);
+        assert!(selected_archives(&config(path, &escaped)).is_err());
+        std::fs::remove_dir_all(directory).unwrap();
     }
 }

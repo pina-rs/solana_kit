@@ -46,6 +46,7 @@ fn file_commands_require_one_path() {
         "dependency-fixture",
         "package-review",
         "package-report",
+        "package-rehearsal",
         "registry-fixture",
         "prepare-wallet",
         "prepare-wallet-rpc",

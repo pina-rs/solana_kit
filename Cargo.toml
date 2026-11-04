@@ -79,4 +79,4 @@ solana_kit_signers = { version = "0.1.0", path = "crates/solana_kit_signers" }
 solana_kit_stake = { version = "0.1.0", path = "crates/solana_kit_stake" }
 solana_kit_surfpool = { version = "0.1.0", path = "crates/solana_kit_surfpool" }
 solana_kit_system = { version = "0.1.0", path = "crates/solana_kit_system" }
-solana_kit_wallet = { version = "0.1.0", path = "crates/solana_kit_wallet" }
+solana_kit_wallet = { version = "0.1.0", path = "crates/solana_kit_wallet", default-features = false }
