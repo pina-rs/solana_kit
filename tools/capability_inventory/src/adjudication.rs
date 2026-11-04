@@ -4,6 +4,8 @@
 //! keyed by the complete canonical ID and the defining source hash, so an
 //! adjudication cannot drift onto a different declaration or revision.
 
+mod report;
+
 use crate::model::Result;
 use std::{
     collections::{BTreeMap, BTreeSet},
@@ -295,23 +297,15 @@ fn verify_claim(
     }
 
     for case in cases {
-        if !evidence.iter().any(|path| executed(repository, path, case)) {
+        if !evidence
+            .iter()
+            .any(|path| report::contains(repository, path, case))
+        {
             return Err(format!("unverified case {case} for {id}").into());
         }
     }
 
     Ok(())
-}
-
-/// A case binds only to a successful line in a cited execution report.
-fn executed(repository: &Path, path: &str, case: &str) -> bool {
-    let Ok(report) = fs::read_to_string(repository.join(path)) else {
-        return false;
-    };
-
-    report
-        .lines()
-        .any(|line| line.strip_suffix(": Ok(())") == Some(case))
 }
 
 fn join_or_dash(values: &[String]) -> String {

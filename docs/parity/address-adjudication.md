@@ -63,13 +63,18 @@ The other ten stay partial for concrete reasons:
   `TryFrom<&[u8]>` rejects trailing bytes.
 - `getAddressCodec` and `getAddressEncoder` return fixed-size codec objects;
   Rust exposes typed conversions without cursor or codec metadata.
-- No checked-in report entry asserts a positive 32-byte to canonical-address
-  conversion, so `getAddressFromPublicKey` remains partial.
+- The shared report checks fixed-array construction and display, plus rejection
+  of wrong slice lengths. It does not exercise successful checked-slice
+  construction through `TryFrom<&[u8]>`, so `getAddressFromPublicKey` stays partial.
 
 ## Evidence binding
 
-The extractor accepts a cited case only when the evidence file contains the exact
-line `<case>: Ok(())`. A prose file, a substring of source, an absent path, a
+The extractor accepts executable evidence only from the maintained conformance
+success report, whose integrity test compares its case names to the live registry.
+The report must have a complete successful case block with unique names and a
+matching full-success footer. The cited case must be an exact `<case>: Ok(())`
+entry in that block. Other report formats need an explicit validator first.
+A prose file quoting a success line, a substring of source, an absent path, a
 `..` path, an absolute path and a symlink escaping the repository are rejected.
 A complete claim without evidence or without a case is also rejected, as are
 unknown IDs, duplicate IDs, changed hashes, blank case names, invented case

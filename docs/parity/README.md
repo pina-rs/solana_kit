@@ -52,7 +52,10 @@ status/evidence claims, and delivery membership. Reviewed claims are loaded from
 `adjudications.tsv` after extraction and may replace only `status`, `evidence`
 and `notes` for the complete canonical ID they key. A claim must match the
 defining source hash; a `complete` claim needs at least one exact case that is a
-successful `<case>: Ok(())` entry in its cited evidence file. Unknown and
+successful `<case>: Ok(())` entry in the maintained conformance success report.
+The checker validates its complete case block, unique case names and full-success
+footer. The conformance integrity test binds that report to the live case registry.
+Other report formats require an explicit validator before they qualify. Unknown and
 duplicate IDs, hash drift, absent or unsafe evidence paths, prose evidence,
 blank or invented cases, malformed headers/field counts and unknown statuses all
 fail. `controls` deletes a real extracted capability row and source-file row,
