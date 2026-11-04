@@ -166,7 +166,6 @@ fn unsupported(error: &anyhow::Error) -> bool {
     let message = error.to_string();
 
     message.contains("unsupported archive filename")
-        || message.contains("GNU long-name extension records")
 }
 
 /// Reads one aggregate score from the retained analyzer report.
