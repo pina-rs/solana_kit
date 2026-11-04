@@ -95,13 +95,18 @@ Source formatting and per-file Monostyle checks establish no behavioral result.
 The portal layer and its native verification are documented in [Publisher portal protocol](dapp-publisher-portal.md).
 It adds raw wire contracts and explicit retry/upload boundaries without claiming
 workflow orchestration. The separate optional [ingestion and hydration layer](dapp-publisher-workflow.md)
-now reconciles resumable checkpoints and metadata/media as an unexecuted source
-proposal. Transaction/store completion, a portable funding preflight and the
-`solana_kit_dapp_publisher_cli` native binary are implemented. The binary resolves
-flags/environment, loads a Solana CLI keypair, performs the funding preflight,
-uploads a local APK or uses a remote URL, signs the prepared mint/verification
-transactions, creates the attestation and submits store review. A
-`publisher-cli-v*` workflow uploads downloadable archives; `cargo install --git`
-installs from the repository while the SDK dependency chain remains unpublished.
-Full normalized projections remain separate work. Existing canonical declaration
-IDs remain pending.
+now reconciles resumable checkpoints and metadata/media. Transaction/store
+completion, a portable funding preflight and the `solana_kit_dapp_publisher_cli`
+native binary are implemented. The binary resolves flags/environment, loads a
+Solana CLI keypair, performs the funding preflight, uploads a local APK or uses a
+remote URL, signs the prepared mint/verification transactions, creates the
+attestation and submits store review. A `publisher-cli-v*` workflow uploads
+downloadable archives; `cargo install --git` installs from the repository while
+the SDK dependency chain remains unpublished.
+
+The same `portal` feature now exposes deterministic normalized projections in
+`publication`, including typed bundle/file/media/session/source records, the
+wire checkpoint/stage/status translators, and safe progress helpers. That work is
+documented in the workflow record, including its deliberate unknown-value,
+timestamp, media and diagnostic-redaction deviations. Existing canonical
+declaration IDs remain pending; no new canonical verdict is asserted here.

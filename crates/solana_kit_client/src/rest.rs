@@ -78,15 +78,6 @@ impl Body {
     }
 }
 
-impl fmt::Debug for Body {
-    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
-        formatter
-            .debug_struct("Body")
-            .field("content_type", &self.content_type())
-            .finish_non_exhaustive()
-    }
-}
-
 /// One owned request to a provider-defined approved destination.
 pub struct Request<D> {
     /// Explicit approved destination identity, independent of request data.
@@ -101,16 +92,6 @@ pub struct Request<D> {
     pub body: Body,
     /// Maximum reply allocation enforced while receiving.
     pub max_reply_bytes: usize,
-}
-
-impl<D> fmt::Debug for Request<D> {
-    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
-        formatter
-            .debug_struct("RestRequest")
-            .field("method", &self.method)
-            .field("max_reply_bytes", &self.max_reply_bytes)
-            .finish_non_exhaustive()
-    }
 }
 
 /// A single HTTP exchange using a provider-specific destination identity.
@@ -154,5 +135,24 @@ impl fmt::Display for RedactedCause {
 impl std::error::Error for RedactedCause {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         Some(&self.0)
+    }
+}
+
+impl fmt::Debug for Body {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        formatter
+            .debug_struct("Body")
+            .field("content_type", &self.content_type())
+            .finish_non_exhaustive()
+    }
+}
+
+impl<D> fmt::Debug for Request<D> {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        formatter
+            .debug_struct("RestRequest")
+            .field("method", &self.method)
+            .field("max_reply_bytes", &self.max_reply_bytes)
+            .finish_non_exhaustive()
     }
 }

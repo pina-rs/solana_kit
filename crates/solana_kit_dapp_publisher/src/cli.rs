@@ -6,6 +6,9 @@
 use http::Uri;
 use std::{collections::BTreeMap, fmt, string::String, vec::Vec};
 
+mod urls;
+use urls::{derive_api_base, is_https, is_localhost, normalize_url};
+
 /// CLI version reported by `--version`.
 pub const CLI_VERSION: &str = "0.1.0";
 
@@ -30,21 +33,6 @@ pub type Flags = BTreeMap<String, Option<String>>;
 /// One bounded CLI input error.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct CliError(String);
-
-impl CliError {
-    /// Human-readable message without any captured secret.
-    pub fn message(&self) -> &str {
-        &self.0
-    }
-}
-
-impl fmt::Display for CliError {
-    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
-        formatter.write_str(&self.0)
-    }
-}
-
-impl std::error::Error for CliError {}
 
 /// Parsed options for a new publication.
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
@@ -132,6 +120,21 @@ pub enum PublicationSource {
     },
 }
 
+impl CliError {
+    /// Human-readable message without any captured secret.
+    pub fn message(&self) -> &str {
+        &self.0
+    }
+}
+
+impl fmt::Display for CliError {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        formatter.write_str(&self.0)
+    }
+}
+
+impl std::error::Error for CliError {}
+
 const VALUED: &[&str] = &[
     "apk-file",
     "apk-url",
@@ -156,42 +159,74 @@ pub fn parse_flags(arguments: &[String]) -> Result<Flags, CliError> {
 
     while index < arguments.len() {
         let argument = &arguments[index];
-        let Some(without_prefix) = argument.strip_prefix("--") else {
-            return Err(CliError(format!("Unexpected argument: {argument}")));
-        };
-        let (name, inline) = without_prefix
-            .split_once('=')
-            .map_or((without_prefix, None), |(name, value)| (name, Some(value)));
+        let (name, inline) = split_flag(argument)?;
 
-        if VALUED.contains(&name) {
-            let value = match inline {
-                Some(value) => value.to_owned(),
-                None => {
-                    let next = arguments.get(index + 1).ok_or_else(|| {
-                        CliError(format!(
-                            "Missing value for --{name}. Provide it as --{name} <value>."
-                        ))
-                    })?;
-                    index += 1;
-                    next.clone()
-                }
-            };
-            values.insert(name.to_owned(), Some(value));
-        } else if BOOLEAN.contains(&name) {
-            if inline.is_some() {
-                return Err(CliError(format!(
-                    "The --{name} flag does not accept a value."
-                )));
-            }
-            values.insert(name.to_owned(), None);
-        } else {
+        if !VALUED.contains(&name) && !BOOLEAN.contains(&name) {
             return Err(CliError(format!("Unknown argument: {argument}")));
         }
 
+        let value = parse_flag(arguments, &mut index, name, inline)?;
+
+        values.insert(name.to_owned(), value);
         index += 1;
     }
 
     Ok(values)
+}
+
+fn split_flag(argument: &str) -> Result<(&str, Option<&str>), CliError> {
+    let Some(without_prefix) = argument.strip_prefix("--") else {
+        return Err(CliError(format!("Unexpected argument: {argument}")));
+    };
+
+    Ok(without_prefix
+        .split_once('=')
+        .map_or((without_prefix, None), |(name, value)| (name, Some(value))))
+}
+
+fn parse_flag(
+    arguments: &[String],
+    index: &mut usize,
+    name: &str,
+    inline: Option<&str>,
+) -> Result<Option<String>, CliError> {
+    if VALUED.contains(&name) {
+        return parse_value(arguments, index, name, inline).map(Some);
+    }
+
+    reject_boolean_value(name, inline)?;
+
+    Ok(None)
+}
+
+fn parse_value(
+    arguments: &[String],
+    index: &mut usize,
+    name: &str,
+    inline: Option<&str>,
+) -> Result<String, CliError> {
+    if let Some(value) = inline {
+        return Ok(value.to_owned());
+    }
+
+    let next = arguments.get(*index + 1).ok_or_else(|| {
+        CliError(format!(
+            "Missing value for --{name}. Provide it as --{name} <value>."
+        ))
+    })?;
+    *index += 1;
+
+    Ok(next.clone())
+}
+
+fn reject_boolean_value(name: &str, inline: Option<&str>) -> Result<(), CliError> {
+    if inline.is_some() {
+        return Err(CliError(format!(
+            "The --{name} flag does not accept a value."
+        )));
+    }
+
+    Ok(())
 }
 
 /// Builds new-version options from parsed flags.
@@ -235,44 +270,61 @@ pub fn validate_new_version(
     options: &NewVersionOptions,
     file_exists: impl Fn(&str) -> bool,
 ) -> Result<(), CliError> {
+    validate_one_source(options)?;
+    validate_required(options.whats_new.as_deref(), "`--whats-new` is required.")?;
+    validate_required(options.keypair.as_deref(), "`--keypair` is required.")?;
+    validate_apk_file(options.apk_file.as_deref(), &file_exists)?;
+    validate_apk_url(options.apk_url.as_deref())?;
+
+    Ok(())
+}
+
+fn validate_one_source(options: &NewVersionOptions) -> Result<(), CliError> {
     let sources = usize::from(options.apk_file.is_some()) + usize::from(options.apk_url.is_some());
 
-    if sources != 1 {
-        return Err(CliError(
-            "Specify exactly one of `--apk-file` or `--apk-url`.".into(),
-        ));
+    if sources == 1 {
+        return Ok(());
     }
 
-    if options
-        .whats_new
-        .as_deref()
-        .is_none_or(|value| value.trim().is_empty())
-    {
-        return Err(CliError("`--whats-new` is required.".into()));
+    Err(CliError(
+        "Specify exactly one of `--apk-file` or `--apk-url`.".into(),
+    ))
+}
+
+fn validate_required(value: Option<&str>, message: &'static str) -> Result<(), CliError> {
+    if value.is_some_and(|value| !value.trim().is_empty()) {
+        return Ok(());
     }
 
-    if options
-        .keypair
-        .as_deref()
-        .is_none_or(|value| value.trim().is_empty())
-    {
-        return Err(CliError("`--keypair` is required.".into()));
+    Err(CliError(message.into()))
+}
+
+fn validate_apk_file(
+    path: Option<&str>,
+    file_exists: &impl Fn(&str) -> bool,
+) -> Result<(), CliError> {
+    let Some(path) = path else {
+        return Ok(());
+    };
+
+    if file_exists(path) {
+        return Ok(());
     }
 
-    if let Some(path) = options.apk_file.as_deref()
-        && !file_exists(path)
-    {
-        return Err(CliError(format!("APK file not found: {path}")));
-    }
+    Err(CliError(format!("APK file not found: {path}")))
+}
 
-    if let Some(url) = options.apk_url.as_deref() {
-        let parsed = url
-            .parse::<Uri>()
-            .map_err(|_| CliError("`--apk-url` must be a valid HTTPS URL.".into()))?;
+fn validate_apk_url(url: Option<&str>) -> Result<(), CliError> {
+    let Some(url) = url else {
+        return Ok(());
+    };
 
-        if parsed.scheme_str() != Some("https") || parsed.host().is_none() {
-            return Err(CliError("`--apk-url` must be a valid HTTPS URL.".into()));
-        }
+    let parsed = url
+        .parse::<Uri>()
+        .map_err(|_| CliError("`--apk-url` must be a valid HTTPS URL.".into()))?;
+
+    if parsed.scheme_str() != Some("https") || parsed.host().is_none() {
+        return Err(CliError("`--apk-url` must be a valid HTTPS URL.".into()));
     }
 
     Ok(())
@@ -348,40 +400,62 @@ pub fn resolve_portal_targets(
     local_dev: bool,
     environment: &BTreeMap<String, String>,
 ) -> Result<PortalTargets, CliError> {
-    let environment_url = environment.get(PORTAL_URL_ENV).map(String::as_str);
-    let selected = trim_to_none(portal_url)
-        .or_else(|| trim_to_none(environment_url))
-        .or_else(|| local_dev.then_some(DEFAULT_LOCAL_PORTAL_URL))
-        .unwrap_or(DEFAULT_PRODUCTION_PORTAL_URL);
+    let selected = select_portal_url(portal_url, local_dev, environment);
     let portal_url = normalize_url(selected, "portal URL")?;
     let api_base_url = normalize_url(&derive_api_base(&portal_url)?, "portal API base URL")?;
-
-    if local_dev {
-        if !is_localhost(&portal_url) || !is_localhost(&api_base_url) {
-            let target = if is_localhost(&portal_url) {
-                format!("portal API base URL: {api_base_url}")
-            } else {
-                format!("portal URL: {portal_url}")
-            };
-            return Err(CliError(format!(
-                "--local-dev only allows localhost portal endpoints. Received {target}"
-            )));
-        }
-    } else if !portal_url
-        .parse::<Uri>()
-        .ok()
-        .and_then(|uri| uri.scheme_str().map(|scheme| scheme == "https"))
-        .unwrap_or(false)
-    {
-        return Err(CliError(format!(
-            "Portal endpoints must use HTTPS unless --local-dev is set. Received portal URL: {portal_url}"
-        )));
-    }
+    enforce_endpoint_policy(&portal_url, &api_base_url, local_dev)?;
 
     Ok(PortalTargets {
         portal_url,
         api_base_url,
     })
+}
+
+fn select_portal_url<'a>(
+    portal_url: Option<&'a str>,
+    local_dev: bool,
+    environment: &'a BTreeMap<String, String>,
+) -> &'a str {
+    let environment_url = environment.get(PORTAL_URL_ENV).map(String::as_str);
+
+    trim_to_none(portal_url)
+        .or_else(|| trim_to_none(environment_url))
+        .or_else(|| local_dev.then_some(DEFAULT_LOCAL_PORTAL_URL))
+        .unwrap_or(DEFAULT_PRODUCTION_PORTAL_URL)
+}
+
+fn enforce_endpoint_policy(
+    portal_url: &str,
+    api_base_url: &str,
+    local_dev: bool,
+) -> Result<(), CliError> {
+    if local_dev {
+        return enforce_local_endpoints(portal_url, api_base_url);
+    }
+
+    if is_https(portal_url) {
+        return Ok(());
+    }
+
+    Err(CliError(format!(
+        "Portal endpoints must use HTTPS unless --local-dev is set. Received portal URL: {portal_url}"
+    )))
+}
+
+fn enforce_local_endpoints(portal_url: &str, api_base_url: &str) -> Result<(), CliError> {
+    if is_localhost(portal_url) && is_localhost(api_base_url) {
+        return Ok(());
+    }
+
+    let target = if is_localhost(portal_url) {
+        format!("portal API base URL: {api_base_url}")
+    } else {
+        format!("portal URL: {portal_url}")
+    };
+
+    Err(CliError(format!(
+        "--local-dev only allows localhost portal endpoints. Received {target}"
+    )))
 }
 
 /// Resolves the portal API key from stdin or the selected environment variable.
@@ -402,6 +476,7 @@ pub fn resolve_api_key(
         let value = std::str::from_utf8(stdin.unwrap_or_default())
             .map_err(|_| CliError(with_docs("No API key was provided on stdin.")))?
             .trim();
+
         return if value.is_empty() {
             Err(CliError(with_docs("No API key was provided on stdin.")))
         } else {
@@ -487,59 +562,6 @@ fn trim_to_none(value: Option<&str>) -> Option<&str> {
     value.map(str::trim).filter(|value| !value.is_empty())
 }
 
-fn normalize_url(value: &str, label: &str) -> Result<String, CliError> {
-    if value.contains('#') {
-        return Err(CliError(format!("Invalid {label}: {value}")));
-    }
-
-    let parsed = value
-        .parse::<Uri>()
-        .map_err(|_| CliError(format!("Invalid {label}: {value}")))?;
-    let scheme = parsed
-        .scheme_str()
-        .ok_or_else(|| CliError(format!("Invalid {label}: {value}")))?;
-    let authority = parsed
-        .authority()
-        .ok_or_else(|| CliError(format!("Invalid {label}: {value}")))?;
-
-    if authority.host().is_empty() || parsed.query().is_some() {
-        return Err(CliError(format!("Invalid {label}: {value}")));
-    }
-
-    let path = parsed.path().trim_end_matches('/');
-    Ok(format!("{scheme}://{authority}{path}"))
-}
-
-fn derive_api_base(portal_url: &str) -> Result<String, CliError> {
-    let parsed = portal_url
-        .parse::<Uri>()
-        .map_err(|_| CliError(format!("Invalid portal URL: {portal_url}")))?;
-    let scheme = parsed
-        .scheme_str()
-        .ok_or_else(|| CliError(format!("Invalid portal URL: {portal_url}")))?;
-    let authority = parsed
-        .authority()
-        .ok_or_else(|| CliError(format!("Invalid portal URL: {portal_url}")))?;
-    let path = parsed.path().trim_end_matches('/');
-
-    if path.is_empty() {
-        Ok(format!("{scheme}://{authority}/api"))
-    } else {
-        Ok(format!("{scheme}://{authority}{path}/api"))
-    }
-}
-
-fn is_localhost(url: &str) -> bool {
-    let Ok(parsed) = url.parse::<Uri>() else {
-        return false;
-    };
-    let Some(host) = parsed.host() else {
-        return false;
-    };
-    let host = host.trim_matches(['[', ']']);
-    matches!(host, "localhost" | "127.0.0.1" | "::1")
-}
-
 fn with_docs(message: &str) -> String {
     format!("{message}\n\nThe publishing CLI has changed. See the updated usage guide:\n{DOCS_URL}")
 }
@@ -591,10 +613,13 @@ mod tests {
         };
         assert!(validate_new_version(&options, |_| false).is_err());
         assert!(validate_new_version(&options, |_| true).is_ok());
+
         options.apk_url = Some("https://example.invalid/app.apk".into());
         assert!(validate_new_version(&options, |_| true).is_err());
+
         options.apk_file = None;
         assert!(validate_new_version(&options, |_| true).is_ok());
+
         options.apk_url = Some("http://example.invalid/app.apk".into());
         assert!(validate_new_version(&options, |_| true).is_err());
     }
@@ -640,9 +665,10 @@ mod tests {
     fn portal_targets_default_derive_and_enforce_security() {
         let environment = BTreeMap::new();
         let targets = resolve_portal_targets(None, false, &environment).unwrap();
+        let local = resolve_portal_targets(None, true, &environment).unwrap();
+
         assert_eq!(targets.portal_url, DEFAULT_PRODUCTION_PORTAL_URL);
         assert_eq!(targets.api_base_url, "https://publish.solanamobile.com/api");
-        let local = resolve_portal_targets(None, true, &environment).unwrap();
         assert_eq!(local.api_base_url, "http://localhost:3333/api");
         assert!(
             resolve_portal_targets(Some("https://example.invalid/base/"), false, &environment)
@@ -653,12 +679,14 @@ mod tests {
         assert!(
             resolve_portal_targets(Some("http://example.invalid"), false, &environment).is_err()
         );
+
         assert!(resolve_portal_targets(Some("http://localhost:3333"), true, &environment).is_ok());
         assert!(resolve_portal_targets(Some("http://127.0.0.1:3333"), true, &environment).is_ok());
         assert!(resolve_portal_targets(Some("http://[::1]:3333"), true, &environment).is_ok());
         assert!(
             resolve_portal_targets(Some("https://example.invalid"), true, &environment).is_err()
         );
+
         let environment =
             BTreeMap::from([(PORTAL_URL_ENV.to_owned(), "https://env.invalid".to_owned())]);
         assert_eq!(

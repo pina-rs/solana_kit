@@ -11,9 +11,19 @@ pub mod funding;
 #[cfg(feature = "portal")]
 mod deadline;
 
+#[cfg(feature = "portal")]
+mod mime;
+
 /// Bounded portal protocol with caller-owned destination, authentication and upload policy.
 #[cfg(feature = "portal")]
 pub mod portal;
+
+/// Deterministic normalized read models projected from typed portal records.
+#[cfg(feature = "portal")]
+pub mod publication;
+
+#[cfg(feature = "portal")]
+mod text;
 
 /// Resumable ingestion and metadata hydration with explicit caller-owned I/O.
 #[cfg(feature = "workflow")]

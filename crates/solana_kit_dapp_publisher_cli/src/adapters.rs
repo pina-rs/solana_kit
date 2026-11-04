@@ -17,6 +17,8 @@ use std::{
 };
 
 const MAX_TARGET_BYTES: usize = 16_384;
+const PORTAL_TIMEOUT_SECONDS: u64 = 30;
+const UPLOAD_TIMEOUT_SECONDS: u64 = 60;
 
 /// Blocking native portal transport with caller-owned origin and API key.
 pub struct PortalTransport {
@@ -48,7 +50,7 @@ impl PortalTransport {
         let origin = format!("{scheme}://{authority}");
         let path = uri.path().trim_end_matches('/').to_owned();
         let agent = ureq::Agent::config_builder()
-            .timeout_global(Some(Duration::from_secs(30)))
+            .timeout_global(Some(Duration::from_secs(PORTAL_TIMEOUT_SECONDS)))
             .http_status_as_error(false)
             .max_redirects(0)
             .build()
@@ -62,6 +64,7 @@ impl PortalTransport {
         })
     }
 
+    /// Sends one typed request without redirects, retries or implicit decoding.
     fn execute(&self, request: rest::Request<PortalService>) -> Result<Reply, TransportError> {
         let target = rest::request_target(
             &self.base_path,
@@ -72,36 +75,9 @@ impl PortalTransport {
         let url = format!("{}{target}", self.origin);
         let content_type = request.body.content_type();
         let body = request.body.into_bytes();
-        let response = match request.method {
-            rest::Method::Get => self
-                .agent
-                .get(&url)
-                .header("accept", "application/json")
-                .header("x-api-key", &self.api_key)
-                .call(),
-            rest::Method::Delete => self
-                .agent
-                .delete(&url)
-                .header("accept", "application/json")
-                .header("x-api-key", &self.api_key)
-                .call(),
-            _ => {
-                let builder = match request.method {
-                    rest::Method::Post => self.agent.post(&url),
-                    rest::Method::Put => self.agent.put(&url),
-                    rest::Method::Patch => self.agent.patch(&url),
-                    rest::Method::Get | rest::Method::Delete => unreachable!(),
-                }
-                .header("accept", "application/json")
-                .header("x-api-key", &self.api_key);
-                let builder = match content_type {
-                    Some(content_type) => builder.header("content-type", content_type),
-                    None => builder,
-                };
-                builder.send(body.as_slice())
-            }
-        }
-        .map_err(|error| TransportError::with_source(TransportFailureKind::Io, error))?;
+        let response = self
+            .send(&request.method, &url, content_type, &body)
+            .map_err(|error| TransportError::with_source(TransportFailureKind::Io, error))?;
         let status = response.status().as_u16();
         let body = response
             .into_body()
@@ -109,6 +85,58 @@ impl PortalTransport {
             .map_err(|error| TransportError::with_source(TransportFailureKind::Io, error))?;
 
         Ok(Reply { status, body })
+    }
+
+    fn send(
+        &self,
+        method: &rest::Method,
+        url: &str,
+        content_type: Option<&str>,
+        body: &[u8],
+    ) -> Result<ureq::http::Response<ureq::Body>, ureq::Error> {
+        match method {
+            rest::Method::Get => self
+                .agent
+                .get(url)
+                .header("accept", "application/json")
+                .header("x-api-key", &self.api_key)
+                .call(),
+            rest::Method::Delete => self
+                .agent
+                .delete(url)
+                .header("accept", "application/json")
+                .header("x-api-key", &self.api_key)
+                .call(),
+            rest::Method::Post | rest::Method::Put | rest::Method::Patch => {
+                self.send_mutation(method, url, content_type, body)
+            }
+        }
+    }
+
+    fn send_mutation(
+        &self,
+        method: &rest::Method,
+        url: &str,
+        content_type: Option<&str>,
+        body: &[u8],
+    ) -> Result<ureq::http::Response<ureq::Body>, ureq::Error> {
+        let builder = match method {
+            rest::Method::Post => self.agent.post(url),
+            rest::Method::Put => self.agent.put(url),
+            rest::Method::Patch => self.agent.patch(url),
+            rest::Method::Get | rest::Method::Delete => unreachable!(),
+        };
+
+        let builder = builder
+            .header("accept", "application/json")
+            .header("x-api-key", &self.api_key);
+
+        let builder = match content_type {
+            Some(content_type) => builder.header("content-type", content_type),
+            None => builder,
+        };
+
+        builder.send(body)
     }
 }
 
@@ -136,11 +164,12 @@ impl HttpUploader {
     #[must_use]
     pub fn new() -> Self {
         let agent = ureq::Agent::config_builder()
-            .timeout_global(Some(Duration::from_secs(60)))
+            .timeout_global(Some(Duration::from_secs(UPLOAD_TIMEOUT_SECONDS)))
             .http_status_as_error(false)
             .max_redirects(0)
             .build()
             .new_agent();
+
         Self { agent }
     }
 }
@@ -149,49 +178,54 @@ impl Uploader for HttpUploader {
     type Upload<'a> = Ready<Result<(), TransportError>>;
 
     fn upload<'a>(&'a self, request: UploadRequest<'a>) -> Self::Upload<'a> {
-        let result = (|| {
-            let uri = request
-                .target
-                .upload_url
-                .parse::<http::Uri>()
-                .map_err(|_| TransportError::new(TransportFailureKind::Denied))?;
-            let scheme = uri
-                .scheme_str()
-                .ok_or(TransportError::new(TransportFailureKind::Denied))?;
-            let authority = uri
-                .authority()
-                .ok_or(TransportError::new(TransportFailureKind::Denied))?;
-            let local_http = scheme == "http"
-                && authority
-                    .host()
-                    .parse::<std::net::IpAddr>()
-                    .is_ok_and(|ip| ip.is_loopback());
-
-            if scheme != "https" && !local_http {
-                return Err(TransportError::new(TransportFailureKind::Denied));
-            }
-
-            let response = self
-                .agent
-                .put(request.target.upload_url.as_str())
-                .header("content-type", request.content_type)
-                .send(request.body)
-                .map_err(|error| TransportError::with_source(TransportFailureKind::Io, error))?;
-            let status = response.status().as_u16();
-            let _ = response
-                .into_body()
-                .read_to_vec()
-                .map_err(|error| TransportError::with_source(TransportFailureKind::Io, error))?;
-
-            if (200..300).contains(&status) {
-                Ok(())
-            } else {
-                Err(TransportError::new(TransportFailureKind::InvalidResponse))
-            }
-        })();
-
-        std::future::ready(result)
+        std::future::ready(self.send(&request))
     }
+}
+
+impl HttpUploader {
+    fn send(&self, request: &UploadRequest<'_>) -> Result<(), TransportError> {
+        approve_upload_target(&request.target.upload_url)?;
+        let response = self
+            .agent
+            .put(request.target.upload_url.as_str())
+            .header("content-type", request.content_type)
+            .send(request.body)
+            .map_err(|error| TransportError::with_source(TransportFailureKind::Io, error))?;
+        let status = response.status().as_u16();
+        let _ = response
+            .into_body()
+            .read_to_vec()
+            .map_err(|error| TransportError::with_source(TransportFailureKind::Io, error))?;
+
+        if (200..300).contains(&status) {
+            return Ok(());
+        }
+
+        Err(TransportError::new(TransportFailureKind::InvalidResponse))
+    }
+}
+
+fn approve_upload_target(url: &str) -> Result<(), TransportError> {
+    let uri = url
+        .parse::<http::Uri>()
+        .map_err(|_| TransportError::new(TransportFailureKind::Denied))?;
+    let scheme = uri
+        .scheme_str()
+        .ok_or(TransportError::new(TransportFailureKind::Denied))?;
+    let authority = uri
+        .authority()
+        .ok_or(TransportError::new(TransportFailureKind::Denied))?;
+    let local_http = scheme == "http"
+        && authority
+            .host()
+            .parse::<std::net::IpAddr>()
+            .is_ok_and(|ip| ip.is_loopback());
+
+    if scheme == "https" || local_http {
+        return Ok(());
+    }
+
+    Err(TransportError::new(TransportFailureKind::Denied))
 }
 
 /// One bounded file-backed checkpoint in the current working directory.
@@ -212,48 +246,63 @@ impl Storage for FileStorage {
     type Save<'a> = Ready<Result<(), TransportError>>;
 
     fn load<'a>(&'a self, _key: &'a str, maximum: usize) -> Self::Load<'a> {
-        let result = (|| {
-            let metadata = match std::fs::metadata(&self.path) {
-                Ok(metadata) => metadata,
-                Err(error) if error.kind() == io::ErrorKind::NotFound => return Ok(None),
-                Err(error) => {
-                    return Err(TransportError::with_source(TransportFailureKind::Io, error));
-                }
-            };
-
-            if metadata.len() > maximum as u64 {
-                return Err(TransportError::new(TransportFailureKind::BodyLimit));
-            }
-
-            std::fs::read(&self.path)
-                .map(Some)
-                .map_err(|error| TransportError::with_source(TransportFailureKind::Io, error))
-        })();
-
-        std::future::ready(result)
+        std::future::ready(self.read_checkpoint(maximum))
     }
 
     fn save<'a>(&'a mut self, _key: &'a str, bytes: &'a [u8], maximum: usize) -> Self::Save<'a> {
-        let result = (|| {
-            if bytes.len() > maximum {
-                return Err(TransportError::new(TransportFailureKind::BodyLimit));
-            }
-
-            if let Some(parent) = self.path.parent() {
-                std::fs::create_dir_all(parent).map_err(|error| {
-                    TransportError::with_source(TransportFailureKind::Io, error)
-                })?;
-            }
-
-            let temporary = self.path.with_extension("tmp");
-            std::fs::write(&temporary, bytes)
-                .map_err(|error| TransportError::with_source(TransportFailureKind::Io, error))?;
-            std::fs::rename(&temporary, &self.path)
-                .map_err(|error| TransportError::with_source(TransportFailureKind::Io, error))
-        })();
-
-        std::future::ready(result)
+        std::future::ready(self.write_checkpoint(bytes, maximum))
     }
+}
+
+impl FileStorage {
+    /// Reads at most one checkpoint; an absent file is `Ok(None)`, not an error.
+    fn read_checkpoint(&self, maximum: usize) -> Result<Option<Vec<u8>>, TransportError> {
+        let Some(metadata) = self.checkpoint_metadata()? else {
+            return Ok(None);
+        };
+
+        if metadata.len() > maximum as u64 {
+            return Err(TransportError::new(TransportFailureKind::BodyLimit));
+        }
+
+        std::fs::read(&self.path)
+            .map(Some)
+            .map_err(|error| TransportError::with_source(TransportFailureKind::Io, error))
+    }
+
+    /// Separates an absent checkpoint from other metadata failures.
+    fn checkpoint_metadata(&self) -> Result<Option<std::fs::Metadata>, TransportError> {
+        match std::fs::metadata(&self.path) {
+            Ok(metadata) => Ok(Some(metadata)),
+            Err(error) => metadata_error(error),
+        }
+    }
+
+    fn write_checkpoint(&self, bytes: &[u8], maximum: usize) -> Result<(), TransportError> {
+        if bytes.len() > maximum {
+            return Err(TransportError::new(TransportFailureKind::BodyLimit));
+        }
+
+        if let Some(parent) = self.path.parent() {
+            std::fs::create_dir_all(parent)
+                .map_err(|error| TransportError::with_source(TransportFailureKind::Io, error))?;
+        }
+
+        let temporary = self.path.with_extension("tmp");
+        std::fs::write(&temporary, bytes)
+            .map_err(|error| TransportError::with_source(TransportFailureKind::Io, error))?;
+
+        std::fs::rename(&temporary, &self.path)
+            .map_err(|error| TransportError::with_source(TransportFailureKind::Io, error))
+    }
+}
+
+fn metadata_error(error: io::Error) -> Result<Option<std::fs::Metadata>, TransportError> {
+    if error.kind() != io::ErrorKind::NotFound {
+        return Err(TransportError::with_source(TransportFailureKind::Io, error));
+    }
+
+    Ok(None)
 }
 
 /// Reads one bounded local APK through the caller-supplied path token.

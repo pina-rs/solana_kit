@@ -4,9 +4,9 @@ mod adapters;
 mod execute;
 
 use solana_kit_dapp_publisher::cli::{
-    CLI_VERSION, DOCS_URL, NewVersionOptions, ResumeOptions, enforce_self_update_policy,
-    new_version_options, parse_flags, resolve_api_key, resolve_portal_targets, resume_options,
-    validate_new_version, validate_resume,
+    CLI_VERSION, DOCS_URL, Flags, NewVersionOptions, PortalTargets, ResumeOptions,
+    enforce_self_update_policy, new_version_options, parse_flags, resolve_api_key,
+    resolve_portal_targets, resume_options, validate_new_version, validate_resume,
 };
 use std::{
     collections::BTreeMap,
@@ -22,19 +22,23 @@ fn run(arguments: Vec<String>) -> i32 {
         Ok(()) => 0,
         Err(message) => {
             eprintln!("Error: {message}");
+
             1
         }
     }
 }
 
+/// Dispatches help, version and one subcommand without implicit network work.
 fn execute(arguments: &[String]) -> Result<(), String> {
     if arguments.is_empty() {
         print_help();
+
         return Ok(());
     }
 
     if arguments.iter().any(|argument| argument == "--version") {
         println!("solana-kit-publisher {CLI_VERSION}");
+
         return Ok(());
     }
 
@@ -43,6 +47,7 @@ fn execute(arguments: &[String]) -> Result<(), String> {
         .any(|argument| argument == "--help" || argument == "-h")
     {
         print_help();
+
         return Ok(());
     }
 
@@ -52,44 +57,56 @@ fn execute(arguments: &[String]) -> Result<(), String> {
     let environment = environment();
 
     if resume {
-        let options = resume_options(&flags);
-        validate_resume(&options).map_err(|error| error.message().to_owned())?;
-        enforce_self_update_policy(options.skip_self_update, options.local_dev)
-            .map_err(|error| error.message().to_owned())?;
-        run_resume(&options, &environment)
+        run_resume_command(&flags, &environment)
     } else {
-        let options = new_version_options(&flags);
-        validate_new_version(&options, execute::path_exists)
-            .map_err(|error| error.message().to_owned())?;
-        enforce_self_update_policy(options.skip_self_update, options.local_dev)
-            .map_err(|error| error.message().to_owned())?;
-        run_new(&options, &environment)
+        run_new_command(&flags, &environment)
     }
+}
+
+fn run_new_command(flags: &Flags, environment: &BTreeMap<String, String>) -> Result<(), String> {
+    let options = new_version_options(flags);
+
+    validate_new_version(&options, execute::path_exists)
+        .map_err(|error| error.message().to_owned())?;
+    enforce_self_update_policy(options.skip_self_update, options.local_dev)
+        .map_err(|error| error.message().to_owned())?;
+
+    run_new(&options, environment)
+}
+
+fn run_resume_command(flags: &Flags, environment: &BTreeMap<String, String>) -> Result<(), String> {
+    let options = resume_options(flags);
+
+    validate_resume(&options).map_err(|error| error.message().to_owned())?;
+    enforce_self_update_policy(options.skip_self_update, options.local_dev)
+        .map_err(|error| error.message().to_owned())?;
+
+    run_resume(&options, environment)
 }
 
 fn run_new(
     options: &NewVersionOptions,
     environment: &BTreeMap<String, String>,
 ) -> Result<(), String> {
-    let targets = resolve_portal_targets(
+    let targets = resolve_targets(
         options.portal_url.as_deref(),
         options.local_dev,
         environment,
-    )
-    .map_err(|error| error.message().to_owned())?;
+    )?;
     let api_key = api_key(
         options.api_key_stdin,
         options.api_key_env.as_deref(),
         environment,
     )?;
-    if options.verbose {
-        println!("Portal: {}", targets.portal_url);
-        println!("Portal API: {}", targets.api_base_url);
-    }
+
+    print_targets(options.verbose, &targets);
+
     let summary = execute::new_publication(options, &targets, &api_key)?;
+
     for line in summary.lines() {
         println!("{line}");
     }
+
     Ok(())
 }
 
@@ -97,26 +114,44 @@ fn run_resume(
     options: &ResumeOptions,
     environment: &BTreeMap<String, String>,
 ) -> Result<(), String> {
-    let targets = resolve_portal_targets(
+    let targets = resolve_targets(
         options.portal_url.as_deref(),
         options.local_dev,
         environment,
-    )
-    .map_err(|error| error.message().to_owned())?;
+    )?;
     let api_key = api_key(
         options.api_key_stdin,
         options.api_key_env.as_deref(),
         environment,
     )?;
-    if options.verbose {
-        println!("Portal: {}", targets.portal_url);
-        println!("Portal API: {}", targets.api_base_url);
-    }
+
+    print_targets(options.verbose, &targets);
+
     let summary = execute::resume_publication(options, &targets, &api_key)?;
+
     for line in summary.lines() {
         println!("{line}");
     }
+
     Ok(())
+}
+
+fn resolve_targets(
+    portal_url: Option<&str>,
+    local_dev: bool,
+    environment: &BTreeMap<String, String>,
+) -> Result<PortalTargets, String> {
+    resolve_portal_targets(portal_url, local_dev, environment)
+        .map_err(|error| error.message().to_owned())
+}
+
+fn print_targets(verbose: bool, targets: &PortalTargets) {
+    if !verbose {
+        return;
+    }
+
+    println!("Portal: {}", targets.portal_url);
+    println!("Portal API: {}", targets.api_base_url);
 }
 
 fn api_key(
@@ -126,11 +161,13 @@ fn api_key(
 ) -> Result<String, String> {
     let stdin_is_tty = std::io::stdin().is_terminal();
     let mut bytes = Vec::new();
+
     if stdin && !stdin_is_tty {
         std::io::stdin()
             .read_to_end(&mut bytes)
             .map_err(|_| "failed to read the API key from stdin".to_owned())?;
     }
+
     resolve_api_key(
         stdin,
         environment_name,

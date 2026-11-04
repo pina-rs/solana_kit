@@ -103,16 +103,7 @@ fn number(value: Option<&serde_json::Number>, fallback: u64) -> Result<u64, Erro
 }
 
 /// A Unicode boundary is never split when applying the source's UTF-16 length bound.
-pub(super) fn truncate(value: &str, maximum: usize) -> String {
-    let mut units = 0;
-    value
-        .chars()
-        .take_while(|character| {
-            units += character.len_utf16();
-            units <= maximum
-        })
-        .collect()
-}
+pub(super) use crate::text::truncate_utf16 as truncate;
 
 impl Spec {
     pub fn new(

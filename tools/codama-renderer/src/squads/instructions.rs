@@ -10,8 +10,10 @@ const VOTE: &str = "multisig:r,member:ws,proposal:w";
 const CLOSE: &str = "multisig:r,proposal:w,transaction:w,rentCollector:w,systemProgram:r";
 const HEADER_BYTES: usize = 8;
 
-/// Name, ordered accounts and payload are source facts rather than emitted Rust.
-pub(super) const INSTRUCTIONS: &[(&str, &str, &str)] = &[
+/// One pinned operation: name, ordered accounts and payload.
+type InstructionSpec = (&'static str, &'static str, &'static str);
+
+const PROGRAM_CONFIG_INSTRUCTIONS: &[InstructionSpec] = &[
     (
         "programConfigInit",
         "programConfig:w,initializer:ws,systemProgram:r",
@@ -32,6 +34,9 @@ pub(super) const INSTRUCTIONS: &[(&str, &str, &str)] = &[
         "programConfig:w,authority:s",
         "newTreasury:address",
     ),
+];
+
+const MULTISIG_INSTRUCTIONS: &[InstructionSpec] = &[
     ("multisigCreate", "null:r", ""),
     (
         "multisigCreateV2",
@@ -63,6 +68,9 @@ pub(super) const INSTRUCTIONS: &[(&str, &str, &str)] = &[
         CONFIG,
         "rentCollector:?address,memo:?text",
     ),
+];
+
+const SPENDING_LIMIT_INSTRUCTIONS: &[InstructionSpec] = &[
     (
         "multisigAddSpendingLimit",
         "multisig:r,configAuthority:s,spendingLimit:w,rentPayer:ws,systemProgram:r",
@@ -76,6 +84,9 @@ pub(super) const INSTRUCTIONS: &[(&str, &str, &str)] = &[
         "multisig:r,configAuthority:s,spendingLimit:w,rentCollector:w",
         "memo:?text",
     ),
+];
+
+const TRANSACTION_INSTRUCTIONS: &[InstructionSpec] = &[
     (
         "configTransactionCreate",
         CREATE,
@@ -112,6 +123,9 @@ pub(super) const INSTRUCTIONS: &[(&str, &str, &str)] = &[
         "multisig:r,proposal:w,transaction:r,member:s",
         "",
     ),
+];
+
+const BATCH_INSTRUCTIONS: &[InstructionSpec] = &[
     (
         "batchCreate",
         "multisig:w,batch:w,creator:s,rentPayer:ws,systemProgram:r",
@@ -127,6 +141,9 @@ pub(super) const INSTRUCTIONS: &[(&str, &str, &str)] = &[
         "multisig:r,member:s,proposal:w,batch:w,transaction:r",
         "",
     ),
+];
+
+const PROPOSAL_INSTRUCTIONS: &[InstructionSpec] = &[
     (
         "proposalCreate",
         "multisig:r,proposal:w,creator:s,rentPayer:ws,systemProgram:r",
@@ -141,14 +158,18 @@ pub(super) const INSTRUCTIONS: &[(&str, &str, &str)] = &[
         "multisig:r,member:ws,proposal:w,systemProgram:r",
         "args:ProposalVoteArgs",
     ),
-    (
-        "spendingLimitUse",
-        concat!(
-            "multisig:r,member:s,spendingLimit:w,vault:w,destination:w,systemProgram:r?,",
-            "mint:r?,vaultTokenAccount:w?,destinationTokenAccount:w?,tokenProgram:r?"
-        ),
-        "amount:u64,decimals:u8,memo:?text",
+];
+
+const SPENDING_USE_INSTRUCTIONS: &[InstructionSpec] = &[(
+    "spendingLimitUse",
+    concat!(
+        "multisig:r,member:s,spendingLimit:w,vault:w,destination:w,systemProgram:r?,",
+        "mint:r?,vaultTokenAccount:w?,destinationTokenAccount:w?,tokenProgram:r?"
     ),
+    "amount:u64,decimals:u8,memo:?text",
+)];
+
+const CLOSE_INSTRUCTIONS: &[InstructionSpec] = &[
     ("configTransactionAccountsClose", CLOSE, ""),
     ("vaultTransactionAccountsClose", CLOSE, ""),
     (
@@ -163,31 +184,48 @@ pub(super) const INSTRUCTIONS: &[(&str, &str, &str)] = &[
     ),
 ];
 
+/// Ordered groups preserve the exact instruction sequence of the pinned MIT Dart source.
+const INSTRUCTION_GROUPS: &[&[InstructionSpec]] = &[
+    PROGRAM_CONFIG_INSTRUCTIONS,
+    MULTISIG_INSTRUCTIONS,
+    SPENDING_LIMIT_INSTRUCTIONS,
+    TRANSACTION_INSTRUCTIONS,
+    BATCH_INSTRUCTIONS,
+    PROPOSAL_INSTRUCTIONS,
+    SPENDING_USE_INSTRUCTIONS,
+    CLOSE_INSTRUCTIONS,
+];
+
 pub(super) fn instructions() -> Result<Vec<Value>, Error> {
-    INSTRUCTIONS.iter().map(|(name, accounts, payload)| {
-        let mut arguments = vec![json!({"kind":"instructionArgumentNode","name":"discriminator",
-            "type":{
-                "kind":"fixedSizeTypeNode","size":HEADER_BYTES,
-                "type":{"kind":"bytesTypeNode"}
-            },
-            "defaultValue":{"kind":"bytesValueNode","encoding":"base16",
-                "data":discriminator("global", &identifier(name)?)
-            },"defaultValueStrategy":"omitted"})];
-        arguments.extend(fields(payload,"instructionArgumentNode")?);
-        let mut output = json!({"kind":"instructionNode","name":name,"accounts":roles(accounts)?,
-            "arguments":arguments,"optionalAccountStrategy":"programId",
-            "discriminators":[{
-                "kind":"fieldDiscriminatorNode","name":"discriminator","offset":0
-            }]});
+    INSTRUCTION_GROUPS
+        .iter()
+        .flat_map(|group| group.iter().copied())
+        .map(|(name, accounts, payload)| {
+            let mut arguments = vec![json!({"kind":"instructionArgumentNode","name":"discriminator",
+                "type":{
+                    "kind":"fixedSizeTypeNode","size":HEADER_BYTES,
+                    "type":{"kind":"bytesTypeNode"}
+                },
+                "defaultValue":{"kind":"bytesValueNode","encoding":"base16",
+                    "data":discriminator("global", &identifier(name)?)
+                },"defaultValueStrategy":"omitted"})];
+            arguments.extend(fields(payload,"instructionArgumentNode")?);
+            let mut output = json!({"kind":"instructionNode","name":name,
+                "accounts":roles(accounts)?,"arguments":arguments,
+                "optionalAccountStrategy":"programId",
+                "discriminators":[{
+                    "kind":"fieldDiscriminatorNode","name":"discriminator","offset":0
+                }]});
 
-        if [
-            "configTransactionExecute", "vaultTransactionExecute", "batchExecuteTransaction"
-        ].contains(name) {
-            output["remainingAccounts"] = json!([{"kind":"instructionRemainingAccountsNode",
-                "value":{"kind":"argumentValueNode","name":"remaining"},"isOptional":true,
-                "privilegePolicy":"callerProvided"}]);
-        }
+            if [
+                "configTransactionExecute", "vaultTransactionExecute", "batchExecuteTransaction"
+            ].contains(&name) {
+                output["remainingAccounts"] = json!([{"kind":"instructionRemainingAccountsNode",
+                    "value":{"kind":"argumentValueNode","name":"remaining"},"isOptional":true,
+                    "privilegePolicy":"callerProvided"}]);
+            }
 
-        Ok(output)
-    }).collect()
+            Ok(output)
+        })
+        .collect()
 }

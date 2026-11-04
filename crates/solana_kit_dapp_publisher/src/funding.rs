@@ -14,6 +14,8 @@ pub const MIN_PUBLICATION_SIGNER_BALANCE_LAMPORTS: u64 = 16_000_000;
 pub const DEFAULT_MAINNET_RPC_URL: &str = "https://api.mainnet-beta.solana.com";
 
 const MICRO_LAMPORTS_PER_SOL: u128 = 1_000_000;
+const LAMPORTS_PER_MICRO_LAMPORT: u128 = 1_000;
+const MICRO_LAMPORT_ROUNDING: u128 = 500;
 
 /// One bounded funding observation.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -57,18 +59,25 @@ impl std::error::Error for FundingError {}
 /// check; otherwise the caller receives the default mainnet endpoint. The SDK
 /// does not validate or contact the URL here.
 pub fn resolve_funding_rpc_url(local_dev: bool, explicit: Option<&str>) -> Option<&str> {
-    match explicit.map(str::trim).filter(|value| !value.is_empty()) {
-        Some(url) => Some(url),
-        None if local_dev => None,
-        None => Some(DEFAULT_MAINNET_RPC_URL),
+    let explicit = explicit.map(str::trim).filter(|value| !value.is_empty());
+
+    if let Some(url) = explicit {
+        return Some(url);
     }
+
+    if local_dev {
+        return None;
+    }
+
+    Some(DEFAULT_MAINNET_RPC_URL)
 }
 
 /// Formats lamports as a six-decimal SOL amount using integer rounding.
 pub fn format_sol_amount(lamports: u64) -> String {
-    let micros = (u128::from(lamports) + 500) / 1_000;
+    let micros = (u128::from(lamports) + MICRO_LAMPORT_ROUNDING) / LAMPORTS_PER_MICRO_LAMPORT;
     let whole = micros / MICRO_LAMPORTS_PER_SOL;
     let fraction = micros % MICRO_LAMPORTS_PER_SOL;
+
     format!("{whole}.{fraction:06}")
 }
 
@@ -115,31 +124,41 @@ mod tests {
 
     #[test]
     fn sol_formatting_uses_integer_six_decimal_rounding() {
+        let half_micro_lamport = MICRO_LAMPORT_ROUNDING as u64;
+
         assert_eq!(format_sol_amount(0), "0.000000");
         assert_eq!(format_sol_amount(1), "0.000000");
-        assert_eq!(format_sol_amount(500), "0.000001");
-        assert_eq!(format_sol_amount(16_000_000), "0.016000");
+        assert_eq!(format_sol_amount(half_micro_lamport), "0.000001");
+        assert_eq!(
+            format_sol_amount(MIN_PUBLICATION_SIGNER_BALANCE_LAMPORTS),
+            "0.016000"
+        );
         assert_eq!(format_sol_amount(1_234_567_890), "1.234568");
     }
 
     #[test]
     fn balance_check_preserves_the_observed_value_and_threshold() {
+        let below_minimum = MIN_PUBLICATION_SIGNER_BALANCE_LAMPORTS - 1;
+
         assert_eq!(
-            check_signer_balance("11111111111111111111111111111111", 15_999_999),
+            check_signer_balance("11111111111111111111111111111111", below_minimum),
             Ok(FundingCheck::Insufficient {
-                balance: 15_999_999,
+                balance: below_minimum,
                 required: MIN_PUBLICATION_SIGNER_BALANCE_LAMPORTS,
             })
         );
         assert_eq!(
-            check_signer_balance("11111111111111111111111111111111", 16_000_000),
+            check_signer_balance(
+                "11111111111111111111111111111111",
+                MIN_PUBLICATION_SIGNER_BALANCE_LAMPORTS
+            ),
             Ok(FundingCheck::Sufficient {
-                balance: 16_000_000,
+                balance: MIN_PUBLICATION_SIGNER_BALANCE_LAMPORTS,
                 required: MIN_PUBLICATION_SIGNER_BALANCE_LAMPORTS,
             })
         );
         assert_eq!(
-            check_signer_balance("not-an-address", 16_000_000),
+            check_signer_balance("not-an-address", MIN_PUBLICATION_SIGNER_BALANCE_LAMPORTS),
             Err(FundingError::InvalidAddress)
         );
     }

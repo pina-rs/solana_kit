@@ -4,20 +4,20 @@ The source contract is the MIT-licensed Dart Jupiter package at
 `0138bb956d2d81ccc0c56edc602401c0df2f2b46`. The package retains its MIT notice;
 original Rust implementation uses the Unlicense. No official Solana crate is used.
 
-| Pinned Dart declaration | Rust public surface |
-| --- | --- |
-| `JupiterOrderRequest`, `toQueryParameters` | `OrderRequest`, `to_query_parameters` |
-| `JupiterSwapMode`, `JupiterOrderMode` | `SwapMode`, `OrderMode` |
-| `JupiterOrderResponse` | `OrderResponse`, `decode_order` |
-| `JupiterExecutionResponse` | `ExecutionResponse`, `decode_execution` |
-| `JupiterInstructionPayload` | `InstructionPayload`, `to_instruction` |
-| `JupiterAccountMetaPayload` | `AccountMetaPayload`, `to_account_meta` |
-| `JupiterBuildResponse` | `BuildResponse`, `decode_build` |
-| `JupiterBlockhashWithMetadata` | `BlockhashWithMetadata`, `to_lifetime` |
-| `JupiterSwapClient.getOrder` | `Client::get_order`, `GET /swap/v2/order` |
-| `JupiterSwapClient.buildSwap` | `Client::build_swap`, `GET /swap/v2/build` |
-| `JupiterSwapClient.executeOrder` | `Client::execute_order`, `POST /swap/v2/execute` |
-| `decodeBase64SwapTransaction` | `decode_base64_swap_transaction` |
+| Pinned Dart declaration                    | Rust public surface                              |
+| ------------------------------------------ | ------------------------------------------------ |
+| `JupiterOrderRequest`, `toQueryParameters` | `OrderRequest`, `to_query_parameters`            |
+| `JupiterSwapMode`, `JupiterOrderMode`      | `SwapMode`, `OrderMode`                          |
+| `JupiterOrderResponse`                     | `OrderResponse`, `decode_order`                  |
+| `JupiterExecutionResponse`                 | `ExecutionResponse`, `decode_execution`          |
+| `JupiterInstructionPayload`                | `InstructionPayload`, `to_instruction`           |
+| `JupiterAccountMetaPayload`                | `AccountMetaPayload`, `to_account_meta`          |
+| `JupiterBuildResponse`                     | `BuildResponse`, `decode_build`                  |
+| `JupiterBlockhashWithMetadata`             | `BlockhashWithMetadata`, `to_lifetime`           |
+| `JupiterSwapClient.getOrder`               | `Client::get_order`, `GET /swap/v2/order`        |
+| `JupiterSwapClient.buildSwap`              | `Client::build_swap`, `GET /swap/v2/build`       |
+| `JupiterSwapClient.executeOrder`           | `Client::execute_order`, `POST /swap/v2/execute` |
+| `decodeBase64SwapTransaction`              | `decode_base64_swap_transaction`                 |
 
 The unused Dart `userPublicKey` execution argument has no Rust counterpart:
 the signed transaction already carries wallet identity. Execution requires the
