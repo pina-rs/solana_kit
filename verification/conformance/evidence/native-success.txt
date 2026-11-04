@@ -453,4 +453,11 @@ publisher-workflow-durable-effects-and-cancellation: Ok(())
 publisher-workflow-apk-headers-and-admission: Ok(())
 publisher-workflow-public-url-boundaries: Ok(())
 publisher-workflow-completion-stages: Ok(())
-solana-kit-core-v55: 448/448 cases passed
+grind-entropy-cancellation: Ok(())
+message-decompile-roundtrip: Ok(())
+signer-explicit-config: Ok(())
+token-mint-ata-plans: Ok(())
+client-parsed-account-families: Ok(())
+fixed-point-codec-pairing: Ok(())
+test-support-scripted-client: Ok(())
+solana-kit-core-v56: 455/455 cases passed

@@ -9,9 +9,9 @@ pressing its report each execute the whole suite. Wasmi 2 meters Wasm operations
 dynamic copying, and first-use lazy function translation. It does not meter
 elapsed time. The upstream application default and production source are unchanged.
 
-The prepared 400-case v47 suite receives **13,965,000,000 fuel per entry**.
+The prepared 455-case v56 suite receives **15,190,000,000 fuel per entry**.
 The host computes `15_000_000 × (EXPECTED_CASE_COUNT - 3) +
-5_000_000 × (MAX_BATCH + 1 + 3 × MESSAGE_COUNT + 4 + 573)` with checked arithmetic.
+5_000_000 × (MAX_BATCH + 1 + 3 × MESSAGE_COUNT + 4 + 573 + 80)` with checked arithmetic.
 These are pooled workload
 allowances, not individual case limits. The inputs are compile-time fixture
 metadata, never guest reports. Missing cases, invalid batch sizes, and arithmetic
@@ -33,14 +33,23 @@ Pyth account groups, four Hermes response groups, four Hermes GET groups and thr
 receiver instruction/PDA groups, five Jupiter price/token groups and ten Jupiter
 swap groups, and four SNS groups receive the unchanged ordinary-case allowance.
 
-Current CI must execute all 400 canonical cases and the 399/400 sole-hash-corruption
+The seven appended parity-completion groups add only ordinary reading and the
+explicit crypto ledger below. They cover grinding and cancellation, message
+decompilation, explicit signer configuration, Token instruction plans, typed
+parsed-account families, fixed-point codec pairing, and scripted client exchanges.
+Their source-owned ledger contributes 80 crypto units: 69 grinding key
+derivations, five signer key operations, and six derived associated-address
+searches. It is not a measured minimum and does not change the ordinary or crypto
+rates.
+
+Current CI must execute all 455 canonical cases and the 454/455 sole-hash-corruption
 report through the actual pinned host. The earlier 108-case acceptance and 92-case
 minimum measurements below remain historical. No current-suite minimum,
 elapsed-time or SDK speed claim is made.
 
-The checked-in native reports record actual v47 execution: 400/400 canonical
-and 399/400 corrupted, with a failure exit for the corruption control. All
-preceding 392 result entries remain byte-identical. These native reports do not
+The checked-in native reports record actual v56 execution: 455/455 canonical
+and 454/455 corrupted, with a failure exit for the corruption control. All
+preceding 448 result entries remain byte-identical. These native reports do not
 establish browser, WASI or interpreted execution of the current suite.
 
 The two Token groups and three confirmation groups add only ordinary work.

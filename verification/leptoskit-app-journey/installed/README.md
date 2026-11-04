@@ -183,9 +183,11 @@ Compilation, Clippy and protocol tests do not establish installed OS acceptance;
 the actual journey must pass for each platform. The complete iOS controller,
 including save/relaunch/restore and subscription/cancellation, passed twice
 locally on 2026-11-04. The [current execution receipt](../../../docs/verification/installed-wallet-current.md)
-records the source, artifacts and limits. Current macOS and Android installed
-journeys remain unexecuted successfully. Browser subscription acceptance remains
-separate work.
+records the source, artifacts and limits. The same three-process macOS functional journey subsequently
+passed through computer use, including independent ledger checks and both subscription races; its
+[receipt](../../../docs/verification/installed-wallet-macos-current.md) distinguishes that result from
+the unavailable Mac2 driver. Current Android installed acceptance remains unexecuted. Browser
+subscription acceptance is separate evidence.
 
 This is exclusively off-chain client verification. Use Pina or official Solana
 program libraries for on-chain programs.
