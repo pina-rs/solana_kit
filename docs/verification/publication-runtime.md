@@ -3,11 +3,17 @@
 The shared suite executes the four normalized publication-projection groups and,
 from v58, the 365-constant error-code catalog. The publication groups reuse the
 32 existing native bodies; the catalog groups reuse the same shared body as the
-native `shared_errors` integration test. No production SDK source changed.
+native `shared_errors` integration test. The error catalog now references the
+existing public constants instead of repeating their numeric literals; their
+values and behavior are unchanged.
 
-The final five-host execution ran from the working tree based on `f1e27418`
-that produced the checked-in reports below. It is the same code and report tree
+The final five-host execution ran from the working tree based on `0e5fbce3`,
+including the public-constant binding fix, that produced the reports below. It is the same code and report tree
 recorded by this change; no compilation-only result is claimed.
+
+The earlier publication-only v57/459 run used signed executable
+`16379ca98e40e8d3aed937017e056b4bac4c1b60`, rebased onto `1d70bc37`.
+Its historical artifacts remain separate from this v58 execution.
 
 ## Suite identity and preserved order
 
@@ -81,8 +87,8 @@ the final execution:
 
 ```text
 b56f17cd0a4005e99cb386efe113933f6848059925eb068b6051174eefa431cc  wasm32-unknown-unknown release guest
-c0ad0b4997a8f8fe94e67bc0ce49c193d937a00aecf88c1ac45d6df1deb5a179  wasm32-wasip1 debug command
-68d430c178123b4c2da663a1369e1b794ecc213314dac1c846b44662917b6f25  wasm32-wasip2 debug command
+dc61c1c0c9c962403935487f07fd52c6f0ea3b48a4c736b34a4d953e59d5b6c8  wasm32-wasip1 debug command
+c3e9d72e96bebeda1cc13acfe8a3d154690c457e6f26b2610a504400451bb92f  wasm32-wasip2 debug command
 ```
 
 No per-case timing or performance measurement is claimed.
@@ -150,4 +156,6 @@ live wallet, validator, registry publication, store submission, external upload,
 installed device or network RPC claim. The suite count and receipt do not mark the
 whole SDK, the errors package or any phase complete. Actual command outputs and
 statuses were retained outside build targets by the implementation unit. Those
-disposable local artifacts are not committed.
+disposable local artifacts are not committed. The final logs, runtime outputs,
+generator comparison and artifact hashes are retained at
+`/tmp/solana-kit-error-parent-final/` outside build targets.

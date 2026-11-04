@@ -68,6 +68,16 @@ row, in order, the body checks:
 - the default-context message renders and is non-empty;
 - definition count, fixture row count and unique-integer count are all 365.
 
+Each `CodeDefinition::code` references its existing public `ErrorCode` constant.
+The catalog no longer repeats the constant's numeric literal. This binds the
+comparison to the public API: a disposable negative control changed only
+`BLOCK_HEIGHT_EXCEEDED` from `Self(1)` to `Self(999)`, leaving the fixture intact.
+The exact test then failed with `catalog integer differs` for
+`blockHeightExceeded`. The unmodified public values, templates and definition
+order are preserved.
+The maintained catalog generator emits these constant references too; formatted
+regeneration reproduces all catalog modules and the unchanged literal fixture.
+
 Mismatches return a `CaseResult` error with a stable field explanation. They do
 not panic, abort the guest, or discard later case results.
 

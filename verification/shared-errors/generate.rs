@@ -65,8 +65,8 @@ fn emit_group(group: &[Vec<&str>]) -> String {
 
     for row in group {
         source.push_str(&format!(
-            "CodeDefinition {{ code: ErrorCode({}), name: {:?}, template: {:?} }},\n",
-            row[1],
+            "    CodeDefinition {{\n        code: ErrorCode::{},\n        name: {:?},\n        template: {:?},\n    }},\n",
+            constant_name(row[0]),
             row[0],
             decode_message(row[3])
         ));
