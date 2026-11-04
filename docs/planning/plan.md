@@ -190,7 +190,8 @@ snapshots and all 256 distinct message signing/oracle assertions to its historic
 105-case suite. Its declaration receipt retains 39 partial, 46 pending and zero
 complete IDs. Typed composition replaces dynamic discovery and attachment.
 Explicit configuration and bounded key generation now have their own receipts;
-the installed iOS wallet controller also exercises native persistence and recovery.
+the installed iOS, Android and macOS wallet journeys also exercise native
+persistence and recovery.
 These additions do not silently adjudicate the historical declaration rows.
 
 ## Phase 4: RPC and host transports
@@ -220,8 +221,9 @@ The optional LeptosKit HTTP adapter now has accepted actual-host execution throu
 public `Client<GuestHttp>` and host-owned `NativeHttp`. Its application owns the
 local executor, singleton Events routing and completion loop. Guest networking
 uses fixed named host services; cancellation retains capacity until real native
-termination is joined. This headless result leaves generated desktop, Android
-and iOS application wiring, other capabilities and full Phase 4 coverage open.
+termination is joined. The installed iOS, Android and macOS wallet journeys now
+execute this HTTP path, plus the socket path, through generated applications;
+other capabilities and full Phase 4 coverage remain open.
 
 ## Phase 5: subscriptions and orchestration
 
@@ -304,9 +306,11 @@ adds caller-supplied P-256 keys and IVs, HELLO negotiation, ordered authenticate
 framing, JSON-RPC contracts, legacy compatibility mapping, and SIWS validation.
 Independent Dart crypto vectors execute in both directions. Ordinary native
 consumers run on current Rust and Rust 1.89; all three Wasm targets compile on
-current Rust. Platform handover, wallet transports, UI, and actual wallet or
-device runtime journeys remain pending. All 179 canonical protocol declarations
-remain partial.
+current Rust. A local native loopback transport, the Android handover plugin and
+a wallet control surface are implemented and have native peer tests. Those tests
+are not an external-wallet receipt. A real external-wallet journey, remote
+reflector transport and browser handover remain unproven. All 179 canonical
+protocol declarations remain partial.
 
 ## Phase 8: integrations, tooling, and release readiness
 
@@ -355,21 +359,27 @@ Operation coverage does not complete those declaration contracts.
 Foundation, node, economics, account/token and history groups execute with
 memory transports across native Rust, Chrome, both WASI previews, and the actual
 pinned LeptosKit host. Accepted native, Window Fetch and headless LeptosKit HTTP
-adapters add separate network evidence. These results do not establish installed device support or full
-Phase 4 completion.
+adapters add separate network evidence. These RPC catalog results do not by
+themselves establish installed device support or full Phase 4 completion; the
+separate installed wallet receipts establish only their named generated-app
+journeys.
 
 The production LeptosKit HTTP driver now supports a caller-owned interpreter via
 short borrows and owned completions, with `HttpHost` delegating to the same owner
-of services and jobs. Its upstream identity and scoped-access prerequisite is
-pinned to public commit `706334eaa3e011d1ef986159911b0d80c80d3e9f`.
-Platform scheduling and awaited-close hooks and generated desktop, Android and
-iOS HTTP journeys remain unimplemented and unaccepted.
+of services and jobs. The current crate and installed receipts use public
+framework commit `7437097c52aa68a3401bd378764e051ed4c9165a`; the separate
+portable conformance host retains its earlier pin. Installed generated iOS,
+Android and macOS wallet journeys now exercise the HTTP and socket paths.
+Swift/Kotlin platform scheduling and awaited-close hooks are not established by
+those receipts and remain unimplemented and unaccepted.
 
 The bounded [Mobile Wallet Adapter runtime receipt](../verification/mwa-runtime.md)
 adds seven groups to the unchanged 111-case frontier. All 26 public MWA/URI and
 independent protocol contracts execute in the maintained 118-case suite on native
 Rust, Chrome, both WASI previews and the actual LeptosKit interpreter. Existing
 37 default-wallet tests and their portable groups remain unchanged. All 179 MWA
-canonical rows remain partial. Entropy, globally unique IVs, time, persistence,
-platform handover and installed desktop/mobile wallet journeys remain caller or
-future application work. This does not complete Phase 7.
+canonical rows remain partial. Entropy, globally unique IVs, time and persistence
+remain caller-owned. The local native transport and Android handover now have
+loopback and platform-source evidence; an installed external-wallet journey,
+remote reflector transport and browser handover remain unproven. This does not
+complete Phase 7.
