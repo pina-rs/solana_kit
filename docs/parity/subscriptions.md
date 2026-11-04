@@ -3,7 +3,9 @@
 The public client implements nine typed subscription families through one mutable
 `subscriptions::Connection`. The caller owns text-frame transport, tick values,
 and generation identities. This is exclusively an off-chain client protocol.
-No native, browser, WASI, LeptosKit, validator, or device networking is proved here.
+No network transport, validator acceptance or device networking is proved here;
+the linked portable groups execute complete in-memory frames on the five
+conformance hosts.
 
 `docs/parity/subscriptions.tsv` extracts all 173 declaration IDs from the three
 pinned subscription packages. There are 68 partial and 105 pending entries, and
@@ -33,9 +35,12 @@ cargo test -p solana_kit_client --test subscriptions --test subscription_familie
 ```
 
 The isolated cases are registered in `verification/subscriptions-design/cases.tsv`.
-They have not been added to the shared portable runtime suite. Three Wasm target
-checks establish compilation only. Native in-memory tests establish actual public
-protocol execution, not network transport execution.
+Four portable groups now extend the [shared conformance registry](../verification/subscription-runtime.md)
+after the existing 77 groups: `subscriptions-nine-families`,
+`subscriptions-typed-variants`, `subscriptions-lifecycle` and
+`subscriptions-malformed-bounds`. Three Wasm target checks establish compilation
+only. These groups use complete in-memory text frames; they do not establish
+network transport execution.
 
 The original pinned Dart API and protocol tests execute separately. They are an
 oracle for reference behavior, not proof of identical behavior. Rust deliberately

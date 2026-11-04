@@ -244,7 +244,9 @@ cancellation evidence. WASI adapter correction remains outside this accepted
 snapshot. In particular, WASI denial and early-response handling
 during an upload need corrected error precedence and independent verification.
 LeptosKit fixture entropy and injected time do not prove platform entropy or
-timers. Installed desktop, Android, and iOS journeys remain required.
+timers. Installed local-wallet desktop, Android and iOS journeys now exist for
+the wallet controller; broader installed application journeys and external MWA
+acceptance remain required.
 
 Publishing the LeptosKit adapter may need to wait for its dependencies to become
 registry-available. Avoid publishing an unusable adapter with missing host
@@ -287,8 +289,10 @@ only aborts. `HttpHost` owns a host and this same driver, with no second registr
 The rejected closure-owned candidate captures `App` for its entire lifetime and
 prevents independent application access while waiting. The caller-borrowed shape
 keeps interpreter ownership with the application. Native waiting uses no hidden
-runtime or platform pump. Swift and Kotlin scheduling and awaited close hooks,
-and generated desktop and mobile HTTP journeys, remain future work.
+runtime or platform pump. Swift and Kotlin scheduling and awaited close hooks
+remain future work. The installed local-wallet iOS, Android and macOS receipts
+now execute `Client<GuestHttp>` in generated applications; external MWA and
+public-reflector interoperability remain separate gaps.
 
 ## Portable wallet protocol
 

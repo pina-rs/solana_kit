@@ -16,11 +16,15 @@ explicit constructor, default LE selection and byte-order accessor replace the
 Dart config object. Rust integer types and checked conversions replace coercing
 fractional `num` inputs. `ensure_number_range` supplies the two inclusive range
 assertions through `PartialOrd`, retaining the reference's behavior for NaN.
-`Encoder`/`Decoder` traits replace callback factories; a clean external consumer
-implements an arbitrary checked three-byte numeric codec and executes its
-success, overflow and truncation paths. Four dynamically sized BigInt helpers
-remain partial: typed 64/128/256-bit codecs exist, but arbitrary caller-selected
-multiword widths are not a public generic helper.
+
+`Encoder`/`Decoder` traits replace callback factories. A clean external consumer
+implements a checked three-byte numeric codec and runs its success, overflow and
+truncation paths. `BigNumber<BigUint>` and `BigNumber<BigInt>` in
+`crates/solana_kit_core/src/codecs/big_number.rs` accept a nonzero width and
+LE/BE order with range and trailing-byte checks. The four BigInt rows stay
+partial because the scoped receipt is not yet adjudicated; their old width
+reason is stale. The `core_parity` BigInt tests run 2-, 3- and 33-byte cases
+with `--features bigint-codecs`.
 
 `Uint256` and `Int256` parse radix 2 through 36 and decimal `FromStr` without
 floating point, reject overflow and invalid syntax, and format exact canonical
@@ -37,9 +41,12 @@ size calculation, accepts at most 4096 input symbols, and supports BMP alphabets
 of 2 through 65536 symbols, including the reference's first-duplicate lookup
 behavior. Non-BMP alphabets remain partial because the Dart implementation
 indexes UTF-16 code units, which may produce lone surrogates that Rust strings
-cannot represent. The generic bit-reslicing codec validates a power-of-two
-alphabet and 1 through 16 bits per symbol; it discards incomplete trailing input
-bits and zero-pads the final decoded symbol.
+cannot represent. This is a deliberate boundary across the three BaseX rows, not
+a missing BMP alphabet contract.
+
+The generic bit-reslicing codec validates a power-of-two alphabet and 1 through
+16 bits per symbol. It discards incomplete trailing input bits and zero-pads the
+final decoded symbol.
 
 `Utf8Config` defaults to strict decode, stripping the first BOM and preserving
 nulls. All eight option combinations match the executed Dart fixtures, including
@@ -67,10 +74,12 @@ Evidence executes 1,536 actual Dart text fixtures, 88 UTF-8 configurations,
 and 17,920 additional BigInt radix comparisons. The clean external consumer also
 executes on MSRV 1.89. An unchanged independent consumer replays 19,158 actual
 Dart oracle rows against the integrated public package with zero mismatches.
-Three portable groups now execute in the shared 59-case suite natively, in
+
+Three portable groups entered the then-current shared 59-case suite natively, in
 Chrome, in Wasmtime Preview 1 and Preview 2, and in the pinned actual LeptosKit
-host. The [runtime receipt](../verification/runtimes.md) records the executed
-source and artifact hashes. This bounded evidence does not complete Phase 2,
+host. They remain in the current v57/459 suite. The
+[runtime receipt](../verification/runtimes.md) records the executed source and
+artifact hashes. This bounded evidence does not complete Phase 2,
 installed-app journeys, or the seven partial capabilities.
 The original MIT license is retained beside the generated fixtures. Component
 publication remains disabled.
