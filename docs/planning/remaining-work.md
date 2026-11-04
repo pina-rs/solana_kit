@@ -477,20 +477,22 @@ wrapper.
 
 ### RW-07 Whole-workspace registry and package release rehearsal
 
-**Kind.** Executed local rehearsal, with archive-form and external publication
-prerequisites still open.
+**Kind.** Executed local rehearsal, with external publication prerequisites
+still open.
 
 **Acceptance criterion.** Phase 1 requires repeatable release preparation.
 Phase 8 requires clean-consumer packaging and real release readiness; only
 implemented crates may be published.
 
 **Executed follow-up.** The [package rehearsal receipt](../verification/sdk-package-rehearsal-current.md)
-records a successful disposable Monochange apply and lock refresh, 34
-dependency-ordered archives, 32 fresh archive reviews over 1,103 members, and a
-207-package offline registry. The downstream consumer passes 9 default and
-12 selected-feature tests on current Rust and actual Rust 1.89, plus a portable
-Wasm compile check. Default and selected PackageID/member audits are separate;
-missing-archive and checksum controls use fresh namespaces.
+records a successful disposable Monochange apply and lock refresh from the fresh
+`9682bebd` snapshot, 34 dependency-ordered archives, 34 fresh archive reviews over
+1,287 members, and a 207-package offline registry. The downstream consumer passes
+9 default and 12 selected-feature tests on current Rust and actual Rust 1.89,
+plus a portable Wasm compile check. Default and selected PackageID/member audits
+are separate; missing-archive and checksum controls use fresh namespaces. Wallet's
+interior-space filenames and Token-2022's bounded GNU long-name records are now
+ordinary fresh reviews, not form exceptions.
 
 The rehearsal exposed a stale target-specific Browser-to-Wallet requirement
 during Wallet's planned 0.2.0 bump. Browser now inherits the shared requirement,
@@ -502,21 +504,21 @@ The same local-registry installation exposed a hard-coded CLI version display.
 The executable now reports its own Cargo package version, while the retained
 library constant follows library metadata. A staged CLI 9.8.7/library 1.2.3 copy
 passed the black-box version tests, and corrected 0.1.1 archives installed from a
-fresh 207-package registry report `solana-kit-publisher 0.1.1`. Only those two
-archives were rebuilt and reviewed; the remaining 32 stayed read-only.
+fresh 207-package registry report `solana-kit-publisher 0.1.1`. In that
+correction run only those two archives were rebuilt and reviewed; the fresh
+34-archive run above requalifies all of them.
 
-**Remaining limits.** Wallet filenames with spaces and Token-2022 GNU long-name
-records are outside the maintained archive gate's supported forms. Those two
-archives have checksum custody but no fresh style/member audit. LeptosKit's Git
-upstream is not a registry package. Twenty included crates retain
-`publish = false`; the others stop at an offline registry-API dry run. Actual
-registry versions, publication decisions and authorization are still required.
-The corrected archives still exclude their lockfiles, so installation resolves a
-fresh dependency graph instead of proving an immutable published lock.
+**Remaining limits.** LeptosKit's Git upstream is not a registry package. Twenty
+included crates retain `publish = false`; the others stop at an offline
+registry-API dry run. Actual registry versions, publication decisions and
+authorization are still required. The corrected archives still exclude their
+lockfiles, so installation resolves a fresh dependency graph instead of proving
+an immutable published lock. This remains local macOS package evidence, not
+Linux/Windows execution, publication or whole-SDK completion.
 
 **Owning code.** `monochange.toml`, the shared Wallet dependency,
-`xtask/src/package_rehearsal/`, `xtask/src/registry_fixture.rs`, and
-`xtask/PACKAGE_REVIEW.md`.
+`xtask/src/package_review/archive.rs`, `xtask/src/package_rehearsal/`,
+`xtask/src/registry_fixture.rs`, and `xtask/PACKAGE_REVIEW.md`.
 
 **Verification.**
 
@@ -528,10 +530,10 @@ monochange prepare
 cargo xtask package-rehearsal /absolute/path/to/rehearsal.json
 ```
 
-**Next minimal unit.** Add bounded archive-form support and requalify both
-remaining archives without weakening existing rejection controls or scores.
-Real registry API acceptance and publication remain explicitly authorized
-release work; this local gate does not enable them.
+**Next minimal unit.** None for local archive-form support; Wallet and
+Token-2022 now pass the maintained gate as fresh reviews. Real registry API
+acceptance and publication remain explicitly authorized release work; this
+local gate does not enable them.
 
 ### RW-08 Native Linux and Windows execution evidence
 
@@ -802,9 +804,9 @@ functional computer-use proof distinct from the automated driver route.
 6. **RW-06**: publisher reconciliation decision. The caller-explicit
    cleanup/resume contract is accepted; CLI registry enablement stays in RW-07.
 7. **RW-08**: Linux/Windows CI evidence; can run in parallel with the above.
-8. **RW-07**: the local prepared-package rehearsal is executed; finish the two
-   archive-form reviews and CLI version display, then address real-registry
-   release prerequisites.
+8. **RW-07**: the local prepared-package rehearsal, all 34 fresh archive reviews
+   and CLI version display are executed; address real-registry release
+   prerequisites next.
 9. **RW-09**: remaining program breadth. The twelve RW-10/RW-11 residual IDs
    have reviewed partial adjudications; broader numeric-family closure stays
    under RW-01.

@@ -10,9 +10,18 @@ The receipt directory must not exist. `source` names the reviewed crate source.
 Use the repository's exact `monostyle.toml` policy. Authenticate tools and resource
 ownership in the invoking driver before starting this command.
 
-The gate checks raw GNU and USTAR headers after bounded decompression. It rejects tar
-extensions, duplicate or escaped names and nonregular members. Each actual
-member's type, size and SHA256 is preserved in `members.json`.
+The gate checks raw GNU and USTAR headers after bounded decompression. It accepts
+ordinary regular files, including real Cargo member names with interior ASCII
+spaces, and bounded GNU `L` long-name metadata for the immediately following
+regular file. A long name must be NUL-terminated, unambiguous UTF-8, within its
+bound, and match the truncated name in the next header. Orphaned, repeated,
+oversized or mismatched metadata is rejected. Every header and metadata checksum,
+payload offset, padding and end marker is validated before any member is written.
+All other tar extensions and every nonregular member are rejected, including GNU
+`K`, links, directories and pax records. Duplicate effective names, conflicting
+roots, escaped or ambiguous paths and control characters remain failures.
+
+Each actual member's type, size and SHA256 is preserved in `members.json`.
 It compares all source members with the crate source. Cargo's normalized manifest,
 generated lockfile and optional VCS metadata are recorded as generated inputs;
 `Cargo.toml.orig` must match the authored manifest.
