@@ -75,8 +75,9 @@ associated-account plans, typed parsed-account families, direct fixed-point
 `Paired` composition, and scripted client exchanges. The
 [parity-completion runtime receipt](parity-completion-runtime.md) records the
 exact ledger and statuses. The first 448 report rows remain byte-identical to
-the captured v55 report. Installed iOS and macOS wallet execution is recorded
-[separately](installed-wallet-current.md).
+the captured v55 report. Installed iOS and Android wallet execution is recorded
+[separately](installed-wallet-current.md); the macOS computer-use journey has
+its own [receipt](installed-wallet-macos-current.md).
 
 ## Historical v27 introspection integration
 

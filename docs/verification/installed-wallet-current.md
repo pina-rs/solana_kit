@@ -90,8 +90,8 @@ existing computer-use connection, including independent ledger checks and both s
 see the [macOS execution receipt](installed-wallet-macos-current.md). Mac2's XCTest runner still timed
 out while enabling automation, and developer-tool authorization was unchanged. The successful manual
 native journey is separate from that unavailable automated driver route.
-Android's device opener failed to boot its advertised emulator, and its
-suggested diagnostic reported an unknown AVD name. No current Android installed
-execution is claimed. Physical devices, production networks, external wallet
-Intents, and complete platform acceptance beyond this wallet controller remain
-outside this receipt.
+The maintained Android controller subsequently completed the three-process journey twice on a freshly
+created arm64 API 35 emulator, including both subscription races and all ledger oracles; see the
+[Android execution receipt](installed-wallet-android-current.md). Physical devices, production
+networks, external wallet Intents, and complete platform acceptance beyond this wallet controller
+remain outside these receipts.
