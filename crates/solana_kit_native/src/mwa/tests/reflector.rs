@@ -30,7 +30,7 @@ const KEY: &[u8] = include_bytes!("../../../tests/fixtures/server-key.der");
 const WRONG_ROOT: &[u8] = include_bytes!("../../../tests/fixtures/wrong-ca.der");
 const OFFER: &str = "com.solana.mobilewalletadapter.v1, com.solana.mobilewalletadapter.v1.base64";
 
-/// Source-literal reflector ID bytes from the pinned scenario fixture.
+/// Independent length-prefixed reflector ID fixture with a literal URI oracle.
 pub(super) const ID_BYTES: [u8; 4] = [0x03, 0x01, 0x02, 0x03];
 
 /// The TLS-protected server side of one reflector fixture.

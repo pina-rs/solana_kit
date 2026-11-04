@@ -1,6 +1,6 @@
 ---
 solana_kit_native: minor
-solana_kit_wallet: patch
+solana_kit_wallet: minor
 ---
 
 # Connect to an explicit remote MWA reflector

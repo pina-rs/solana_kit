@@ -296,6 +296,11 @@ deadline. Dropping the pending owner or either in-flight future closes the
 single socket and erases the association/agreement keys. There is no default
 reflector, redirect, retry, background task or fallback transport.
 
+All timeout settings reject zero or unrepresentable values before connection
+I/O. Reflector authorities and pairing URIs are redacted from `Debug`.
+Dropping the future cancels SDK-owned work; it does not establish cancellation
+of Tokio's underlying operating-system hostname resolver.
+
 The base64 subprotocol encodes each complete MWA payload as one padded standard
 base64 text frame. Both the encoded text and its decoded payload must fit
 `WsConfig::max_frame_bytes`; malformed or oversized values reject before an

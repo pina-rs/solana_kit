@@ -186,6 +186,7 @@ async fn selected_reflector_session(encoding: Encoding) {
         authority.replace(':', "%3A"),
     );
     assert_eq!(pending.uri(), expected);
+    assert_eq!(format!("{pending:?}"), "PendingRemoteAssociation { .. }");
     key_tx.send(key).unwrap();
 
     let mut wallet = tokio::time::timeout(SERVER_DEADLINE, pending.join())
@@ -290,10 +291,9 @@ fn reflector_authorities_require_an_exact_bare_tls_authority() {
         "127.0.0.1",
         "[::1]:443",
     ] {
-        assert_eq!(
-            RemoteReflector::new(authority).unwrap().authority(),
-            authority
-        );
+        let reflector = RemoteReflector::new(authority).unwrap();
+        assert_eq!(reflector.authority(), authority);
+        assert_eq!(format!("{reflector:?}"), "RemoteReflector { .. }");
     }
 
     for authority in [
@@ -361,7 +361,7 @@ async fn remote_tls_requires_selected_roots_and_exact_destination_name() {
     config.socket.tls = wrong_roots();
     assert!(matches!(
         connect(authority, config).await,
-        Err(MwaError::Transport(_))
+        Err(MwaError::Transport(crate::WsError::Tls))
     ));
     finish(server).await;
 
@@ -373,9 +373,49 @@ async fn remote_tls_requires_selected_roots_and_exact_destination_name() {
     });
     assert!(matches!(
         connect(format!("127.0.0.1:{port}"), mwa_config()).await,
-        Err(MwaError::Transport(_))
+        Err(MwaError::Transport(crate::WsError::Tls))
     ));
     finish(server).await;
+}
+
+/// Invalid policy must fail at either public entry point before a TCP accept.
+async fn rejects_deadline_before_connection(config: MwaConfig) {
+    let (listener, authority) = reflector().await;
+    assert!(matches!(
+        connect(authority, config.clone()).await,
+        Err(MwaError::Config(_))
+    ));
+    assert!(
+        tokio::time::timeout(Duration::from_millis(1), listener.accept())
+            .await
+            .is_err()
+    );
+
+    let (proposal, listener) = association().await;
+    assert!(matches!(
+        proposal.connect(config).await,
+        Err(MwaError::Config(_))
+    ));
+    assert!(
+        tokio::time::timeout(Duration::from_millis(1), listener.accept())
+            .await
+            .is_err()
+    );
+}
+
+#[tokio::test]
+async fn local_and_remote_deadlines_reject_zero_and_overflow_before_io() {
+    for duration in [Duration::ZERO, Duration::MAX] {
+        let mut configs = [mwa_config(), mwa_config(), mwa_config(), mwa_config()];
+        configs[0].approval_timeout = duration;
+        configs[1].join_timeout = duration;
+        configs[2].socket.connect_timeout = duration;
+        configs[3].socket.operation_timeout = duration;
+
+        for config in configs {
+            rejects_deadline_before_connection(config).await;
+        }
+    }
 }
 
 #[tokio::test]
@@ -494,10 +534,7 @@ async fn remote_reflector_rejects_an_oversized_id_frame() {
         Ok(_) => panic!("accepted an oversized reflector frame"),
     };
 
-    assert!(matches!(
-        error,
-        MwaError::Socket(_) | MwaError::Capacity | MwaError::Handshake
-    ));
+    assert!(matches!(error, MwaError::Socket(_) | MwaError::Capacity));
     finish(server).await;
 }
 

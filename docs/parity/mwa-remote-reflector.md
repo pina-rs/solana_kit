@@ -41,6 +41,10 @@ cancellation all reuse that existing path. Dropping the pending owner, the
 connect future, the join future, or a borrowed active call closes the owned
 socket and key state; no detached task survives.
 
+All four timeout settings must be positive and representable before either
+local or remote connection entry point performs I/O. Authorities and pairing
+URIs remain explicit accessor data; `Debug` exposes neither.
+
 ## Wire details
 
 - The reflector ID payload is LEB128 length-prefixed. Zero length, truncated
@@ -98,13 +102,21 @@ Executed with the pinned Rust 1.99.1 toolchain:
 cargo test --locked -p solana_kit_native --features mwa --lib mwa --offline
 ```
 
-Result: 25 passed, 0 failed. The same focused target passed on Rust 1.89.0,
+After review, the focused target passes 26 tests, including a regression that
+first failed for an invalid approval deadline and now checks zero and
+unrepresentable values at both public connection entry points before TCP I/O.
+The same focused target passed on Rust 1.89.0,
 and the all-feature native target, workspace tests, strict Clippy, warning-denied
 Rustdoc, formatting, style and dependency gates passed locally.
 
 ## Limits
 
 This is owned loopback TLS evidence, not a public reflector connection and not an
-installed-wallet journey. No public reflector host, external wallet, device,
-account, or network request was used. Android launch/approval and browser
+installed-wallet journey. No public reflector or RPC endpoint, installed external
+wallet, device or user account was used. Android launch/approval and browser
 association remain separate caller/platform responsibilities.
+
+The no-background-task contract concerns SDK-owned work. Hostname resolution
+uses Tokio's OS resolver path; dropping the connection future does not prove
+termination of an operating-system resolver callback. The fixture uses only
+`localhost` and makes no arbitrary-DNS cancellation claim.

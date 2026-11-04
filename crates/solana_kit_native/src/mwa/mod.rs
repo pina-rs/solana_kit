@@ -61,14 +61,17 @@ impl MwaConfig {
             return Err(MwaError::Capacity);
         }
 
-        if self.join_timeout.is_zero()
-            || std::time::Instant::now()
-                .checked_add(self.join_timeout)
-                .is_none()
-        {
-            return Err(MwaError::Config(ConfigError(
-                "join timeout must be positive and representable",
-            )));
+        for duration in [
+            self.socket.connect_timeout,
+            self.socket.operation_timeout,
+            self.join_timeout,
+            self.approval_timeout,
+        ] {
+            if duration.is_zero() || std::time::Instant::now().checked_add(duration).is_none() {
+                return Err(MwaError::Config(ConfigError(
+                    "MWA timeouts must be positive and representable",
+                )));
+            }
         }
 
         Ok(())

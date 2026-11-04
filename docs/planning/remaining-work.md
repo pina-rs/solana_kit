@@ -296,8 +296,16 @@ as unavailable, not implemented as a fake transport.
 
 ### RW-04 Remote reflector association and transport
 
-**Kind.** Missing source behavior, unless the parent explicitly accepts a
-local-Android-only scope.
+**Kind.** Native source behavior implemented with bounded substitutions;
+public-reflector and installed-wallet acceptance remain separate.
+
+**Implemented follow-up.** The
+[native reflector receipt](../parity/mwa-remote-reflector.md) records the
+caller-owned two-stage WSS association, binary/base64 negotiation, real
+server-assigned ID/URI, wallet join, HELLO and the shared encrypted wallet path.
+Twenty-six focused tests pass on current Rust and Rust 1.89, using owned TLS
+peers. No default reflector, retry or SDK-owned background task is added.
+The missing-connector finding below describes the original audit snapshot.
 
 **Acceptance criterion.** Phase 7 Mobile Wallet Adapter protocol coverage and
 the plan's package-capability definition. The source package exposes both local
@@ -328,12 +336,10 @@ cargo test -p solana_kit_native --features mwa --offline
 Then repeat against a named public reflector only when an explicit endpoint and
 privacy review exist. There is no current command because the code is absent.
 
-**Next minimal unit.** Add a caller-owned `ReflectorTransport`/`connect_remote`
-that takes an explicit endpoint, TLS roots and budgets; do not add an ambient
-default host, discovery, retry loop or background task. Keep the local transport
-unchanged and reuse the existing session/crypto path. If the parent accepts
-local-only MWA scope, record that decision and keep this item open rather than
-claiming remote parity.
+**Next minimal unit.** Native implementation and loopback acceptance are
+recorded above. Public-reflector interoperability requires a named endpoint and
+an explicit privacy decision; installed external-wallet proof stays under RW-03.
+Neither is established by the native fixture.
 
 **Substitution note.** Browser association via a hidden iframe
 (`intent_launcher_web.dart`) is also unimplemented. Treat it as a separate

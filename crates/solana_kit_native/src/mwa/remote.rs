@@ -19,9 +19,17 @@ const BYTE_BASE: u64 = 256;
 /// fragments and noncanonical ports reject. The selected authority is both the
 /// TLS destination and the exact `reflector` value in the returned association
 /// URI. No default host or public reflector is installed.
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Eq, PartialEq)]
 pub struct RemoteReflector {
     authority: String,
+}
+
+impl fmt::Debug for RemoteReflector {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        formatter
+            .debug_struct("RemoteReflector")
+            .finish_non_exhaustive()
+    }
 }
 
 impl RemoteReflector {
@@ -54,7 +62,7 @@ impl RemoteReflector {
     ///
     /// The returned pending owner retains the only socket, association key and
     /// agreement key. Dropping it, or dropping this future, closes the socket and
-    /// erases the keys; no task, retry or fallback endpoint survives. The pending
+    /// erases the keys; no SDK-owned task, retry or fallback endpoint survives. The pending
     /// association URI is available before any wallet join or HELLO exchange.
     ///
     /// # Errors
@@ -126,7 +134,6 @@ impl fmt::Debug for PendingRemoteAssociation {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         formatter
             .debug_struct("PendingRemoteAssociation")
-            .field("uri", &self.uri)
             .finish_non_exhaustive()
     }
 }
