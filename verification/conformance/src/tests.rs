@@ -52,6 +52,16 @@ fn canonical_suite_passes_every_case() {
 
     assert!(report.is_success(), "{report:#?}");
     assert_eq!(report.cases.len(), EXPECTED_CASE_COUNT);
+    let captured_names: alloc::vec::Vec<_> = CURRENT_SUCCESS
+        .lines()
+        .filter_map(|line| line.strip_suffix(": Ok(())"))
+        .collect();
+    let live_names: alloc::vec::Vec<_> = report.cases.iter().map(|case| case.name).collect();
+
+    assert_eq!(
+        live_names, captured_names,
+        "live suite changed the captured case order"
+    );
 }
 
 #[test]

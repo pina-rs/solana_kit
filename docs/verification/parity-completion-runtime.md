@@ -2,9 +2,9 @@
 
 The signed executable source is `444dd895`, the rebased conformance commit whose
 parent is `a0cc1cf0`. The actual runtime proof below executed from that clean
-tree before this docs-only receipt was added. No production SDK source changed.
-Branch `test/parity-completion-runtime` was not pushed and no pull request was
-opened.
+tree before this receipt was added. No production SDK source changed. Parent review also requires the
+live canonical registration order to match the captured report, rather than comparing only two
+checked-in files.
 
 The shared suite is now `solana-kit-core-v56` with **455** cases. The first 448
 case names, order, outcomes and fixture bytes remain exactly the captured v55
@@ -20,7 +20,7 @@ Seven groups append at the end:
 - `fixed-point-codec-pairing`
 - `test-support-scripted-client`
 
-The stored golden reports are
+The checked-in execution reports are
 [`native-success.txt`](../../verification/conformance/evidence/native-success.txt)
 and
 [`native-corruption.txt`](../../verification/conformance/evidence/native-corruption.txt).
@@ -42,7 +42,7 @@ cargo +1.99.1 xtask all
 | Actual host               | Canonical                    | Corruption control           |
 | ------------------------- | ---------------------------- | ---------------------------- |
 | Native command            | 455/455, exit 0              | 454/455, exit 1              |
-| Real Chrome               | Complete 455-case report     | Complete 454-case report     |
+| Real Chrome               | Full report, 455/455 passed  | Full report, 454/455 passed  |
 | Wasmtime 50 Preview 1     | 455/455, exit 0              | 454/455, exit 1              |
 | Wasmtime 50 Preview 2     | 455/455, exit 0              | 454/455, exit 1              |
 | Pinned LeptosKit WasmHost | Full JSON, 455/455 committed | Full JSON, 454/455 committed |
@@ -128,19 +128,18 @@ Run with concrete Rust 1.99.1 binaries first on `PATH` and `CARGO`, `RUSTC` and
 | `cargo xtask dependency-graphs`                                                                | Passed, 224 graph commands plus negative controls                    |
 | `monochange check`                                                                             | Passed, 0 issues                                                     |
 | Rust 1.89 conformance tests and three Wasm target checks                                       | Passed                                                               |
-| `dprint check`                                                                                 | Fails on 29 unrelated `docs/book` files from main                    |
+| `dprint check`                                                                                 | Passed after the handbook formatting repair described below          |
 
-The `dprint` failure is confined to Markdown files introduced by the documentation
-site merge. This unit did not alter them. The files touched here pass `dprint`
-individually; the failure is reported rather than silently rewriting unrelated
-documentation.
+The initial full `dprint` run found 29 Markdown files introduced by the documentation site merge.
+The subsequent formatting repair normalized those files with the repository formatter and passed
+the full check and the documentation site's real-book build tests. No formatter policy or exclusion
+was changed.
 
 ## Limits
 
 This is off-chain, host-neutral behavior evidence. It adds no live wallet,
 validator, registry publication, store submission, external upload, installed
 device or network RPC claim. The suite count and receipt do not mark the whole SDK
-complete. The validator worker and the parent's shared-checkout work are
-untouched. The implementation commit is signed with the user's OpenPGP key and
-verifies locally; GitHub verification follows only after a push, which this unit
-did not perform.
+complete. Validator and installed application results are recorded separately in the
+[program integration](program-integration.md) and
+[installed wallet](installed-wallet-current.md) receipts.
