@@ -145,17 +145,20 @@ The reference is immutable Dart revision
 `8d2578053f9a679f87f9c6cce601f3db4c0049583a632f684d925bc9e785980a`.
 The original package MIT notice remains in `MIT-DART.txt`.
 
-| Dart source contract                                            | Rust boundary                                                                             |
-| --------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
-| publication_workflow.dart:86–184, :239–273                      | start/resume through ingestion and hydrated bundle; completion is deferred                |
-| publication_workflow.dart:302–398                               | typed selectors, attached bundle/session reuse and ID resolution                          |
-| publication_workflow.dart:402–454                               | bounded Ready/Failed polling through caller Clock                                         |
-| publication_workflow.dart:479–535, files.dart:163–164, :260–296 | one immutable capped local APK read/hash/upload with typed source result                  |
-| publication_workflow.dart:581–605, :185–235                     | explicit single cleanup and preservedSubmitted reconciliation; no automatic catch cleanup |
-| portal_workflow_client.dart:157–304, :456–480                   | bundle hydration, cached metadata, typed remote fetch and independent upload              |
-| release_metadata.dart:96–342, :403–493                          | closed 0.4.0 document, media resolution and external rehosting                            |
-| release_metadata.dart:499–724                                   | R2/MIME/extension fallback and header dimensions                                          |
-| portal_translators.dart:12–64, workflow_state.dart:234–267      | stage/receipt precedence; full normalized model projection remains deferred               |
+| Dart source contract                                             | Rust boundary                                                                             |
+| ---------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| publication_workflow.dart:86–184, :239–273                       | start/resume through ingestion and hydrated bundle; completion is deferred                |
+| publication_workflow.dart:302–398                                | typed selectors, attached bundle/session reuse and ID resolution                          |
+| publication_workflow.dart:402–454                                | bounded Ready/Failed polling through caller Clock                                         |
+| publication_workflow.dart:479–535, files.dart:163–164, :260–296  | one immutable capped local APK read/hash/upload with typed source result                  |
+| publication_workflow.dart:581–605, :185–235                      | explicit single cleanup and preservedSubmitted reconciliation; no automatic catch cleanup |
+| portal_workflow_client.dart:157–304, :456–480                    | bundle hydration, cached metadata, typed remote fetch and independent upload              |
+| release_metadata.dart:96–342, :403–493                           | closed 0.4.0 document, media resolution and external rehosting                            |
+| release_metadata.dart:499–724                                    | R2/MIME/extension fallback and header dimensions                                          |
+| portal_translators.dart:12–64, workflow_state.dart:234–267       | stage/receipt precedence and normalized session projection; unknown stages retained       |
+| portal_translators.dart:147–337, publication_models.dart:4–417   | normalized bundle, install-file, declared media and signer-authority projection           |
+| portal_translators.dart:363–425, publication_models.dart:419–535 | checkpoint/status wire translators and coarse stage mapping                               |
+| portal_translators.dart:64–144, publication_models.dart:608–687  | ingestion source/status projection and attached bundle/session records                    |
 
 Audited members under `packages/solana_kit_dapp_publisher_cli/lib/src/`:
 
@@ -191,6 +194,72 @@ Prepared transactions are still untrusted proposals. No method signs, submits a
 transaction automatically, retries, creates an attestation or enables normal
 publishing. Callers must re-hydrate after each acknowledged mutation to read the
 backend stage.
+
+## Normalized publication projection
+
+`solana_kit_dapp_publisher::publication` is available with the `portal` feature.
+It projects `publication_models.dart` and `portal_translators.dart` into typed,
+deterministic records without network, filesystem, entropy, signing, registry or
+clock access:
+
+- `DappInfo`, `PublisherInfo`/`PublisherKind`, `BundleLegal`,
+  `LocalizedReleaseStrings`, `BundleMetadata`, `BundleMedia`/`MediaPurpose`,
+  `SignerAuthority`, `InstallFileDetails`, `ReleaseInfo`, `PublicationBundle`.
+- `PublicationCheckpoint`, `PublicationSessionStage`,
+  `PublicationSessionStatus`, `PublicationSession`, `SessionTimestamps` and
+  `SessionMarkers`.
+- `PublicationIngestionSession`, `PublicationSource` and `PortalSourceKind`.
+- `infer_publication_source_kind`, `map_backend_bundle_to_publication_bundle`,
+  `translate_backend_publication_session`,
+  `translate_backend_ingestion_session` and its explicit-attachment variant.
+- `normalize_publication_checkpoint` and `normalize_publication_status`.
+
+Checkpoint precedence is the pinned source's: explicit known stages win;
+`Attested`, `Verified` and `VerificationSubmitted` all map to `Verified`;
+`PreparedForMint` maps to `BundleReady`; other stages use ticket, attestation,
+verification signature, mint signature, then expected-mint/metadata evidence.
+Status is failed first, then completed for `Submitted` or a nonempty ticket, then
+running. Blank receipt text is ignored exactly like the source's `firstNonEmpty`;
+it is not trimmed into absence. Absent and explicit null stage values default to
+`PreparedForMint`; absent/null timestamps remain absent unless the caller supplies
+`SessionTimestamps`.
+
+Deliberate deviations are explicit:
+
+- Unknown stage names become `PublicationSessionStage::Unknown` instead of the
+  source's `PreparedForMint`. Checkpoint/status fallback still follows the source,
+  so callers must review the retained stage rather than treat it as mint readiness.
+- Unknown ingestion `sourceKind` values become `PortalSourceKind::Unrecognized`
+  or `PublicationSource::Unrecognized` instead of being presented as a portal
+  upload. Missing/null kinds still default to `portalUpload`.
+- Unknown publisher `type` values become `PublisherKind::Unrecognized` instead of
+  `organization`.
+- `BundleMetadata.media` is a typed projection of declared dApp media in icon,
+  preview, banner, editors'-choice/feature order. The source leaves its untyped
+  list empty because media hydration is a later stage; Rust deliberately exposes
+  the declared locations without fetching or approving them.
+- `InstallFileDetails::url`, `ReleaseInfo::nft_mint_address` and
+  `PublicationSession::error` are methods publishing the source's aliases rather
+  than duplicate stored fields.
+- File names use the literal final URI path segment and are not percent-decoded
+  or URL-validated. No URL in this layer is approved for disclosure or fetch.
+
+Diagnostics stay bounded. Normalized models that carry application, contact, URL
+or provider fields do not derive `Debug`; publication and ingestion sessions have
+manual `Debug` output that omits identifiers and error text. `Provider` error text
+remains available only through the explicit `last_error`/`error()` and
+`processing_*` fields. `ProgressStep`/`ProgressEvent` emit the source's static
+messages, `IngestionProgress` replaces provider detail/stage text with a fixed
+running message, and `CleanupOutcome` classifies actions without echoing them.
+No raw portal body, presigned URL, APK bytes, credential or application metadata
+enters these ordinary diagnostics. The Dart `PublisherCliException` message
+wrapper has no new Rust counterpart because `cli::CliError`, `portal::Error` and
+`workflow::Error` already own bounded caller-facing messages, and projection is
+infallible.
+
+The workflow uses `CleanupOutcome` for explicit cleanup classification. The
+native CLI keeps its existing raw-record composition; the projection is a library
+read model, not an orchestration or publication enablement path.
 
 ## Verification and remaining work
 
@@ -271,9 +340,41 @@ verification and store-submission stage/flag behavior. They are part of
 the appended `publisher-workflow-completion-stages` group, so every portable
 conformance host executes them.
 
-Full Dart normalized model/error/logging projection and automated
-uncertain-effect reconciliation are still incomplete. The native CLI seam is
-argument/env/stdin resolution, approved credentials, existing Kit signer/funding
-preflight, bounded SourceReader, atomic durable Storage, portal transport,
-independent PUT adapter and progress/summary output. No CLI or image framework
-is represented by a stub or claimed as complete here.
+The normalized projection adds 32 native integration bodies covering the full
+and empty bundle fixtures, display/contact/support precedence, exact numbers,
+media order, install/release fallbacks, checkpoint stage and receipt precedence,
+absent/null/blank/unknown values, caller-supplied timestamps, source inference,
+attached ingestion records, metadata URI precedence, progress messages,
+cleanup outcomes and diagnostic redaction. They live in
+`crates/solana_kit_dapp_publisher/tests/publication.rs`, use independently
+authored JSON and string literals, and are not registered in the shared
+conformance suite. The checked-in v55/448 shared identity and all canonical
+declaration IDs/statuses remain unchanged. No Dart oracle was executed for these
+bodies, and no actual portal request, upload or publication occurred.
+
+The 2026-11-04 local execution of this source passed:
+
+```sh
+cargo +1.99.1 fmt --all --check
+cargo +1.99.1 test --locked -p solana_kit_dapp_publisher --all-features
+cargo +1.99.1 test --locked -p solana_kit_dapp_publisher_cli --all-features
+cargo +1.99.1 clippy --locked -p solana_kit_dapp_publisher -p solana_kit_dapp_publisher_cli --all-targets --all-features -- -D warnings
+RUSTDOCFLAGS="-D warnings" cargo +1.99.1 doc --locked -p solana_kit_dapp_publisher -p solana_kit_dapp_publisher_cli --all-features --no-deps
+dprint check
+monochange check
+cargo +1.99.1 xtask style
+```
+
+The publisher package executed 131 test bodies (11 unit, 5 attestation, 24
+portal, 17 prepared, 32 publication, 41 workflow and one Rustdoc example); the
+CLI executed five unit bodies. The style gate scored 2,110 files with repository
+readability 97.15 and complexity 98.50, and every file remained at or above 90.
+These results qualify the local source only; browser, both WASI targets,
+production wasmi, three-OS CI and independent consumer locks remain unexecuted.
+
+Automated uncertain-effect reconciliation remains incomplete. The native CLI
+seam is argument/env/stdin resolution, approved credentials, existing Kit
+signer/funding preflight, bounded SourceReader, atomic durable Storage, portal
+transport, independent PUT adapter and progress/summary output. Normalized
+projections remain a library read model and do not enable normal publishing; no
+CLI or image framework is represented by a stub or claimed as complete here.

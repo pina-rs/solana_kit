@@ -33,35 +33,8 @@ impl<'a> Draft<'a> {
         mut input: SmartTransactionInput<'a>,
         options: SmartTransactionOptions<'_>,
     ) -> Result<Self, SmartTransactionError> {
-        input
-            .instructions
-            .retain(|instruction| instruction.program_address != PROGRAM);
-        let explicit_units = input
-            .compute_unit_limit
-            .map(|units| {
-                NonZeroU32::new(units).ok_or(SmartTransactionError::NonPositiveComputeUnitLimit)
-            })
-            .transpose()?;
-        let payer = input
-            .fee_payer
-            .or_else(|| input.signers.first().copied())
-            .ok_or(SmartTransactionError::MissingFeePayer)?;
-
-        if explicit_units.is_none() {
-            buffer_compute_units(0, options.compute_buffer)?;
-        }
-
-        let message = Message::compile(
-            Version::V0,
-            payer,
-            Lifetime::Blockhash {
-                blockhash: input.simulation_lifetime.blockhash,
-                last_valid_block_height: input.simulation_lifetime.last_valid_block_height,
-            },
-            &input.instructions,
-            input.lookup_tables,
-        )?;
-        let wire = Transaction::new(message).encode(false)?;
+        let (payer, explicit_units) = prepare_input(&mut input, options)?;
+        let wire = simulation_wire(payer, &input)?;
         let account_keys = account_keys(payer, &input.instructions);
         let draft = Self {
             payer,
@@ -72,12 +45,7 @@ impl<'a> Draft<'a> {
             account_keys,
         };
 
-        // Budget instruction sizes are fixed; this catches final-layout failures
-        // before spending RPC calls, using the caller's actual simulation lifetime.
-        draft.priced_message(
-            input.simulation_lifetime,
-            (explicit_units.unwrap_or(NonZeroU32::MIN), PREFLIGHT_FEE),
-        )?;
+        draft.preflight(input.simulation_lifetime)?;
 
         Ok(draft)
     }
@@ -88,26 +56,93 @@ impl<'a> Draft<'a> {
         lifetime: &BlockhashValue,
         budget: (NonZeroU32, ResolvedPriorityFee),
     ) -> Result<Message, SmartTransactionError> {
-        let (units, fee) = budget;
-        let mut instructions = vec![
-            SetComputeUnitPrice {
-                micro_lamports: fee.rate,
-            }
-            .instruction(BUDGET_CODEC_LIMITS)?,
-            SetComputeUnitLimit { units: units.get() }.instruction(BUDGET_CODEC_LIMITS)?,
-        ];
+        let mut instructions = budget_instructions(budget)?;
         instructions.extend_from_slice(&self.instructions);
-        Ok(Message::compile(
-            Version::V0,
-            self.payer,
-            Lifetime::Blockhash {
-                blockhash: lifetime.blockhash,
-                last_valid_block_height: lifetime.last_valid_block_height,
-            },
-            &instructions,
-            self.lookup_tables,
-        )?)
+        compile_message(self.payer, lifetime, &instructions, self.lookup_tables)
     }
+
+    /// Rejects a priced layout the caller's simulation lifetime cannot encode.
+    fn preflight(&self, lifetime: &BlockhashValue) -> Result<(), SmartTransactionError> {
+        // Budget instruction sizes are fixed; this catches final-layout failures
+        // before spending RPC calls, using the caller's actual simulation lifetime.
+        let units = self.explicit_units.unwrap_or(NonZeroU32::MIN);
+        self.priced_message(lifetime, (units, PREFLIGHT_FEE))?;
+
+        Ok(())
+    }
+}
+
+/// Strips caller budget instructions and resolves the payer and compute policy.
+fn prepare_input(
+    input: &mut SmartTransactionInput<'_>,
+    options: SmartTransactionOptions<'_>,
+) -> Result<(Address, Option<NonZeroU32>), SmartTransactionError> {
+    input
+        .instructions
+        .retain(|instruction| instruction.program_address != PROGRAM);
+    let explicit_units = input
+        .compute_unit_limit
+        .map(|units| {
+            NonZeroU32::new(units).ok_or(SmartTransactionError::NonPositiveComputeUnitLimit)
+        })
+        .transpose()?;
+    let payer = input
+        .fee_payer
+        .or_else(|| input.signers.first().copied())
+        .ok_or(SmartTransactionError::MissingFeePayer)?;
+
+    if explicit_units.is_none() {
+        buffer_compute_units(0, options.compute_buffer)?;
+    }
+
+    Ok((payer, explicit_units))
+}
+
+/// Compiles the exact simulation wire before fee identity collection.
+fn simulation_wire(
+    payer: Address,
+    input: &SmartTransactionInput<'_>,
+) -> Result<Vec<u8>, SmartTransactionError> {
+    let message = compile_message(
+        payer,
+        input.simulation_lifetime,
+        &input.instructions,
+        input.lookup_tables,
+    )?;
+
+    Ok(Transaction::new(message).encode(false)?)
+}
+
+/// Builds the maintained price-then-limit prefix for one positive budget.
+fn budget_instructions(
+    (units, fee): (NonZeroU32, ResolvedPriorityFee),
+) -> Result<Vec<Instruction>, SmartTransactionError> {
+    Ok(vec![
+        SetComputeUnitPrice {
+            micro_lamports: fee.rate,
+        }
+        .instruction(BUDGET_CODEC_LIMITS)?,
+        SetComputeUnitLimit { units: units.get() }.instruction(BUDGET_CODEC_LIMITS)?,
+    ])
+}
+
+/// Compiles a v0 message against the caller's blockhash and lookup tables.
+fn compile_message(
+    payer: Address,
+    lifetime: &BlockhashValue,
+    instructions: &[Instruction],
+    lookup_tables: &[LookupTable],
+) -> Result<Message, SmartTransactionError> {
+    Ok(Message::compile(
+        Version::V0,
+        payer,
+        Lifetime::Blockhash {
+            blockhash: lifetime.blockhash,
+            last_valid_block_height: lifetime.last_valid_block_height,
+        },
+        instructions,
+        lookup_tables,
+    )?)
 }
 
 /// Keeps payer first and original account encounter order without adding program identities.

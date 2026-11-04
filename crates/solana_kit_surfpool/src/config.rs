@@ -62,15 +62,6 @@ impl KeypairInfo {
     }
 }
 
-impl core::fmt::Debug for KeypairInfo {
-    fn fmt(&self, formatter: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        formatter
-            .debug_struct("KeypairInfo")
-            .field("public_key", &self.public_key)
-            .finish_non_exhaustive()
-    }
-}
-
 /// Pinned CLI defaults, retained as host-independent data.
 #[derive(Clone)]
 pub struct SurfnetConfig {
@@ -106,32 +97,6 @@ pub struct SurfnetConfig {
     pub studio_port: Option<NonZeroU16>,
 }
 
-impl core::fmt::Debug for SurfnetConfig {
-    fn fmt(&self, formatter: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        formatter
-            .debug_struct("SurfnetConfig")
-            .field("offline", &self.offline)
-            .field(
-                "remote_rpc_url",
-                &self.remote_rpc_url.as_ref().map(|_| "[REDACTED]"),
-            )
-            .field("block_production_mode", &self.block_production_mode)
-            .field("slot_time_ms", &self.slot_time_ms)
-            .field("airdrop_sol", &self.airdrop_sol)
-            .field("airdrop_addresses", &self.airdrop_addresses)
-            .field("payer", &self.payer)
-            .field("enable_features", &self.enable_features)
-            .field("disable_features", &self.disable_features)
-            .field("all_features", &self.all_features)
-            .field("skip_blockhash_check", &self.skip_blockhash_check)
-            .field("host", &self.host)
-            .field("rpc_port", &self.rpc_port)
-            .field("ws_port", &self.ws_port)
-            .field("studio_port", &self.studio_port)
-            .finish()
-    }
-}
-
 impl Default for SurfnetConfig {
     fn default() -> Self {
         Self {
@@ -163,5 +128,45 @@ impl SurfnetConfig {
     /// Rejects configured port collisions before the host allocates resources.
     pub fn validate(&self) -> Result<(), ConfigError> {
         ports::validate([self.rpc_port, self.ws_port, self.studio_port])
+    }
+}
+
+/// Emits the complete field set that `SurfnetConfig`'s Debug shape has always carried.
+fn debug_fields(config: &SurfnetConfig, debug: &mut core::fmt::DebugStruct<'_, '_>) {
+    debug
+        .field("offline", &config.offline)
+        .field(
+            "remote_rpc_url",
+            &config.remote_rpc_url.as_ref().map(|_| "[REDACTED]"),
+        )
+        .field("block_production_mode", &config.block_production_mode)
+        .field("slot_time_ms", &config.slot_time_ms)
+        .field("airdrop_sol", &config.airdrop_sol)
+        .field("airdrop_addresses", &config.airdrop_addresses)
+        .field("payer", &config.payer)
+        .field("enable_features", &config.enable_features)
+        .field("disable_features", &config.disable_features)
+        .field("all_features", &config.all_features)
+        .field("skip_blockhash_check", &config.skip_blockhash_check)
+        .field("host", &config.host)
+        .field("rpc_port", &config.rpc_port)
+        .field("ws_port", &config.ws_port)
+        .field("studio_port", &config.studio_port);
+}
+
+impl core::fmt::Debug for KeypairInfo {
+    fn fmt(&self, formatter: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        formatter
+            .debug_struct("KeypairInfo")
+            .field("public_key", &self.public_key)
+            .finish_non_exhaustive()
+    }
+}
+
+impl core::fmt::Debug for SurfnetConfig {
+    fn fmt(&self, formatter: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        let mut debug = formatter.debug_struct("SurfnetConfig");
+        debug_fields(self, &mut debug);
+        debug.finish()
     }
 }

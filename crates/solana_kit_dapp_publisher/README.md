@@ -61,7 +61,8 @@ flags, new-version and resume validation, selector aliases, self-update policy,
 portal/API endpoint derivation with HTTPS and localhost checks, API-key
 environment/stdin selection, local/remote source selection and summary lines.
 It performs no file read, stdin read, keypair load, network request, signing or
-workflow execution; the native binary and concrete adapters remain later work.
+workflow execution; the native binary and concrete adapters live in the separate
+`solana_kit_dapp_publisher_cli` crate.
 
 The default graph also exposes a caller-owned funding preflight. It resolves an
 explicit RPC endpoint, skips the check for local development, and otherwise names
@@ -83,6 +84,17 @@ and invalid envelopes reject within byte/depth/string/item budgets. Unknown DTO
 fields are ignored. Ordinary error diagnostics redact provider text and bodies;
 bounded evidence requires explicit field access. GET does not hydrate metadata,
 cache sessions, choose signing policy or submit anything.
+
+The same feature exposes deterministic normalized projections in `publication`:
+typed dApp, publisher, bundle, release, install-file, media, source,
+publication-session and ingestion-session records; checkpoint, stage and status
+translators; and safe progress helpers. Projection performs no I/O and samples no
+clock, so callers supply any timestamp fallback. Absent/null/blank and unknown
+values keep the pinned source's precedence; unknown stage, source-kind and
+publisher-kind strings are retained instead of being silently coerced. Provider
+error text stays explicit data and never enters progress messages or `Debug`
+output. The workflow still exposes the original raw DTOs and the CLI keeps its
+existing raw-record composition.
 
 Only explicit `create_ingestion_with_retry` supports at most three attempts with
 the same nonempty idempotency key and caller-owned Clock/deadline. A 1500 ms base
@@ -107,9 +119,19 @@ Native Send witnesses remain confined to the earlier portal's native coverage.
 Nine native completion bodies add caller-driven mint preparation, signed
 transaction submission, receipt save, collection verification and attested store
 submission. Each mutation records durable intent before the call; no method signs,
-retries or enables normal publishing. Full normalized model/error/logging
-projection, funding preflight and the native CLI remain later work.
-Porting source does not authorize uploading application artifacts or contact data.
+retries or enables normal publishing. Funding preflight and the native CLI are
+implemented at their documented boundaries. Porting source does not authorize
+uploading application artifacts or contact data.
+
+A separate native-only publication suite adds 32 behavioral bodies for the
+normalized projection: full/empty source bundles, display/contact/media
+precedence, exact numbers, checkpoints/status/receipt precedence, absent/null/
+blank/unknown values, caller-supplied timestamps, source kinds, attached
+ingestion records, metadata URI precedence, safe progress messages and redacted
+diagnostics. Its JSON and string literals are independently authored from the
+pinned Dart fixtures and edge cases. These bodies are not registered in the
+shared conformance suite, so the checked-in v55/448 identity is unchanged.
+No Dart oracle, actual portal request or publication was executed.
 
 The tests contain independent JSON, Borsh and legacy/v0/v1 envelope literals plus
 targeted policy rejection cases. The preceding `cff45f7` source passed all 22
@@ -135,5 +157,7 @@ Strict Clippy and documentation checks passed. The v53 native suite passed
 443/443 groups; deliberate SHA-256 corruption passed 442/443 and exited one.
 Current checked-in reports are those actual captured outputs. Browser, both
 WASI targets, production wasmi and three-OS CI remain unqualified for this
-producer. This source worker ran no compiler or runtime checks.
+producer. The 2026-11-04 normalized-projection pass executed formatting, both
+package test suites, strict Clippy, documentation and the repository style gate
+locally; see the parity records for exact commands and remaining limits.
 See the portal parity record for source anchors, native receipts and remaining checks.

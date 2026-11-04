@@ -1,7 +1,10 @@
 //! Exact MIT Dart error code order and messages, including meaningful trailing space.
 use serde_json::{Value, json};
 
-pub(super) const ERRORS: &[(&str, &str)] = &[
+/// One pinned error code and its exact message.
+type ErrorRow = (&'static str, &'static str);
+
+const ACCOUNT_ERRORS: &[ErrorRow] = &[
     ("InvalidSystemProgram", "Invalid System Program"),
     ("DeserializationError", "Error deserializing account"),
     ("SerializationError", "Error serializing account"),
@@ -24,6 +27,9 @@ pub(super) const ERRORS: &[(&str, &str)] = &[
     ("NumericalOverflowError", "Numerical overflow"),
     ("AlreadyCompressed", "Already compressed account"),
     ("AlreadyDecompressed", "Already decompressed account"),
+];
+
+const AUTHORITY_ERRORS: &[ErrorRow] = &[
     ("InvalidCollection", "Invalid Collection passed in"),
     ("MissingUpdateAuthority", "Missing update authority"),
     ("MissingNewOwner", "Missing new owner"),
@@ -44,6 +50,9 @@ pub(super) const ERRORS: &[(&str, &str)] = &[
         "ConflictingAuthority",
         "Cannot specify both an update authority and collection on an asset",
     ),
+];
+
+const EXTERNAL_PLUGIN_ERRORS: &[ErrorRow] = &[
     ("InvalidLogWrapperProgram", "Invalid Log Wrapper Program"),
     (
         "ExternalPluginAdapterNotFound",
@@ -83,6 +92,9 @@ pub(super) const ERRORS: &[(&str, &str)] = &[
     ),
     ("MissingSigner", "Missing required signer for operation"),
     ("InvalidPluginOperation", "Invalid plugin operation"),
+];
+
+const ASSET_OPERATION_ERRORS: &[ErrorRow] = &[
     (
         "CollectionMustBeEmpty",
         "Collection must be empty to be burned",
@@ -117,6 +129,9 @@ pub(super) const ERRORS: &[(&str, &str)] = &[
         "Bubblegum V2 Plugin limits other plugins",
     ),
     ("AgentIdentityMustSign", "Agent Identity Program must sign"),
+];
+
+const GROUP_ERRORS: &[ErrorRow] = &[
     ("GroupMustBeEmpty", "Group must be empty to be closed"),
     (
         "DuplicateEntry",
@@ -130,9 +145,19 @@ pub(super) const ERRORS: &[(&str, &str)] = &[
     ),
 ];
 
+/// Ordered groups preserve the exact code sequence of the pinned MIT Dart source.
+const ERROR_GROUPS: &[&[ErrorRow]] = &[
+    ACCOUNT_ERRORS,
+    AUTHORITY_ERRORS,
+    EXTERNAL_PLUGIN_ERRORS,
+    ASSET_OPERATION_ERRORS,
+    GROUP_ERRORS,
+];
+
 pub(super) fn errors() -> Vec<Value> {
-    ERRORS
+    ERROR_GROUPS
         .iter()
+        .flat_map(|group| group.iter())
         .enumerate()
         .map(|(code, (name, message))| {
             json!({

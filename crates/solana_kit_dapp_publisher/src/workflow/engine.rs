@@ -10,6 +10,7 @@ use crate::{
         self, CleanupRelease, CleanupReleaseResult, Client, CreateIngestionSession,
         GetIngestionSession, Operation, PortalService, Uploader,
     },
+    publication::CleanupOutcome,
 };
 use solana_kit_client::{rest::Transport, subscriptions::Clock};
 
@@ -53,7 +54,15 @@ where
             options,
         })
     }
+}
 
+impl<T, U, S, C> Workflow<'_, T, U, S, C>
+where
+    T: Transport<PortalService>,
+    U: Uploader,
+    S: Storage,
+    C: Clock,
+{
     /// Creates ingestion once, polls within bounds, then hydrates metadata for caller review.
     ///
     /// The caller supplies a fresh idempotency key and already remote source.
@@ -181,10 +190,10 @@ where
         self.intent(&mut snapshot, Effect::Cleanup).await?;
         let result = self.call(&CleanupRelease { release_id }).await?;
 
-        match result.action.as_str() {
-            "deleted" => snapshot.deleted = true,
-            "preservedSubmitted" => snapshot.preserved_submitted = true,
-            _ => return Err(Error::Invalid("unknown cleanup outcome")),
+        match CleanupOutcome::from_action(&result.action) {
+            CleanupOutcome::Deleted => snapshot.deleted = true,
+            CleanupOutcome::PreservedSubmitted => snapshot.preserved_submitted = true,
+            CleanupOutcome::Unrecognized => return Err(Error::Invalid("unknown cleanup outcome")),
         }
 
         snapshot.pending = None;
@@ -324,6 +333,7 @@ where
     }
 }
 
+/// Requires the polled identity and caller key to agree, then binds known linked IDs.
 fn record_ingestion(
     snapshot: &mut Snapshot,
     session: &portal::BackendIngestionSession,

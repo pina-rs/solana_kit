@@ -72,9 +72,18 @@ empty strings or false. Block slots and uploaded byte counts require unsigned
 
 The source getPublicationBundle wrapper at portal_workflow_client.dart:157–253
 also resolves sessions, hydrates/uploads metadata, caches identifiers and infers
-source kind. Raw GET here performs none of those operations. Normalized models,
-checkpoints, fallback timestamps, media translation and fetchRemoteFile at :456
-remain a later unit. Raw DTO presence is not orchestration parity.
+source kind. Raw GET here performs none of those operations. The `portal` feature
+now also exposes deterministic `publication` projections over these typed DTOs:
+dApp, publisher, bundle, install-file, declared media, signer authority, release,
+publication-session and ingestion-session records, plus source-kind inference and
+checkpoint/stage/status translators. Projection is infallible and performs no URL
+validation, fetch, upload or clock sampling. Absent and explicit null normalize
+the same way; blank strings remain distinct where the source keeps them. Unknown
+backend stage, source-kind and publisher-kind names are retained as explicit
+variants instead of being silently coerced, while checkpoint/status receipt
+precedence remains the pinned source's. `fetchRemoteFile` and media hydration are
+implemented by the workflow layer. See the workflow record for the full contract
+and its deviations.
 
 The explicit ingestion helper retains at most three attempts and, with base
 1500 ms, source waits of 1500/3000 ms from portal_client.dart:239–263. It requires

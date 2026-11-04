@@ -8,7 +8,10 @@ const CLOSE: &str = "payer:ws,authority:s,credential:r,attestation:w,eventAuthor
 const CLOSE_ATTESTATION_TAG: u8 = 7;
 const EMIT_EVENT_TAG: u8 = 228;
 
-pub(super) const INSTRUCTIONS: &[(&str, u8, &str, &str)] = &[
+/// One pinned operation: name, tag, ordered accounts and payload.
+type InstructionSpec = (&'static str, u8, &'static str, &'static str);
+
+const CREDENTIAL_INSTRUCTIONS: &[InstructionSpec] = &[
     (
         "createCredential",
         0,
@@ -45,6 +48,9 @@ pub(super) const INSTRUCTIONS: &[(&str, u8, &str, &str)] = &[
         "payer:ws,authority:s,credential:r,existingSchema:r,newSchema:w,systemProgram:r",
         "layout:[]SchemaDataType,fieldNames:[]text",
     ),
+];
+
+const ATTESTATION_INSTRUCTIONS: &[InstructionSpec] = &[
     (
         "createAttestation",
         6,
@@ -52,6 +58,9 @@ pub(super) const INSTRUCTIONS: &[(&str, u8, &str, &str)] = &[
         "nonce:address,data:bytes,expiry:i64",
     ),
     ("closeAttestation", CLOSE_ATTESTATION_TAG, CLOSE, ""),
+];
+
+const TOKENIZED_INSTRUCTIONS: &[InstructionSpec] = &[
     (
         "tokenizeSchema",
         9,
@@ -81,17 +90,31 @@ pub(super) const INSTRUCTIONS: &[(&str, u8, &str, &str)] = &[
         ),
         "",
     ),
-    ("emitEvent", EMIT_EVENT_TAG, "eventAuthority:s", ""),
+];
+
+const EVENT_INSTRUCTIONS: &[InstructionSpec] =
+    &[("emitEvent", EMIT_EVENT_TAG, "eventAuthority:s", "")];
+
+/// Ordered groups preserve the exact tag sequence of the pinned Dart source.
+const INSTRUCTION_GROUPS: &[&[InstructionSpec]] = &[
+    CREDENTIAL_INSTRUCTIONS,
+    ATTESTATION_INSTRUCTIONS,
+    TOKENIZED_INSTRUCTIONS,
+    EVENT_INSTRUCTIONS,
 ];
 
 pub(super) fn instructions() -> Result<Vec<Value>, Error> {
-    INSTRUCTIONS.iter().map(|(name, tag, accounts, payload)| {
-        let mut arguments = vec![json!({"kind":"instructionArgumentNode","name":"discriminator",
-            "type":number("u8"),"defaultValue":{"kind":"numberValueNode","number":tag},
-            "defaultValueStrategy":"omitted"})];
-        arguments.extend(fields(payload,"instructionArgumentNode")?);
-        Ok(json!({"kind":"instructionNode","name":name,"accounts":roles(accounts)?,
-            "arguments":arguments,"optionalAccountStrategy":"programId",
-            "discriminators":[{"kind":"fieldDiscriminatorNode","name":"discriminator","offset":0}]}))
-    }).collect()
+    INSTRUCTION_GROUPS
+        .iter()
+        .flat_map(|group| group.iter().copied())
+        .map(|(name, tag, accounts, payload)| {
+            let mut arguments = vec![json!({"kind":"instructionArgumentNode","name":"discriminator",
+                "type":number("u8"),"defaultValue":{"kind":"numberValueNode","number":tag},
+                "defaultValueStrategy":"omitted"})];
+            arguments.extend(fields(payload,"instructionArgumentNode")?);
+            Ok(json!({"kind":"instructionNode","name":name,"accounts":roles(accounts)?,
+                "arguments":arguments,"optionalAccountStrategy":"programId",
+                "discriminators":[{"kind":"fieldDiscriminatorNode","name":"discriminator","offset":0}]}))
+        })
+        .collect()
 }

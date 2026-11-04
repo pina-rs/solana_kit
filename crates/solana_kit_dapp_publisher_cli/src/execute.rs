@@ -1,27 +1,24 @@
 //! Execution composition for the publisher CLI.
 
+mod complete;
+mod funding;
+
 use crate::adapters::{
     FileSource, FileStorage, HttpUploader, PortalTransport, SystemClock, utc_now,
 };
-use base64::{Engine as _, engine::general_purpose::STANDARD};
+use complete::complete;
+use funding::funding_preflight;
 use solana_kit_client::rest::Budgets;
-use solana_kit_core::{Address, Hash, codecs::Limits as CodecLimits, crypto::Keypair};
+use solana_kit_core::crypto::Keypair;
 use solana_kit_dapp_publisher::{
-    AttestationMessage, ExpectedTransaction, FundingCheck, PublicationPolicy, RequestId,
-    check_signer_balance,
     cli::{
         NewVersionOptions, PortalTargets, PublicationSource, ResumeOptions,
         build_publication_source, summary_lines,
     },
-    format_sol_amount,
-    portal::{
-        Client, CreateIngestionSession, GetBlockData, IngestionSource, PreparedReleaseTransaction,
-        PreparedVerifyCollectionTransaction, StoreAttestation,
-    },
-    resolve_funding_rpc_url, validate_prepared_transaction,
+    portal::{Client, CreateIngestionSession, IngestionSource},
     workflow::{
-        HydratedPublication, Limits, LocalApk, MintPreparation, MintSave, Options, ResumeTarget,
-        Stage, Storage, StoreSubmission, TransactionPurpose, Workflow, prepare_local_apk,
+        HydratedPublication, Limits, LocalApk, Options, ResumeTarget, Stage, Storage, Workflow,
+        prepare_local_apk,
     },
 };
 use std::{
@@ -29,15 +26,26 @@ use std::{
     path::{Path, PathBuf},
     pin::pin,
     task::{Context, Poll, Waker},
-    time::Duration,
 };
 
 const SNAPSHOT_KEY: &str = "solana-kit-publisher";
-const TRANSACTION_BYTES: usize = 4096;
-const TRANSACTION_ITEMS: usize = 12_288;
-const ATTESTATION_BYTES: usize = 4096;
-const ATTESTATION_ITEMS: usize = 8192;
-const STAGE_ATTEMPTS: usize = 30;
+const TOKEN_BYTES: usize = 16;
+const REQUEST_ID_DIGITS: usize = 32;
+
+const WORKFLOW_DEADLINE_MS: u64 = 120_000;
+const MAX_POLLS: usize = 60;
+const POLL_INTERVAL_MS: u64 = 2_000;
+const SOURCE_BYTES: usize = 64 * 1024 * 1024;
+const MEDIA_BYTES: usize = 16 * 1024 * 1024;
+const MEDIA_ITEMS: usize = 32;
+
+const RANK_PREPARED_FOR_MINT: u8 = 0;
+const RANK_MINT_SUBMITTED: u8 = 1;
+const RANK_MINT_SAVED: u8 = 2;
+const RANK_VERIFICATION_SUBMITTED: u8 = 3;
+const RANK_VERIFIED: u8 = 4;
+const RANK_ATTESTED: u8 = 5;
+const RANK_SUBMITTED: u8 = 6;
 
 /// One successful publication summary.
 pub struct Summary {
@@ -58,6 +66,13 @@ impl Summary {
     }
 }
 
+struct Runtime<'a> {
+    client: &'a Client<PortalTransport>,
+    uploader: &'a HttpUploader,
+    source_reader: &'a FileSource,
+    clock: &'a SystemClock,
+}
+
 /// Runs a new publication from parsed options.
 pub fn new_publication(
     options: &NewVersionOptions,
@@ -65,63 +80,27 @@ pub fn new_publication(
     api_key: &str,
 ) -> Result<Summary, String> {
     let keypair = load_keypair(options.keypair.as_deref())?;
+
     funding_preflight(&keypair, options)?;
-    let client = Client::new(
-        PortalTransport::new(&targets.api_base_url, api_key)?,
-        Budgets::default(),
-    );
+
+    let client = portal_client(targets, api_key)?;
     let uploader = HttpUploader::new();
     let source_reader = FileSource;
     let clock = SystemClock::new();
     let limits = limits()?;
     let mut storage = storage();
-
-    if block_on(storage.load(SNAPSHOT_KEY, 1024 * 1024))
-        .map_err(|error| format!("checkpoint read failed: {error:?}"))?
-        .is_some()
-    {
-        return Err("existing checkpoint requires resume".into());
-    }
-
-    let source =
-        match build_publication_source(options).map_err(|error| error.message().to_owned())? {
-            PublicationSource::LocalApk { path, file_name } => block_on(prepare_local_apk(
-                &client,
-                &uploader,
-                &source_reader,
-                &clock,
-                &LocalApk {
-                    token: path,
-                    file_name,
-                    content_type: None,
-                },
-                limits,
-            ))
-            .map_err(|error| format!("local APK preparation failed: {error:?}"))?,
-            PublicationSource::RemoteApk { url, file_name } => IngestionSource::ExternalUrl {
-                apk_url: url,
-                release_file_name: file_name,
-            },
-        };
-    let idempotency_key = options
-        .idempotency_key
-        .clone()
-        .filter(|value| !value.trim().is_empty())
-        .unwrap_or_else(|| random_token(16));
-    let input = CreateIngestionSession {
-        source,
-        whats_new: options.whats_new.clone().unwrap_or_default(),
-        idempotency_key,
-        dapp_id: None,
+    let runtime = Runtime {
+        client: &client,
+        uploader: &uploader,
+        source_reader: &source_reader,
+        clock: &clock,
     };
-    let mut workflow = Workflow::new(
-        &client,
-        &uploader,
-        &mut storage,
-        &clock,
-        workflow_options(limits)?,
-    )
-    .map_err(|error| format!("workflow configuration failed: {error:?}"))?;
+
+    reject_existing_checkpoint(&mut storage)?;
+
+    let source = prepare_source(options, &runtime, limits)?;
+    let input = ingestion_input(options, source)?;
+    let mut workflow = workflow(&client, &uploader, &mut storage, &clock, limits)?;
     let hydrated = block_on(workflow.start(&input))
         .map_err(|error| format!("publication start failed: {error:?}"))?;
 
@@ -141,417 +120,115 @@ pub fn resume_publication(
     api_key: &str,
 ) -> Result<Summary, String> {
     let keypair = load_keypair(options.keypair.as_deref())?;
-    let client = Client::new(
-        PortalTransport::new(&targets.api_base_url, api_key)?,
-        Budgets::default(),
-    );
+    let client = portal_client(targets, api_key)?;
     let uploader = HttpUploader::new();
     let clock = SystemClock::new();
     let limits = limits()?;
     let mut storage = storage();
-    let mut workflow = Workflow::new(
-        &client,
-        &uploader,
-        &mut storage,
-        &clock,
-        workflow_options(limits)?,
-    )
-    .map_err(|error| format!("workflow configuration failed: {error:?}"))?;
-    let target = match (
-        options
-            .release_id
-            .as_deref()
-            .or(options.resume_release.as_deref()),
-        options
-            .session_id
-            .as_deref()
-            .or(options.resume_session.as_deref()),
-    ) {
-        (_, Some(session)) => ResumeTarget::Session(session.trim().to_owned()),
-        (Some(release), None) => ResumeTarget::Release(release.trim().to_owned()),
-        _ => return Err("a release or session selector is required".into()),
-    };
+    let mut workflow = workflow(&client, &uploader, &mut storage, &clock, limits)?;
+    let target = resume_target(options)?;
     let hydrated = block_on(workflow.resume(target))
         .map_err(|error| format!("publication resume failed: {error:?}"))?;
 
     complete(&mut workflow, hydrated, &client, &keypair, None)
 }
 
-fn complete(
-    workflow: &mut Workflow<'_, PortalTransport, HttpUploader, FileStorage, SystemClock>,
-    mut hydrated: HydratedPublication,
-    client: &Client<PortalTransport>,
-    keypair: &Keypair,
-    whats_new: Option<&str>,
-) -> Result<Summary, String> {
-    let (app_mint_text, publisher_text, payer_text, collection_authority_text) = {
-        let bundle = hydrated.backend_bundle();
-        let authority = option(&bundle.signer_authority)
-            .ok_or("publication bundle lacks a signer authority")?;
-        let app_mint = text(&authority.app_mint_address)
-            .ok_or("publication bundle lacks an app mint")?
-            .to_owned();
-        let publisher = text(&authority.required_signer)
-            .or_else(|| text(&authority.dapp_wallet_address))
-            .ok_or("publication bundle lacks a publisher")?
-            .to_owned();
-        let payer = text(&authority.fee_payer).unwrap_or(&publisher).to_owned();
-        let collection_authority = text(&authority.collection_authority).map(str::to_owned);
-        (app_mint, publisher, payer, collection_authority)
-    };
-    let app_mint = app_mint_text
-        .parse::<Address>()
-        .map_err(|_| "publication bundle has an invalid app mint")?;
-    let publisher = publisher_text
-        .parse::<Address>()
-        .map_err(|_| "publication bundle has an invalid publisher")?;
-    let payer = payer_text
-        .parse::<Address>()
-        .map_err(|_| "publication bundle has an invalid payer")?;
-    let (release_name, release_version, android_package, release_notes) = {
-        let bundle = hydrated.backend_bundle();
-        let release = option(&bundle.release).ok_or("publication bundle lacks a release")?;
-        (
-            option(&bundle.dapp)
-                .and_then(|dapp| text(&dapp.dapp_name))
-                .unwrap_or("Release update")
-                .to_owned(),
-            text(&release.version_name).unwrap_or("1.0").to_owned(),
-            text(&release.android_package)
-                .unwrap_or_default()
-                .to_owned(),
-            text(&release.new_in_version).map(str::to_owned),
-        )
-    };
-    let mut release_mint = mint_of(&hydrated);
-    let mut ticket = None;
+fn portal_client(
+    targets: &PortalTargets,
+    api_key: &str,
+) -> Result<Client<PortalTransport>, String> {
+    Ok(Client::new(
+        PortalTransport::new(&targets.api_base_url, api_key)?,
+        Budgets::default(),
+    ))
+}
 
-    if rank(hydrated.stage()) < rank(Stage::MintSubmitted) {
-        let prepared = block_on(workflow.prepare_release_mint(
-            &hydrated,
-            MintPreparation {
-                release_name: &release_name,
-                app_mint_address: &app_mint_text,
-                publisher_address: &publisher_text,
-                payer_address: &payer_text,
+fn workflow<'a>(
+    client: &'a Client<PortalTransport>,
+    uploader: &'a HttpUploader,
+    storage: &'a mut FileStorage,
+    clock: &'a SystemClock,
+    limits: Limits,
+) -> Result<Workflow<'a, PortalTransport, HttpUploader, FileStorage, SystemClock>, String> {
+    Workflow::new(client, uploader, storage, clock, workflow_options(limits)?)
+        .map_err(|error| format!("workflow configuration failed: {error:?}"))
+}
+
+fn reject_existing_checkpoint(storage: &mut FileStorage) -> Result<(), String> {
+    let existing = block_on(storage.load(SNAPSHOT_KEY, 1024 * 1024))
+        .map_err(|error| format!("checkpoint read failed: {error:?}"))?;
+
+    if existing.is_some() {
+        return Err("existing checkpoint requires resume".into());
+    }
+
+    Ok(())
+}
+
+fn prepare_source(
+    options: &NewVersionOptions,
+    runtime: &Runtime<'_>,
+    limits: Limits,
+) -> Result<IngestionSource, String> {
+    let source = build_publication_source(options).map_err(|error| error.message().to_owned())?;
+
+    match source {
+        PublicationSource::LocalApk { path, file_name } => block_on(prepare_local_apk(
+            runtime.client,
+            runtime.uploader,
+            runtime.source_reader,
+            runtime.clock,
+            &LocalApk {
+                token: path,
+                file_name,
+                content_type: None,
             },
+            limits,
         ))
-        .map_err(|error| format!("release mint preparation failed: {error:?}"))?;
-        release_mint = Some(prepared.mint_address.clone());
-        let signed = sign_release_mint(&prepared, keypair, payer, publisher, app_mint)?;
-        block_on(workflow.submit_signed_transaction(
-            &hydrated,
-            TransactionPurpose::ReleaseMint,
-            &signed,
-        ))
-        .map_err(|error| format!("release mint submission failed: {error:?}"))?;
-        hydrated = wait_for(workflow, Stage::MintSubmitted)?;
+        .map_err(|error| format!("local APK preparation failed: {error:?}")),
+        PublicationSource::RemoteApk { url, file_name } => Ok(IngestionSource::ExternalUrl {
+            apk_url: url,
+            release_file_name: file_name,
+        }),
     }
+}
 
-    if rank(hydrated.stage()) < rank(Stage::MintSaved) {
-        let mint = release_mint
-            .as_deref()
-            .ok_or("publication did not resolve a release mint")?;
-        block_on(
-            workflow.save_release_nft_data(
-                &hydrated,
-                MintSave {
-                    mint_address: mint,
-                    transaction_signature: text(
-                        &hydrated.backend_session().mint_transaction_signature,
-                    )
-                    .ok_or("publication session lacks the mint signature")?,
-                    owner_address: &publisher_text,
-                    release_name: &release_name,
-                    release_version: &release_version,
-                    android_package: &android_package,
-                    app_mint_address: &app_mint_text,
-                },
-            ),
-        )
-        .map_err(|error| format!("release data save failed: {error:?}"))?;
-        hydrated = wait_for(workflow, Stage::MintSaved)?;
-    }
+fn ingestion_input(
+    options: &NewVersionOptions,
+    source: IngestionSource,
+) -> Result<CreateIngestionSession, String> {
+    let explicit_key = options
+        .idempotency_key
+        .clone()
+        .filter(|value| !value.trim().is_empty());
+    let idempotency_key = match explicit_key {
+        Some(key) => key,
+        None => random_token(TOKEN_BYTES)?,
+    };
 
-    if rank(hydrated.stage()) < rank(Stage::VerificationSubmitted) {
-        let prepared = block_on(workflow.prepare_collection_verification(&hydrated, &payer_text))
-            .map_err(|error| {
-            format!("collection verification preparation failed: {error:?}")
-        })?;
-        let mint = release_mint
-            .as_deref()
-            .ok_or("publication did not resolve a release mint")?
-            .parse::<Address>()
-            .map_err(|_| "publication has an invalid release mint")?;
-        let authority_address = collection_authority_text
-            .as_deref()
-            .ok_or("publication lacks a collection authority")?
-            .parse::<Address>()
-            .map_err(|_| "publication has an invalid collection authority")?;
-        let signed = sign_verification(
-            &prepared,
-            keypair,
-            payer,
-            publisher,
-            mint,
-            app_mint,
-            authority_address,
-        )?;
-        block_on(workflow.submit_signed_transaction(
-            &hydrated,
-            TransactionPurpose::CollectionVerification,
-            &signed,
-        ))
-        .map_err(|error| format!("collection verification submission failed: {error:?}"))?;
-        hydrated = wait_for(workflow, Stage::VerificationSubmitted)?;
-    }
-
-    if rank(hydrated.stage()) < rank(Stage::Verified) {
-        block_on(workflow.mark_collection_verified(&hydrated)).map_err(|error| {
-            format!("collection verification acknowledgement failed: {error:?}")
-        })?;
-        hydrated = wait_for(workflow, Stage::Verified)?;
-    }
-
-    if rank(hydrated.stage()) < rank(Stage::Submitted) {
-        let attestation = create_attestation(client, keypair)?;
-        let result = block_on(
-            workflow.submit_to_store(
-                &hydrated,
-                StoreSubmission {
-                    whats_new: whats_new
-                        .or(release_notes.as_deref())
-                        .unwrap_or("New version"),
-                    critical_update: false,
-                    testing_instructions: None,
-                    is_resubmission: None,
-                    attestation,
-                },
-            ),
-        )
-        .map_err(|error| format!("store submission failed: {error:?}"))?;
-        ticket = match result.hubspot_ticket_id {
-            solana_kit_client::Presence::Present(Some(value)) => Some(value),
-            _ => None,
-        };
-    }
-
-    Ok(Summary {
-        release_mint,
-        collection_mint: Some(app_mint.to_string()),
-        ticket,
+    Ok(CreateIngestionSession {
+        source,
+        whats_new: options.whats_new.clone().unwrap_or_default(),
+        idempotency_key,
+        dapp_id: None,
     })
 }
 
-fn wait_for(
-    workflow: &mut Workflow<'_, PortalTransport, HttpUploader, FileStorage, SystemClock>,
-    minimum: Stage,
-) -> Result<HydratedPublication, String> {
-    for _ in 0..STAGE_ATTEMPTS {
-        let hydrated = block_on(workflow.resume(ResumeTarget::Snapshot))
-            .map_err(|error| format!("publication refresh failed: {error:?}"))?;
+fn resume_target(options: &ResumeOptions) -> Result<ResumeTarget, String> {
+    let release = options
+        .release_id
+        .as_deref()
+        .or(options.resume_release.as_deref());
+    let session = options
+        .session_id
+        .as_deref()
+        .or(options.resume_session.as_deref());
 
-        if hydrated.stage() == Stage::Failed {
-            return Err("publication reached the failed stage".into());
-        }
-
-        if rank(hydrated.stage()) >= rank(minimum) {
-            return Ok(hydrated);
-        }
-
-        std::thread::sleep(Duration::from_secs(2));
+    match (release, session) {
+        (_, Some(session)) => Ok(ResumeTarget::Session(session.trim().to_owned())),
+        (Some(release), None) => Ok(ResumeTarget::Release(release.trim().to_owned())),
+        _ => Err("a release or session selector is required".into()),
     }
-
-    Err("publication did not advance to the next stage".into())
-}
-
-fn sign_release_mint(
-    prepared: &PreparedReleaseTransaction,
-    keypair: &Keypair,
-    payer: Address,
-    publisher: Address,
-    collection: Address,
-) -> Result<String, String> {
-    let blockhash = prepared
-        .blockhash
-        .parse::<Hash>()
-        .map_err(|_| "prepared mint has an invalid blockhash")?;
-    let mint = prepared
-        .mint_address
-        .parse::<Address>()
-        .map_err(|_| "prepared mint has an invalid address")?;
-    sign_prepared(
-        &prepared.transaction,
-        PublicationPolicy::ReleaseMint {
-            expected: ExpectedTransaction {
-                blockhash,
-                payer,
-                signer: publisher,
-            },
-            mint,
-            collection,
-        },
-        keypair,
-    )
-}
-
-fn sign_verification(
-    prepared: &PreparedVerifyCollectionTransaction,
-    keypair: &Keypair,
-    payer: Address,
-    publisher: Address,
-    nft_mint: Address,
-    collection: Address,
-    authority: Address,
-) -> Result<String, String> {
-    let blockhash = prepared
-        .blockhash
-        .parse::<Hash>()
-        .map_err(|_| "prepared verification has an invalid blockhash")?;
-    sign_prepared(
-        &prepared.transaction,
-        PublicationPolicy::VerifyCollection {
-            expected: ExpectedTransaction {
-                blockhash,
-                payer,
-                signer: publisher,
-            },
-            nft_mint,
-            collection,
-            authority,
-        },
-        keypair,
-    )
-}
-
-fn sign_prepared(
-    prepared: &str,
-    policy: PublicationPolicy,
-    keypair: &Keypair,
-) -> Result<String, String> {
-    let bytes = STANDARD
-        .decode(prepared)
-        .map_err(|_| "prepared transaction is not valid base64")?;
-    let sealed = validate_prepared_transaction(
-        &bytes,
-        policy,
-        CodecLimits::new(TRANSACTION_BYTES, TRANSACTION_ITEMS),
-    )
-    .map_err(|error| format!("prepared transaction policy failed: {error:?}"))?;
-    let signature = {
-        let request = sealed.signing_request();
-        keypair.sign(request.message)
-    };
-    let signed = sealed
-        .attach_signature(signature)
-        .map_err(|error| format!("prepared transaction signing failed: {error:?}"))?;
-    let wire = signed
-        .encode(true)
-        .map_err(|error| format!("signed transaction encoding failed: {error:?}"))?;
-
-    Ok(STANDARD.encode(wire))
-}
-
-fn create_attestation(
-    client: &Client<PortalTransport>,
-    keypair: &Keypair,
-) -> Result<StoreAttestation, String> {
-    let block = block_on(client.call(&GetBlockData {}))
-        .map_err(|error| format!("attestation block data failed: {error:?}"))?;
-    let blockhash = block
-        .blockhash
-        .parse::<Hash>()
-        .map_err(|_| "attestation blockhash is invalid")?;
-    let request_id = random_digits(32);
-    let request =
-        RequestId::parse(&request_id).map_err(|_| "attestation request identity is invalid")?;
-    let message = AttestationMessage::new(
-        block.slot,
-        blockhash,
-        request,
-        CodecLimits::new(ATTESTATION_BYTES, ATTESTATION_ITEMS),
-    )
-    .map_err(|error| format!("attestation message failed: {error:?}"))?;
-    let signature = keypair.sign(message.bytes());
-    let payload = message
-        .attach_signature(keypair.address(), signature)
-        .map_err(|error| format!("attestation signing failed: {error:?}"))?;
-
-    Ok(StoreAttestation {
-        payload: payload.payload().to_owned(),
-        request_unique_id: request_id,
-    })
-}
-
-fn funding_preflight(keypair: &Keypair, options: &NewVersionOptions) -> Result<(), String> {
-    let Some(url) = resolve_funding_rpc_url(options.local_dev, options.rpc_url.as_deref()) else {
-        return Ok(());
-    };
-    let address = keypair.address().to_string();
-
-    match fetch_balance(url, &address) {
-        Ok(balance) => match check_signer_balance(&address, balance) {
-            Ok(FundingCheck::Sufficient { .. }) => Ok(()),
-            Ok(FundingCheck::Insufficient { balance, required }) => Err(format!(
-                "signer {address} has {} SOL, but publishing needs at least {} SOL before it starts",
-                format_sol_amount(balance),
-                format_sol_amount(required)
-            )),
-            Err(_) => {
-                eprintln!("Warning: unable to validate the signer address for funding preflight.");
-                Ok(())
-            }
-        },
-        Err(_) => {
-            eprintln!(
-                "Warning: unable to confirm the signer balance; continuing without a SOL preflight check."
-            );
-            Ok(())
-        }
-    }
-}
-
-fn fetch_balance(url: &str, address: &str) -> Result<u64, String> {
-    let body = serde_json::json!({
-        "jsonrpc": "2.0",
-        "id": 1,
-        "method": "getBalance",
-        "params": [address],
-    })
-    .to_string();
-    let agent = ureq::Agent::config_builder()
-        .timeout_global(Some(Duration::from_secs(15)))
-        .http_status_as_error(false)
-        .build()
-        .new_agent();
-    let response = agent
-        .post(url)
-        .header("content-type", "application/json")
-        .header("accept", "application/json")
-        .send(body.as_str())
-        .map_err(|_| "RPC request failed".to_owned())?;
-
-    if !(200..300).contains(&response.status().as_u16()) {
-        return Err("RPC returned a non-success status".into());
-    }
-
-    let mut response = response;
-    let bytes = response
-        .body_mut()
-        .read_to_vec()
-        .map_err(|_| "RPC response failed".to_owned())?;
-    let value: serde_json::Value =
-        serde_json::from_slice(&bytes).map_err(|_| "RPC response was not JSON".to_owned())?;
-
-    if value.get("error").is_some() {
-        return Err("RPC returned an error".into());
-    }
-
-    value
-        .get("result")
-        .and_then(|result| result.get("value"))
-        .and_then(serde_json::Value::as_u64)
-        .ok_or_else(|| "RPC balance was missing or invalid".into())
 }
 
 fn load_keypair(path: Option<&str>) -> Result<Keypair, String> {
@@ -566,12 +243,12 @@ fn load_keypair(path: Option<&str>) -> Result<Keypair, String> {
 fn limits() -> Result<Limits, String> {
     let budgets = Budgets::default();
     let limits = Limits {
-        deadline: 120_000,
-        max_polls: 60,
-        poll_interval_ms: 2_000,
-        source_bytes: 64 * 1024 * 1024,
-        media_bytes: 16 * 1024 * 1024,
-        media_items: 32,
+        deadline: WORKFLOW_DEADLINE_MS,
+        max_polls: MAX_POLLS,
+        poll_interval_ms: POLL_INTERVAL_MS,
+        source_bytes: SOURCE_BYTES,
+        media_bytes: MEDIA_BYTES,
+        media_items: MEDIA_ITEMS,
         snapshot: budgets,
         metadata: budgets,
     };
@@ -590,7 +267,7 @@ fn storage() -> FileStorage {
     FileStorage::new(PathBuf::from(".solana-kit-publisher/checkpoint.json"))
 }
 
-fn mint_of(hydrated: &HydratedPublication) -> Option<String> {
+pub(super) fn mint_of(hydrated: &HydratedPublication) -> Option<String> {
     text(&hydrated.backend_session().expected_mint_address)
         .or_else(|| {
             option(&hydrated.backend_bundle().release)
@@ -599,52 +276,59 @@ fn mint_of(hydrated: &HydratedPublication) -> Option<String> {
         .map(str::to_owned)
 }
 
-fn option<T>(value: &solana_kit_client::Presence<Option<T>>) -> Option<&T> {
+pub(super) fn option<T>(value: &solana_kit_client::Presence<Option<T>>) -> Option<&T> {
     match value {
         solana_kit_client::Presence::Present(Some(value)) => Some(value),
         _ => None,
     }
 }
 
-fn text(value: &solana_kit_client::Presence<Option<String>>) -> Option<&str> {
+pub(super) fn text(value: &solana_kit_client::Presence<Option<String>>) -> Option<&str> {
     option(value)
         .map(String::as_str)
         .filter(|value| !value.trim().is_empty())
 }
 
-fn rank(stage: Stage) -> u8 {
+pub(super) fn rank(stage: Stage) -> u8 {
     match stage {
-        Stage::PreparedForMint => 0,
-        Stage::MintSubmitted => 1,
-        Stage::MintSaved => 2,
-        Stage::VerificationSubmitted => 3,
-        Stage::Verified => 4,
-        Stage::Attested => 5,
-        Stage::Submitted => 6,
+        Stage::PreparedForMint => RANK_PREPARED_FOR_MINT,
+        Stage::MintSubmitted => RANK_MINT_SUBMITTED,
+        Stage::MintSaved => RANK_MINT_SAVED,
+        Stage::VerificationSubmitted => RANK_VERIFICATION_SUBMITTED,
+        Stage::Verified => RANK_VERIFIED,
+        Stage::Attested => RANK_ATTESTED,
+        Stage::Submitted => RANK_SUBMITTED,
         Stage::Failed => u8::MAX,
     }
 }
 
-fn random_token(length: usize) -> String {
-    let mut bytes = vec![0; length];
-    if getrandom::fill(&mut bytes).is_err() {
-        return "0000000000000000".into();
-    }
-    bytes.iter().map(|byte| format!("{byte:02x}")).collect()
+fn random_token(length: usize) -> Result<String, String> {
+    let bytes = random_bytes_with(length, getrandom::fill)?;
+
+    Ok(bytes.iter().map(|byte| format!("{byte:02x}")).collect())
 }
 
-fn random_digits(length: usize) -> String {
+fn random_bytes_with(
+    length: usize,
+    fill: impl FnOnce(&mut [u8]) -> Result<(), getrandom::Error>,
+) -> Result<Vec<u8>, String> {
     let mut bytes = vec![0; length];
-    if getrandom::fill(&mut bytes).is_err() {
-        return "0".repeat(length);
-    }
-    bytes
+
+    fill(&mut bytes).map_err(|_| "system entropy is unavailable".to_owned())?;
+
+    Ok(bytes)
+}
+
+pub(super) fn random_digits(length: usize) -> Result<String, String> {
+    let bytes = random_bytes_with(length, getrandom::fill)?;
+
+    Ok(bytes
         .iter()
         .map(|byte| char::from(b'0' + (byte % 10)))
-        .collect()
+        .collect())
 }
 
-fn block_on<F: Future>(future: F) -> F::Output {
+pub(super) fn block_on<F: Future>(future: F) -> F::Output {
     let mut future = pin!(future);
     let waker = Waker::noop();
     let mut context = Context::from_waker(waker);
@@ -653,6 +337,7 @@ fn block_on<F: Future>(future: F) -> F::Output {
         if let Poll::Ready(value) = future.as_mut().poll(&mut context) {
             return value;
         }
+
         std::thread::yield_now();
     }
 }
@@ -705,10 +390,23 @@ mod tests {
 
     #[test]
     fn random_outputs_have_the_expected_shape() {
-        assert_eq!(random_token(8).len(), 16);
-        assert!(random_token(8).bytes().all(|byte| byte.is_ascii_hexdigit()));
-        assert_eq!(random_digits(32).len(), 32);
-        assert!(random_digits(32).bytes().all(|byte| byte.is_ascii_digit()));
+        let token = random_token(8).expect("system entropy");
+        let digits = random_digits(32).expect("system entropy");
+
+        assert_eq!(token.len(), 16);
+        assert!(token.bytes().all(|byte| byte.is_ascii_hexdigit()));
+        assert_eq!(digits.len(), 32);
+        assert!(digits.bytes().all(|byte| byte.is_ascii_digit()));
+    }
+
+    #[test]
+    fn entropy_failure_never_produces_a_publication_identity() {
+        let result = random_bytes_with(TOKEN_BYTES, |bytes| {
+            bytes.fill(7);
+            Err(getrandom::Error::UNSUPPORTED)
+        });
+
+        assert_eq!(result, Err("system entropy is unavailable".to_owned()));
     }
 
     #[test]
