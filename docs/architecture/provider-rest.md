@@ -1,8 +1,10 @@
 # Provider REST ownership
 
 This source checkpoint is exclusively for off-chain application clients. On-chain
-programs use Pina or official Solana program libraries. Compilation, formatting,
-runtime checks and declaration parity remain pending.
+programs use Pina or official Solana program libraries. The
+[current execution receipt](../verification/provider-rest-current.md) records
+native, Chrome, Preview 2 and interpreted-host transport checks. Declaration
+parity remains separate from those transport results.
 
 `solana_kit_client::rest` owns one request contract. `Transport<D>` accepts a
 `Request<D>` and returns the existing `Reply` or `TransportError` through a
@@ -44,10 +46,8 @@ owner/interpreter/Bridge completion identities and cancellation accounting.
 Capacity remains occupied until native completion is joined. The application
 routes Events and awaits shutdown before unloading its host. Drop only aborts.
 
-The private provider consumer's `rest::journey` calls actual Helius, Jupiter and
-Hermes clients with Rc across awaits. Concrete browser, Preview2 and guest
-functions consume the same journey. Native peer source covers literal methods,
-encoding, authentication isolation, body presence, chunk bounds and cancellation.
-These bodies have not executed. Actual browser, Preview2 and production WasmHost
-driver replay, current/MSRV graphs, quality gates and independent source review
-remain required. Every canonical provider declaration remains pending.
+Maintained transport fixtures exercise actual native, browser, Preview 2 and
+production WasmHost requests, including encoding, body presence, response bounds,
+grant denial and cleanup. They do not establish every Helius, Jupiter or Hermes
+client operation: provider request/response contracts and declaration adjudication
+remain separate. Canonical provider declaration statuses are unchanged.
