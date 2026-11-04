@@ -3,10 +3,12 @@ name: Publish crate
 on:
   workflow_dispatch:
     inputs:
+
       package:
         description: Workspace crate to publish (solana_kit or solana_kit_*)
         required: true
         type: string
+
       dry_run:
         description: Verify the packaged crate without publishing
         type: boolean
@@ -22,15 +24,18 @@ concurrency:
 jobs:
   publish:
     if: github.ref == 'refs/heads/main'
-    runs-on: ubuntu-24.04
+    runs-on: "ubuntu-24.04"
     timeout-minutes: 45
+
     permissions:
       contents: read
       id-token: write
+
     env:
       PACKAGE: ${{ inputs.package }}
       CARGO_HTTP_USER_AGENT: solana-kit-publishing
       GIT_HTTP_USER_AGENT: solana-kit-publishing
+
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -38,6 +43,7 @@ jobs:
 
       - name: Validate crate selection
         shell: bash
+
         run: |
           set -euo pipefail
           case "$PACKAGE" in
