@@ -131,7 +131,7 @@ executes start failure, explicit cleanup, preserved-submitted resume, and assert
 no `publication.submitToStore` procedure and no upload observation. The body is
 included in the shared `publisher-workflow-durable-effects-and-cancellation`
 group and now executes on all five hosts in the
-[v57/459 publication receipt](../verification/publication-runtime.md). Normal CLI
+[v58/461 publication receipt](../verification/publication-runtime.md). Normal CLI
 registry enablement remains under RW-07; no automatic destructive cleanup, broad
 catch/replay or additional production wrapper is added.
 
@@ -387,7 +387,7 @@ attached ingestion records, metadata URI precedence, progress messages,
 cleanup outcomes and diagnostic redaction. They live in
 `crates/solana_kit_dapp_publisher/tests/publication.rs`, use independently
 authored JSON and string literals, and also execute in four appended portable
-groups in the v57/459 shared suite; the
+groups in the v58/461 shared suite; the
 [publication runtime receipt](../verification/publication-runtime.md) records the
 five-host run. The earlier v55/448 identity remains historical. All canonical
 declaration IDs/statuses remain unchanged. No Dart oracle was executed for these

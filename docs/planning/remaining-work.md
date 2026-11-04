@@ -19,16 +19,17 @@ declarations across **70** packages with extracted declarations. The
 
 | Phase | Declarations | Partial | Pending | Complete |
 | ----- | -----------: | ------: | ------: | -------: |
-| 2     |        1,387 |      23 |   1,362 |        2 |
+| 2     |        1,387 |      23 |     997 |      367 |
 | 3     |          746 |       0 |     746 |        0 |
 | 4     |        1,403 |       0 |   1,403 |        0 |
 | 5     |          262 |       0 |     262 |        0 |
 | 6     |        9,991 |       0 |   9,991 |        0 |
 | 7     |          751 |       0 |     751 |        0 |
 | 8     |        3,408 |       0 |   3,408 |        0 |
-| Total |       17,948 |      23 |  17,923 |        2 |
+| Total |       17,948 |      23 |  17,558 |      367 |
 
-These totals include the address pilot and the twelve numeric adjudications.
+These totals include the address pilot, the twelve numeric adjudications and the
+365 `SolanaErrorCode` name/integer claims.
 All 71 package-disposition rows are `inventoried`, with no `implemented`,
 `verified`, or `blocked` claim. `rustc tools/check_plan.rs` reports
 `verified 71 unique package records and their planning states`.
@@ -37,8 +38,10 @@ The original audit had one partial row (`mergeRoles`) and 17,947 pending. The
 [address adjudication pilot](../parity/address-adjudication.md) adds a checked
 manifest and reviews twelve address declarations: two complete, ten partial.
 The subsequent [numeric adjudication](../parity/numeric-adjudication.md) records
-twelve more partial declarations, preserving all 17,948 IDs and source hashes.
-RW-01a and this bounded RW-10/RW-11 batch are implemented;
+twelve more partial declarations, and the
+[error-code adjudication](../parity/error-code-adjudication.md) records 365
+complete `SolanaErrorCode` name/integer claims. All 17,948 IDs and source hashes
+are preserved. RW-01a and this bounded RW-10/RW-11 batch are implemented;
 family-by-family adjudication and the other backlog items remain open.
 
 Scoped receipts retain their own exact counts and are not canonical totals:
@@ -74,7 +77,7 @@ These results are inputs to the backlog, not completion claims.
 
 | Area                 | Current executed evidence                                                                                                                                                                                                                                                                                                                             |
 | -------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Portable conformance | `solana-kit-core-v57` passes 459/459 natively, in Chrome, both Wasmtime 50 previews and the pinned LeptosKit interpreter; corruption is 458/459. The first 455 v56 cases are preserved. [Receipt](../verification/publication-runtime.md)                                                                                                             |
+| Portable conformance | `solana-kit-core-v58` passes 461/461 natively, in Chrome, both Wasmtime 50 previews and the pinned LeptosKit interpreter; corruption is 460/461. The first 459 v57 cases are preserved. [Receipt](../verification/publication-runtime.md)                                                                                                             |
 | Program clients      | 17 owned-validator tests pass for builtins and pinned external programs. [Receipt](../verification/program-integration.md)                                                                                                                                                                                                                            |
 | Codama package       | Packed NPM consumer, 9 NPM tests, 116 generator tests and the exact 9 groups on native/Chrome/WASI/LeptosKit. [Receipt](../verification/codama-package-current.md)                                                                                                                                                                                    |
 | Native wallet        | iOS controller twice, Android controller twice on a fresh API 35 arm64 emulator, and a three-process macOS computer-use journey with independent ledger/state oracles. [iOS](../verification/installed-wallet-current.md), [Android](../verification/installed-wallet-android-current.md), [macOS](../verification/installed-wallet-macos-current.md) |
@@ -96,18 +99,19 @@ claim.
 evidence is linked." The plan's definition of done also requires behavioral
 evidence for every package capability.
 
-**Current finding.** The canonical ledger has zero complete rows. The extractor
-does not read scoped family receipts and cannot be incrementally adjudicated:
+**Historical audit (superseded).** At the original audit snapshot the canonical
+ledger had zero complete rows and the extractor built every row status through
+`pilot(package, symbol)`:
 
-- `tools/capability_inventory/src/ledger.rs:46` builds every row status through
+- `tools/capability_inventory/src/ledger.rs:46` built every row status through
   `pilot(package, symbol)`.
-- `tools/capability_inventory/src/ledger.rs:259-273` returns `partial` only for
+- `tools/capability_inventory/src/ledger.rs:259-273` returned `partial` only for
   `solana_kit_instructions#mergeRoles` and `pending` for everything else.
 - `Tables::check` at `:86-103` requires an exact regeneration match, so editing
-  `capabilities.tsv` without changing the extractor is rejected.
+  `capabilities.tsv` without changing the extractor was rejected.
 - The existing controls at `:114-129` correctly reject missing, duplicate,
   invented-verified and unsupported-evidence rows.
-- Scoped receipt generators also hard-code non-completion. Examples:
+- Scoped receipt generators hard-code non-completion. Examples:
   `verification/signer-capabilities/audit.rs:41` panics on any completion claim
   and `:44` fixes the total at 85/39/46; `verification/durable-nonce/src/bin/receipt.rs:95`
   accepts only `pending|partial`; `verification/instruction-plans/coverage.rs:38`
@@ -119,8 +123,26 @@ does not read scoped family receipts and cannot be incrementally adjudicated:
   and `verification/wallet-consumer/src/bin/receipt.rs:30` reports all rows as
   partial.
 
-These guards are useful: they prevent silent mass promotion. They are not an
-incremental adjudication mechanism.
+Those guards still prevent silent mass promotion in their scoped receipts. They
+are not the canonical adjudication mechanism.
+
+**Current mechanism.** `docs/parity/adjudications.tsv` now supplies reviewed
+rows keyed by complete canonical ID and defining source hash. `Manifest::parse`
+rejects unknown, duplicate or hash-drifted IDs, absent or unsafe evidence, prose
+evidence, blank or invented case names, malformed headers/field counts and
+unknown statuses. `Tables::build` replaces only `status`, `evidence` and `notes`
+for a matching ID; every other column is regenerated from the pinned source.
+`check` requires an exact regeneration match and `controls` rejects every
+manifest corruption in addition to missing, duplicate and invented rows.
+
+The committed reviews are the twelve address declarations (two complete, ten
+partial), twelve numeric/fixed-point declarations (all partial), and 365
+`SolanaErrorCode` declarations (all complete for exact name and integer only).
+The canonical ledger therefore has 367 complete, 23 partial and 17,558 pending
+rows. No package disposition is promoted: every package remains `inventoried`,
+and the 365 error-code rows do not claim the enum class, constructors, getters,
+domain constants, dynamic `SolanaError` behavior, or the other 73 declarations
+in that package.
 
 **Owning code/source.** `tools/capability_inventory` (extractor and controls),
 all family receipt generators under `verification/` and `tools/codama-renderer`,
@@ -133,45 +155,34 @@ rustc --edition=2024 -D warnings tools/check_plan.rs -o /tmp/solana-kit-check-pl
 /tmp/solana-kit-check-plan
 ```
 
-The full extractor check needs a clean checkout at the immutable Dart pin and a
-cached `tree-sitter` dependency:
+The full extractor check uses a clean checkout at the immutable Dart pin:
 
 ```sh
-cargo run --manifest-path tools/capability_inventory/Cargo.toml --locked -- check "$PINNED_DART"
+cargo run --locked --manifest-path tools/capability_inventory/Cargo.toml --offline -- check "$PINNED_DART" .
+cargo run --locked --manifest-path tools/capability_inventory/Cargo.toml --offline -- controls "$PINNED_DART" .
+cargo test --locked -p solana_kit_conformance --offline --lib
 ```
 
-At this snapshot the available local reference checkout contains the pin object
-but its working HEAD is not the pin, and the offline dependency cache lacks
-`tree-sitter`; the extractor test command therefore could not be executed in
-this unit. This is an environment/setup blocker, not evidence that the ledger is
-wrong.
+The current pin checkout is clean and the cached `tree-sitter` dependency is
+available; the commands above executed in this unit. The earlier setup blocker
+is historical.
 
-**Next minimal unit (RW-01a).** Add one machine-checked adjudication source and
-pilot exactly one small family. Do not change IDs, hashes, source extraction,
-thresholds, or the existing failure controls.
+**Next minimal unit (RW-01b).** Continue one bounded family at a time. Use the
+existing machine-checked adjudication source; do not change IDs, hashes, source
+extraction, thresholds, or the existing failure controls.
 
-1. Add `docs/parity/adjudications.tsv` with columns
-   `id`, `sha256`, `status`, `evidence`, `cases`, `notes`, `decision`.
-   Every row is keyed by the complete canonical ID, not package/symbol.
-2. Extend the extractor to load that file after the inventory. Validate:
-   every ID exists once; the hash equals the canonical source hash; status is
-   `pending|partial|complete`; every evidence path exists; `complete` requires
-   nonempty exact case names; `partial` requires a bounded note; unknown,
-   duplicate, hash-drifted, or evidence-free rows fail.
-3. Regenerate only `status`, `evidence` and `notes` from that source. Leave
-   `id`, `package`, `path`, `symbol`, `kind`, `line`, `owner`, `phase`, `unit`,
-   `sha256` and `provenance` byte-identical by construction.
-4. Add negative controls for an unknown ID, a duplicate ID, a changed hash, a
-   missing evidence file, a `complete` row with no case, and an invented
-   verification claim. Keep the existing controls.
-5. Pilot the twelve `solana_kit_address` declarations in
-   `docs/parity/capabilities.tsv` using existing address/collation/PDA executable
-   tests. One complete row is enough to prove the mechanism; do not promote the
-   rest of the family by association.
-6. Only after the pilot: roll out one family at a time, in phase order. Use a
-   single test or conformance case to cover a group only when the case proves
-   every mapped row's exact contract, and record that mapping in `cases`.
-7. Promote the 71 package rows separately in `docs/planning/parity.tsv`, with
+1. Pick one bounded family and one exact contract. Add or reuse an executable
+   test/conformance body that proves every mapped row; do not infer neighboring
+   declarations from a family name.
+2. Append one manifest row per complete canonical ID with the defining source
+   hash, exact successful case name and a bounded decision. Keep existing rows
+   byte-identical and re-run the extractor `write`.
+3. Prove only `status`, `evidence` and `notes` changed; `source-files.tsv`,
+   `delivery-units.md` and every identity/hash/provenance column must stay
+   byte-identical.
+4. Run the native, Chrome, Wasmtime 50 Preview 1/2 and pinned LeptosKit hosts
+   before the report is cited as complete evidence.
+5. Promote the 71 package rows separately in `docs/planning/parity.tsv`, with
    evidence, only after the corresponding capability families are honestly
    complete. `check_plan` already rejects implementation claims without evidence.
 
@@ -192,10 +203,10 @@ partial count completes canonical rows.
 
 **Executed follow-up.** RW-02 is now closed by the
 [publication runtime receipt](../verification/publication-runtime.md). All 32
-existing projection bodies execute in four appended v57 groups on native Rust,
-Chrome, both Wasmtime previews and the pinned LeptosKit host: 459/459 pass,
-with only the intended hash failure in the 458/459 control. The first 455 cases
-are preserved. Findings below describe the earlier audit snapshot.
+existing projection bodies execute in four appended groups on native Rust,
+Chrome, both Wasmtime previews and the pinned LeptosKit host: they pass in the
+current 461/461 v58 report, with only the intended hash failure in the 460/461
+control. The first 459 cases are preserved. Findings below describe the earlier audit snapshot.
 
 **Acceptance criterion.** Phase 8 runtime evidence is linked; the publisher
 package acceptance includes portable execution, not only native tests.
@@ -449,7 +460,7 @@ comes from the acknowledged cache, session or bundle (`:157-179`), so no upload
 or store submit is issued. The exact path is
 `tests/workflow/failures.rs::preserved_submitted_cleanup_reconciles_without_resubmitting_to_store`;
 it is included in `publisher-workflow-durable-effects-and-cancellation` and now
-executes on all five hosts in the v57/459 receipt. The decision is recorded in
+executes on all five hosts in the v58/461 receipt. The decision is recorded in
 [the workflow record](../parity/dapp-publisher-workflow.md).
 
 **Normal CLI enablement.** The native binary is implemented and usable from a
@@ -728,7 +739,7 @@ one docs-only change:
 - `mobile-wallet-protocol.md` records local transport, Android handover and the
   wallet control surface as implemented, and links the later native reflector
   TLS receipt. External-wallet and public-reflector interoperability stay open.
-- `dapp-publisher.md` links the v57/459 five-host receipt and keeps the
+- `dapp-publisher.md` links the v58/461 five-host receipt and keeps the
   cross-language signature oracle unexecuted.
 - `subscriptions.md` links the four appended portable groups.
 - `numeric-string-codecs.md` and both numeric scoped receipts describe the
@@ -792,9 +803,10 @@ functional computer-use proof distinct from the automated driver route.
 ## Achievable order
 
 1. **RW-01a**: adjudication manifest plus the twelve-address pilot are complete.
-   Continue with reviewed family-by-family adjudication under RW-01b.
+   The error-code review adds 365 complete name/integer rows. Continue with
+   reviewed family-by-family adjudication under RW-01b.
 2. **RW-02**: publication projections in the shared suite. Closed by the
-   v57/459 five-host receipt.
+   v58/461 five-host receipt.
 3. **RW-05**: WASI socket/clock named-host receipt. Closed for its named host;
    broader WASI hosts remain open.
 4. **RW-03**: external Android wallet acceptance. This is the largest genuine

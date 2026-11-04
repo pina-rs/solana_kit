@@ -1,7 +1,6 @@
 const BUDGET: usize = 64;
 const ABOVE_RANGE: u8 = 9;
 const RANGE_MAX: u8 = 8;
-const HEX_RADIX: u32 = 16;
 const OVER_TEXT_LIMIT: i64 = 1025;
 const FIXED_POINT_CODE: i64 = 8090000;
 const HISTORICAL_ACCOUNT_TYPO: i64 = 32300001;
@@ -14,44 +13,19 @@ use solana_kit_core::{
     codecs::{Bool, Constant, Decoder, Error, Limits, Number, Reader, ensure_number_range},
     errors::{Context, ContextError, ContextValue, Diagnostic, ErrorCode, ErrorDomain, ErrorFacts},
 };
-use std::{collections::HashSet, error::Error as _};
+use std::error::Error as _;
+
+#[path = "shared_errors/exact_catalog.rs"]
+mod exact_catalog;
 
 #[test]
 fn exact_pinned_codes_domains_templates_and_unknown_values() {
-    let mut values = HashSet::new();
-    let fixture = include_str!("shared_errors/catalog.tsv");
+    exact_catalog::exact(include_str!("shared_errors/catalog.tsv")).unwrap();
+}
 
-    for (definition, row) in ErrorCode::definitions().zip(fixture.lines()) {
-        let fields: Vec<_> = row.split('\t').collect();
-        let value: i64 = fields[1].parse().unwrap();
-        assert!(values.insert(value));
-        assert_eq!(definition.code.value(), value);
-        assert_eq!(definition.name, fields[0]);
-
-        let domain = format!("{:?}", definition.code.domain());
-        assert_eq!(
-            format!("{}{}", domain[..1].to_lowercase(), &domain[1..]),
-            fields[2]
-        );
-        let message: Vec<_> = fields[3]
-            .as_bytes()
-            .chunks(2)
-            .map(|pair| u8::from_str_radix(std::str::from_utf8(pair).unwrap(), HEX_RADIX).unwrap())
-            .collect();
-        assert_eq!(definition.template.as_bytes(), message);
-        assert_eq!(definition.code.definition(), Some(definition));
-        assert!(
-            !definition
-                .code
-                .message(&Context::default())
-                .unwrap()
-                .is_empty()
-        );
-    }
-
-    assert_eq!(values.len(), 365);
-    assert_eq!(fixture.lines().count(), 365);
-    assert_eq!(ErrorCode::definitions().count(), 365);
+#[test]
+fn wrong_catalog_literal_is_rejected_before_unknown_value_checks() {
+    exact_catalog::rejects_wrong_literal(include_str!("shared_errors/catalog.tsv")).unwrap();
 }
 
 #[test]

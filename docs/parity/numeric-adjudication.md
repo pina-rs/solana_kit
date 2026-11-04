@@ -46,7 +46,7 @@ The exact IDs and reviewed notes are in the manifest.
 ## Shared case bodies
 
 Every cited case is an exact successful entry in the maintained
-`solana-kit-core-v57` report. The bodies map to source behavior as follows.
+`solana-kit-core-v58` report. The bodies map to source behavior as follows.
 
 | Shared case                          | Body                                                          | Source behavior proved                                                                                                     |
 | ------------------------------------ | ------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
