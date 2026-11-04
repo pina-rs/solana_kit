@@ -58,8 +58,11 @@ does not prove those new operations on every host.
 
 The [installed wallet receipt](../verification/installed-wallet-current.md)
 records two complete current-source iOS controller runs, including native wallet
-recovery and real local-validator effects. Successful current macOS and Android
-installed runs remain outstanding.
+recovery and real local-validator effects. The macOS functional journey passed through computer use,
+with its separate [receipt](../verification/installed-wallet-macos-current.md); the Mac2 controller
+route remains unavailable. The current Android controller passed twice
+on an arm64 emulator, recorded in its
+[execution receipt](../verification/installed-wallet-android-current.md).
 
 No canonical capability ID, hash, status, checker, threshold, shared golden or
 suite version changes in this reconciliation. Declaration-level evidence

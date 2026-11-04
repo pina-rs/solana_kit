@@ -63,9 +63,12 @@ join; Drop cancels outstanding work and the host must still drain and join it.
 The maintained interpreted fixture adds Helius pre-ack binary delivery and close.
 The [current installed iOS wallet receipt](../../docs/verification/installed-wallet-current.md)
 exercises the granted validator socket, cancellation and continuing slot activity
-through this source pin. It does not establish successful current macOS or Android
-installed execution. The historical HTTP receipt above does not verify this source
-pin or socket extension.
+through this source pin. The [Android receipt](../../docs/verification/installed-wallet-android-current.md)
+records the same socket extension on an installed emulator application. The
+[macOS functional receipt](../../docs/verification/installed-wallet-macos-current.md) covers three
+process sessions through computer use; the Mac2/XCTest controller route remains unavailable. The
+historical HTTP receipt above does not verify this source pin or socket
+extension.
 
 The REST adapter provides `GuestRest<D>` and
 `HttpDriver::install_rest`. The application binds provider destinations to named

@@ -48,7 +48,11 @@ confirmed context which a later same-socket slot must exceed. Background socket
 traffic keeps draining without rebuilding the visible panel. The repaired
 initial and recovered-session activity checks passed twice in the complete
 installed iOS controller on 2026-11-04; see the [execution receipt](../../../docs/verification/installed-wallet-current.md).
-Successful current-source macOS and Android artifacts remain outstanding.
+The [macOS functional receipt](../../../docs/verification/installed-wallet-macos-current.md) records
+three sessions through computer use and distinguishes them from the unavailable Mac2 driver. The maintained
+Android controller completed the same three-process journey twice on an arm64
+API 35 emulator; its [receipt](../../../docs/verification/installed-wallet-android-current.md)
+records the build, subscriptions and remaining limits.
 A native runtime test or a generated guest build does not prove those journeys.
 
 The normal runtime test suite imports the generated guest's actual delivery

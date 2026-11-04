@@ -186,8 +186,11 @@ locally on 2026-11-04. The [current execution receipt](../../../docs/verificatio
 records the source, artifacts and limits. The same three-process macOS functional journey subsequently
 passed through computer use, including independent ledger checks and both subscription races; its
 [receipt](../../../docs/verification/installed-wallet-macos-current.md) distinguishes that result from
-the unavailable Mac2 driver. Current Android installed acceptance remains unexecuted. Browser
-subscription acceptance is separate evidence.
+the unavailable Mac2 driver. The maintained Android controller then completed the
+same three-process journey twice on a freshly created arm64 API 35 emulator; its
+[receipt](../../../docs/verification/installed-wallet-android-current.md) records
+the artifacts, subscriptions and limits, and distinguishes emulator evidence from
+a physical device and from CI. Browser subscription acceptance is separate evidence.
 
 This is exclusively off-chain client verification. Use Pina or official Solana
 program libraries for on-chain programs.
