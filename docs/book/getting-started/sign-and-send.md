@@ -167,13 +167,16 @@ async fn wait_for_airdrop<T: Transport>(
     client: &Client<T>,
     signature: Signature,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    const ATTEMPTS: u32 = 120;
+    tokio::time::timeout(Duration::from_secs(60), async {
+        loop {
+            tokio::time::sleep(Duration::from_millis(500)).await;
 
-    for _ in 0..ATTEMPTS {
-        let Contextual { mut value, .. } =
-            client.call(SignatureStatuses(&[signature], None)).await?;
+            let Contextual { mut value, .. } =
+                client.call(SignatureStatuses(&[signature], None)).await?;
+            let Some(status) = value.pop().flatten() else {
+                continue;
+            };
 
-        if let Some(status) = value.pop().flatten() {
             if let Some(failure) = status.err {
                 return Err(failure.into());
             }
@@ -185,11 +188,8 @@ async fn wait_for_airdrop<T: Transport>(
                 return Ok(());
             }
         }
-
-        tokio::time::sleep(Duration::from_millis(500)).await;
-    }
-
-    Err("the airdrop was not confirmed within 60 seconds".into())
+    })
+    .await?
 }
 ```
 
