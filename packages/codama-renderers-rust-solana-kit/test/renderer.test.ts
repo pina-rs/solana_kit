@@ -2,7 +2,16 @@ import { visit } from "@codama/visitors-core";
 import { createFromRoot } from "codama";
 import { deepStrictEqual, equal, throws } from "node:assert/strict";
 import { execFileSync } from "node:child_process";
-import { mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
+import {
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  readdirSync,
+  realpathSync,
+  rmSync,
+  symlinkSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { test } from "node:test";
@@ -12,6 +21,9 @@ import { getRenderMapVisitor, renderVisitor } from "../src/index.js";
 import { writeFiles } from "../src/write.js";
 import { contractRoot } from "./contracts.ts";
 import { counterRoot } from "./fixture.js";
+
+/** The writer rejects symlink ancestors, including macOS's `/var` temporary alias. */
+const temporaryRoot = realpathSync(tmpdir());
 
 test("complete record and resolver contracts pass the normal Codama boundary", () => {
   const files = createFromRoot(contractRoot()).accept(getRenderMapVisitor());
@@ -44,7 +56,7 @@ test("normal Codama factory accepts the public render-map visitor", () => {
 });
 
 test("the real Codama CLI loads the default renderer and writes the same modules", () => {
-  const directory = mkdtempSync(join(tmpdir(), "solana-kit-cli-"));
+  const directory = mkdtempSync(join(temporaryRoot, "solana-kit-cli-"));
   const root = counterRoot();
   const cli = join(dirname(fileURLToPath(import.meta.resolve("codama"))), "../bin/cli.cjs");
   const renderer = fileURLToPath(new URL("../../dist/index.js", import.meta.url));
@@ -72,7 +84,7 @@ test("the real Codama CLI loads the default renderer and writes the same modules
 });
 
 test("regeneration replaces generated modules and preserves unrelated files", () => {
-  const directory = mkdtempSync(join(tmpdir(), "kit-render-test-"));
+  const directory = mkdtempSync(join(temporaryRoot, "kit-render-test-"));
 
   try {
     writeFileSync(join(directory, "notes.txt"), "caller notes");
@@ -95,7 +107,7 @@ test("response validation rejects escaping and duplicate modules", () => {
 });
 
 test("destination symlinks fail before any generated module is overwritten", () => {
-  const directory = mkdtempSync(join(tmpdir(), "kit-path-test-"));
+  const directory = mkdtempSync(join(temporaryRoot, "kit-path-test-"));
 
   try {
     const outside = join(directory, "outside.txt");
@@ -104,6 +116,42 @@ test("destination symlinks fail before any generated module is overwritten", () 
     const files = visit(counterRoot(), getRenderMapVisitor());
     throws(() => writeFiles(directory, files));
     equal(readFileSync(outside, "utf8"), "caller bytes");
+  } finally {
+    rmSync(directory, { recursive: true });
+  }
+});
+
+test("destination directory symlinks fail before any generated module is written", () => {
+  const directory = mkdtempSync(join(temporaryRoot, "kit-path-directory-test-"));
+  const outside = join(directory, "outside");
+  const destination = join(directory, "generated");
+
+  try {
+    mkdirSync(outside);
+    writeFileSync(join(outside, "counter.rs"), "caller bytes");
+    symlinkSync(outside, destination, "dir");
+    const files = visit(counterRoot(), getRenderMapVisitor());
+    throws(() => writeFiles(destination, files), /non-directory or symlink/);
+    equal(readFileSync(join(outside, "counter.rs"), "utf8"), "caller bytes");
+    deepStrictEqual(readdirSync(outside), ["counter.rs"]);
+  } finally {
+    rmSync(directory, { recursive: true });
+  }
+});
+
+test("symlink ancestors fail before generated output is created", () => {
+  const directory = mkdtempSync(join(temporaryRoot, "kit-path-ancestor-test-"));
+  const outside = join(directory, "outside");
+  const ancestor = join(directory, "linked");
+
+  try {
+    mkdirSync(outside);
+    writeFileSync(join(outside, "counter.rs"), "caller bytes");
+    symlinkSync(outside, ancestor, "dir");
+    const files = visit(counterRoot(), getRenderMapVisitor());
+    throws(() => writeFiles(join(ancestor, "generated"), files), /non-directory or symlink/);
+    equal(readFileSync(join(outside, "counter.rs"), "utf8"), "caller bytes");
+    deepStrictEqual(readdirSync(outside), ["counter.rs"]);
   } finally {
     rmSync(directory, { recursive: true });
   }

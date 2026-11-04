@@ -1,6 +1,14 @@
 import { deepStrictEqual } from "node:assert/strict";
 import { execFileSync } from "node:child_process";
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import {
+  copyFileSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  realpathSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -23,7 +31,10 @@ if (
 
 const archive = process.argv[2]
   ?? join(packageDirectory, `${metadata.name}-${metadata.version}.tgz`);
-const consumer = mkdtempSync(join(tmpdir(), "solana-kit-packed-"));
+const preserve = process.argv[3];
+/** The writer rejects symlink ancestors, including macOS's `/var` temporary alias. */
+const temporaryRoot = realpathSync(tmpdir());
+const consumer = mkdtempSync(join(temporaryRoot, "solana-kit-packed-"));
 
 try {
   preparePackedConsumer({
@@ -67,17 +78,16 @@ try {
     "rust",
   ], { cwd: consumer, stdio: "inherit", env });
 
-  for (
-    const file of [
-      "counter.rs",
-      "empty_pda_contracts.rs",
-      "literal_contracts.rs",
-      "numeric_contracts.rs",
-      "record_contracts.rs",
-      "resolver_contracts.rs",
-      "mod.rs",
-    ]
-  ) {
+  const modules = [
+    "counter.rs",
+    "empty_pda_contracts.rs",
+    "literal_contracts.rs",
+    "numeric_contracts.rs",
+    "record_contracts.rs",
+    "resolver_contracts.rs",
+  ];
+
+  for (const file of [...modules, "mod.rs"]) {
     deepStrictEqual(
       readFileSync(join(consumer, "generated", file)),
       readFileSync(join(consumer, "cli-generated", file)),
@@ -85,6 +95,15 @@ try {
   }
 
   verifyGeneratedClient(consumer);
+
+  if (preserve !== undefined) {
+    const directory = resolve(preserve);
+    mkdirSync(directory);
+
+    for (const file of modules) {
+      copyFileSync(join(consumer, "generated", file), join(directory, file));
+    }
+  }
 } finally {
   rmSync(consumer, { recursive: true });
 }
