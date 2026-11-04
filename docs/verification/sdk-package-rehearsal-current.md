@@ -8,7 +8,7 @@ package evidence, not publication or whole-SDK release readiness. All publish
 settings remain disabled; twenty crates retain `publish = false`.
 
 The executable gate is `cargo xtask package-rehearsal CONFIG.json`. The fresh
-snapshot is a disposable `git archive` of `9682bebd` (merged main `886286ba`
+snapshot is a disposable `git archive` of `8b1b342a` (merged main `886286ba`
 plus the archive-form support in this change), prepared with Monochange only in
 that copy. Its source-tree digest is
 `2f01b423bd6152f82c4c41870036e8501d56e768a84850d5715d06c1a0eeca99`. That digest
@@ -54,8 +54,9 @@ Cargo produced actual archives with
 `cargo package --locked --offline --exclude-lockfile --no-verify`.
 The [maintained archive gate](../../xtask/PACKAGE_REVIEW.md) freshly analyzed all
 34 archives and 1,287 regular members. Every scored member met both 90-point
-floors; the lowest readability was 92.04 and the lowest complexity was 94.76.
-The gate now accepts the real Cargo forms that previously remained outside it:
+floors; the lowest member readability was 90.02 and the lowest member complexity
+was 90.36. The lowest archive aggregates were 92.04 and 94.76. The gate now
+accepts the real Cargo forms that previously remained outside it:
 
 - Wallet's `assets/coinbase wallet.uri` and `assets/huobi wallet.uri` use
   ordinary interior ASCII spaces.
@@ -269,8 +270,8 @@ controls. `registry-fixture` preserves its single-archive configuration;
 `additions` is optional.
 
 The fresh worker's logs and standalone Wallet/Token-2022 reviews are under
-`/tmp/solana-kit-rw07-run`; reviewed preparation, corrected MSRV and local-gate
+`/tmp/solana-kit-rw07-final-run`; reviewed preparation, corrected MSRV and local-gate
 logs from the earlier run remain under `/tmp/solana-kit-package-parent-evidence`.
 The fresh prepared registry evidence is under
-`/tmp/solana-kit-rw07-run/evidence`. Build targets are disposable; hashes, public
+`/tmp/solana-kit-rw07-final-run/evidence`. Build targets are disposable; hashes, public
 source snapshots and receipts are retained outside them.

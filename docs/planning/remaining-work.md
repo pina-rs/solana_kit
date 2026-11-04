@@ -486,7 +486,7 @@ implemented crates may be published.
 
 **Executed follow-up.** The [package rehearsal receipt](../verification/sdk-package-rehearsal-current.md)
 records a successful disposable Monochange apply and lock refresh from the fresh
-`9682bebd` snapshot, 34 dependency-ordered archives, 34 fresh archive reviews over
+`8b1b342a` snapshot, 34 dependency-ordered archives, 34 fresh archive reviews over
 1,287 members, and a 207-package offline registry. The downstream consumer passes
 9 default and 12 selected-feature tests on current Rust and actual Rust 1.89,
 plus a portable Wasm compile check. Default and selected PackageID/member audits
