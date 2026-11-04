@@ -550,6 +550,14 @@ is a verification unit, not a code change.
 
 **Kind.** Evidence, with one external fixture blocker.
 
+**Executed follow-up.** The [Subscriptions lifecycle receipt](../verification/subscriptions-program-current.md)
+adds real subscribe/cancel/resume, self-CPI events, exact token delegation and
+four confirmed unchanged-state rejections. The reviewed suite passes 19
+integration cases: 18 program journeys and a two-validator isolation regression.
+The gossip port is reserved explicitly. The original authority/plan-only finding
+below is historical; broader delegation, transfer and other-program operations
+remain open.
+
 **Acceptance criterion.** Phase 6 pinned validator integration; the plan's
 "every public operation has behavioral evidence" rule.
 
@@ -580,8 +588,9 @@ CARGO_INCREMENTAL=0 CARGO_BUILD_JOBS=4 cargo +1.99.1 test --locked --offline \
 Add one real instruction family per unit and assert independent post-state, not
 just the client's own bytes.
 
-**Next minimal unit.** Add Subscriptions subscribe/cancel/resume using the
-already-pinned `subscriptions-v0.5.0.so` fixture. Treat the missing Pyth receiver
+**Next minimal unit.** Extend a remaining pinned-program flow, such as
+Subscriptions transfer/delegation or Squads vault proposal/execution. The
+subscribe/cancel/resume unit is complete. Treat the missing Pyth receiver
 artifact as an external blocker, not a code failure.
 
 ### RW-10 Fixed-point residual reconciliation

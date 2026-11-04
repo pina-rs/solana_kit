@@ -11,22 +11,33 @@ This receipt is the executed acceptance slice for the existing Rust program clie
 local Agave 4.2 validator per test. It does not claim whole-SDK, Phase 4–8, release, registry, browser,
 WASI, LeptosKit, device or mainnet completion.
 
-The executed run:
+The final reviewed run:
 
 ```text
-running 17 tests
-test result: ok. 17 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 80.34s
+running 19 tests
+test result: ok. 19 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 100.81s
 ```
 
-The parent-reviewed run also passed two unit regressions for bounded reaping and confirmed read
-ordering. Strict all-target Clippy, warning-free docs, Rust 1.89 all-target compilation, formatting,
-and the repository style gate passed locally (2,201 files, readability 97.20, complexity 98.52).
+The new program case is the Subscriptions subscribe/cancel/resume lifecycle; its literal addresses,
+signatures, state and rejection evidence are in
+[the Subscriptions lifecycle receipt](subscriptions-program-current.md). The previous 17 program
+journeys are unchanged. A separate nineteenth integration case starts two owned
+validators together and verifies distinct identities, genesis hashes and payer
+ledgers, exercising the explicit gossip-port reservation.
+
+Two existing harness unit regressions for bounded reaping and confirmed read ordering also passed.
+Strict all-target Clippy (`-D warnings`), warning-free docs, formatting and the repository style gate
+passed locally with Rust 1.99.1. The final retained style report records the
+repository and per-file floors.
 
 Command, from the repository root after extracting the pinned artifacts as described in the
 [workspace README](../../verification/program-integration/README.md):
 
 ```sh
-CARGO_INCREMENTAL=0 CARGO_BUILD_JOBS=4 cargo +1.99.1 test --locked --offline \
+CARGO_INCREMENTAL=0 CARGO_BUILD_JOBS=2 \
+SOLANA_KIT_PROGRAM_FIXTURES=<pinned>/config/programs \
+SOLANA_TEST_VALIDATOR=$HOME/.local/share/solana/install/active_release/bin/solana-test-validator \
+cargo +1.99.1 test --locked --offline \
   --manifest-path verification/program-integration/Cargo.toml -- --test-threads=1
 ```
 
@@ -40,7 +51,8 @@ crate, root manifest, root lockfile, workflow, fixture or other verification dir
 - a fresh directory under the platform temp directory, created with `create_new` semantics and mode
   `0700`; the node never reuses or resumes another ledger;
 - `--ledger <owned>/ledger`, `--reset`, `--quiet`, `--bind-address 127.0.0.1`, an OS-reserved numeric
-  RPC pair, an OS-reserved faucet port, and a bounded `--dynamic-port-range` that avoids those ports;
+  RPC pair, an OS-reserved faucet port, an OS-reserved gossip port, and a bounded
+  `--dynamic-port-range` that avoids those ports;
 - an owned CLI config (`--config`) and explicit `--mint`, so neither `~/.config/solana/cli/config.yml`
   nor an ambient identity/mint keypair is consulted;
 - `.env_clear()` with owned `HOME`, `TMPDIR`, `PATH` and `NO_DNA`;
@@ -131,7 +143,7 @@ a `jsonParsed` projection where noted), never the instruction's own expected byt
 | Loader buffer           | 97-byte Buffer, write 60 bytes, decoded `Buffer { authority: Some(payer) }`, close returns 1,566,000 lamports                                                                                                                                      | foreign authority write → `IncorrectAuthority`                                                                            |
 | Loader deploy/upgrade   | `noop` ELF (18,432 bytes) deployed through loader v3: Program + ProgramData, executable, invoked; upgraded with the same pinned bytes and invoked again                                                                                            | n/a in this path; see Anchor ID guard                                                                                     |
 | Anchor compatibility    | IDL-encoded initialize (41), increment (46), one `CounterChanged` event each; decoded account fields                                                                                                                                               | foreign authority → 2001 (`ConstraintHasOne`), state unchanged; mismatched deploy ID → 4100 (`DeclaredProgramIdMismatch`) |
-| Subscriptions           | authority PDA (`init_id=4`); plan 7 with amount 42 / 24 h; decoded authority and plan                                                                                                                                                              | duplicate plan → 518 (`PlanAlreadyExists`)                                                                                |
+| Subscriptions           | authority, plan, 155-byte delegation; subscribe/cancel/resume with exact `u64::MAX` delegate, period-end expiry and decoded events                                                                                                                 | duplicate plan 518; resume-before-cancel 510; wrong signer 130; duplicate cancel 509; stale resume 521                    |
 | MPL Core                | create asset with name/URI, transfer to a new owner; decoded `AssetV1` owner changes, metadata retained                                                                                                                                            | foreign transfer authority → 26 (`NoApprovals`)                                                                           |
 | Metadata                | create Metadata for an SPL mint (fee 250), update name/URI; decoded `Metadata` fields                                                                                                                                                              | foreign update authority → 7 (`UpdateAuthorityIncorrect`)                                                                 |
 | Squads V4               | injected `ProgramConfig` (fee 0), create 1-of-1 multisig, add a second member with reallocation; decoded account members                                                                                                                           | foreign config authority → 6004 (`Unauthorized`)                                                                          |
@@ -186,8 +198,10 @@ Agave 4.2 `jsonParsed` snapshots and calls `ParsedAccount::decode_typed(Limits)`
   non-canonical ID only to prove the ID guard. No claim is made that an SBPF v0 ELF deploys on an Agave
   validator without the local deployment-feature override.
 - No Pyth receiver `.so` exists in the pinned fixture set, so there is no positive Pyth receiver case.
-- Subscriptions covers authority and plan only; subscribe/cancel/resume, fixed/recurring delegations and
-  event decoding are not exercised here.
+- Subscriptions now covers authority, plan, subscribe, cancel, resume and their three event types
+  with exact token delegation and unchanged-state rejections; `TransferSubscription`,
+  fixed/recurring delegations, revoke, close, `CancelSubscriptionNow`, plan update, sunset and
+  deletion are not exercised here.
 - Squads covers program config, multisig creation and member expansion; vault transaction, proposal and
   execution flows are not exercised here.
 - Bubblegum covers one V1 tree and the mint/transfer/burn lifecycle; V2, collections, DAS and vouchers

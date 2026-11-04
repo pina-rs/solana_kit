@@ -6,6 +6,7 @@ mod anchor_id_mismatch;
 mod bubblegum;
 
 mod compute_budget;
+mod concurrent;
 mod config;
 mod loader;
 mod loader_deploy;
@@ -17,6 +18,7 @@ mod squads;
 
 mod stake;
 mod subscriptions;
+mod subscriptions_lifecycle;
 mod system;
 mod token;
 mod token_2022;
