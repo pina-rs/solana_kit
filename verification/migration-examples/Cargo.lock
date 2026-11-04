@@ -1006,6 +1006,7 @@ dependencies = [
 name = "solana_kit_native"
 version = "0.1.0"
 dependencies = [
+ "base64",
  "bytes",
  "futures-util",
  "http-body-util",

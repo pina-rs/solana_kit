@@ -266,6 +266,49 @@ Wallet rejection remains a protocol response; transport errors preserve their
 original source. Dropping a pending call closes local authority. Await `close`
 for the bounded peer close, or drop the unique owner for immediate local close.
 
+Remote associations use an explicit caller-selected reflector:
+
+```rust
+use solana_kit_native::keys::NativeEntropy;
+use solana_kit_native::mwa::{MwaConfig, RemoteReflector};
+
+async fn connect() -> Result<(), Box<dyn std::error::Error>> {
+    let reflector = RemoteReflector::new("reflector.example")?;
+    let pending = reflector
+        .connect(NativeEntropy::default(), MwaConfig::default())
+        .await?;
+    // Present pending.uri(), then wait for the wallet to scan and join.
+    let _wallet = pending.join().await?;
+    Ok(())
+}
+# let _ = connect;
+```
+
+The connection is one `wss://<authority>/reflect` request with normal
+certificate and destination-name verification through the configured
+`WsConfig::tls` roots. Only the binary and base64 MWA subprotocols are offered,
+and the server must select exactly one with no extension. The pending owner
+returns only after the reflector's LEB128-prefixed ID is validated and the
+association URI contains the actual selected authority and ID. It then waits for
+the wallet's empty join frame before sending HELLO. The join wait uses
+`MwaConfig::join_timeout`; HELLO and encrypted calls use the socket operation
+deadline. Dropping the pending owner or either in-flight future closes the
+single socket and erases the association/agreement keys. There is no default
+reflector, redirect, retry, background task or fallback transport.
+
+All timeout settings reject zero or unrepresentable values before connection
+I/O. Reflector authorities and pairing URIs are redacted from `Debug`.
+Dropping the future cancels SDK-owned work; it does not establish cancellation
+of Tokio's underlying operating-system hostname resolver.
+
+The base64 subprotocol encodes each complete MWA payload as one padded standard
+base64 text frame. Both the encoded text and its decoded payload must fit
+`WsConfig::max_frame_bytes`; malformed or oversized values reject before an
+unbounded allocation. The reflector ID must fit the existing JavaScript-safe
+`ReflectorId` contract, so raw IDs wider than eight bytes or above 2^53 - 1
+reject even though the pinned Dart source accepts arbitrary raw bytes until it
+builds the URI.
+
 Authorization and signing use `MwaConfig::approval_timeout`, which defaults to
 five minutes and includes the user's approval time. Capability queries, revocation
 and peer close use the socket operation deadline. Applications can configure both.

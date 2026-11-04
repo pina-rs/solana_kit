@@ -114,9 +114,11 @@ runtime execution. A Rust 1.89 release-profile attempt failed to load its host
 serde-derive dylib on this machine. Development-profile proofs do not establish
 release-profile support for that compiler and host combination.
 
-Platform association handover, transport lifecycle, Android intents, reflector
-networking, browser discovery, wallet UI, and installed desktop or mobile wallet
-journeys remain pending. This unit does not claim full MWA platform parity.
+Platform association handover, Android intents, browser discovery, wallet UI,
+installed desktop or mobile wallet journeys, and public reflector operation remain
+pending. The owned loopback native reflector transport is recorded separately in
+the [remote reflector receipt](mwa-remote-reflector.md). This unit does not claim
+full MWA platform parity.
 
 ## Portable protocol execution
 

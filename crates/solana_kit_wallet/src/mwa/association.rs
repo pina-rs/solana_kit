@@ -103,7 +103,7 @@ pub fn association_uri(
             host,
             id,
         } => {
-            validate_host(host)?;
+            validate_reflector_authority(host)?;
             (
                 "remote",
                 key,
@@ -171,7 +171,7 @@ pub fn parse_association_uri(input: &str) -> Result<Association, Error> {
     }
 
     let host = get("reflector")?.to_string();
-    validate_host(&host)?;
+    validate_reflector_authority(&host)?;
     let id = parse_reflector(get("id")?)?;
     Ok(Association::Remote {
         key,
@@ -215,7 +215,13 @@ fn parse_reflector(input: &str) -> Result<ReflectorId, Error> {
     ReflectorId::new(id)
 }
 
-fn validate_host(host: &str) -> Result<(), Error> {
+/// Validates an exact reflector authority before any remote connection.
+///
+/// Accepts a bare host or host:port, requires a canonical u16 port and a
+/// canonical supported IPv6 spelling, and rejects userinfo, paths, queries,
+/// fragments and malformed percent escapes. This is the same validation
+/// [`association_uri`] applies to an [`Association::Remote`] host.
+pub fn validate_reflector_authority(host: &str) -> Result<(), Error> {
     let input = format!("https://{host}/");
     let uri = parse_uri(&input)?;
     let authority = uri.authority_components().ok_or(Error::Association)?;
