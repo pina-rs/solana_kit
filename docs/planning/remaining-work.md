@@ -33,6 +33,13 @@ All 71 package-disposition rows are `inventoried`, with no `implemented`,
 `verified`, or `blocked` claim. `rustc tools/check_plan.rs` reports
 `verified 71 unique package records and their planning states`.
 
+These are the audit snapshot totals. The subsequent
+[address adjudication pilot](../parity/address-adjudication.md) adds a checked
+manifest and reviews twelve address declarations: two complete, ten partial.
+The canonical totals after that pilot are 2 complete, 11 partial and 17,935
+pending, with the same 17,948 IDs and source hashes. RW-01a is implemented;
+family-by-family adjudication and the other backlog items remain open.
+
 Scoped receipts retain their own exact counts and are not canonical totals:
 `message-transactions.tsv` has 746 rows (46 partial, 700 pending);
 `signer-capabilities.tsv` has 85 (39 partial, 46 pending);
