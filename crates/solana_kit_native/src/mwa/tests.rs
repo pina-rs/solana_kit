@@ -81,9 +81,9 @@ async fn handshake(listener: TcpListener, association: mwa::PublicPoint) -> (Pee
     let agreement = AgreementKey::from_scalar(&scalar).unwrap();
     let key = agreement.session_key(&public, &association);
     let mut hello = agreement.public_key().to_bytes().to_vec();
-    hello.extend(encrypt_message("{\"v\":1}", 0, &[0; 12], &key).unwrap());
+    hello.extend(encrypt_message("{\"v\":1}", 1, &[0; 12], &key).unwrap());
     socket.send(Message::Binary(hello.into())).await.unwrap();
-    (socket, Session::new(key, 1, 1))
+    (socket, Session::new(key, 2, 1))
 }
 
 async fn peer(listener: TcpListener, association: mwa::PublicPoint) -> PeerSocket {

@@ -179,8 +179,8 @@ fn hello_response_and_properties_require_authenticated_frames() {
         assert!(SessionProperties::from_json(version).is_err());
     }
 
-    let frame = encrypt_message("{\"v\":1}", 0, &[1; 12], &key).unwrap();
-    let mut session = Session::new(key, 1, 0);
+    let frame = encrypt_message("{\"v\":1}", 1, &[1; 12], &key).unwrap();
+    let mut session = Session::new(key, 1, 1);
     assert_eq!(
         session.properties(&frame).unwrap().protocol_version,
         ProtocolVersion::V1
@@ -490,19 +490,19 @@ fn encrypted_memory_session_handshake_authorization_and_close() {
     )
     .unwrap();
     let wallet_key = bob.session_key(&peer, &association.public_key());
-    let properties = encrypt_message("{\"v\":1}", 0, &[0; 12], &wallet_key).unwrap();
+    let properties = encrypt_message("{\"v\":1}", 1, &[0; 12], &wallet_key).unwrap();
     let mut hello = bob.public_key().to_bytes().to_vec();
     hello.extend(properties);
 
     let (app_key, properties) = alice
         .accept_hello(&hello, &association.public_key())
         .unwrap();
-    let mut app = Session::new(app_key, 1, 0);
+    let mut app = Session::new(app_key, 1, 1);
     let version = app
         .properties(&properties.unwrap())
         .unwrap()
         .protocol_version;
-    let mut wallet = Session::new(wallet_key, 1, 1);
+    let mut wallet = Session::new(wallet_key, 2, 1);
     let request = Request::new(
         1,
         Method::Authorize,
