@@ -1,12 +1,15 @@
-//! Caller-owned local binary MWA transport. Android launch remains an explicit
-//! platform action. No runtime or background task is created by this module.
+//! Caller-owned local and remote Mobile Wallet Adapter transports. Android
+//! launch remains an explicit platform action. No runtime or background task
+//! is created by this module.
 mod error;
+mod remote;
 #[cfg(test)]
 mod tests;
 mod transport;
 
-use crate::{WsConfig, keys::NativeEntropy, websocket_connect::Socket};
+use crate::{ConfigError, WsConfig, keys::NativeEntropy};
 pub use error::MwaError;
+pub use remote::{PendingRemoteAssociation, RemoteReflector};
 use serde_json::{Map, Value};
 use solana_kit_core::crypto::Entropy;
 use solana_kit_wallet::mwa::{
@@ -19,14 +22,18 @@ const MAX_REQUESTS: usize = 4096;
 const HELLO_BYTES: usize = 129;
 const FRAME_OVERHEAD: usize = 32;
 const MAX_APP_PINGS: usize = 32;
+const DEFAULT_USER_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(300);
 
 /// Finite policy for one MWA connection. Outbound headers are deliberately rejected.
 #[derive(Clone, Debug)]
 pub struct MwaConfig {
-    /// Shared bounded WebSocket parser and connect/operation deadlines.
+    /// Shared bounded WebSocket parser, TLS roots and connect/operation deadlines.
     pub socket: WsConfig,
     /// Maximum encrypted calls before a new association is required.
     pub max_requests: usize,
+    /// Deadline for waiting for a remote wallet to join the reflector.
+    /// Defaults to five minutes, independently of the socket operation deadline.
+    pub join_timeout: std::time::Duration,
     /// Deadline for wallet authorization and signing, including user approval.
     /// Defaults to five minutes, independently of the socket operation deadline.
     pub approval_timeout: std::time::Duration,
@@ -42,12 +49,33 @@ impl Default for MwaConfig {
                 ..WsConfig::default()
             },
             max_requests: 128,
-            approval_timeout: std::time::Duration::from_secs(300),
+            join_timeout: DEFAULT_USER_TIMEOUT,
+            approval_timeout: DEFAULT_USER_TIMEOUT,
         }
     }
 }
 
-/// Inert association material. Keys and provider state have no Debug or export API.
+impl MwaConfig {
+    fn validate(&self) -> Result<(), MwaError> {
+        if self.max_requests == 0 || self.max_requests > MAX_REQUESTS {
+            return Err(MwaError::Capacity);
+        }
+
+        if self.join_timeout.is_zero()
+            || std::time::Instant::now()
+                .checked_add(self.join_timeout)
+                .is_none()
+        {
+            return Err(MwaError::Config(ConfigError(
+                "join timeout must be positive and representable",
+            )));
+        }
+
+        Ok(())
+    }
+}
+
+/// Inert local association material. Keys and provider state have no Debug or export API.
 /// Generate this after user approval, launch `uri`, then consume it in `connect`.
 pub struct NativeAssociation {
     association: AssociationKey,
@@ -93,72 +121,120 @@ impl NativeAssociation {
     /// Only TCP refusal before HELLO is retried, within the total connect deadline.
     /// Cancelling drops the socket and all private material; no task is detached.
     pub async fn connect(self, config: MwaConfig) -> Result<NativeMobileWallet, MwaError> {
-        if config.max_requests == 0 || config.max_requests > MAX_REQUESTS {
-            return Err(MwaError::Capacity);
-        }
-
+        config.validate()?;
         let deadline = config.socket.connect_timeout;
         tokio::time::timeout(deadline, self.establish(config))
             .await
             .map_err(MwaError::Deadline)?
     }
 
-    async fn establish(mut self, config: MwaConfig) -> Result<NativeMobileWallet, MwaError> {
+    async fn establish(self, config: MwaConfig) -> Result<NativeMobileWallet, MwaError> {
         if config.socket.max_frame_bytes < HELLO_BYTES {
             return Err(MwaError::Capacity);
         }
 
-        let mut socket = transport::connect(self.port, &config.socket).await?;
-        let hello = self.hello(&mut socket).await?;
-        let (key, properties) = self
-            .agreement
-            .accept_hello(&hello, &self.association.public_key())?;
-        let incoming = if properties.is_some() { 0 } else { 1 };
-        let mut session = Session::new(key, 1, incoming);
-        let mut nonces = Vec::new();
-        nonces
-            .try_reserve_exact(config.max_requests * 2 + 1)
-            .map_err(|_| MwaError::Capacity)?;
-
-        let properties = match properties {
-            Some(bytes) => {
-                remember(&mut nonces, &bytes)?;
-                session.properties(&bytes)?
-            }
-            None => SessionProperties {
-                protocol_version: mwa::ProtocolVersion::Legacy,
-            },
+        let Self {
+            association,
+            mut agreement,
+            port,
+            mut entropy,
+        } = self;
+        let mut connection = transport::connect(port, &config.socket).await?;
+        let hello = hello(
+            &mut connection,
+            &mut agreement,
+            &association,
+            &mut entropy,
+            config.socket.max_frame_bytes,
+        )
+        .await?;
+        let seed = WalletSeed {
+            association,
+            agreement,
+            entropy,
+            config,
         };
 
-        Ok(NativeMobileWallet {
-            active: Some(Active {
-                socket,
-                session,
-                nonces,
-            }),
-            config,
-            properties,
-            entropy: self.entropy,
-            next_id: 1,
-        })
+        establish_wallet(connection, seed, &hello)
     }
+}
 
-    // An APP_PING restarts HELLO with a fresh agreement key, within the same deadline.
-    async fn hello(&mut self, socket: &mut Socket) -> Result<Vec<u8>, MwaError> {
-        for _ in 0..MAX_APP_PINGS {
-            let request = self.agreement.hello_request(&self.association).to_vec();
-            transport::send(socket, request).await?;
-            let response = transport::receive(socket).await?;
+/// The private inputs shared by local and remote session establishment.
+struct WalletSeed {
+    association: AssociationKey,
+    agreement: AgreementKey,
+    entropy: NativeEntropy,
+    config: MwaConfig,
+}
 
-            if !response.is_empty() {
-                return Ok(response);
-            }
+// An APP_PING restarts HELLO with a fresh agreement key, within the same deadline.
+async fn hello(
+    connection: &mut transport::Connection,
+    agreement: &mut AgreementKey,
+    association: &AssociationKey,
+    entropy: &mut NativeEntropy,
+    max_frame: usize,
+) -> Result<Vec<u8>, MwaError> {
+    for _ in 0..MAX_APP_PINGS {
+        let request = agreement.hello_request(association).to_vec();
+        transport::send(connection, request, max_frame).await?;
+        let response = transport::receive(connection, max_frame).await?;
 
-            self.agreement = scalar(&mut self.entropy, AgreementKey::from_scalar).await?;
+        if !response.is_empty() {
+            return Ok(response);
         }
 
-        Err(MwaError::Capacity)
+        *agreement = scalar(entropy, AgreementKey::from_scalar).await?;
     }
+
+    Err(MwaError::Capacity)
+}
+
+fn establish_wallet(
+    connection: transport::Connection,
+    seed: WalletSeed,
+    hello: &[u8],
+) -> Result<NativeMobileWallet, MwaError> {
+    let WalletSeed {
+        association,
+        agreement,
+        entropy,
+        config,
+    } = seed;
+    let (key, properties) = agreement.accept_hello(hello, &association.public_key())?;
+    let incoming = if properties.is_some() { 0 } else { 1 };
+    let mut session = Session::new(key, 1, incoming);
+    let capacity = config
+        .max_requests
+        .checked_mul(2)
+        .and_then(|value| value.checked_add(1))
+        .ok_or(MwaError::Capacity)?;
+    let mut nonces = Vec::new();
+    nonces
+        .try_reserve_exact(capacity)
+        .map_err(|_| MwaError::Capacity)?;
+
+    let properties = match properties {
+        Some(bytes) => {
+            remember(&mut nonces, &bytes)?;
+            session.properties(&bytes)?
+        }
+        None => SessionProperties {
+            protocol_version: mwa::ProtocolVersion::Legacy,
+        },
+    };
+
+    Ok(NativeMobileWallet {
+        active: Some(Active {
+            connection,
+            session,
+            nonces,
+        }),
+        config,
+        properties,
+        entropy,
+        next_id: 1,
+    })
 }
 
 async fn scalar<T>(
@@ -182,7 +258,7 @@ async fn scalar<T>(
 }
 
 struct Active {
-    socket: Socket,
+    connection: transport::Connection,
     session: Session,
     nonces: Vec<[u8; 12]>,
 }
@@ -224,6 +300,7 @@ impl NativeMobileWallet {
             | Method::SignAndSendTransactions
             | Method::CloneAuthorization => self.config.approval_timeout,
         };
+
         let request = Request::new(
             self.next_id,
             method,
@@ -250,7 +327,7 @@ impl NativeMobileWallet {
             return Ok(());
         };
         tokio::time::timeout(self.config.socket.operation_timeout, async {
-            transport::close(&mut active.socket).await
+            transport::close(&mut active.connection).await
         })
         .await
         .map_err(MwaError::Deadline)?
@@ -277,8 +354,13 @@ impl Active {
         let mut nonce = [0; 12];
         entropy.fill(&mut nonce).await.map_err(MwaError::Entropy)?;
         remember_iv(&mut self.nonces, nonce)?;
-        transport::send(&mut self.socket, self.session.encrypt(&message, &nonce)?).await?;
-        let frame = transport::receive_encrypted(&mut self.socket).await?;
+        transport::send(
+            &mut self.connection,
+            self.session.encrypt(&message, &nonce)?,
+            max_frame,
+        )
+        .await?;
+        let frame = transport::receive_encrypted(&mut self.connection, max_frame).await?;
         remember(&mut self.nonces, &frame)?;
         let plaintext = Zeroizing::new(self.session.decrypt(&frame)?);
         Response::from_json(&plaintext, request.id()).map_err(Into::into)

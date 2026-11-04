@@ -13,10 +13,11 @@ description = "Bounded Tokio HTTP and WebSocket transports for off-chain Solana 
 [features]
 default = []
 keys = ["dep:solana_kit_core", "solana_kit_core/crypto", "dep:rustix", "dep:zeroize"]
-mwa = ["keys", "dep:solana_kit_wallet", "dep:serde_json", "dep:zeroize"]
+mwa = ["keys", "dep:base64", "dep:solana_kit_wallet", "dep:serde_json", "dep:zeroize"]
 surfpool = ["dep:solana_kit_core", "dep:solana_kit_surfpool", "dep:serde", "dep:serde_json", "tokio/fs"]
 
 [dependencies]
+base64 = { version = "=0.22.1", optional = true }
 bytes = "=1.11.1"
 futures-util = { version = "=0.3.34", default-features = false, features = ["sink", "std"] }
 http-body-util = "=0.1.3"

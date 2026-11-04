@@ -215,6 +215,16 @@ fn parse_reflector(input: &str) -> Result<ReflectorId, Error> {
     ReflectorId::new(id)
 }
 
+/// Validates an exact reflector authority before any remote connection.
+///
+/// Accepts a bare host or host:port, requires a canonical u16 port and a
+/// canonical supported IPv6 spelling, and rejects userinfo, paths, queries,
+/// fragments and malformed percent escapes. This is the same validation
+/// [`association_uri`] applies to an [`Association::Remote`] host.
+pub fn validate_reflector_authority(host: &str) -> Result<(), Error> {
+    validate_host(host)
+}
+
 fn validate_host(host: &str) -> Result<(), Error> {
     let input = format!("https://{host}/");
     let uri = parse_uri(&input)?;

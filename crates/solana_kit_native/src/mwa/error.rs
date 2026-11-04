@@ -1,4 +1,4 @@
-use crate::{ConfigError, keys::NativeEntropyError};
+use crate::{ConfigError, WsError, keys::NativeEntropyError};
 use std::{error::Error, fmt, io};
 use tokio_tungstenite::tungstenite;
 
@@ -10,8 +10,12 @@ pub enum MwaError {
     Io(io::Error),
     /// The WebSocket implementation rejected the exchange.
     Socket(tungstenite::Error),
+    /// The bounded remote WebSocket or TLS layer failed.
+    Transport(WsError),
     /// The MWA framing or RPC contract failed.
     Protocol(solana_kit_wallet::mwa::Error),
+    /// The reflector authority, ID framing, join, or HELLO state was invalid.
+    Reflector,
     /// A selected finite transport configuration is invalid.
     Config(ConfigError),
     /// An owned connect or operation deadline expired.
@@ -32,7 +36,9 @@ impl fmt::Debug for MwaError {
             Self::Entropy(_) => "entropy",
             Self::Io(_) => "I/O",
             Self::Socket(_) => "socket",
+            Self::Transport(_) => "transport",
             Self::Protocol(_) => "protocol",
+            Self::Reflector => "reflector",
             Self::Config(_) => "configuration",
             Self::Deadline(_) => "deadline",
             Self::Closed => "closed",
@@ -57,6 +63,7 @@ impl Error for MwaError {
             Self::Entropy(error) => Some(error),
             Self::Io(error) => Some(error),
             Self::Socket(error) => Some(error),
+            Self::Transport(error) => Some(error),
             Self::Protocol(error) => Some(error),
             Self::Config(error) => Some(error),
             Self::Deadline(error) => Some(error),
