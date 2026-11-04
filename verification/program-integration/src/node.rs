@@ -300,6 +300,8 @@ fn add_node_arguments(command: &mut Command, paths: &OwnedPaths, ports: &Ports, 
         .arg(ports.rpc.to_string())
         .arg("--faucet-port")
         .arg(ports.faucet.to_string())
+        .arg("--gossip-port")
+        .arg(ports.gossip.to_string())
         .arg("--dynamic-port-range")
         .arg(format!(
             "{}-{}",

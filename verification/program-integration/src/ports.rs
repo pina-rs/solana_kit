@@ -1,7 +1,7 @@
 //! Reserved numeric loopback sockets and bounded validator port windows.
 
 use crate::node::NodeError;
-use std::net::{Ipv4Addr, TcpListener};
+use std::net::{Ipv4Addr, TcpListener, UdpSocket};
 
 pub(crate) const DYNAMIC_PORTS: u16 = 200;
 const MIN_PORT: u16 = 10_000;
@@ -11,6 +11,7 @@ const PORT_ATTEMPTS: usize = 64;
 pub(crate) struct Ports {
     pub(crate) rpc: u16,
     pub(crate) faucet: u16,
+    pub(crate) gossip: u16,
     pub(crate) dynamic_base: u16,
     listeners: Option<Listeners>,
 }
@@ -20,22 +21,26 @@ struct Listeners {
     _rpc: TcpListener,
     _rpc_ws: TcpListener,
     _faucet: TcpListener,
+    _gossip: UdpSocket,
 }
 
 impl Ports {
     pub(crate) fn reserve(nonce: &[u8; 2]) -> Result<Self, NodeError> {
         let (rpc_listener, rpc_ws_listener, rpc) = reserve_rpc_pair()?;
         let (faucet_listener, faucet) = reserve_port()?;
-        let dynamic_base = dynamic_base(nonce, &[rpc, rpc.saturating_add(1), faucet]);
+        let (gossip_socket, gossip) = reserve_gossip_port()?;
+        let dynamic_base = dynamic_base(nonce, &[rpc, rpc.saturating_add(1), faucet, gossip]);
 
         Ok(Self {
             rpc,
             faucet,
+            gossip,
             dynamic_base,
             listeners: Some(Listeners {
                 _rpc: rpc_listener,
                 _rpc_ws: rpc_ws_listener,
                 _faucet: faucet_listener,
+                _gossip: gossip_socket,
             }),
         })
     }
@@ -50,6 +55,13 @@ fn reserve_port() -> Result<(TcpListener, u16), NodeError> {
     let port = listener.local_addr()?.port();
 
     Ok((listener, port))
+}
+
+fn reserve_gossip_port() -> Result<(UdpSocket, u16), NodeError> {
+    let socket = UdpSocket::bind((Ipv4Addr::LOCALHOST, 0))?;
+    let port = socket.local_addr()?.port();
+
+    Ok((socket, port))
 }
 
 fn reserve_rpc_pair() -> Result<(TcpListener, TcpListener, u16), NodeError> {

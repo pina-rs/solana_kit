@@ -17,6 +17,7 @@ mod squads;
 
 mod stake;
 mod subscriptions;
+mod subscriptions_lifecycle;
 mod system;
 mod token;
 mod token_2022;
