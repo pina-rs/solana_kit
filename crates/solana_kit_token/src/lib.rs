@@ -4,3 +4,7 @@
 extern crate alloc;
 mod generated;
 pub use generated::*;
+#[cfg(feature = "plans")]
+mod plans;
+#[cfg(feature = "plans")]
+pub use plans::*;
