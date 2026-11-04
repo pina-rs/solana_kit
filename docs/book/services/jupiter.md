@@ -73,7 +73,7 @@ Decode `encoded_transaction` with `decode_base64_swap_transaction`. Review its a
 
 </Steps>
 
-To land the transaction yourself, `Client::build_swap` (`GET /swap/v2/build`) returns raw instructions and lookup tables instead. Convert them explicitly with `to_instruction`, `to_account_meta`, `to_lookup_table` and `to_lifetime`. These reject missing privilege flags, bad addresses, malformed base64 and oversized tables. The client does not infer instruction ordering or verify that a lookup table is authentic.
+To land the transaction yourself, set `OrderRequest::taker` first; the API requires it for a build. `Client::build_swap` (`GET /swap/v2/build`) then returns raw instructions and lookup tables instead. Convert them explicitly with `to_instruction`, `to_account_meta`, `to_lookup_table` and `to_lifetime`. These reject missing privilege flags, bad addresses, malformed base64 and oversized tables. The client does not infer instruction ordering or verify that a lookup table is authentic.
 
 `Integer` holds arbitrary-width signed decimal integers. It accepts both number and string forms and rejects fractions, exponents and hex. `decode_order`, `decode_build` and `decode_execution` decode standalone responses and keep the exact bytes in `raw_response`.
 

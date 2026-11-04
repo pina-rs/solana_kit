@@ -77,7 +77,7 @@ fn example() {
 
 `solana_kit_client::diagnostics` turns strict RPC values into a `Diagnostic`. `json_rpc_error(json)` handles a JSON-RPC error object, and `transaction_error(json)` handles an execution error. `TransactionFailure::into_diagnostic` converts a failure you already have.
 
-`Context` accepts only public scalar facts. Keys that look secret, such as `privateKey`, are rejected, and so is text over the size limit. `Debug` and `Display` output redact payloads. Message rendering is always an explicit call.
+`Context` accepts public facts: scalars (null, integers, booleans and text) and structured `List` and `Object` values. Keys that look secret, such as `privateKey`, are rejected, and so is text over the size limit. `Debug` and `Display` output redact payloads. Message rendering is always an explicit call.
 
 ## Status
 

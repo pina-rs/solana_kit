@@ -141,7 +141,7 @@ Use `solana_kit_dapp_publisher` directly to build your own publishing tool. Ever
 | (default) | `AttestationMessage`, `RequestId` and the funding preflight helpers (`resolve_funding_rpc_url`, `check_signer_balance`, `format_sol_amount`) |
 | `crypto` | `validate_prepared_transaction`, `PublicationPolicy`, `ExpectedTransaction`, `PublicationAttestation` and detached-signature verification |
 | `cli` | `cli` module: pure flag, endpoint and API-key resolution (`parse_flags`, `resolve_portal_targets`, `resolve_api_key` and related functions) |
-| `portal` | `portal` module: thirteen typed tRPC procedures over `rest::Transport<PortalService>`, an `Uploader` trait for the binary PUT, and `create_ingestion_with_retry` |
+| `portal` | `portal` module: fourteen typed tRPC procedures over `rest::Transport<PortalService>`, an `Uploader` trait for the binary PUT, and `create_ingestion_with_retry` |
 | `workflow` | `workflow` module: caller-driven ingestion, resume, polling, metadata hydration and the completion stages. Implies `portal` and `crypto`. |
 
 ```rust

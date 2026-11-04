@@ -52,7 +52,7 @@ A passing test on one host proves nothing for another. Each crate README and eac
 All four adapters follow the same rules:
 
 - **You own the runtime.** No adapter starts an executor, spawns a detached task, pools connections or installs a global.
-- **You pass configuration in.** Endpoints, headers, trust roots and deadlines are explicit. Nothing is read from the environment.
+- **You pass configuration in.** Endpoints, headers and deadlines are explicit, and nothing is read from the environment. Trust roots are yours to supply only where the adapter exposes them (`NativeHttp`'s `TlsRoots`); the browser, the WASI host and the LeptosKit host apply their own TLS trust policy.
 - **Bounded by default.** Reply bodies are capped by the client's request budget. Each transport adds its own deadlines.
 - **Drop cancels.** Dropping an in-flight exchange releases its owned network work. Nothing is retried or redirected automatically.
 - **Diagnostics are redacted.** Errors omit endpoints and header values. The original cause stays reachable through `std::error::Error::source`.

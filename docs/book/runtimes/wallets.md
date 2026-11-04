@@ -106,7 +106,7 @@ Dropping a connect or signing future stops your app from acting on the result. I
 
 </Callout>
 
-Call `discovery.close()` for early teardown. `discovery.take_failures()` returns registration, event and cleanup errors. A submitted signature from `TransactionSendingSigner` is not proof of execution. Confirm it through [RPC](../core/rpc.md).
+Discovery closes when its last owner is dropped. `WalletDiscovery::close` needs `&mut self`, so you can only call it for early teardown while you own the discovery directly, not through the `Rc` in the example above. `discovery.take_failures()` returns registration, event and cleanup errors. A submitted signature from `TransactionSendingSigner` is not proof of execution. Confirm it through [RPC](../core/rpc.md).
 
 ## Mobile Wallet Adapter
 

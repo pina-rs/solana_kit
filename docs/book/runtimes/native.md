@@ -128,12 +128,22 @@ while let Some(frame) = connection.outbound() {
 }
 
 // Feed every received text frame back in, tagged with this socket's generation.
-while let Some(text) = socket.receive().await? {
-    connection.ingest(GENERATION, text.as_bytes())?;
+// `tick` enforces the subscribe deadline; `next` reports a missed one as an error.
+loop {
+    connection.tick(now(), now() + ACK_TIMEOUT)?;
 
-    if let Drain::Notification(root) = connection.next(&handle)? {
-        println!("new root: {root}");
-        break;
+    match connection.next(&handle)? {
+        Drain::Notification(root) => {
+            println!("new root: {root}");
+            break;
+        }
+        Drain::Closed => break,
+        Drain::Pending => {}
+    }
+
+    if let Ok(received) = tokio::time::timeout(Duration::from_millis(100), socket.receive()).await {
+        let Some(text) = received? else { break };
+        connection.ingest(GENERATION, text.as_bytes())?;
     }
 }
 
