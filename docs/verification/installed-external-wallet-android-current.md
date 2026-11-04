@@ -270,8 +270,14 @@ feature-gated `generated-wallet` host suite
 exposed a diagnostic-prefix regression introduced by the initial MWA observer
 change: it inserted `mobile=None` before the storage `io` field. The observer
 now appends the mobile category, preserving the established storage-error
-prefix. That maintenance change requires a fresh host-suite replay; it does not
-change the installed run's recorded artifact hashes or transport behavior.
+prefix. A freshly scaffolded and prepared macOS guest passed all six host-suite
+cases through production wasmi after this maintenance change, including
+`failed_private_copy_reaches_the_guest_without_becoming_cancellation`. The
+replay logs are in `/tmp/solana-kit-host-replay-20261104/evidence`. This separate
+host replay does not change the installed run's recorded artifact hashes or
+transport behavior. The pinned generator emits a deprecated `fetch_update`
+warning on Rust 1.99.1; the guest builds successfully, and SDK warning-denied
+checks remain separate.
 
 ## Retained evidence
 

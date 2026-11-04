@@ -252,8 +252,8 @@ Android MWA exists on iOS.
 **Current finding.** The acceptance criterion is met on the owned emulator. The
 [external Android wallet execution
 receipt](../verification/installed-external-wallet-android-current.md) records
-the 2026-11-04 final invocation at `da4aaef2` (branch
-`test/android-external-wallet-final`): the installed `android-mwa` controller
+the 2026-11-04 final invocation based on `da4aaef2` with the cancellation repair
+committed as `75c31455`: the installed `android-mwa` controller
 drove a fresh ordinary generated application through authorization, funding,
 message signature, rejection and approval of one exact 1,000,000-lamport System
 transfer, the subscription race, cancellation of an actual pending wallet
@@ -298,11 +298,10 @@ ledger bytes, signature, fee and balances; the wallet package/version is
 recorded before any UI action and a missing wallet stays an environment
 prerequisite. The retained final run and its hashes are listed in the receipt.
 
-**Next minimal unit.** The emulator acceptance is complete; the remaining gap
-is a physical-device run (the attached Seeker) or a production-wallet
-compatibility statement, both of which need an explicit owner decision about
-personal devices and funds. If neither is wanted, retire this entry with the
-receipt as terminal evidence.
+**Next minimal unit.** None for this emulator/reference-wallet acceptance.
+Physical-device and production-wallet compatibility are separate extensions,
+not prerequisites added to this criterion. Their absence remains an explicit
+limit of the receipt.
 
 **Blocker/substitution.** External wallet availability is an environment
 prerequisite. MWA on iOS is not offered by the platform and should be recorded
