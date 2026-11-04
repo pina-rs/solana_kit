@@ -5,6 +5,7 @@ use solana_kit_conformance::{
     EXPECTED_CASE_COUNT,
     message_cases::{CRYPTO_CALLS_PER_MESSAGE, FIXED_CRYPTO_CALLS, MESSAGE_COUNT},
     mwa_cases::BACKEND_WORK,
+    parity_completion::{CRYPTO_WORK, CRYPTO_WORK_UNITS},
     signers::MAX_BATCH,
 };
 
@@ -21,9 +22,31 @@ pub(crate) fn allowance() -> Result<u64> {
         MESSAGE_COUNT,
     )?;
     let mwa = checked_mwa_work(&BACKEND_WORK)?;
+    let parity_completion = checked_parity_completion_work(CRYPTO_WORK)?;
     ordinary_and_existing_crypto
         .checked_add(mwa)
-        .context("MWA suite fuel overflow")
+        .and_then(|total| total.checked_add(parity_completion))
+        .context("appended parity-completion fuel overflow")
+}
+
+/// Accounts for only the exact finite crypto work owned by the appended cases.
+fn checked_parity_completion_work(work: &[(&str, u64)]) -> Result<u64> {
+    let entries = work.iter().try_fold(0_u64, |total, (_, count)| {
+        total
+            .checked_add(*count)
+            .context("parity-completion work count overflow")
+    })?;
+    ensure!(
+        work == CRYPTO_WORK,
+        "invalid fixed parity-completion work categories"
+    );
+    ensure!(
+        entries == CRYPTO_WORK_UNITS,
+        "invalid fixed parity-completion workload"
+    );
+    entries
+        .checked_mul(FUEL_PER_CRYPTO_UNIT)
+        .context("parity-completion crypto fuel overflow")
 }
 
 fn checked_mwa_work(work: &[(&str, u64)]) -> Result<u64> {
@@ -80,14 +103,42 @@ mod tests {
             13_965_000_000
         );
         let next_case_count = u64::try_from(EXPECTED_CASE_COUNT).unwrap() + 1;
-        let next =
-            checked_allowance(next_case_count, MAX_BATCH, MESSAGE_COUNT).unwrap() + fixed_mwa;
+        let next = checked_allowance(next_case_count, MAX_BATCH, MESSAGE_COUNT).unwrap()
+            + fixed_mwa
+            + checked_parity_completion_work(CRYPTO_WORK).unwrap();
         assert_eq!(next - allowance().unwrap(), 15_000_000);
+        assert_eq!(allowance().unwrap(), 15_190_000_000);
         assert_eq!(MESSAGE_COUNT, 256);
         assert_eq!(
             MESSAGE_COUNT as u64 * CRYPTO_CALLS_PER_MESSAGE + FIXED_CRYPTO_CALLS,
             772
         );
+    }
+
+    #[test]
+    fn accounts_for_every_appended_crypto_site() {
+        assert_eq!(
+            CRYPTO_WORK.iter().map(|(_, count)| *count).collect::<Vec<_>>(),
+            [69, 5, 6],
+            "appended crypto work ledger"
+        );
+        assert_eq!(
+            CRYPTO_WORK.iter().map(|(_, count)| count).sum::<u64>(),
+            CRYPTO_WORK_UNITS
+        );
+        assert_eq!(
+            checked_parity_completion_work(CRYPTO_WORK).unwrap(),
+            400_000_000
+        );
+        assert!(checked_parity_completion_work(&[]).is_err());
+        assert!(checked_parity_completion_work(&[("unknown", CRYPTO_WORK_UNITS)]).is_err());
+
+        let mut wrong = CRYPTO_WORK.to_vec();
+        wrong[0].1 = 0;
+        assert!(checked_parity_completion_work(&wrong).is_err());
+
+        wrong[0].1 = u64::MAX;
+        assert!(checked_parity_completion_work(&wrong).is_err());
     }
 
     #[test]

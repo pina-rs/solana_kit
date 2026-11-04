@@ -1706,6 +1706,7 @@ dependencies = [
  "solana_kit_sns",
  "solana_kit_surfpool",
  "solana_kit_system",
+ "solana_kit_test_support",
  "solana_kit_token",
  "solana_kit_wallet",
  "solana_kit_wallet_verification",
