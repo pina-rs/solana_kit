@@ -514,6 +514,15 @@ jobs:
           tar -xjf "$archive" -C "$RUNNER_TEMP/validator"
           rm "$archive"
 
+      - name: Release completed generator build artifacts
+
+        run: |
+          set -euo pipefail
+          # The remaining journey uses the generated APK and installed controller.
+          # Neither needs the generator binary or its compilation intermediates.
+          rm -rf framework/target
+          df -h "$HOME" "$RUNNER_TEMP"
+
       - name: Enable the owned emulator accelerator
 
         run: |
@@ -530,6 +539,7 @@ jobs:
           target: default
           arch: x86_64
           avd-name: solana-kit-wallet
+          disk-size: 2048M
 
           force-avd-creation: true
           disable-animations: true

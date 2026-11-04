@@ -12,6 +12,9 @@ use solana_kit_core::crypto::Keypair;
 use solana_kit_wallet::mwa::*;
 
 const SAMPLE_PORT: u32 = 55123;
+const MIN_EPHEMERAL_PORT: u32 = 49_152;
+const MAX_U16_PORT: u32 = 65_535;
+const SIWS_REQUEST_ID: u32 = 7;
 const HEX_RADIX: u32 = 16;
 
 fn scalar(value: u8) -> [u8; 32] {
@@ -37,8 +40,26 @@ fn fixture() -> Value {
     serde_json::from_str(include_str!("dart.json")).unwrap()
 }
 
+/// Checks Rust association, session-frame and JWS output against the pinned Dart vectors.
 pub(super) fn dart_crypto_vectors_and_rust_signature_output() -> Result<(), &'static str> {
     let vectors = fixture();
+    let (association, alice, bob) = association_and_hello(&vectors)?;
+    let frame = session_frame_vectors(&vectors, &association, &alice, &bob)?;
+    let rust_jws = jws_round_trip(&vectors, &association)?;
+    let rust = json!({
+        "hello": hex(&alice.hello_request(&association)),
+        "frame": hex(&frame),
+        "jws": rust_jws,
+    });
+    let _ = rust;
+
+    Ok(())
+}
+
+/// Builds the association and hello keys and checks their published vectors.
+fn association_and_hello(
+    vectors: &Value,
+) -> Result<(AssociationKey, AgreementKey, AgreementKey), &'static str> {
     let association = AssociationKey::from_scalar(&scalar(1)).unwrap();
     let alice = AgreementKey::from_scalar(&scalar(2)).unwrap();
     let bob = AgreementKey::from_scalar(&scalar(3)).unwrap();
@@ -56,6 +77,17 @@ pub(super) fn dart_crypto_vectors_and_rust_signature_output() -> Result<(), &'st
         verify_hello_request(&hello, &association.public_key()).unwrap(),
         alice.public_key()
     );
+
+    Ok((association, alice, bob))
+}
+
+/// Derives both session keys and checks the frame round trip.
+fn session_frame_vectors(
+    vectors: &Value,
+    association: &AssociationKey,
+    alice: &AgreementKey,
+    bob: &AgreementKey,
+) -> Result<Vec<u8>, &'static str> {
     let key = alice.session_key(&bob.public_key(), &association.public_key());
     let reverse_key = bob.session_key(&alice.public_key(), &association.public_key());
     let frame = decode(vectors["frame"].as_str().unwrap());
@@ -73,6 +105,11 @@ pub(super) fn dart_crypto_vectors_and_rust_signature_output() -> Result<(), &'st
         frame
     );
 
+    Ok(frame)
+}
+
+/// Verifies the published JWS and returns the Rust-generated equivalent.
+fn jws_round_trip(vectors: &Value, association: &AssociationKey) -> Result<String, &'static str> {
     let jws: Vec<_> = vectors["jws"].as_str().unwrap().split('.').collect();
     let public = association.public_key();
     check_eq!(
@@ -100,13 +137,8 @@ pub(super) fn dart_crypto_vectors_and_rust_signature_output() -> Result<(), &'st
         .jws(json!({"test":true}).as_object().unwrap())
         .unwrap();
     check_eq!(rust_jws, vectors["jws"]);
-    let rust = json!({
-        "hello": hex(&alice.hello_request(&association)),
-        "frame": hex(&frame),
-        "jws": rust_jws,
-    });
-    let _ = rust;
-    Ok(())
+
+    Ok(rust_jws)
 }
 
 pub(super) fn canonical_point_scalar_and_signature_boundaries() -> Result<(), &'static str> {
@@ -223,6 +255,7 @@ pub(super) fn authenticated_ordering_replay_tampering_and_exhaustion() -> Result
     Ok(())
 }
 
+/// Checks that association URI round trips retain the wallet's path prefix.
 pub(super) fn associations_preserve_wallet_prefix() -> Result<(), &'static str> {
     let key = AssociationKey::from_scalar(&scalar(1))
         .unwrap()
@@ -238,12 +271,14 @@ pub(super) fn associations_preserve_wallet_prefix() -> Result<(), &'static str> 
         let uri = association_uri(&local, Some(&base)).unwrap();
         check_eq!(parse_association_uri(&uri).unwrap(), local);
     }
+
     Ok(())
 }
 
+/// Accepts the ephemeral port endpoints and rejects values outside the allowed range.
 pub(super) fn association_port_boundaries() -> Result<(), &'static str> {
-    let minimum_port = 49152;
-    let maximum_port = 65535;
+    let minimum_port = MIN_EPHEMERAL_PORT;
+    let maximum_port = MAX_U16_PORT;
 
     for port in [0, minimum_port - 1, maximum_port + 1, u32::MAX] {
         check!(AssociationPort::new(port).is_err());
@@ -252,9 +287,11 @@ pub(super) fn association_port_boundaries() -> Result<(), &'static str> {
     for port in [minimum_port, maximum_port] {
         check_eq!(u32::from(AssociationPort::new(port).unwrap().value()), port);
     }
+
     Ok(())
 }
 
+/// Checks reflector identity and query escaping through remote association round trips.
 pub(super) fn reflector_ids_and_query_escaping_round_trip() -> Result<(), &'static str> {
     let key = AssociationKey::from_scalar(&scalar(1))
         .unwrap()
@@ -273,6 +310,7 @@ pub(super) fn reflector_ids_and_query_escaping_round_trip() -> Result<(), &'stat
             remote
         );
     }
+
     Ok(())
 }
 
@@ -410,6 +448,7 @@ pub(super) fn siws_matches_dart_and_verifies_exact_signer_message_and_algorithm(
     Ok(())
 }
 
+/// Rejects injected line breaks in sign-in fields and resource entries.
 pub(super) fn siws_rejects_injection_in_every_field_and_resource() -> Result<(), &'static str> {
     for field in [
         "domain",
@@ -442,11 +481,22 @@ pub(super) fn siws_rejects_injection_in_every_field_and_resource() -> Result<(),
             .is_err()
         );
     }
+
     Ok(())
 }
 
+/// Checks omission, null handling, address validation and canonical wallet JSON models.
 pub(super) fn json_models_preserve_omission_null_and_solana_address_validation()
 -> Result<(), &'static str> {
+    identity_and_account_models_preserve_json_contract()?;
+    wallet_capabilities_preserve_transaction_versions()?;
+    wallet_capabilities_and_options_serialize_canonically()?;
+
+    Ok(())
+}
+
+/// Checks that omitted and null fields stay omitted and addresses stay validated.
+fn identity_and_account_models_preserve_json_contract() -> Result<(), &'static str> {
     let identity: AppIdentity =
         serde_json::from_value(json!({"name":"Application", "uri":null})).unwrap();
     check_eq!(
@@ -463,6 +513,12 @@ pub(super) fn json_models_preserve_omission_null_and_solana_address_validation()
     );
     let invalid: MwaAccount = serde_json::from_value(json!({"address":"dGVzdA=="})).unwrap();
     check_eq!(invalid.solana_address(), Err(Error::Json));
+
+    Ok(())
+}
+
+/// Checks that both decode paths accept known versions and reject invalid ones.
+fn wallet_capabilities_preserve_transaction_versions() -> Result<(), &'static str> {
     let raw = r#"{"supported_transaction_versions":["legacy",0,255]}"#;
     let expected = vec![
         TransactionVersion::Named("legacy".into()),
@@ -474,9 +530,11 @@ pub(super) fn json_models_preserve_omission_null_and_solana_address_validation()
     check!(direct.supported_transaction_versions == Some(expected.clone()));
     let value: Value =
         serde_json::from_str(raw).map_err(|_| "wallet capabilities JSON rejected")?;
+
     let through_value: WalletCapabilities =
         serde_json::from_value(value).map_err(|_| "value wallet capabilities decode failed")?;
     check!(through_value.supported_transaction_versions == Some(expected));
+
     for invalid in [
         "-1",
         "256",
@@ -492,11 +550,16 @@ pub(super) fn json_models_preserve_omission_null_and_solana_address_validation()
             serde_json::from_str(&raw).map_err(|_| "invalid-case JSON syntax rejected")?;
         check!(serde_json::from_value::<WalletCapabilities>(value).is_err());
     }
+
+    Ok(())
+}
+
+/// Checks that capabilities and sign-and-send options keep their canonical shape.
+fn wallet_capabilities_and_options_serialize_canonically() -> Result<(), &'static str> {
     let capabilities: WalletCapabilities = serde_json::from_value(
         json!({"supported_transaction_versions":["legacy",0],"max_messages_per_request":5}),
     )
     .unwrap();
-
     let encoded = serde_json::to_value(capabilities).unwrap();
     check_eq!(
         encoded["supported_transaction_versions"],
@@ -513,11 +576,46 @@ pub(super) fn json_models_preserve_omission_null_and_solana_address_validation()
         serde_json::to_value(options).unwrap(),
         json!({"skip_preflight":false,"min_context_slot":u64::MAX})
     );
+
     Ok(())
 }
 
+/// Exercises encrypted handshake, authorization, deauthorization and explicit session close.
 pub(super) fn encrypted_memory_session_handshake_authorization_and_close()
 -> Result<(), &'static str> {
+    let (mut app, mut wallet, version) = encrypted_session_handshake();
+    let request = Request::new(
+        1,
+        Method::Authorize,
+        json!({"chain":"solana:mainnet"})
+            .as_object()
+            .unwrap()
+            .clone(),
+        version,
+    )
+    .unwrap();
+    let authorized = authorize_response(&mut app, &mut wallet, &request)?;
+    let request = Request::new(
+        2,
+        Method::Deauthorize,
+        json!({"auth_token":authorized.auth_token})
+            .as_object()
+            .unwrap()
+            .clone(),
+        version,
+    )
+    .unwrap();
+    let encrypted = app.encrypt(&request.to_json().unwrap(), &[3; 12]).unwrap();
+    let incoming: Value = serde_json::from_str(&wallet.decrypt(&encrypted).unwrap()).unwrap();
+    check_eq!(incoming["method"], "deauthorize");
+    app.close();
+    wallet.close();
+
+    Ok(())
+}
+
+/// Performs the encrypted hello handshake and returns both sessions.
+fn encrypted_session_handshake() -> (Session, Session, ProtocolVersion) {
     let association = AssociationKey::from_scalar(&scalar(1)).unwrap();
     let alice = AgreementKey::from_scalar(&scalar(2)).unwrap();
     let bob = AgreementKey::from_scalar(&scalar(3)).unwrap();
@@ -539,22 +637,29 @@ pub(super) fn encrypted_memory_session_handshake_authorization_and_close()
         .properties(&properties.unwrap())
         .unwrap()
         .protocol_version;
-    let mut wallet = Session::new(wallet_key, 1, 1);
-    let request = Request::new(
-        1,
-        Method::Authorize,
-        json!({"chain":"solana:mainnet"})
-            .as_object()
-            .unwrap()
-            .clone(),
-        version,
-    )
-    .unwrap();
+    let wallet = Session::new(wallet_key, 1, 1);
+
+    (app, wallet, version)
+}
+
+/// Sends the authorize request and checks the decrypted response.
+fn authorize_response(
+    app: &mut Session,
+    wallet: &mut Session,
+    request: &Request,
+) -> Result<AuthorizationResult, &'static str> {
     let encrypted = app.encrypt(&request.to_json().unwrap(), &[1; 12]).unwrap();
     let incoming: Value = serde_json::from_str(&wallet.decrypt(&encrypted).unwrap()).unwrap();
     check_eq!(incoming["method"], "authorize");
 
-    let response = json!({"jsonrpc":"2.0","id":incoming["id"],"result":{"accounts":[{"address":STANDARD.encode([0;32])}],"auth_token":"session-authorization"}});
+    let response = json!({
+        "jsonrpc": "2.0",
+        "id": incoming["id"],
+        "result": {
+            "accounts": [{"address": STANDARD.encode([0; 32])}],
+            "auth_token": "session-authorization",
+        },
+    });
     let encrypted = wallet.encrypt(&response.to_string(), &[2; 12]).unwrap();
     let Response::Result(result) =
         Response::from_json(&app.decrypt(&encrypted).unwrap(), request.id()).unwrap()
@@ -566,22 +671,8 @@ pub(super) fn encrypted_memory_session_handshake_authorization_and_close()
         authorized.accounts[0].solana_address().unwrap(),
         solana_kit_core::Address::from_bytes([0; 32])
     );
-    let request = Request::new(
-        2,
-        Method::Deauthorize,
-        json!({"auth_token":authorized.auth_token})
-            .as_object()
-            .unwrap()
-            .clone(),
-        version,
-    )
-    .unwrap();
-    let encrypted = app.encrypt(&request.to_json().unwrap(), &[3; 12]).unwrap();
-    let incoming: Value = serde_json::from_str(&wallet.decrypt(&encrypted).unwrap()).unwrap();
-    check_eq!(incoming["method"], "deauthorize");
-    app.close();
-    wallet.close();
-    Ok(())
+
+    Ok(authorized)
 }
 fn wire_payload() -> Value {
     json!({
@@ -614,6 +705,7 @@ fn expected_payload() -> SignInPayload {
     }
 }
 
+/// Checks sign-in wire keys, optional fields and the containing authorize request.
 pub(super) fn siws_wire_keys_preserve_full_payload_message_and_authorize_envelope()
 -> Result<(), &'static str> {
     let wire = wire_payload();
@@ -635,22 +727,18 @@ pub(super) fn siws_wire_keys_preserve_full_payload_message_and_authorize_envelop
         )
     );
 
-    for absent in [
-        json!({}),
-        json!({"chainId":null, "issuedAt":null, "expirationTime":null,
-            "notBefore":null, "requestId":null}),
-    ] {
-        let payload: SignInPayload = serde_json::from_value(absent).unwrap();
-        check!(payload == SignInPayload::default());
-        check_eq!(serde_json::to_value(payload).unwrap(), json!({}));
-    }
+    check_absent_payload_fields_default(json!({}))?;
+    check_absent_payload_fields_default(json!({
+        "chainId":null, "issuedAt":null, "expirationTime":null,
+        "notBefore":null, "requestId":null
+    }))?;
 
     let params = json!({
         "chain":"solana:mainnet", "auth_token":"opaque",
         "sign_in_payload":serde_json::to_value(expected).unwrap()
     });
     let request = Request::new(
-        7,
+        SIWS_REQUEST_ID,
         Method::Authorize,
         params.as_object().unwrap().clone(),
         ProtocolVersion::V1,
@@ -659,12 +747,21 @@ pub(super) fn siws_wire_keys_preserve_full_payload_message_and_authorize_envelop
     let encoded: Value = serde_json::from_str(&request.to_json().unwrap()).unwrap();
     check_eq!(
         encoded,
-        json!({"id":7, "jsonrpc":"2.0", "method":"authorize", "params":{
+        json!({"id":SIWS_REQUEST_ID, "jsonrpc":"2.0", "method":"authorize", "params":{
             "chain":"solana:mainnet", "auth_token":"opaque", "sign_in_payload":wire
         }})
     );
     let nested: SignInPayload =
         serde_json::from_value(encoded["params"]["sign_in_payload"].clone()).unwrap();
     check!(nested == incoming);
+    Ok(())
+}
+
+/// Checks that absent optional fields decode to defaults and serialize away.
+fn check_absent_payload_fields_default(absent: Value) -> Result<(), &'static str> {
+    let payload: SignInPayload = serde_json::from_value(absent).unwrap();
+    check!(payload == SignInPayload::default());
+    check_eq!(serde_json::to_value(payload).unwrap(), json!({}));
+
     Ok(())
 }
