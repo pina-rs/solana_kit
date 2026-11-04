@@ -4,18 +4,18 @@ This page covers how the repository is laid out, which toolchain it pins, and th
 
 ## Repository layout
 
-| Path | Contents |
-| --- | --- |
-| `crates/` | The SDK crates. See [Crates](../reference/crates.md). |
-| `verification/` | Private harnesses: conformance suites, runtime hosts, boundary and consumer checks. See [Verification](verification.md). |
-| `xtask/` | `cargo xtask`, the reproducible verification commands |
-| `tools/` | `capability_inventory`, `codama-renderer`, `check_plan.rs` and receipt helpers |
-| `packages/` | `codama-renderers-rust-solana-kit`, the NPM Codama renderer |
-| `docs/parity/`, `docs/planning/`, `docs/verification/` | Ledgers, the plan and decisions, and execution receipts. See [Parity and status](../reference/parity.md). |
-| `docs/architecture/` | The design and API proposal |
-| `docs/book/`, `docs/site/` | This book and the site that builds it. See [These docs](docs.md). |
-| `.changeset/` | Pending release notes, consumed by monochange |
-| `.github/workflows/` | CI. See [Verification](verification.md). |
+| Path                                                   | Contents                                                                                                                 |
+| ------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------ |
+| `crates/`                                              | The SDK crates. See [Crates](../reference/crates.md).                                                                    |
+| `verification/`                                        | Private harnesses: conformance suites, runtime hosts, boundary and consumer checks. See [Verification](verification.md). |
+| `xtask/`                                               | `cargo xtask`, the reproducible verification commands                                                                    |
+| `tools/`                                               | `capability_inventory`, `codama-renderer`, `check_plan.rs` and receipt helpers                                           |
+| `packages/`                                            | `codama-renderers-rust-solana-kit`, the NPM Codama renderer                                                              |
+| `docs/parity/`, `docs/planning/`, `docs/verification/` | Ledgers, the plan and decisions, and execution receipts. See [Parity and status](../reference/parity.md).                |
+| `docs/architecture/`                                   | The design and API proposal                                                                                              |
+| `docs/book/`, `docs/site/`                             | This book and the site that builds it. See [These docs](docs.md).                                                        |
+| `.changeset/`                                          | Pending release notes, consumed by monochange                                                                            |
+| `.github/workflows/`                                   | CI. See [Verification](verification.md).                                                                                 |
 
 Some verification crates are excluded from the main workspace (listed under `exclude` in the root `Cargo.toml`) and have their own lockfiles. Run those with `--manifest-path`.
 
@@ -25,12 +25,12 @@ Some verification crates are excluded from the main workspace (listed under `exc
 
 There is no devenv or Nix setup. Runtime journeys need a few external executables, which you point at with environment variables:
 
-| Tool | Version | Used by |
-| --- | --- | --- |
-| `wasm-bindgen-cli` | 0.2.128 | Browser tests (`.cargo/config.toml` sets `wasm-bindgen-test-runner` as the `wasm32-unknown-unknown` runner) |
-| Chrome and ChromeDriver | 155.0.8059.84 in CI | `CHROME`, `CHROMEDRIVER` |
-| Wasmtime | 50.0.0 | `WASMTIME` |
-| Monostyle | 0.3.27 (pinned git revision) | `cargo xtask style` |
+| Tool                    | Version                      | Used by                                                                                                     |
+| ----------------------- | ---------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| `wasm-bindgen-cli`      | 0.2.128                      | Browser tests (`.cargo/config.toml` sets `wasm-bindgen-test-runner` as the `wasm32-unknown-unknown` runner) |
+| Chrome and ChromeDriver | 155.0.8059.84 in CI          | `CHROME`, `CHROMEDRIVER`                                                                                    |
+| Wasmtime                | 50.0.0                       | `WASMTIME`                                                                                                  |
+| Monostyle               | 0.3.27 (pinned git revision) | `cargo xtask style`                                                                                         |
 
 ## Build and test
 
@@ -55,17 +55,17 @@ cargo run -p solana_kit_conformance --locked -- --corrupt-fixture
 
 `.cargo/config.toml` defines the `xtask` alias. Each command validates its arguments before it does anything, and it does not forward Cargo flags.
 
-| Command | Runs |
-| --- | --- |
-| `cargo xtask native` | The conformance suite natively |
-| `cargo xtask browser` | The same suite in Chrome |
-| `cargo xtask wasi` | The same suite under Wasmtime Preview 1 and Preview 2 |
-| `cargo xtask leptoskit` | The same suite in the LeptosKit headless host |
-| `cargo xtask gates` | Guest imports, dependency closures and forbidden fixtures |
-| `cargo xtask dependency-graphs` | Dependency graph checks |
-| `cargo xtask consumer` | An external packaged-core consumer |
-| `cargo xtask all` | `native`, `browser`, `wasi`, `leptoskit`, `gates` and `consumer`, in that order |
-| `cargo xtask style [root]` | The per-file Monostyle gate |
+| Command                         | Runs                                                                            |
+| ------------------------------- | ------------------------------------------------------------------------------- |
+| `cargo xtask native`            | The conformance suite natively                                                  |
+| `cargo xtask browser`           | The same suite in Chrome                                                        |
+| `cargo xtask wasi`              | The same suite under Wasmtime Preview 1 and Preview 2                           |
+| `cargo xtask leptoskit`         | The same suite in the LeptosKit headless host                                   |
+| `cargo xtask gates`             | Guest imports, dependency closures and forbidden fixtures                       |
+| `cargo xtask dependency-graphs` | Dependency graph checks                                                         |
+| `cargo xtask consumer`          | An external packaged-core consumer                                              |
+| `cargo xtask all`               | `native`, `browser`, `wasi`, `leptoskit`, `gates` and `consumer`, in that order |
+| `cargo xtask style [root]`      | The per-file Monostyle gate                                                     |
 
 Other commands take a path: `style-report`, `imports`, `dependency-fixture`, `package-review`, `package-report`, `registry-fixture`, `artifact-capture`, `prepare-wallet` and `prepare-wallet-rpc`. To keep nested Cargo calls offline, set the environment rather than a flag: `CARGO_NET_OFFLINE=true cargo xtask consumer`.
 

@@ -4,14 +4,14 @@ Wallet support is split into layers so that each runtime pulls in only what it n
 
 ## Pick the layer you need
 
-| You want to | Use | Feature |
-| --- | --- | --- |
-| Write code that is generic over any wallet backend | `solana_kit_wallet` | default |
-| Speak the Mobile Wallet Adapter protocol (keys, framing, JSON-RPC, SIWS) | `solana_kit_wallet::mwa` | `mwa` |
-| Connect to browser extension wallets from a web page | `solana_kit_browser::wallet` | `wallet` |
-| Open an MWA session to an Android wallet from native code | `solana_kit_native::mwa` | `mwa` |
-| Show a wallet picker in a LeptosKit app | `solana_kit_leptoskit::wallet_ui` | `wallet-ui`, `wallet-browser-ui` |
-| Hand over to an Android wallet from a LeptosKit guest | `solana_kit_leptoskit` | `wallet-platform`, `wallet-session`, `wallet-host` |
+| You want to                                                              | Use                               | Feature                                            |
+| ------------------------------------------------------------------------ | --------------------------------- | -------------------------------------------------- |
+| Write code that is generic over any wallet backend                       | `solana_kit_wallet`               | default                                            |
+| Speak the Mobile Wallet Adapter protocol (keys, framing, JSON-RPC, SIWS) | `solana_kit_wallet::mwa`          | `mwa`                                              |
+| Connect to browser extension wallets from a web page                     | `solana_kit_browser::wallet`      | `wallet`                                           |
+| Open an MWA session to an Android wallet from native code                | `solana_kit_native::mwa`          | `mwa`                                              |
+| Show a wallet picker in a LeptosKit app                                  | `solana_kit_leptoskit::wallet_ui` | `wallet-ui`, `wallet-browser-ui`                   |
+| Hand over to an Android wallet from a LeptosKit guest                    | `solana_kit_leptoskit`            | `wallet-platform`, `wallet-session`, `wallet-host` |
 
 ## Wallet Standard contracts
 
@@ -189,13 +189,13 @@ For a browser bundle, `wallet-browser-ui` adds `BrowserWalletView::new(discovery
 
 ## Status
 
-| Capability | Status |
-| --- | --- |
-| Wallet Standard contracts and registry | Tests run in CI on native and in the portable conformance suite (native, Chrome, Wasmtime, LeptosKit). Declaration coverage in the parity receipt is still partial. |
-| Browser `wallet` feature | Tests run in CI in Chrome against a fixture wallet, not against real extension wallets |
-| MWA protocol (`mwa` feature) | Runs in the portable suite on every host. All 179 MWA declaration rows are still marked partial. |
-| Native MWA transport | Unit tests against local loopback peers; no installed Android wallet is exercised |
+| Capability                             | Status                                                                                                                                                                                                                |
+| -------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Wallet Standard contracts and registry | Tests run in CI on native and in the portable conformance suite (native, Chrome, Wasmtime, LeptosKit). Declaration coverage in the parity receipt is still partial.                                                   |
+| Browser `wallet` feature               | Tests run in CI in Chrome against a fixture wallet, not against real extension wallets                                                                                                                                |
+| MWA protocol (`mwa` feature)           | Runs in the portable suite on every host. All 179 MWA declaration rows are still marked partial.                                                                                                                      |
+| Native MWA transport                   | Unit tests against local loopback peers; no installed Android wallet is exercised                                                                                                                                     |
 | LeptosKit local wallet and approval UI | The `generated-wallet` CI workflow drives a generated app on macOS, an iOS simulator and an Android emulator: create, approve, transfer, save and reload. Keyboard, focus and installed accessibility are unverified. |
-| LeptosKit Android MWA handover | Source and generated-app code exist; an installed journey against a real Android wallet is not recorded |
+| LeptosKit Android MWA handover         | Source and generated-app code exist; an installed journey against a real Android wallet is not recorded                                                                                                               |
 
 The receipts are [Wallet Standard parity](https://github.com/pina-rs/solana_kit/blob/main/docs/parity/wallet-standard.md), [MWA protocol](https://github.com/pina-rs/solana_kit/blob/main/docs/parity/mobile-wallet-protocol.md), [wallet runtime](https://github.com/pina-rs/solana_kit/blob/main/docs/verification/wallet-runtime.md) and [MWA runtime](https://github.com/pina-rs/solana_kit/blob/main/docs/verification/mwa-runtime.md).

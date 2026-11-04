@@ -45,18 +45,18 @@ Anchor's `Limits::new(max_bytes, max_items, max_depth)` has a third budget for n
 
 `Value` represents any Anchor value without losing precision. `Values` is a `BTreeMap<String, Value>` of named fields. Encoding always follows the IDL's field order, not the map order.
 
-| Variant                 | Anchor types                                              |
-| ----------------------- | --------------------------------------------------------- |
-| `Unsigned(u128)`        | `u8` to `u128`, checked against the declared width        |
-| `Signed(i128)`          | `i8` to `i128`, checked against the declared width        |
-| `F32`, `F64`            | `f32`, `f64`, with exact bit patterns                     |
-| `Bool`                  | `bool`                                                    |
-| `String`, `Bytes`       | `string`, `bytes` (u32 length prefix)                     |
-| `Address`               | `pubkey`                                                  |
-| `Sequence(Vec<Value>)`  | `vec` (u32 count) and fixed arrays (no prefix)            |
-| `Option(Option<Box<Value>>)` | `option` (one-byte tag). Nested options keep every tag. |
-| `Struct(Values)`        | defined structs                                           |
-| `Enum { variant, fields }` | defined enums. Tuple fields are named `field0`, `field1`, and so on. |
+| Variant                      | Anchor types                                                         |
+| ---------------------------- | -------------------------------------------------------------------- |
+| `Unsigned(u128)`             | `u8` to `u128`, checked against the declared width                   |
+| `Signed(i128)`               | `i8` to `i128`, checked against the declared width                   |
+| `F32`, `F64`                 | `f32`, `f64`, with exact bit patterns                                |
+| `Bool`                       | `bool`                                                               |
+| `String`, `Bytes`            | `string`, `bytes` (u32 length prefix)                                |
+| `Address`                    | `pubkey`                                                             |
+| `Sequence(Vec<Value>)`       | `vec` (u32 count) and fixed arrays (no prefix)                       |
+| `Option(Option<Box<Value>>)` | `option` (one-byte tag). Nested options keep every tag.              |
+| `Struct(Values)`             | defined structs                                                      |
+| `Enum { variant, fields }`   | defined enums. Tuple fields are named `field0`, `field1`, and so on. |
 
 A wrong type, a missing field, or an out-of-range integer is an error. Encoding errors say which field or account failed.
 

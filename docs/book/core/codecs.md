@@ -61,26 +61,26 @@ fn example() -> Result<(), Error> {
 
 ## Numbers
 
-| Codec | Wire format |
-| --- | --- |
-| `Number::<T>::LE`, `Number::<T>::BE` | Fixed-width integers `u8` through `u128` and `i8` through `i128`, plus `f32` and `f64`, in the chosen byte order |
-| `Number::<Uint256>`, `Number::<Int256>` | 256-bit integers stored as exact wire bytes, with no arithmetic |
-| `ShortU16` | Solana's compact u16. Redundant bytes are rejected as `Error::NonCanonical` |
-| `BigNumber` | Arbitrary-width integers (`bigint-codecs` feature) |
+| Codec                                   | Wire format                                                                                                      |
+| --------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| `Number::<T>::LE`, `Number::<T>::BE`    | Fixed-width integers `u8` through `u128` and `i8` through `i128`, plus `f32` and `f64`, in the chosen byte order |
+| `Number::<Uint256>`, `Number::<Int256>` | 256-bit integers stored as exact wire bytes, with no arithmetic                                                  |
+| `ShortU16`                              | Solana's compact u16. Redundant bytes are rejected as `Error::NonCanonical`                                      |
+| `BigNumber`                             | Arbitrary-width integers (`bigint-codecs` feature)                                                               |
 
 The Rust input type enforces numeric range. Floats keep NaN payloads, infinities and signed zero bit for bit. Use `ensure_number_range` to check an explicit interval.
 
 ## Bytes, booleans and strings
 
-| Codec | Behavior |
-| --- | --- |
-| `Bool` | One byte. Any value other than 0 or 1 fails with `Error::InvalidBoolean { value }` |
-| `FixedBytes::<N>` | Exactly `N` bytes as `[u8; N]` |
-| `Bytes`, `Utf8` | All remaining bytes. Use them inside a frame or as the last field |
-| `Utf8Config` | UTF-8 with explicit strict/lossy, BOM and null policies |
+| Codec                                                                                  | Behavior                                                                                     |
+| -------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| `Bool`                                                                                 | One byte. Any value other than 0 or 1 fails with `Error::InvalidBoolean { value }`           |
+| `FixedBytes::<N>`                                                                      | Exactly `N` bytes as `[u8; N]`                                                               |
+| `Bytes`, `Utf8`                                                                        | All remaining bytes. Use them inside a frame or as the last field                            |
+| `Utf8Config`                                                                           | UTF-8 with explicit strict/lossy, BOM and null policies                                      |
 | `Base16`, `BaseX::base10()`, `BaseX::base58()`, `BaseX::new(alphabet)`, `BaseXReslice` | Text alphabets. The encoder takes text and produces bytes; the decoder renders bytes as text |
-| `Base64` | Base64 text (`text-codecs` feature) |
-| `Constant(&[u8])` | A fixed byte pattern, checked on decode |
+| `Base64`                                                                               | Base64 text (`text-codecs` feature)                                                          |
+| `Constant(&[u8])`                                                                      | A fixed byte pattern, checked on decode                                                      |
 
 `Utf8` is strict, and it keeps a leading BOM and any null characters. `remove_null_characters` and `pad_null_characters` help with fixed-width text fields.
 
@@ -100,15 +100,15 @@ fn example() -> Result<(), Error> {
 
 A frame tells a codec where its payload ends.
 
-| Wrapper | Frame |
-| --- | --- |
-| `SizePrefix(item)`, `SizePrefix64(item)` | u32 or u64 little-endian byte length. The payload must be consumed exactly |
-| `ByteSizePrefix { item, prefix, consumption }` | Byte length written by any u64-valued `prefix` codec. `FrameConsumption::Exact` requires every byte to be read. `FrameConsumption::Skip` advances past unread bytes |
-| `FixedSize { item, size, decoded_size, allow_truncation, max_encoded_size }` | Fixed-width field with zero padding and optional truncation |
-| `Padded { left, item, right }` | Zero padding around a value |
-| `Sentinel::new(item, sentinel, max)` | Payload ending at a delimiter |
-| `Affix { prefix, item, suffix }` | Constant bytes on either side |
-| `Reverse`, `Resized`, `Offset` | Byte reversal, a changed allocation extent, and checked repositioning |
+| Wrapper                                                                      | Frame                                                                                                                                                               |
+| ---------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `SizePrefix(item)`, `SizePrefix64(item)`                                     | u32 or u64 little-endian byte length. The payload must be consumed exactly                                                                                          |
+| `ByteSizePrefix { item, prefix, consumption }`                               | Byte length written by any u64-valued `prefix` codec. `FrameConsumption::Exact` requires every byte to be read. `FrameConsumption::Skip` advances past unread bytes |
+| `FixedSize { item, size, decoded_size, allow_truncation, max_encoded_size }` | Fixed-width field with zero padding and optional truncation                                                                                                         |
+| `Padded { left, item, right }`                                               | Zero padding around a value                                                                                                                                         |
+| `Sentinel::new(item, sentinel, max)`                                         | Payload ending at a delimiter                                                                                                                                       |
+| `Affix { prefix, item, suffix }`                                             | Constant bytes on either side                                                                                                                                       |
+| `Reverse`, `Resized`, `Offset`                                               | Byte reversal, a changed allocation extent, and checked repositioning                                                                                               |
 
 `SizePrefix(Utf8)` is the Borsh string layout:
 
@@ -126,19 +126,19 @@ fn example() -> Result<(), Error> {
 
 ## Composite codecs
 
-| Codec | Shape |
-| --- | --- |
-| `Sequence { item, count }` | Homogeneous `Vec<T>`. `Count::U32` writes a Borsh-style u32 prefix, `Count::Fixed(n)` has no prefix, and `Count::Remainder` reads to the end of the enclosing frame |
-| `Counted { prefix, item }` | `Vec<T>` with any count codec as the prefix, such as a mapped `u8` |
-| `Tuple(a, b)` | A pair. Nest tuples for more fields |
-| `Mapped::new(item, into_wire, from_wire)` | Fallible conversion between your type and a wire codec |
-| `OptionCodec::u8`, `::u32`, `::c_option`, `::remainder` | Tagged, C-layout and trailing options |
-| `Choice(a, b)` with `Either` | Two variants with a one-byte tag, 0 or 1 |
-| `Literal { variants, index }` | A value from a fixed list, stored by index |
-| `Dependent(head, f)` | A second codec chosen from the first decoded value |
-| `BitArray`, `Unit`, `Nullable`, `UnionEncoder`/`UnionDecoder` | Bit flags, the zero-byte unit and other specialized layouts |
-| `OrderedMapCodec`, `OrderedSetCodec` | Insertion-ordered maps and sets |
-| `RecordEncoder`/`RecordDecoder`, `TupleEncoder`/`TupleDecoder` | Runtime schemas over borrowed codec objects |
+| Codec                                                          | Shape                                                                                                                                                               |
+| -------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Sequence { item, count }`                                     | Homogeneous `Vec<T>`. `Count::U32` writes a Borsh-style u32 prefix, `Count::Fixed(n)` has no prefix, and `Count::Remainder` reads to the end of the enclosing frame |
+| `Counted { prefix, item }`                                     | `Vec<T>` with any count codec as the prefix, such as a mapped `u8`                                                                                                  |
+| `Tuple(a, b)`                                                  | A pair. Nest tuples for more fields                                                                                                                                 |
+| `Mapped::new(item, into_wire, from_wire)`                      | Fallible conversion between your type and a wire codec                                                                                                              |
+| `OptionCodec::u8`, `::u32`, `::c_option`, `::remainder`        | Tagged, C-layout and trailing options                                                                                                                               |
+| `Choice(a, b)` with `Either`                                   | Two variants with a one-byte tag, 0 or 1                                                                                                                            |
+| `Literal { variants, index }`                                  | A value from a fixed list, stored by index                                                                                                                          |
+| `Dependent(head, f)`                                           | A second codec chosen from the first decoded value                                                                                                                  |
+| `BitArray`, `Unit`, `Nullable`, `UnionEncoder`/`UnionDecoder`  | Bit flags, the zero-byte unit and other specialized layouts                                                                                                         |
+| `OrderedMapCodec`, `OrderedSetCodec`                           | Insertion-ordered maps and sets                                                                                                                                     |
+| `RecordEncoder`/`RecordDecoder`, `TupleEncoder`/`TupleDecoder` | Runtime schemas over borrowed codec objects                                                                                                                         |
 
 To encode a struct, map it to and from nested tuples:
 
@@ -190,16 +190,16 @@ Generated program clients use the same building blocks for their instruction and
 
 All codecs return one `Copy` error type, `codecs::Error`:
 
-| Variant | Meaning |
-| --- | --- |
-| `Truncated` | Input or output ended early |
-| `Overflow` | A length or offset calculation overflowed |
-| `LimitExceeded` | A byte or element budget was exceeded, detected before allocating |
-| `TrailingBytes` | Full decode or an exact frame left bytes unread |
-| `NonCanonical` | A compact integer used redundant bytes |
-| `InvalidDiscriminator` | An option or choice tag, or a sentinel, did not match |
-| `InvalidBoolean { value }`, `InvalidConstant { offset, length }` | A bad boolean byte, or a constant mismatch at an offset |
-| `NumberOutOfRange`, `InvalidUtf8`, `InvalidValue`, `AllocationFailed` | Range, text, contract and allocation failures |
+| Variant                                                               | Meaning                                                           |
+| --------------------------------------------------------------------- | ----------------------------------------------------------------- |
+| `Truncated`                                                           | Input or output ended early                                       |
+| `Overflow`                                                            | A length or offset calculation overflowed                         |
+| `LimitExceeded`                                                       | A byte or element budget was exceeded, detected before allocating |
+| `TrailingBytes`                                                       | Full decode or an exact frame left bytes unread                   |
+| `NonCanonical`                                                        | A compact integer used redundant bytes                            |
+| `InvalidDiscriminator`                                                | An option or choice tag, or a sentinel, did not match             |
+| `InvalidBoolean { value }`, `InvalidConstant { offset, length }`      | A bad boolean byte, or a constant mismatch at an offset           |
+| `NumberOutOfRange`, `InvalidUtf8`, `InvalidValue`, `AllocationFailed` | Range, text, contract and allocation failures                     |
 
 A failed operation can leave its cursor advanced or its output partly written. Do not reuse a cursor after an error unless you use `Reader::transaction`, which rolls back position and claims on failure. Codec errors also implement `errors::ErrorFacts`; see [Errors](errors.md).
 

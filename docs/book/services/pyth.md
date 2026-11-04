@@ -13,10 +13,10 @@ solana_kit_core = { git = "https://github.com/pina-rs/solana_kit" }
 solana_kit_pyth = { git = "https://github.com/pina-rs/solana_kit" }
 ```
 
-| Feature | Adds |
-| --- | --- |
+| Feature  | Adds                                                                                                                               |
+| -------- | ---------------------------------------------------------------------------------------------------------------------------------- |
 | `hermes` | `hermes` module: bounded JSON models and the runtime-neutral Hermes `Client` (pulls in `solana_kit_client`, `serde`, `serde_json`) |
-| `crypto` | PDA helpers: `config_address`, `treasury_address`, `guardian_set_address` and `ReceiverAccounts::derive` |
+| `crypto` | PDA helpers: `config_address`, `treasury_address`, `guardian_set_address` and `ReceiverAccounts::derive`                           |
 
 The crate is unpublished (`publish = false`).
 
@@ -37,14 +37,14 @@ fn first_price(data: &[u8], limits: Limits) -> Result<PythPriceFeedMessage, Erro
 }
 ```
 
-| Function | Parses |
-| --- | --- |
-| `parse_wormhole_vaa` | Wormhole v1 VAA envelopes |
-| `get_guardian_set_index`, `get_vaa_signature_count` | Header fields only (narrower checks, as in the Dart helpers) |
-| `trim_vaa_signatures` | Reduces the signature count. Unchanged input is borrowed, not copied. |
-| `parse_pyth_wormhole_message` | The `AUWV` Merkle-root commitment |
-| `is_accumulator_update_data`, `parse_accumulator_update_data` | `PNAU` accumulator updates |
-| `parse_pyth_price_feed_message` | Variant-zero price feed messages |
+| Function                                                      | Parses                                                                |
+| ------------------------------------------------------------- | --------------------------------------------------------------------- |
+| `parse_wormhole_vaa`                                          | Wormhole v1 VAA envelopes                                             |
+| `get_guardian_set_index`, `get_vaa_signature_count`           | Header fields only (narrower checks, as in the Dart helpers)          |
+| `trim_vaa_signatures`                                         | Reduces the signature count. Unchanged input is borrowed, not copied. |
+| `parse_pyth_wormhole_message`                                 | The `AUWV` Merkle-root commitment                                     |
+| `is_accumulator_update_data`, `parse_accumulator_update_data` | `PNAU` accumulator updates                                            |
+| `parse_pyth_price_feed_message`                               | Variant-zero price feed messages                                      |
 
 Payloads and variable-length byte fields borrow from your input. On one point this crate deliberately differs from the Dart reference. It follows the official `AUWV` format, which the pinned Dart helper rejects. The reasoning is in [`docs/parity/pyth-wire.md`](https://github.com/pina-rs/solana_kit/blob/main/docs/parity/pyth-wire.md).
 
@@ -67,11 +67,11 @@ fn client<T: rest::Transport<Service>, C: Clock>(transport: T, clock: C) -> Clie
 }
 ```
 
-| Method | Route |
-| --- | --- |
-| `get_price_feeds(query, asset)` | `/v2/price_feeds`, with an optional symbol query and `AssetType` filter |
-| `get_latest_price_updates(ids, options)` | Latest updates for the given feed IDs |
-| `get_price_updates_at_timestamp(publish_time, ids, options)` | Updates at a signed Unix timestamp in seconds |
+| Method                                                       | Route                                                                   |
+| ------------------------------------------------------------ | ----------------------------------------------------------------------- |
+| `get_price_feeds(query, asset)`                              | `/v2/price_feeds`, with an optional symbol query and `AssetType` filter |
+| `get_latest_price_updates(ids, options)`                     | Latest updates for the given feed IDs                                   |
+| `get_price_updates_at_timestamp(publish_time, ids, options)` | Updates at a signed Unix timestamp in seconds                           |
 
 `UpdateOptions` selects the `Encoding` and the `parsed` and `ignore_invalid_price_ids` flags. `Policy::default()` allows 5000 ms per attempt and three retries, with delays of 100, 200 and 400 ms. Only I/O failures, elapsed deadlines, HTTP 408 or 429, and statuses of 500 or above are retried. `Policy::new` rejects a zero timeout and more than `MAX_HTTP_RETRIES` (32) retries. Each losing exchange is dropped before the backoff starts.
 

@@ -6,13 +6,13 @@
 
 Each trait is a separate permission. A backend implements only the ones it actually supports.
 
-| Trait | Operation | Returns |
-| --- | --- | --- |
-| `Signer` | `address()` | The address whose signature slot it owns |
-| `MessageSigner` | `sign_message(bytes)` | A `SignatureOutput` over exact bare bytes |
-| `TransactionPartialSigner` | `sign_transaction(&transaction)` | A `SignatureOutput` for one immutable transaction snapshot |
-| `TransactionModifyingSigner` | `modify_transaction(&transaction)` | A replacement `Transaction`, applied before partial signers run |
-| `TransactionSendingSigner` | `send_transaction(&transaction)` | A submission `Signature`. This is not proof that the transaction executed |
+| Trait                        | Operation                          | Returns                                                                   |
+| ---------------------------- | ---------------------------------- | ------------------------------------------------------------------------- |
+| `Signer`                     | `address()`                        | The address whose signature slot it owns                                  |
+| `MessageSigner`              | `sign_message(bytes)`              | A `SignatureOutput` over exact bare bytes                                 |
+| `TransactionPartialSigner`   | `sign_transaction(&transaction)`   | A `SignatureOutput` for one immutable transaction snapshot                |
+| `TransactionModifyingSigner` | `modify_transaction(&transaction)` | A replacement `Transaction`, applied before partial signers run           |
+| `TransactionSendingSigner`   | `send_transaction(&transaction)`   | A submission `Signature`. This is not proof that the transaction executed |
 
 Each trait has an associated future type, such as `type Sign<'a>`. This lets a backend keep local state such as `Rc` across an `.await` while a native backend stays `Send`. The traits also take an optional failure type parameter (`TransactionPartialSigner<Failure = Error>`), so a host backend can return its own error type without losing the original cause.
 

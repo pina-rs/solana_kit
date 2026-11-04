@@ -6,15 +6,15 @@ An account snapshot is an owned copy of one account at one point in time: its ad
 
 `Account<T>` is generic over its data. `EncodedAccount` is `Account<Vec<u8>>`. A decoded snapshot keeps every metadata field and swaps the data for your type.
 
-| Field | Type | Meaning |
-| --- | --- | --- |
-| `address` | `Address` | The address you asked for |
-| `owner` | `Address` | The program that owns the account |
-| `lamports` | `u64` | Balance |
-| `executable` | `bool` | Whether the account holds a program |
-| `space` | `u64` | The reported data allocation, independent of the decoded form |
-| `rent_epoch` | `Option<u64>` | Present only when the source reported it |
-| `data` | `T` | Raw bytes or a decoded value |
+| Field        | Type          | Meaning                                                       |
+| ------------ | ------------- | ------------------------------------------------------------- |
+| `address`    | `Address`     | The address you asked for                                     |
+| `owner`      | `Address`     | The program that owns the account                             |
+| `lamports`   | `u64`         | Balance                                                       |
+| `executable` | `bool`        | Whether the account holds a program                           |
+| `space`      | `u64`         | The reported data allocation, independent of the decoded form |
+| `rent_epoch` | `Option<u64>` | Present only when the source reported it                      |
+| `data`       | `T`           | Raw bytes or a decoded value                                  |
 
 A fetch can find nothing at an address. That case is a value, not an error: `MaybeAccount<T>` is either `Present(Account<T>)` or `Missing(Address)`, and `MaybeEncodedAccount` is `MaybeAccount<Vec<u8>>`. Call `exists()` to check, `address()` to read the address in either state, and `require()` to turn `Missing` into `AccountError::Missing(address)`.
 
@@ -66,12 +66,12 @@ The client crate also has looser helpers. `solana_kit_client::accounts::decode_a
 
 `Client<T>` adds four fetch helpers. Each returns `Contextual<...>`, which pairs the value with the node's evaluation `context` (slot and optional API version).
 
-| Method | Returns |
-| --- | --- |
-| `fetch_encoded_account(address, config)` | `Contextual<MaybeEncodedAccount>` with full base64 data |
-| `fetch_encoded_accounts(addresses, config)` | One entry per requested address, in order, duplicates included |
-| `fetch_json_parsed_account(address, config)` | `Contextual<MaybeAccount<AccountData>>`, parsed JSON or a binary fallback |
-| `fetch_json_parsed_accounts(addresses, config)` | The positional parsed form |
+| Method                                          | Returns                                                                   |
+| ----------------------------------------------- | ------------------------------------------------------------------------- |
+| `fetch_encoded_account(address, config)`        | `Contextual<MaybeEncodedAccount>` with full base64 data                   |
+| `fetch_encoded_accounts(addresses, config)`     | One entry per requested address, in order, duplicates included            |
+| `fetch_json_parsed_account(address, config)`    | `Contextual<MaybeAccount<AccountData>>`, parsed JSON or a binary fallback |
+| `fetch_json_parsed_accounts(addresses, config)` | The positional parsed form                                                |
 
 `ReadConfig` carries the optional `commitment` and `min_context_slot`. For transports and errors, see [RPC](rpc.md). For a guided walkthrough, see [Fetch an account](../getting-started/fetch-an-account.md).
 
@@ -79,17 +79,17 @@ The client crate also has looser helpers. `solana_kit_client::accounts::decode_a
 
 `SysvarCodec::<T>::NEW` is a stateless codec that implements both `Encoder<T>` and `Decoder<T>` for each supported sysvar type. All fields use the pinned little-endian widths.
 
-| Type | Address constant | Size |
-| --- | --- | --- |
-| `Clock` | `CLOCK_ADDRESS` | `CLOCK_SIZE` (40 bytes) |
-| `Rent` | `RENT_ADDRESS` | `RENT_SIZE` (17 bytes) |
-| `EpochSchedule` | `EPOCH_SCHEDULE_ADDRESS` | `EPOCH_SCHEDULE_SIZE` (33 bytes) |
-| `EpochRewards` | `EPOCH_REWARDS_ADDRESS` | `EPOCH_REWARDS_SIZE` (81 bytes) |
-| `LastRestartSlot` | `LAST_RESTART_SLOT_ADDRESS` | `LAST_RESTART_SLOT_SIZE` (8 bytes) |
-| `SlotHashes` (`Vec<SlotHashEntry>`) | `SLOT_HASHES_ADDRESS` | u64 count, then entries |
-| `StakeHistory` (`Vec<StakeHistoryEntry>`) | `STAKE_HISTORY_ADDRESS` | u64 count, then entries |
-| `RecentBlockhashes` (`Vec<RecentBlockhashEntry>`) | `RECENT_BLOCKHASHES_ADDRESS` | u64 count, then entries |
-| `SlotHistory` | `SLOT_HISTORY_ADDRESS` | `SLOT_HISTORY_SIZE` |
+| Type                                              | Address constant             | Size                               |
+| ------------------------------------------------- | ---------------------------- | ---------------------------------- |
+| `Clock`                                           | `CLOCK_ADDRESS`              | `CLOCK_SIZE` (40 bytes)            |
+| `Rent`                                            | `RENT_ADDRESS`               | `RENT_SIZE` (17 bytes)             |
+| `EpochSchedule`                                   | `EPOCH_SCHEDULE_ADDRESS`     | `EPOCH_SCHEDULE_SIZE` (33 bytes)   |
+| `EpochRewards`                                    | `EPOCH_REWARDS_ADDRESS`      | `EPOCH_REWARDS_SIZE` (81 bytes)    |
+| `LastRestartSlot`                                 | `LAST_RESTART_SLOT_ADDRESS`  | `LAST_RESTART_SLOT_SIZE` (8 bytes) |
+| `SlotHashes` (`Vec<SlotHashEntry>`)               | `SLOT_HASHES_ADDRESS`        | u64 count, then entries            |
+| `StakeHistory` (`Vec<StakeHistoryEntry>`)         | `STAKE_HISTORY_ADDRESS`      | u64 count, then entries            |
+| `RecentBlockhashes` (`Vec<RecentBlockhashEntry>`) | `RECENT_BLOCKHASHES_ADDRESS` | u64 count, then entries            |
+| `SlotHistory`                                     | `SLOT_HISTORY_ADDRESS`       | `SLOT_HISTORY_SIZE`                |
 
 Every sysvar account is owned by `OWNER_ADDRESS` (`Sysvar1111111111111111111111111111111111111`). The module also exports `FEES_ADDRESS`, `REWARDS_ADDRESS` and `INSTRUCTIONS_ADDRESS`. Those three have no codec.
 

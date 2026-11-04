@@ -15,11 +15,11 @@ See [Installation](../getting-started/installation.md) for how to pin a revision
 
 Optional features:
 
-| Feature | Adds |
-| --- | --- |
-| `keys` | `keys::NativeEntropy` (OS randomness) and `keys::write_keypair_new` for explicit Solana-keygen JSON backups |
-| `mwa` | `mwa::NativeAssociation` and `mwa::NativeMobileWallet`, a caller-owned Mobile Wallet Adapter session (see [Wallets](wallets.md)) |
-| `surfpool` | `surfpool::deploy` and process ownership for a local Surfpool validator (see [Surfpool](../services/surfpool.md)) |
+| Feature    | Adds                                                                                                                             |
+| ---------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| `keys`     | `keys::NativeEntropy` (OS randomness) and `keys::write_keypair_new` for explicit Solana-keygen JSON backups                      |
+| `mwa`      | `mwa::NativeAssociation` and `mwa::NativeMobileWallet`, a caller-owned Mobile Wallet Adapter session (see [Wallets](wallets.md)) |
+| `surfpool` | `surfpool::deploy` and process ownership for a local Surfpool validator (see [Surfpool](../services/surfpool.md))                |
 
 ## Make an RPC call
 
@@ -57,15 +57,15 @@ The exchange future is `Send`. You can move a client into `tokio::spawn` on a mu
 
 `HttpConfig` holds every policy for one transport. Its fields are public:
 
-| Field | Default | Meaning |
-| --- | --- | --- |
-| `headers` | empty | Your authentication and application headers. Framing, `Host`, content type and hop-by-hop headers are rejected. |
-| `connect_timeout` | 10 s | Bounds DNS, TCP and the TLS handshake. |
-| `exchange_timeout` | 30 s | Bounds the whole exchange, from the first poll to the last body byte. |
-| `max_header_bytes` | 16,384 | Limit for the status line plus headers, and for chunk trailers. |
-| `max_headers` | 64 | Limit on response header fields. |
-| `max_read_buffer` | 16,384 | Hyper's read buffer. Must be at least 8,192 and cover the header limit. |
-| `tls` | `TlsRoots::WebPki` | Trust roots for HTTPS. |
+| Field              | Default            | Meaning                                                                                                         |
+| ------------------ | ------------------ | --------------------------------------------------------------------------------------------------------------- |
+| `headers`          | empty              | Your authentication and application headers. Framing, `Host`, content type and hop-by-hop headers are rejected. |
+| `connect_timeout`  | 10 s               | Bounds DNS, TCP and the TLS handshake.                                                                          |
+| `exchange_timeout` | 30 s               | Bounds the whole exchange, from the first poll to the last body byte.                                           |
+| `max_header_bytes` | 16,384             | Limit for the status line plus headers, and for chunk trailers.                                                 |
+| `max_headers`      | 64                 | Limit on response header fields.                                                                                |
+| `max_read_buffer`  | 16,384             | Hyper's read buffer. Must be at least 8,192 and cover the header limit.                                         |
+| `tls`              | `TlsRoots::WebPki` | Trust roots for HTTPS.                                                                                          |
 
 The reply body limit comes from the client's request budget (`Limits`), not from `HttpConfig`. The transport checks it before each reserve and copy, whatever `Content-Length` says. Compressed bodies are not decompressed.
 
@@ -175,17 +175,17 @@ You own the clock: here `now` counts milliseconds since the connection opened, a
 
 `WsConfig` holds the socket's limits:
 
-| Field | Default | Meaning |
-| --- | --- | --- |
-| `headers` | empty | Authentication and application headers. Protocol and cookie headers are rejected. |
-| `connect_timeout` | 10 s | DNS, TCP, TLS and the upgrade handshake together. |
-| `operation_timeout` | 30 s | Each `send`, `receive` and the graceful `close`. |
-| `max_frame_bytes` | 1 MiB | Largest incoming frame and outgoing text. |
-| `max_message_bytes` | 1 MiB | Largest reassembled incoming message. |
-| `read_buffer_bytes` | 8,192 | Read buffer. Must be positive and at most the frame limit. |
-| `max_write_buffer_bytes` | 1 MiB plus frame header | Encoded bytes held for writing. |
-| `max_request_bytes` | 16,384 | Endpoint plus header bytes. |
-| `tls` | `TlsRoots::WebPki` | Trust roots for `wss://`. |
+| Field                    | Default                 | Meaning                                                                           |
+| ------------------------ | ----------------------- | --------------------------------------------------------------------------------- |
+| `headers`                | empty                   | Authentication and application headers. Protocol and cookie headers are rejected. |
+| `connect_timeout`        | 10 s                    | DNS, TCP, TLS and the upgrade handshake together.                                 |
+| `operation_timeout`      | 30 s                    | Each `send`, `receive` and the graceful `close`.                                  |
+| `max_frame_bytes`        | 1 MiB                   | Largest incoming frame and outgoing text.                                         |
+| `max_message_bytes`      | 1 MiB                   | Largest reassembled incoming message.                                             |
+| `read_buffer_bytes`      | 8,192                   | Read buffer. Must be positive and at most the frame limit.                        |
+| `max_write_buffer_bytes` | 1 MiB plus frame header | Encoded bytes held for writing.                                                   |
+| `max_request_bytes`      | 16,384                  | Endpoint plus header bytes.                                                       |
+| `tls`                    | `TlsRoots::WebPki`      | Trust roots for `wss://`.                                                         |
 
 Cancellation rules:
 
@@ -203,12 +203,12 @@ Tungstenite's wire-level trace logs can include complete requests and frames, in
 
 ## Status
 
-| Capability | Status |
-| --- | --- |
-| `NativeHttp` HTTP/1 and TLS | Runs in CI on Ubuntu, macOS and Windows against local fixtures, plus an MSRV (1.89) build |
-| `NativeWebSocket` WS and WSS text, all nine subscription families | Runs in CI on Ubuntu, macOS and Windows with Rust 1.99.1 and 1.89.0 |
-| `NativeSubscriptionSocket` (Session adapter, binary frames) | Source extension; the crate README marks it as not yet executed |
-| `NativeRest` (provider REST routes) | Source extension; real REST peer replay is pending |
-| HTTP/2, connection pooling | Not provided |
+| Capability                                                        | Status                                                                                    |
+| ----------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| `NativeHttp` HTTP/1 and TLS                                       | Runs in CI on Ubuntu, macOS and Windows against local fixtures, plus an MSRV (1.89) build |
+| `NativeWebSocket` WS and WSS text, all nine subscription families | Runs in CI on Ubuntu, macOS and Windows with Rust 1.99.1 and 1.89.0                       |
+| `NativeSubscriptionSocket` (Session adapter, binary frames)       | Source extension; the crate README marks it as not yet executed                           |
+| `NativeRest` (provider REST routes)                               | Source extension; real REST peer replay is pending                                        |
+| HTTP/2, connection pooling                                        | Not provided                                                                              |
 
 The receipts are [native HTTP](https://github.com/pina-rs/solana_kit/blob/main/docs/verification/native-http.md) and [native WebSocket](https://github.com/pina-rs/solana_kit/blob/main/docs/verification/native-websocket.md). All tests use loopback fixtures and synthetic credentials. No public cluster is involved.

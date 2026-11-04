@@ -15,20 +15,20 @@ solana_kit_helius = { git = "https://github.com/pina-rs/solana_kit" }
 
 Pair it with a transport from [Choosing a runtime](../runtimes/index.md). Optional features:
 
-| Feature | Adds |
-| --- | --- |
-| `crypto` | Caller-key authentication signing (`auth::sign_auth_message`); with staking, signature authentication of prepared transactions |
-| `checkout` | `auth::create_payment`, `auth::upgrade_plan` and `auth::pay_renewal`, which prepare unsigned payment links |
-| `signup` | `auth::auth_signup` and `auth::resume_signup_and_pay`; implies `checkout` and adds RFC3339 date parsing |
+| Feature    | Adds                                                                                                                           |
+| ---------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| `crypto`   | Caller-key authentication signing (`auth::sign_auth_message`); with staking, signature authentication of prepared transactions |
+| `checkout` | `auth::create_payment`, `auth::upgrade_plan` and `auth::pay_renewal`, which prepare unsigned payment links                     |
+| `signup`   | `auth::auth_signup` and `auth::resume_signup_and_pay`; implies `checkout` and adds RFC3339 date parsing                        |
 
 ## How the client is shaped
 
 There are two independent owners, and `Helius<R, S>` simply holds both:
 
-| Owner | Type | Used for |
-| --- | --- | --- |
-| RPC | `solana_kit_client::Client<R>` | DAS, ZK compression, priority fees, enhanced RPC V2, compute estimation, staking reads |
-| REST | `service::ServiceClient<S>` | Webhooks, wallet, enhanced transactions, auth, admin, developer, Sender |
+| Owner | Type                           | Used for                                                                               |
+| ----- | ------------------------------ | -------------------------------------------------------------------------------------- |
+| RPC   | `solana_kit_client::Client<R>` | DAS, ZK compression, priority fees, enhanced RPC V2, compute estimation, staking reads |
+| REST  | `service::ServiceClient<S>`    | Webhooks, wallet, enhanced transactions, auth, admin, developer, Sender                |
 
 `Helius::new(rpc, services)` composes owners you have already configured. It creates no credentials or tasks.
 
@@ -49,12 +49,12 @@ async fn asset<T: Transport>(rpc: &Client<T>, id: &str) -> Result<HeliusAsset, E
 
 Request structs have public fields, and optional parameters are `Option`s. `None` leaves the parameter out entirely. The covered method families include:
 
-| Module | Methods |
-| --- | --- |
-| `das` | `getAsset`, `getAssetBatch`, `getAssetProof`, `getAssetProofBatch`, `getAssetsByAuthority`, `getAssetsByCreator`, `getAssetsByGroup`, `getAssetsByOwner`, `getNftEditions`, `getTokenAccounts`, `getSignaturesForAsset`, `searchAssets` |
-| `zk` | The Photon compression methods, such as `getCompressedAccount`, `getValidityProof` and `getIndexerHealth` |
-| `priority_fee` | `getPriorityFeeEstimate` |
-| `rpc_v2` | `getProgramAccountsV2`, `getTokenAccountsByOwnerV2`, `getTransactionsForAddress`, `getTransfersByAddress`, plus bounded cursor collection (`all_program_accounts`, `all_token_accounts_by_owner`) |
+| Module         | Methods                                                                                                                                                                                                                                 |
+| -------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `das`          | `getAsset`, `getAssetBatch`, `getAssetProof`, `getAssetProofBatch`, `getAssetsByAuthority`, `getAssetsByCreator`, `getAssetsByGroup`, `getAssetsByOwner`, `getNftEditions`, `getTokenAccounts`, `getSignaturesForAsset`, `searchAssets` |
+| `zk`           | The Photon compression methods, such as `getCompressedAccount`, `getValidityProof` and `getIndexerHealth`                                                                                                                               |
+| `priority_fee` | `getPriorityFeeEstimate`                                                                                                                                                                                                                |
+| `rpc_v2`       | `getProgramAccountsV2`, `getTokenAccountsByOwnerV2`, `getTransactionsForAddress`, `getTransfersByAddress`, plus bounded cursor collection (`all_program_accounts`, `all_token_accounts_by_owner`)                                       |
 
 DAS records follow the provider's partial-response contract. If you need complete records, convert with `TryFrom` into `CompleteNftEdition`, `CompleteTokenAccount` or `CompleteTokenAccountList`. `IncompleteDasRecord` tells you which field was missing.
 
@@ -81,11 +81,11 @@ async fn load<T: ServiceTransport<Service>>(services: &ServiceClient<T>) -> Resu
 
 The `transactions` module has helpers for preparing transactions. None of them sign or submit.
 
-| Function | What it does |
-| --- | --- |
-| `get_compute_units` | Simulates your transaction wire once and returns the exact unit count plus the node's context |
-| `resolve_priority_fee` | Floors a decimal fee rate and applies rate and total-lamport caps |
-| `buffer_compute_units` | Adds a percentage buffer to a unit count, with the source's floor and maximum |
+| Function                   | What it does                                                                                         |
+| -------------------------- | ---------------------------------------------------------------------------------------------------- |
+| `get_compute_units`        | Simulates your transaction wire once and returns the exact unit count plus the node's context        |
+| `resolve_priority_fee`     | Floors a decimal fee rate and applies rate and total-lamport caps                                    |
+| `buffer_compute_units`     | Adds a percentage buffer to a unit count, with the source's floor and maximum                        |
 | `create_smart_transaction` | Builds an **unsigned** v0 transaction with a compute price and limit placed before your instructions |
 
 `create_smart_transaction`'s portable and native witnesses had not been executed when the crate was last updated. Its parity record is `docs/parity/helius-smart-preparation.md`.

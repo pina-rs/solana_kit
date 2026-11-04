@@ -24,12 +24,12 @@ cargo install --path crates/solana_kit_dapp_publisher_cli
 
 Download an archive from the [`publisher-cli-v0.1.0` release](https://github.com/pina-rs/solana_kit/releases/tag/publisher-cli-v0.1.0). Each archive comes with `.sha256` and `.sha512` checksums.
 
-| Platform | Targets |
-| --- | --- |
-| macOS | `aarch64-apple-darwin`, `x86_64-apple-darwin` |
-| Linux (glibc) | `aarch64-unknown-linux-gnu`, `x86_64-unknown-linux-gnu` |
-| Linux (musl) | `aarch64-unknown-linux-musl`, `x86_64-unknown-linux-musl` |
-| Windows | `aarch64-pc-windows-msvc`, `x86_64-pc-windows-msvc` (`.zip` and `.tar.gz`) |
+| Platform      | Targets                                                                    |
+| ------------- | -------------------------------------------------------------------------- |
+| macOS         | `aarch64-apple-darwin`, `x86_64-apple-darwin`                              |
+| Linux (glibc) | `aarch64-unknown-linux-gnu`, `x86_64-unknown-linux-gnu`                    |
+| Linux (musl)  | `aarch64-unknown-linux-musl`, `x86_64-unknown-linux-musl`                  |
+| Windows       | `aarch64-pc-windows-msvc`, `x86_64-pc-windows-msvc` (`.zip` and `.tar.gz`) |
 
 </Tab>
 
@@ -85,34 +85,34 @@ Progress is saved to `.solana-kit-publisher/checkpoint.json` in the working dire
 
 Flags accept either `--name value` or `--name=value`. Boolean flags take no value. Unknown flags and positional arguments are errors.
 
-| Flag | Applies to | Meaning |
-| --- | --- | --- |
-| `--apk-file <PATH>` | new | Local APK, uploaded through one presigned PUT |
-| `--apk-url <HTTPS_URL>` | new | Already hosted APK |
-| `--whats-new <TEXT>` | new | Release notes (required) |
-| `--keypair <PATH>` | both | Solana CLI keypair JSON (required) |
-| `--idempotency-key <KEY>` | new | Explicit ingestion idempotency key. A random one is generated otherwise. |
-| `--release-id <ID>` / `--resume-release <ID>` | resume | Resume by release. The two are aliases. |
-| `--session-id <ID>` / `--resume-session <ID>` | resume | Resume by publication session. The two are aliases. |
-| `--portal-url <URL>` | both | Portal base URL |
-| `--api-key-env <NAME>` | both | Environment variable that holds the API key |
-| `--api-key-stdin` | both | Read the API key from piped stdin |
-| `--rpc-url <URL>` | new | RPC endpoint for the funding preflight |
-| `--local-dev` | both | Allow, and require, localhost portal endpoints |
-| `--skip-self-update` | both | Accepted only together with `--local-dev`; otherwise the command fails |
-| `--verbose` | both | Print the resolved portal and API URLs |
-| `--version`, `--help` / `-h` | — | Print the version or the usage text |
+| Flag                                          | Applies to | Meaning                                                                  |
+| --------------------------------------------- | ---------- | ------------------------------------------------------------------------ |
+| `--apk-file <PATH>`                           | new        | Local APK, uploaded through one presigned PUT                            |
+| `--apk-url <HTTPS_URL>`                       | new        | Already hosted APK                                                       |
+| `--whats-new <TEXT>`                          | new        | Release notes (required)                                                 |
+| `--keypair <PATH>`                            | both       | Solana CLI keypair JSON (required)                                       |
+| `--idempotency-key <KEY>`                     | new        | Explicit ingestion idempotency key. A random one is generated otherwise. |
+| `--release-id <ID>` / `--resume-release <ID>` | resume     | Resume by release. The two are aliases.                                  |
+| `--session-id <ID>` / `--resume-session <ID>` | resume     | Resume by publication session. The two are aliases.                      |
+| `--portal-url <URL>`                          | both       | Portal base URL                                                          |
+| `--api-key-env <NAME>`                        | both       | Environment variable that holds the API key                              |
+| `--api-key-stdin`                             | both       | Read the API key from piped stdin                                        |
+| `--rpc-url <URL>`                             | new        | RPC endpoint for the funding preflight                                   |
+| `--local-dev`                                 | both       | Allow, and require, localhost portal endpoints                           |
+| `--skip-self-update`                          | both       | Accepted only together with `--local-dev`; otherwise the command fails   |
+| `--verbose`                                   | both       | Print the resolved portal and API URLs                                   |
+| `--version`, `--help` / `-h`                  | —          | Print the version or the usage text                                      |
 
 When resuming, give exactly one of `--release-id` or `--session-id`. If you pass a flag and its alias with different values, the command fails.
 
 ## Endpoints and secrets
 
-| Setting | Source, in priority order |
-| --- | --- |
-| Portal URL | `--portal-url`, then `DAPP_STORE_PORTAL_URL`, then `http://localhost:3333` with `--local-dev`, otherwise `https://publish.solanamobile.com` |
-| Portal API | The portal URL with `/api` appended, for example `https://publish.solanamobile.com/api` |
-| API key | `--api-key-stdin`, otherwise the variable named by `--api-key-env`, otherwise `DAPP_STORE_API_KEY` |
-| Funding RPC | `--rpc-url`. Without it the default is `https://api.mainnet-beta.solana.com`, except under `--local-dev`, which skips the check. |
+| Setting     | Source, in priority order                                                                                                                   |
+| ----------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| Portal URL  | `--portal-url`, then `DAPP_STORE_PORTAL_URL`, then `http://localhost:3333` with `--local-dev`, otherwise `https://publish.solanamobile.com` |
+| Portal API  | The portal URL with `/api` appended, for example `https://publish.solanamobile.com/api`                                                     |
+| API key     | `--api-key-stdin`, otherwise the variable named by `--api-key-env`, otherwise `DAPP_STORE_API_KEY`                                          |
+| Funding RPC | `--rpc-url`. Without it the default is `https://api.mainnet-beta.solana.com`, except under `--local-dev`, which skips the check.            |
 
 The portal must use HTTPS unless `--local-dev` is set. With `--local-dev`, both the portal and the API must be on localhost (`localhost`, `127.0.0.1` or `[::1]`).
 
@@ -136,13 +136,13 @@ It does not:
 
 Use `solana_kit_dapp_publisher` directly to build your own publishing tool. Every feature is off by default:
 
-| Feature | Adds |
-| --- | --- |
-| (default) | `AttestationMessage`, `RequestId` and the funding preflight helpers (`resolve_funding_rpc_url`, `check_signer_balance`, `format_sol_amount`) |
-| `crypto` | `validate_prepared_transaction`, `PublicationPolicy`, `ExpectedTransaction`, `PublicationAttestation` and detached-signature verification |
-| `cli` | `cli` module: pure flag, endpoint and API-key resolution (`parse_flags`, `resolve_portal_targets`, `resolve_api_key` and related functions) |
-| `portal` | `portal` module: fourteen typed tRPC procedures over `rest::Transport<PortalService>`, an `Uploader` trait for the binary PUT, and `create_ingestion_with_retry` |
-| `workflow` | `workflow` module: caller-driven ingestion, resume, polling, metadata hydration and the completion stages. Implies `portal` and `crypto`. |
+| Feature    | Adds                                                                                                                                                             |
+| ---------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| (default)  | `AttestationMessage`, `RequestId` and the funding preflight helpers (`resolve_funding_rpc_url`, `check_signer_balance`, `format_sol_amount`)                     |
+| `crypto`   | `validate_prepared_transaction`, `PublicationPolicy`, `ExpectedTransaction`, `PublicationAttestation` and detached-signature verification                        |
+| `cli`      | `cli` module: pure flag, endpoint and API-key resolution (`parse_flags`, `resolve_portal_targets`, `resolve_api_key` and related functions)                      |
+| `portal`   | `portal` module: fourteen typed tRPC procedures over `rest::Transport<PortalService>`, an `Uploader` trait for the binary PUT, and `create_ingestion_with_retry` |
+| `workflow` | `workflow` module: caller-driven ingestion, resume, polling, metadata hydration and the completion stages. Implies `portal` and `crypto`.                        |
 
 ```rust
 use solana_kit_core::{Hash, codecs::Limits};

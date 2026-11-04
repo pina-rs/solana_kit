@@ -42,15 +42,15 @@ When a test also needs subscriptions and a payer, `SurfpoolClient::new(rpc, subs
 
 All 28 methods from the pinned Dart Surfpool package have a public request type in `cheatcodes`. The builders in `builders` cover accounts, tokens, resets and streams.
 
-| Area | Wire methods |
-| --- | --- |
-| Accounts and tokens | `surfnet_setAccount`, `surfnet_setTokenAccount`, `surfnet_resetAccount`, `surfnet_offlineAccount`, `surfnet_cloneProgramAccount`, `surfnet_streamAccount`, `surfnet_streamAccounts`, `surfnet_getStreamedAccounts` |
-| Programs and IDLs | `surfnet_writeProgram`, `surfnet_setProgramAuthority`, `surfnet_registerIdl`, `surfnet_getActiveIdl` |
-| Clock | `surfnet_timeTravel`, `surfnet_pauseClock`, `surfnet_resumeClock` |
-| Network | `surfnet_setSupply`, `surfnet_getSurfnetInfo`, `surfnet_resetNetwork`, `surfnet_exportSnapshot`, `surfnet_registerScenario`, `surfnet_getLocalSignatures` |
-| Cheatcode control | `surfnet_enableCheatcode`, `surfnet_disableCheatcode` |
-| Profiling | `surfnet_profileTransaction`, `surfnet_getTransactionProfile`, `surfnet_getProfileResultsByTag` |
-| Confidential transfers | `surfnet_getConfidentialBalance`, `surfnet_deriveConfidentialKeys` |
+| Area                   | Wire methods                                                                                                                                                                                                       |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Accounts and tokens    | `surfnet_setAccount`, `surfnet_setTokenAccount`, `surfnet_resetAccount`, `surfnet_offlineAccount`, `surfnet_cloneProgramAccount`, `surfnet_streamAccount`, `surfnet_streamAccounts`, `surfnet_getStreamedAccounts` |
+| Programs and IDLs      | `surfnet_writeProgram`, `surfnet_setProgramAuthority`, `surfnet_registerIdl`, `surfnet_getActiveIdl`                                                                                                               |
+| Clock                  | `surfnet_timeTravel`, `surfnet_pauseClock`, `surfnet_resumeClock`                                                                                                                                                  |
+| Network                | `surfnet_setSupply`, `surfnet_getSurfnetInfo`, `surfnet_resetNetwork`, `surfnet_exportSnapshot`, `surfnet_registerScenario`, `surfnet_getLocalSignatures`                                                          |
+| Cheatcode control      | `surfnet_enableCheatcode`, `surfnet_disableCheatcode`                                                                                                                                                              |
+| Profiling              | `surfnet_profileTransaction`, `surfnet_getTransactionProfile`, `surfnet_getProfileResultsByTag`                                                                                                                    |
+| Confidential transfers | `surfnet_getConfidentialBalance`, `surfnet_deriveConfidentialKeys`                                                                                                                                                 |
 
 Numeric requests use `u64`. Typed response integers use `i128`, which covers the full signed and unsigned 64-bit range on every host. Optional arguments are left out of the request. To clear an authority, the request sends the provider's literal string `"null"`.
 
