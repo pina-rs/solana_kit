@@ -19,25 +19,26 @@ declarations across **70** packages with extracted declarations. The
 
 | Phase | Declarations | Partial | Pending | Complete |
 | ----- | -----------: | ------: | ------: | -------: |
-| 2     |        1,387 |       1 |   1,386 |        0 |
+| 2     |        1,387 |      23 |   1,362 |        2 |
 | 3     |          746 |       0 |     746 |        0 |
 | 4     |        1,403 |       0 |   1,403 |        0 |
 | 5     |          262 |       0 |     262 |        0 |
 | 6     |        9,991 |       0 |   9,991 |        0 |
 | 7     |          751 |       0 |     751 |        0 |
 | 8     |        3,408 |       0 |   3,408 |        0 |
-| Total |       17,948 |       1 |  17,947 |        0 |
+| Total |       17,948 |      23 |  17,923 |        2 |
 
-The single partial row is `mergeRoles`; the remaining 17,947 rows are pending.
+These totals include the address pilot and the twelve numeric adjudications.
 All 71 package-disposition rows are `inventoried`, with no `implemented`,
 `verified`, or `blocked` claim. `rustc tools/check_plan.rs` reports
 `verified 71 unique package records and their planning states`.
 
-These are the audit snapshot totals. The subsequent
+The original audit had one partial row (`mergeRoles`) and 17,947 pending. The
 [address adjudication pilot](../parity/address-adjudication.md) adds a checked
 manifest and reviews twelve address declarations: two complete, ten partial.
-The canonical totals after that pilot are 2 complete, 11 partial and 17,935
-pending, with the same 17,948 IDs and source hashes. RW-01a is implemented;
+The subsequent [numeric adjudication](../parity/numeric-adjudication.md) records
+twelve more partial declarations, preserving all 17,948 IDs and source hashes.
+RW-01a and this bounded RW-10/RW-11 batch are implemented;
 family-by-family adjudication and the other backlog items remain open.
 
 Scoped receipts retain their own exact counts and are not canonical totals:
@@ -50,7 +51,7 @@ Scoped receipts retain their own exact counts and are not canonical totals:
 `mobile-wallet-protocol.tsv` has 179 partial;
 `verification/instruction-plans/canonical.tsv` has 212 partial.
 
-This unit added no production SDK change, root manifest/lockfile change,
+The original backlog audit added no production SDK change, root manifest/lockfile change,
 workflow change, shared-suite change, fixture/golden change, or canonical
 status/ID/hash/checker/threshold change.
 
@@ -595,8 +596,8 @@ artifact as an external blocker, not a code failure.
 
 ### RW-10 Fixed-point residual reconciliation
 
-**Kind.** Reconciled scoped reasons plus deliberate presentation substitutions;
-canonical adjudication remains open. The implementation and executable evidence
+**Kind.** Reviewed partial adjudications plus deliberate presentation substitutions.
+The implementation and executable evidence
 already exist.
 
 **Acceptance criterion.** Phase 2 exact numeric behavior and malformed/overflow
@@ -620,7 +621,8 @@ their reason text now points at the executable evidence and
 The old remaining TSV is no longer current gap evidence. This unit refreshed only
 the five reason/notes texts in that file and the 126-entry receipt; the IDs
 remain `remaining`, and counts, source hashes and status are unchanged. The
-126-entry receipt and canonical rows still need adjudication, and the
+126-entry receipt keeps its historical statuses. The five canonical rows now
+have checked partial [adjudications](../parity/numeric-adjudication.md); the
 package/Phase 2 are not claimed complete.
 
 **Owning code/source.** `crates/solana_kit_core/src/fixed_points/`,
@@ -639,14 +641,14 @@ cargo test -p solana_kit_core --features fixed-points \
 
 Result at `79444fb8` and on this unit's rerun: 6 + 6 passed, 0 failed.
 
-**Next minimal unit.** The scoped reason refresh is complete. Map the five IDs in
-the adjudication source under RW-01; no production codec or floating-point change
-is required.
+**Next minimal unit.** The five residual IDs are adjudicated as partial. Continue
+family-by-family review under RW-01; no production codec or floating-point change
+is required by this batch.
 
 ### RW-11 Numeric width and alphabet residuals
 
-**Kind.** Reconciled scoped reasons plus deliberate UTF-16 substitution;
-canonical adjudication remains open. This item was corrected during this audit:
+**Kind.** Reviewed partial adjudications with explicit bounds and range checks.
+This item was corrected during this audit:
 it is not a missing generic BigInt codec.
 
 **Acceptance criterion.** Phase 2 exact integer/string codecs.
@@ -654,19 +656,22 @@ it is not a missing generic BigInt codec.
 **Current finding.** `docs/parity/numeric-string-codecs-remaining.tsv` and the
 88-entry scoped receipt previously said four `readBigInt*`/`writeBigInt*`
 helpers lack arbitrary caller-selected widths. That reason is now stale: the
-current implementation provides exactly that contract.
+current implementation provides arbitrary nonzero widths, with stricter range
+and cursor rules than the raw Dart helpers.
 `crates/solana_kit_core/src/codecs/big_number.rs` exposes
 `BigNumber<BigUint>` and `BigNumber<BigInt>` with an explicit nonzero byte width
 and endian, including range/truncation/trailing checks. The
 `core_parity/bigints.rs` tests exercise 2-, 3- and 33-byte widths and rejection
-paths. This unit refreshed the four rows' reason text only; they remain partial
-pending canonical evidence adjudication, not because a codec is missing.
+paths. The four canonical rows now have checked partial adjudications for
+truncation, zero-width and offset differences, rather than a missing codec.
 
 The three `getBaseXCodec`/`getBaseXEncoder`/`getBaseXDecoder` rows remain partial
-for a different reason: non-BMP alphabets index Dart UTF-16 code units and can
-produce lone surrogates, which Rust `str` cannot represent. This is a deliberate
-language-boundary substitution. Keep the safe Rust behavior and do not copy the
-Dart lone-surrogate result.
+for bounded execution and the explicit code-unit API. `Utf16BaseX` already
+represents non-BMP alphabets and lone surrogates as `&[u16]`/`Vec<u16>`, alongside
+the scalar-string `BaseX`. Encoding is capped at 4096 symbols and alphabets at
+65536 entries; decoding uses the shared reader budget. The reference has no
+equivalent bounds. All three canonical rows now have checked partial
+[adjudications](../parity/numeric-adjudication.md).
 
 **Owning code/source.** `crates/solana_kit_core/src/codecs/big_number.rs`,
 `crates/solana_kit_core/tests/core_parity/bigints.rs`, the text-codec module,
@@ -683,10 +688,9 @@ Result on this unit's rerun: 13 passed, 0 failed. The external consumer in
 `numeric-string-codecs.md` already implements a checked three-byte numeric codec;
 extend that pattern rather than adding another integer implementation.
 
-**Next minimal unit.** The scoped reason refresh is complete. Adjudicate the four
-BigInt IDs and the three BaseX IDs under RW-01. No production codec change is
-required unless a missing width/endian case is found; do not copy the Dart
-lone-surrogate result.
+**Next minimal unit.** These seven residual IDs are adjudicated as partial.
+Continue family-by-family review under RW-01; no production codec change is
+required unless a missing width/endian case is found.
 
 ### RW-12 Current documentation drift
 
@@ -779,9 +783,9 @@ functional computer-use proof distinct from the automated driver route.
 7. **RW-08**: Linux/Windows CI evidence; can run in parallel with the above.
 8. **RW-07**: full release rehearsal, after the release metadata and evidence
    decisions are stable.
-9. **RW-09/RW-10/RW-11**: program breadth and canonical numeric adjudication.
-   The RW-10/RW-11 scoped reason refresh is complete; neither is a codec
-   implementation task.
+9. **RW-09**: remaining program breadth. The twelve RW-10/RW-11 residual IDs
+   have reviewed partial adjudications; broader numeric-family closure stays
+   under RW-01.
 10. **RW-12/RW-13**: the named RW-12 documentation claims are reconciled; the
     Mac2 admin prerequisite remains.
 11. **RW-01b onward**: phase-ordered ledger closure, starting with Phase 2 then

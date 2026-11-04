@@ -5,9 +5,11 @@ Solana Kit revision `0138bb956d2d81ccc0c56edc602401c0df2f2b46`. An inventoried
 symbol is not implemented SDK behavior. The source-derived default is `pending`
 except for one explicitly partial native role-merge mapping; reviewed rows in
 [`adjudications.tsv`](adjudications.tsv) may replace only `status`, `evidence`
-and `notes`. The current pilot adjudicates the twelve `solana_kit_address`
-declarations in [`address-adjudication.md`](address-adjudication.md); it does not
-complete the package or the SDK.
+and `notes`. The current pilots adjudicate the twelve `solana_kit_address`
+declarations in [`address-adjudication.md`](address-adjudication.md) and twelve
+numeric/fixed-point residual declarations in
+[`numeric-adjudication.md`](numeric-adjudication.md); they do not complete those
+packages or the SDK.
 
 The target is an off-chain client SDK for application code. Program clients build
 and decode interactions with deployed programs. `no_std + alloc` supports portable

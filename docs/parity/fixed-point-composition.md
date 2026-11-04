@@ -3,10 +3,10 @@
 This note supplies current evidence for the five rows in
 [fixed-points-remaining.tsv](fixed-points-remaining.tsv): the two
 `*FixedPointToNumber` presentation functions and the three custom callback
-constructors in `fixed_point_codec.dart`. The accompanying reconciliation
-refreshes only those rows' reason/notes text in that file and the
-126-entry scoped [receipt](fixed-points.tsv); no ID, status, count, threshold, golden or
-source hash changes. The source pin is Dart
+constructors in `fixed_point_codec.dart`. The checked
+[manifest adjudication](numeric-adjudication.md) records all five as partial;
+this note preserves the execution detail behind those claims. No ID, count,
+threshold, golden or source hash changes. The source pin is Dart
 `0138bb956d2d81ccc0c56edc602401c0df2f2b46`, package
 `solana_kit_fixed_points` 0.11.0. Package and Phase 2 completion are not claimed.
 
@@ -119,4 +119,5 @@ with callbacks that report a two-byte advance after writing one byte and that
 ignore a trailing byte. Dart package tests were not executed and no network was
 used. The Rust assertions execute under the acceptance command for
 `--test fixed_point_numbers`; the constructor evidence executes under
-`--test fixed_point_composition`.
+`--test fixed_point_composition`. The resulting canonical statuses and shared
+case bindings are in [numeric-adjudication.md](numeric-adjudication.md).

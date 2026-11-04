@@ -7,9 +7,12 @@ The scoped receipt accounts for exactly 88 canonical IDs from Dart source
 `0138bb956d2d81ccc0c56edc602401c0df2f2b46`: 59 numeric and 29 string IDs.
 [The exact mapping](numeric-string-codecs.tsv) preserves each source digest and
 records 81 implemented bounded equivalents and
-[seven partial capabilities](numeric-string-codecs-remaining.tsv). The canonical
-global ledger and older historical receipts remain unchanged. Phase 2 and whole
-package parity are not complete.
+[seven partial capabilities](numeric-string-codecs-remaining.tsv). The checked
+[manifest adjudication](numeric-adjudication.md) records those seven rows and
+their executed evidence. The canonical ledger changes only status, evidence
+and notes for those seven rows and five fixed-point rows; declaration identities
+and older historical receipts remain unchanged. Phase 2 and whole package parity
+are not complete.
 
 `Number<T>` preserves the existing exact primitive and 256-bit wire types. Its
 explicit constructor, default LE selection and byte-order accessor replace the
@@ -22,9 +25,10 @@ implements a checked three-byte numeric codec and runs its success, overflow and
 truncation paths. `BigNumber<BigUint>` and `BigNumber<BigInt>` in
 `crates/solana_kit_core/src/codecs/big_number.rs` accept a nonzero width and
 LE/BE order with range and trailing-byte checks. The four BigInt rows stay
-partial because the scoped receipt is not yet adjudicated; their old width
-reason is stale. The `core_parity` BigInt tests run 2-, 3- and 33-byte cases
-with `--features bigint-codecs`.
+partial after adjudication because the dynamic helpers truncate or no-op on
+sizes and values the typed Rust codec rejects; the exact residual is in
+[numeric-adjudication.md](numeric-adjudication.md). The `core_parity` BigInt
+tests run 2-, 3- and 33-byte cases with `--features bigint-codecs`.
 
 `Uint256` and `Int256` parse radix 2 through 36 and decimal `FromStr` without
 floating point, reject overflow and invalid syntax, and format exact canonical
@@ -39,10 +43,12 @@ in the final byte's low nibble (`AbC` becomes `ab 0c`). Base10 and Base58 preser
 one zero byte per leading zero symbol. BaseX uses fixed scratch storage for exact
 size calculation, accepts at most 4096 input symbols, and supports BMP alphabets
 of 2 through 65536 symbols, including the reference's first-duplicate lookup
-behavior. Non-BMP alphabets remain partial because the Dart implementation
-indexes UTF-16 code units, which may produce lone surrogates that Rust strings
-cannot represent. This is a deliberate boundary across the three BaseX rows, not
-a missing BMP alphabet contract.
+behavior. The explicit `Utf16BaseX` codec represents Dart's UTF-16 code-unit
+alphabets, including surrogate halves and lone code units, as `&[u16]` and
+`Vec<u16>`; it is the executable substitute for non-BMP alphabets. The three
+BaseX rows stay partial only for the 4096-symbol and 65536-entry bounds and the
+code-unit result representation, as recorded in
+[numeric-adjudication.md](numeric-adjudication.md).
 
 The generic bit-reslicing codec validates a power-of-two alphabet and 1 through
 16 bits per symbol. It discards incomplete trailing input bits and zero-pads the
@@ -80,6 +86,7 @@ Chrome, in Wasmtime Preview 1 and Preview 2, and in the pinned actual LeptosKit
 host. They remain in the current v57/459 suite. The
 [runtime receipt](../verification/runtimes.md) records the executed source and
 artifact hashes. This bounded evidence does not complete Phase 2,
-installed-app journeys, or the seven partial capabilities.
+installed-app journeys, or the seven partial capabilities documented in
+[numeric-adjudication.md](numeric-adjudication.md).
 The original MIT license is retained beside the generated fixtures. Component
 publication remains disabled.
