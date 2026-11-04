@@ -5,7 +5,7 @@ const FOREIGN_SEED: u8 = 9;
 use message_support::{Backend, Behavior, address, signature};
 use solana_kit_core::{Address, Signature};
 use solana_kit_signers::{
-    Signer, SignerCapability,
+    Signer, SignerCapability, SignerConfig,
     message::{
         MessageError, MessageModifyingSigner, SignableMessage,
         local::{Composition, Registration},
@@ -57,7 +57,10 @@ async fn actual_bulk_256_success_and_257_preflight_rejection() {
     let inputs: Vec<_> = (0..256)
         .map(|n| SignableMessage::new([n as u8, 0, 255]))
         .collect();
-    let results = pipeline.sign(&inputs).await.unwrap();
+    let results = pipeline
+        .sign(&inputs, SignerConfig::default())
+        .await
+        .unwrap();
     assert_eq!((backend.calls.get(), backend.items.get()), (1, 256));
     assert_eq!(results.len(), 256);
 
@@ -70,11 +73,22 @@ async fn actual_bulk_256_success_and_257_preflight_rejection() {
     }
 
     assert_eq!(
-        pipeline.sign(&vec![SignableMessage::new([]); 257]).await,
+        pipeline
+            .sign(
+                &vec![SignableMessage::new([]); 257],
+                SignerConfig::default()
+            )
+            .await,
         Err(MessageError::TooManyMessages)
     );
     assert_eq!((backend.calls.get(), backend.items.get()), (1, 256));
-    assert!(pipeline.sign(&[]).await.unwrap().is_empty());
+    assert!(
+        pipeline
+            .sign(&[], SignerConfig::default())
+            .await
+            .unwrap()
+            .is_empty()
+    );
     assert_eq!((backend.calls.get(), backend.items.get()), (2, 256));
 }
 
@@ -96,7 +110,10 @@ async fn malicious_bulk_outputs_reject_at_the_message_boundary() {
         let pipeline = Composition::new(vec![Registration::partial(&handle)]).unwrap();
         assert_eq!(
             pipeline
-                .sign(&[SignableMessage::new(b"one"), SignableMessage::new(b"two")])
+                .sign(
+                    &[SignableMessage::new(b"one"), SignableMessage::new(b"two")],
+                    SignerConfig::default()
+                )
                 .await,
             Err(expected)
         );
@@ -106,7 +123,9 @@ async fn malicious_bulk_outputs_reject_at_the_message_boundary() {
     let backend = Backend::new(PRIMARY_SEED, Behavior::Invalid);
     let handle = SignerCapability::new(&backend);
     let pipeline = Composition::new(vec![Registration::partial(&handle)]).unwrap();
-    let result = pipeline.sign(&[SignableMessage::new(b"one")]).await;
+    let result = pipeline
+        .sign(&[SignableMessage::new(b"one")], SignerConfig::default())
+        .await;
     assert_eq!(result.is_err(), cfg!(feature = "crypto"));
 }
 
@@ -125,7 +144,11 @@ impl Signer for Modifier {
 impl MessageModifyingSigner for Modifier {
     type Modify<'a> = Ready<Result<Vec<SignableMessage>, MessageError>>;
 
-    fn modify_messages<'a>(&'a self, messages: &'a [SignableMessage]) -> Self::Modify<'a> {
+    fn modify_messages<'a>(
+        &'a self,
+        messages: &'a [SignableMessage],
+        _config: SignerConfig,
+    ) -> Self::Modify<'a> {
         self.calls.set(self.calls.get() + 1);
         assert_eq!(messages.len(), 1);
         ready(Ok(self.replacement.clone()))
@@ -152,7 +175,7 @@ async fn modifications_precede_partials_and_failures_stop_later_backends() {
     .unwrap();
     let original = SignableMessage::new(b"original");
     let result = pipeline
-        .sign(std::slice::from_ref(&original))
+        .sign(std::slice::from_ref(&original), SignerConfig::default())
         .await
         .unwrap();
     assert_eq!(result[0].content(), bytes);
@@ -187,7 +210,7 @@ async fn modifications_precede_partials_and_failures_stop_later_backends() {
     ])
     .unwrap();
     assert_eq!(
-        bad_pipeline.sign(&[old]).await,
+        bad_pipeline.sign(&[old], SignerConfig::default()).await,
         Err(MessageError::ChangedSnapshot)
     );
     assert_eq!(partial.calls.get(), 1);
@@ -202,7 +225,11 @@ impl Signer for Zst {
 impl solana_kit_signers::message::MessagePartialSigner for Zst {
     type Sign<'a> =
         Ready<Result<Vec<solana_kit_signers::message::MessageSignatureOutput>, MessageError>>;
-    fn sign_messages<'a>(&'a self, messages: &'a [SignableMessage]) -> Self::Sign<'a> {
+    fn sign_messages<'a>(
+        &'a self,
+        messages: &'a [SignableMessage],
+        _config: SignerConfig,
+    ) -> Self::Sign<'a> {
         ready(Ok(messages
             .iter()
             .map(|m| message_support::output(PRIMARY_SEED, m))
@@ -231,7 +258,10 @@ async fn logical_identity_and_registration_bounds_include_coincident_zsts() {
     )
     .unwrap();
     assert_eq!(
-        pipeline.sign(&[SignableMessage::new(b"x")]).await.unwrap()[0]
+        pipeline
+            .sign(&[SignableMessage::new(b"x")], SignerConfig::default())
+            .await
+            .unwrap()[0]
             .signatures()
             .len(),
         1
@@ -250,7 +280,7 @@ async fn logical_identity_and_registration_bounds_include_coincident_zsts() {
     )
     .unwrap();
     assert_eq!(
-        pipeline.sign(&[invalid]).await,
+        pipeline.sign(&[invalid], SignerConfig::default()).await,
         Err(MessageError::InvalidSignature)
     );
 }
@@ -263,7 +293,10 @@ async fn exactly_256_distinct_registrations_invoke_each_backend_once() {
     let handles: Vec<_> = backends.iter().map(SignerCapability::new).collect();
     let pipeline = Composition::new(handles.iter().map(Registration::partial).collect()).unwrap();
     let result = pipeline
-        .sign(&[SignableMessage::new(b"all owners")])
+        .sign(
+            &[SignableMessage::new(b"all owners")],
+            SignerConfig::default(),
+        )
         .await
         .unwrap();
     assert_eq!(result[0].signatures().len(), 256);
@@ -328,7 +361,9 @@ async fn modifier_cardinality_foreign_signature_and_removal_fail_before_partials
         ])
         .unwrap();
         assert_eq!(
-            pipeline.sign(std::slice::from_ref(&old)).await,
+            pipeline
+                .sign(std::slice::from_ref(&old), SignerConfig::default())
+                .await,
             Err(expected)
         );
         assert_eq!(backend.calls.get(), 1);
@@ -348,7 +383,11 @@ impl solana_kit_signers::message::MessagePartialSigner for Rekeyable {
     type Sign<'a> =
         Ready<Result<Vec<solana_kit_signers::message::MessageSignatureOutput>, MessageError>>;
 
-    fn sign_messages<'a>(&'a self, messages: &'a [SignableMessage]) -> Self::Sign<'a> {
+    fn sign_messages<'a>(
+        &'a self,
+        messages: &'a [SignableMessage],
+        _config: SignerConfig,
+    ) -> Self::Sign<'a> {
         ready(Ok(messages
             .iter()
             .map(|m| message_support::output(self.0.get(), m))
@@ -380,7 +419,7 @@ impl Signer for Singular {
 impl solana_kit_signers::MessageSigner for Singular {
     type Sign<'a> = Ready<Result<solana_kit_signers::SignatureOutput, solana_kit_signers::Error>>;
 
-    fn sign_message<'a>(&'a self, bytes: &'a [u8]) -> Self::Sign<'a> {
+    fn sign_message<'a>(&'a self, bytes: &'a [u8], _config: SignerConfig) -> Self::Sign<'a> {
         self.0.set(self.0.get() + 1);
 
         if bytes == b"reject" {
@@ -407,7 +446,7 @@ async fn explicit_singular_adapter_stops_at_first_item_failure() {
         SignableMessage::new(b"unseen"),
     ];
     assert_eq!(
-        pipeline.sign(&inputs).await,
+        pipeline.sign(&inputs, SignerConfig::default()).await,
         Err(MessageError::Signer(solana_kit_signers::Error::Rejected))
     );
     assert_eq!(backend.0.0.get(), 2);

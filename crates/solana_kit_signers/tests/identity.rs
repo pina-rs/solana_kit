@@ -3,7 +3,7 @@ mod support;
 use solana_kit_core::{Address, transaction::Transaction};
 use solana_kit_signers::{
     Error, SignatureOutput, Signer, SignerCapability, TransactionModifyingSigner,
-    TransactionPartialSigner, TransactionSigners,
+    TransactionPartialSigner, TransactionSignerConfig, TransactionSigners,
 };
 use std::{
     cell::Cell,
@@ -24,7 +24,11 @@ impl<const TEST: usize> Signer for Stateless<TEST> {
 impl<const TEST: usize> TransactionPartialSigner for Stateless<TEST> {
     type Sign<'a> = Ready<Result<SignatureOutput, Error>>;
 
-    fn sign_transaction<'a>(&'a self, _: &'a Transaction) -> Self::Sign<'a> {
+    fn sign_transaction<'a>(
+        &'a self,
+        _: &'a Transaction,
+        _config: TransactionSignerConfig,
+    ) -> Self::Sign<'a> {
         EFFECTS[TEST].fetch_add(1, Ordering::SeqCst);
         ready(Err(Error::Rejected))
     }
@@ -33,7 +37,11 @@ impl<const TEST: usize> TransactionPartialSigner for Stateless<TEST> {
 impl<const TEST: usize> TransactionModifyingSigner for Stateless<TEST> {
     type Modify<'a> = Ready<Result<Transaction, Error>>;
 
-    fn modify_transaction<'a>(&'a self, transaction: &'a Transaction) -> Self::Modify<'a> {
+    fn modify_transaction<'a>(
+        &'a self,
+        transaction: &'a Transaction,
+        _config: TransactionSignerConfig,
+    ) -> Self::Modify<'a> {
         EFFECTS[TEST].fetch_add(1, Ordering::SeqCst);
         ready(Ok(transaction.clone()))
     }
@@ -61,7 +69,9 @@ async fn repeated_zero_sized_capability_shares_one_operation() {
     let signers = TransactionSigners::new(&[&capability, &capability]).unwrap();
 
     assert_eq!(
-        signers.partially_sign(&transaction).await,
+        signers
+            .partially_sign(&transaction, TransactionSignerConfig::default())
+            .await,
         Err(Error::Rejected)
     );
     assert_eq!(EFFECTS[1].load(Ordering::SeqCst), 1);
@@ -82,21 +92,33 @@ async fn zero_sized_modifier_identity_and_role_conflicts_precede_effects() {
 
     assert_eq!(
         empty
-            .modify_and_partially_sign(&transaction, &[&first_capability, &second_capability])
+            .modify_and_partially_sign(
+                &transaction,
+                &[&first_capability, &second_capability],
+                TransactionSignerConfig::default()
+            )
             .await,
         Err(Error::ConflictingSigner)
     );
     let partials = TransactionSigners::new(&[&first_capability]).unwrap();
     assert_eq!(
         partials
-            .modify_and_partially_sign(&transaction, &[&second_capability])
+            .modify_and_partially_sign(
+                &transaction,
+                &[&second_capability],
+                TransactionSignerConfig::default()
+            )
             .await,
         Err(Error::ConflictingSigner)
     );
     assert_eq!(EFFECTS[2].load(Ordering::SeqCst), 0);
     assert_eq!(
         empty
-            .modify_and_partially_sign(&transaction, &[&first_capability, &first_capability])
+            .modify_and_partially_sign(
+                &transaction,
+                &[&first_capability, &first_capability],
+                TransactionSignerConfig::default()
+            )
             .await,
         Ok(transaction)
     );
@@ -117,7 +139,11 @@ impl Signer for Stateful {
 impl TransactionPartialSigner for Stateful {
     type Sign<'a> = Ready<Result<SignatureOutput, Error>>;
 
-    fn sign_transaction<'a>(&'a self, _: &'a Transaction) -> Self::Sign<'a> {
+    fn sign_transaction<'a>(
+        &'a self,
+        _: &'a Transaction,
+        _config: TransactionSignerConfig,
+    ) -> Self::Sign<'a> {
         self.effects.set(self.effects.get() + 1);
         ready(Err(Error::Rejected))
     }
@@ -150,7 +176,9 @@ async fn nonzero_backends_preserve_address_conflicts_and_distinct_addresses() {
         TransactionSigners::new(&[&first_capability, &first_capability, &second_capability])
             .unwrap();
     assert_eq!(
-        signers.partially_sign(&transaction).await,
+        signers
+            .partially_sign(&transaction, TransactionSignerConfig::default())
+            .await,
         Err(Error::Rejected)
     );
     assert_eq!((first.effects.get(), second.effects.get()), (1, 1));

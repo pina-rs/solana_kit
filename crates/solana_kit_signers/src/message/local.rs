@@ -11,16 +11,23 @@ use super::{
     MAX_MESSAGES, MessageError, MessageModifyingSigner, MessagePartialSigner,
     MessageSignatureOutput, SignableMessage, validation,
 };
-use crate::{Signer, SignerCapability};
+use crate::{Signer, SignerCapability, SignerConfig};
 
 type Operation<'a, T> = Pin<Box<dyn Future<Output = Result<Vec<T>, MessageError>> + 'a>>;
 
 trait PartialOperation {
-    fn sign<'a>(&'a self, messages: &'a [SignableMessage])
-    -> Operation<'a, MessageSignatureOutput>;
+    fn sign<'a>(
+        &'a self,
+        messages: &'a [SignableMessage],
+        config: SignerConfig,
+    ) -> Operation<'a, MessageSignatureOutput>;
 }
 trait ModifyOperation {
-    fn modify<'a>(&'a self, messages: &'a [SignableMessage]) -> Operation<'a, SignableMessage>;
+    fn modify<'a>(
+        &'a self,
+        messages: &'a [SignableMessage],
+        config: SignerConfig,
+    ) -> Operation<'a, SignableMessage>;
 }
 struct Adapter<'a, P>(&'a SignerCapability<'a, P>);
 
@@ -28,13 +35,18 @@ impl<P: MessagePartialSigner> PartialOperation for Adapter<'_, P> {
     fn sign<'a>(
         &'a self,
         messages: &'a [SignableMessage],
+        config: SignerConfig,
     ) -> Operation<'a, MessageSignatureOutput> {
-        Box::pin(self.0.signer.sign_messages(messages))
+        Box::pin(self.0.signer.sign_messages(messages, config))
     }
 }
 impl<P: MessageModifyingSigner> ModifyOperation for Adapter<'_, P> {
-    fn modify<'a>(&'a self, messages: &'a [SignableMessage]) -> Operation<'a, SignableMessage> {
-        Box::pin(self.0.signer.modify_messages(messages))
+    fn modify<'a>(
+        &'a self,
+        messages: &'a [SignableMessage],
+        config: SignerConfig,
+    ) -> Operation<'a, SignableMessage> {
+        Box::pin(self.0.signer.modify_messages(messages, config))
     }
 }
 

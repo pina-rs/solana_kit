@@ -5,7 +5,7 @@ use core::{fmt, future::Future};
 
 use solana_kit_core::{Address, Signature};
 
-use crate::Signer;
+use crate::{Signer, SignerConfig};
 
 pub mod local;
 pub mod native;
@@ -131,7 +131,14 @@ pub trait MessagePartialSigner: Signer {
         Self: 'a;
 
     /// Receives the actual whole input slice once, in order.
-    fn sign_messages<'a>(&'a self, messages: &'a [SignableMessage]) -> Self::Sign<'a>;
+    ///
+    /// An aborted configuration returns [`MessageError::Cancelled`] before
+    /// signing.
+    fn sign_messages<'a>(
+        &'a self,
+        messages: &'a [SignableMessage],
+        config: SignerConfig,
+    ) -> Self::Sign<'a>;
 }
 
 /// May replace messages sequentially before partial signers see their final bytes.
@@ -154,7 +161,14 @@ pub trait MessageModifyingSigner: Signer {
         Self: 'a;
 
     /// Receives the whole slice once and returns exactly one replacement per input.
-    fn modify_messages<'a>(&'a self, messages: &'a [SignableMessage]) -> Self::Modify<'a>;
+    ///
+    /// An aborted configuration returns [`MessageError::Cancelled`] before
+    /// modification.
+    fn modify_messages<'a>(
+        &'a self,
+        messages: &'a [SignableMessage],
+        config: SignerConfig,
+    ) -> Self::Modify<'a>;
 }
 
 /// Precise failures at the message capability boundary.

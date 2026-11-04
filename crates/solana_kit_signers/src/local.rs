@@ -1,7 +1,7 @@
 //! Local adapters supporting Rc-backed futures across suspension.
 use crate::{
     Error, Role, SignatureOutput, Signer, SignerCapability, TransactionModifyingSigner,
-    TransactionPartialSigner, TransactionSendingSigner,
+    TransactionPartialSigner, TransactionSendingSigner, TransactionSignerConfig,
     composition::{Descriptor, Interfaces, MAX_ITEMS, select_roles, validate_registrations},
 };
 use alloc::{boxed::Box, vec, vec::Vec};
@@ -12,28 +12,52 @@ use core::{
 use solana_kit_core::{Address, Signature, transaction::Transaction};
 type Operation<'a, T, Failure> = Pin<Box<dyn Future<Output = Result<T, Failure>> + 'a>>;
 trait PartialOperation<Failure> {
-    fn partial<'a>(&'a self, tx: &'a Transaction) -> Operation<'a, SignatureOutput, Failure>;
+    fn partial<'a>(
+        &'a self,
+        tx: &'a Transaction,
+        config: TransactionSignerConfig,
+    ) -> Operation<'a, SignatureOutput, Failure>;
 }
 trait ModifyOperation<Failure> {
-    fn modify<'a>(&'a self, tx: &'a Transaction) -> Operation<'a, Transaction, Failure>;
+    fn modify<'a>(
+        &'a self,
+        tx: &'a Transaction,
+        config: TransactionSignerConfig,
+    ) -> Operation<'a, Transaction, Failure>;
 }
 trait SendOperation<Failure> {
-    fn send<'a>(&'a self, tx: &'a Transaction) -> Operation<'a, Signature, Failure>;
+    fn send<'a>(
+        &'a self,
+        tx: &'a Transaction,
+        config: TransactionSignerConfig,
+    ) -> Operation<'a, Signature, Failure>;
 }
 struct Adapter<'a, P>(&'a SignerCapability<'a, P>);
 impl<Failure, P: TransactionPartialSigner<Failure>> PartialOperation<Failure> for Adapter<'_, P> {
-    fn partial<'a>(&'a self, tx: &'a Transaction) -> Operation<'a, SignatureOutput, Failure> {
-        Box::pin(self.0.signer.sign_transaction(tx))
+    fn partial<'a>(
+        &'a self,
+        tx: &'a Transaction,
+        config: TransactionSignerConfig,
+    ) -> Operation<'a, SignatureOutput, Failure> {
+        Box::pin(self.0.signer.sign_transaction(tx, config))
     }
 }
 impl<Failure, P: TransactionModifyingSigner<Failure>> ModifyOperation<Failure> for Adapter<'_, P> {
-    fn modify<'a>(&'a self, tx: &'a Transaction) -> Operation<'a, Transaction, Failure> {
-        Box::pin(self.0.signer.modify_transaction(tx))
+    fn modify<'a>(
+        &'a self,
+        tx: &'a Transaction,
+        config: TransactionSignerConfig,
+    ) -> Operation<'a, Transaction, Failure> {
+        Box::pin(self.0.signer.modify_transaction(tx, config))
     }
 }
 impl<Failure, P: TransactionSendingSigner<Failure>> SendOperation<Failure> for Adapter<'_, P> {
-    fn send<'a>(&'a self, tx: &'a Transaction) -> Operation<'a, Signature, Failure> {
-        Box::pin(self.0.signer.send_transaction(tx))
+    fn send<'a>(
+        &'a self,
+        tx: &'a Transaction,
+        config: TransactionSignerConfig,
+    ) -> Operation<'a, Signature, Failure> {
+        Box::pin(self.0.signer.send_transaction(tx, config))
     }
 }
 /// An explicit supported-interface declaration borrowing one logical capability.
@@ -220,11 +244,15 @@ impl<P, Source, Failure> PartialOperation<Failure> for MappedPartial<'_, P, Sour
 where
     P: TransactionPartialSigner<Source>,
 {
-    fn partial<'a>(&'a self, tx: &'a Transaction) -> Operation<'a, SignatureOutput, Failure> {
+    fn partial<'a>(
+        &'a self,
+        tx: &'a Transaction,
+        config: TransactionSignerConfig,
+    ) -> Operation<'a, SignatureOutput, Failure> {
         Box::pin(async move {
             self.capability
                 .signer
-                .sign_transaction(tx)
+                .sign_transaction(tx, config)
                 .await
                 .map_err(self.map)
         })

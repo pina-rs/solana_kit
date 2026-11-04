@@ -1,6 +1,7 @@
 use solana_kit_core::{Address, transaction::Transaction};
 use solana_kit_signers::{
-    Error, SignatureOutput, Signer, SignerCapability, TransactionPartialSigner, local, native,
+    Error, SignatureOutput, Signer, SignerCapability, TransactionPartialSigner,
+    TransactionSignerConfig, local, native,
 };
 use std::{
     fmt,
@@ -40,7 +41,11 @@ impl Signer for LocalBackend {
 
 impl TransactionPartialSigner<Failure> for LocalBackend {
     type Sign<'a> = Ready<Result<SignatureOutput, Failure>>;
-    fn sign_transaction<'a>(&'a self, _: &'a Transaction) -> Self::Sign<'a> {
+    fn sign_transaction<'a>(
+        &'a self,
+        _: &'a Transaction,
+        _config: TransactionSignerConfig,
+    ) -> Self::Sign<'a> {
         ready(Err(Failure::Backend(self.0.clone())))
     }
 }
@@ -55,7 +60,11 @@ impl Signer for DefaultBackend {
 
 impl TransactionPartialSigner for DefaultBackend {
     type Sign<'a> = Ready<Result<SignatureOutput, Error>>;
-    fn sign_transaction<'a>(&'a self, _: &'a Transaction) -> Self::Sign<'a> {
+    fn sign_transaction<'a>(
+        &'a self,
+        _: &'a Transaction,
+        _config: TransactionSignerConfig,
+    ) -> Self::Sign<'a> {
         ready(Err(Error::Rejected))
     }
 }
@@ -73,7 +82,10 @@ async fn mixed_default_and_local_backend_failures_retain_their_owner() {
     ])
     .unwrap();
     let error = composition
-        .partially_sign(&support::transaction(backend.address(), 3))
+        .partially_sign(
+            &support::transaction(backend.address(), 3),
+            TransactionSignerConfig::default(),
+        )
         .await
         .unwrap_err();
     let Failure::Backend(returned) = error else {
@@ -90,5 +102,5 @@ fn default_native_errors_and_futures_keep_send() {
     let composition = native::Composition::new(native::Registration::partial(&capability)).unwrap();
     let transaction = support::transaction(backend.address(), 4);
     require_send(Error::Rejected);
-    require_send(composition.partially_sign(&transaction));
+    require_send(composition.partially_sign(&transaction, TransactionSignerConfig::default()));
 }

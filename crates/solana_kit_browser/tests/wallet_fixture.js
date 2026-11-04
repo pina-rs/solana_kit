@@ -34,7 +34,7 @@ function validateEvent(event) {
 
 /** Controls a real promise without replacing the production browser adapter. */
 function runtime() {
-  const state = { mode: "ready", error: undefined, settle: undefined, calls: 0 };
+  const state = { mode: "ready", error: undefined, settle: undefined, calls: 0, requests: [] };
   state.response = async (callback) => {
     state.calls += 1;
 
@@ -82,6 +82,11 @@ function signing(account, state, signMessage, signTransaction) {
       version: "1.0.0",
       supportedTransactionVersions: ["legacy", 0, 1],
       async signTransaction(...inputs) {
+        state.requests.push({
+          feature: "solana:signTransaction",
+          options: inputs.map((input) => input.options),
+        });
+
         return state.response(() =>
           inputs.map((input) => {
             authorize(account, input, true);
@@ -95,6 +100,11 @@ function signing(account, state, signMessage, signTransaction) {
       version: "1.0.0",
       supportedTransactionVersions: ["legacy", 0, 1],
       async signAndSendTransaction(...inputs) {
+        state.requests.push({
+          feature: "solana:signAndSendTransaction",
+          options: inputs.map((input) => input.options),
+        });
+
         return state.response(() => inputs.map((input) => {
           authorize(account, input, true);
           const signed = signTransaction(input.transaction);
@@ -190,6 +200,9 @@ export function fixture(address, publicKey, signMessage, signTransaction) {
       emitter.emit({ accounts: wallet.accounts });
     },
     listeners: emitter.count,
+    requests() {
+      return state.requests;
+    },
     malformed() {
       emitter.emit({ accounts: 42 });
     },

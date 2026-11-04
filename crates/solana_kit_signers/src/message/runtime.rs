@@ -47,13 +47,23 @@ impl<'a> Composition<'a> {
     /// Existing signatures are checked before effects; without crypto this is
     /// structural validation only. Earlier backend effects cannot be rolled back.
     ///
+    /// The same configuration is delivered unchanged to every modifier and
+    /// partial backend. An aborted configuration returns
+    /// [`MessageError::Cancelled`] before count checks, snapshot validation, or
+    /// any backend call, including for an empty or otherwise invalid batch.
+    ///
     /// # Errors
     /// Rejects count, cardinality, ownership, stale bytes, missing/invalid signatures
     /// and backend failures. A failure prevents subsequent modifier calls.
     pub async fn sign(
         &self,
         messages: &[SignableMessage],
+        config: crate::SignerConfig,
     ) -> Result<Vec<SignableMessage>, MessageError> {
+        if config.aborted {
+            return Err(MessageError::Cancelled);
+        }
+
         if messages.len() > MAX_MESSAGES {
             return Err(MessageError::TooManyMessages);
         }
@@ -62,13 +72,14 @@ impl<'a> Composition<'a> {
             validation::signatures(message)?;
         }
 
-        let current = self.modify(messages).await?;
-        self.partial(current).await
+        let current = self.modify(messages, config).await?;
+        self.partial(current, config).await
     }
 
     async fn partial(
         &self,
         current: Vec<SignableMessage>,
+        config: crate::SignerConfig,
     ) -> Result<Vec<SignableMessage>, MessageError> {
         let partials: Vec<_> = self
             .registrations
@@ -81,7 +92,7 @@ impl<'a> Composition<'a> {
                 registration
                     .partial
                     .as_ref()
-                    .map(|operation| operation.sign(&current))
+                    .map(|operation| operation.sign(&current, config))
             })
             .collect();
         let mut outputs = vec![None; partials.len()];
@@ -94,6 +105,7 @@ impl<'a> Composition<'a> {
     async fn modify(
         &self,
         messages: &[SignableMessage],
+        config: crate::SignerConfig,
     ) -> Result<Vec<SignableMessage>, MessageError> {
         let mut current = messages.to_vec();
 
@@ -102,7 +114,7 @@ impl<'a> Composition<'a> {
             .iter()
             .filter_map(|r| r.modify.as_ref().map(|operation| (r, operation)))
         {
-            let next = operation.modify(&current).await?;
+            let next = operation.modify(&current, config).await?;
 
             validation::batch_modification(&current, &next, registration.address)?;
             current = next;

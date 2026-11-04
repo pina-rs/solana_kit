@@ -56,7 +56,7 @@ fn coverage(covered: bool, message: bool) -> (&'static str, &'static str, &'stat
         return (
             "partial",
             "crates/solana_kit_signers/tests/messages.rs;crates/solana_kit_signers/tests/message_async.rs;verification/signer-capabilities/tests/messages.rs",
-            "immutable bare snapshots and bounded whole-slice message partial/modifying contracts; explicit local/native traits replace runtime assertions; configuration, dynamic introspection and remaining keypair contracts pending",
+            "immutable bare snapshots and bounded whole-slice message partial/modifying contracts; explicit local/native traits replace runtime assertions; dynamic introspection and remaining keypair contracts pending",
         );
     }
 
@@ -64,7 +64,7 @@ fn coverage(covered: bool, message: bool) -> (&'static str, &'static str, &'stat
         return (
             "partial",
             "crates/solana_kit_signers/tests;verification/signer-capabilities/tests",
-            "automatic heterogeneous transaction roles and bounded ordered transaction batches; attachment, configuration and remaining declaration contracts pending",
+            "automatic heterogeneous transaction roles and bounded ordered transaction batches; attachment and remaining declaration contracts pending",
         );
     }
 

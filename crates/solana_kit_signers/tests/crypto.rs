@@ -7,13 +7,17 @@ use solana_kit_core::{
     transaction::Error as TransactionError,
 };
 use solana_kit_signers::{
-    Error, MessageSigner, SignatureOutput, SignerCapability, TransactionSigners,
+    Error, MessageSigner, SignatureOutput, SignerCapability, SignerConfig, TransactionSignerConfig,
+    TransactionSigners,
 };
 
 #[tokio::test]
 async fn deterministic_keypair_exact_bytes_and_native_spawn() {
     let keypair = Keypair::from_seed(&[7; 32]);
-    let output = keypair.sign_message(b"exact bare bytes").await.unwrap();
+    let output = keypair
+        .sign_message(b"exact bare bytes", SignerConfig::default())
+        .await
+        .unwrap();
     let golden: Vec<_> =
         include_str!("../../../verification/signer-capabilities/fixtures/dart-golden.txt")
             .lines()
@@ -39,7 +43,7 @@ async fn deterministic_keypair_exact_bytes_and_native_spawn() {
         tokio::task::yield_now().await;
         TransactionSigners::new(&[&SignerCapability::new(&keypair)])
             .unwrap()
-            .sign(&transaction)
+            .sign(&transaction, TransactionSignerConfig::default())
             .await
             .unwrap()
     });
@@ -86,7 +90,7 @@ async fn signature_and_identity_failure_paths() {
     assert_eq!(
         TransactionSigners::new(&empty)
             .unwrap()
-            .sign(&transaction)
+            .sign(&transaction, TransactionSignerConfig::default())
             .await,
         Err(Error::Transaction(TransactionError::MissingSignature))
     );

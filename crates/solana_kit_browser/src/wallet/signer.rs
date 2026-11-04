@@ -10,8 +10,8 @@ use solana_kit_core::{
     transaction::{Transaction, Version},
 };
 use solana_kit_signers::{
-    MessageSigner, SignatureOutput, Signer, TransactionModifyingSigner, TransactionPartialSigner,
-    TransactionSendingSigner,
+    MessageSigner, SignatureOutput, Signer, SignerConfig, TransactionModifyingSigner,
+    TransactionPartialSigner, TransactionSendingSigner, TransactionSignerConfig,
 };
 use solana_kit_wallet::{
     SIGN_AND_SEND_TRANSACTION, SIGN_MESSAGE, SIGN_TRANSACTION, Wallet, WalletAccount,
@@ -26,12 +26,47 @@ use wasm_bindgen::JsValue;
 
 type Signing<'a, T> = Pin<Box<dyn Future<Output = Result<T, WalletFailure>> + 'a>>;
 
+/// Largest JavaScript safe integer, `2^53 - 1`.
+const MAX_SAFE_INTEGER: u64 = (1 << 53) - 1;
+
+/// Uses the existing pipeline cancellation mapping before any wallet effect.
+fn aborted() -> WalletFailure {
+    WalletFailure::from(solana_kit_signers::Error::Cancelled)
+}
+
+/// Builds Wallet Standard transaction options without rounding a slot.
+fn transaction_options(config: TransactionSignerConfig) -> Result<Option<Object>, WalletFailure> {
+    if config.aborted {
+        return Err(aborted());
+    }
+
+    let Some(slot) = config.min_context_slot else {
+        return Ok(None);
+    };
+
+    if slot > MAX_SAFE_INTEGER {
+        return Err(WalletFailure::new(
+            WalletErrorCode::InvalidRequest,
+            "minContextSlot exceeds the JavaScript safe integer range",
+        ));
+    }
+
+    let options = Object::new();
+    // The range check above proves this conversion is exact.
+    set(&options, "minContextSlot", &JsValue::from_f64(slot as f64))?;
+    Ok(Some(options))
+}
+
 /// A typed Kit capability bound to one live controller authorization.
 ///
 /// `WalletFailure` retains local JavaScript causes; default native signer errors
 /// stay Send. The low-level Kit traits expose this failure type explicitly.
 /// Replacing the account, wallet, capabilities or controller invalidates this
 /// signer. Wallet output is cryptographically verified before it is returned.
+/// Per-call configuration is forwarded without retention: an aborted call fails
+/// before a guard or prompt, and a transaction slot is forwarded as exact Wallet
+/// Standard `options.minContextSlot` or rejected if JavaScript cannot represent
+/// it as a safe integer.
 pub struct WalletSigner {
     inner: Weak<Inner>,
     authorization: Rc<()>,
@@ -131,7 +166,15 @@ impl WalletSigner {
         Ok(signature)
     }
 
-    async fn message(&self, message: &[u8]) -> Result<SignatureOutput, WalletFailure> {
+    async fn message(
+        &self,
+        message: &[u8],
+        config: SignerConfig,
+    ) -> Result<SignatureOutput, WalletFailure> {
+        if config.aborted {
+            return Err(aborted());
+        }
+
         let mut guard = self.begin(SIGN_MESSAGE)?;
         let request = self.request()?;
         set(&request, "message", &Uint8Array::from(message))?;
@@ -162,6 +205,7 @@ impl WalletSigner {
         &self,
         identifier: &str,
         transaction: &Transaction,
+        options: Option<Object>,
     ) -> Result<Object, WalletFailure> {
         let feature = self.wallet.feature(identifier)?;
         let versions = array(get(&feature.raw, "supportedTransactionVersions")?)?;
@@ -192,6 +236,11 @@ impl WalletSigner {
             &Uint8Array::from(encoded.as_slice()),
         )?;
         set(&request, "chain", &JsValue::from_str(&self.chain))?;
+
+        if let Some(options) = options {
+            set(&request, "options", &JsValue::from(options))?;
+        }
+
         Ok(request)
     }
 
@@ -199,9 +248,11 @@ impl WalletSigner {
         &self,
         transaction: &Transaction,
         modifying: bool,
+        config: TransactionSignerConfig,
     ) -> Result<Transaction, WalletFailure> {
+        let options = transaction_options(config)?;
         let mut guard = self.begin(SIGN_TRANSACTION)?;
-        let request = self.transaction_request(SIGN_TRANSACTION, transaction)?;
+        let request = self.transaction_request(SIGN_TRANSACTION, transaction, options)?;
         let result = self
             .invoke(SIGN_TRANSACTION, "signTransaction", request, &guard)
             .await
@@ -269,8 +320,12 @@ impl WalletSigner {
             .ok_or_else(WalletFailure::invalid)
     }
 
-    async fn partial(&self, transaction: &Transaction) -> Result<SignatureOutput, WalletFailure> {
-        let signed = self.transaction(transaction, false).await?;
+    async fn partial(
+        &self,
+        transaction: &Transaction,
+        config: TransactionSignerConfig,
+    ) -> Result<SignatureOutput, WalletFailure> {
+        let signed = self.transaction(transaction, false, config).await?;
 
         if signed.message().bytes() != transaction.message().bytes() {
             return Err(WalletFailure::invalid());
@@ -283,9 +338,14 @@ impl WalletSigner {
         ))
     }
 
-    async fn send(&self, transaction: &Transaction) -> Result<Signature, WalletFailure> {
+    async fn send(
+        &self,
+        transaction: &Transaction,
+        config: TransactionSignerConfig,
+    ) -> Result<Signature, WalletFailure> {
+        let options = transaction_options(config)?;
         let mut guard = self.begin(SIGN_AND_SEND_TRANSACTION)?;
-        let request = self.transaction_request(SIGN_AND_SEND_TRANSACTION, transaction)?;
+        let request = self.transaction_request(SIGN_AND_SEND_TRANSACTION, transaction, options)?;
         let result = self
             .invoke(
                 SIGN_AND_SEND_TRANSACTION,
@@ -334,28 +394,40 @@ impl Signer for WalletSigner {
 
 impl MessageSigner<WalletFailure> for WalletSigner {
     type Sign<'a> = Signing<'a, SignatureOutput>;
-    fn sign_message<'a>(&'a self, bytes: &'a [u8]) -> Self::Sign<'a> {
-        Box::pin(self.message(bytes))
+    fn sign_message<'a>(&'a self, bytes: &'a [u8], config: SignerConfig) -> Self::Sign<'a> {
+        Box::pin(self.message(bytes, config))
     }
 }
 
 impl TransactionPartialSigner<WalletFailure> for WalletSigner {
     type Sign<'a> = Signing<'a, SignatureOutput>;
-    fn sign_transaction<'a>(&'a self, transaction: &'a Transaction) -> Self::Sign<'a> {
-        Box::pin(self.partial(transaction))
+    fn sign_transaction<'a>(
+        &'a self,
+        transaction: &'a Transaction,
+        config: TransactionSignerConfig,
+    ) -> Self::Sign<'a> {
+        Box::pin(self.partial(transaction, config))
     }
 }
 
 impl TransactionModifyingSigner<WalletFailure> for WalletSigner {
     type Modify<'a> = Signing<'a, Transaction>;
-    fn modify_transaction<'a>(&'a self, transaction: &'a Transaction) -> Self::Modify<'a> {
-        Box::pin(self.transaction(transaction, true))
+    fn modify_transaction<'a>(
+        &'a self,
+        transaction: &'a Transaction,
+        config: TransactionSignerConfig,
+    ) -> Self::Modify<'a> {
+        Box::pin(self.transaction(transaction, true, config))
     }
 }
 
 impl TransactionSendingSigner<WalletFailure> for WalletSigner {
     type Send<'a> = Signing<'a, Signature>;
-    fn send_transaction<'a>(&'a self, transaction: &'a Transaction) -> Self::Send<'a> {
-        Box::pin(self.send(transaction))
+    fn send_transaction<'a>(
+        &'a self,
+        transaction: &'a Transaction,
+        config: TransactionSignerConfig,
+    ) -> Self::Send<'a> {
+        Box::pin(self.send(transaction, config))
     }
 }

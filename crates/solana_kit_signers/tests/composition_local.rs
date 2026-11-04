@@ -6,6 +6,7 @@ use solana_kit_core::{Address, transaction::Transaction};
 use solana_kit_signers::local::{Composition, Registration};
 use solana_kit_signers::{
     Error, SignatureOutput, Signer, SignerCapability, TransactionPartialSigner,
+    TransactionSignerConfig,
 };
 use std::{
     cell::Cell,
@@ -76,7 +77,11 @@ impl Signer for Local {
 impl TransactionPartialSigner for Local {
     type Sign<'a> = Operation<'a>;
 
-    fn sign_transaction<'a>(&'a self, transaction: &'a Transaction) -> Self::Sign<'a> {
+    fn sign_transaction<'a>(
+        &'a self,
+        transaction: &'a Transaction,
+        _config: TransactionSignerConfig,
+    ) -> Self::Sign<'a> {
         Operation {
             signer: self,
             transaction,
@@ -151,7 +156,7 @@ fn partials_share_snapshot_and_both_suspend_before_either_completes() {
     .unwrap();
     let waker = Waker::from(Arc::new(Counter::default()));
     let mut context = Context::from_waker(&waker);
-    let mut future = Box::pin(signers.sign(&transaction));
+    let mut future = Box::pin(signers.sign(&transaction, TransactionSignerConfig::default()));
 
     assert!(future.as_mut().poll(&mut context).is_pending());
     assert_eq!((first.events.get(), second.events.get()), (1, 1));
@@ -171,7 +176,7 @@ fn local_rc_survives_real_pending_wake_and_drop_cancels() {
     let counter = Arc::new(Counter::default());
     let waker = Waker::from(counter.clone());
     let mut context = Context::from_waker(&waker);
-    let mut future = Box::pin(signers.sign(&transaction));
+    let mut future = Box::pin(signers.sign(&transaction, TransactionSignerConfig::default()));
 
     assert!(future.as_mut().poll(&mut context).is_pending());
     assert_eq!(signer.events.get(), 1);
@@ -180,7 +185,7 @@ fn local_rc_survives_real_pending_wake_and_drop_cancels() {
     assert_eq!(signer.events.get(), 2);
 
     signer.dropped.set(false);
-    let mut cancelled = Box::pin(signers.sign(&transaction));
+    let mut cancelled = Box::pin(signers.sign(&transaction, TransactionSignerConfig::default()));
     assert!(cancelled.as_mut().poll(&mut context).is_pending());
     drop(cancelled);
     assert!(signer.dropped.get());
@@ -194,7 +199,7 @@ async fn backend_rejection_and_cancellation_propagate() {
         assert_eq!(
             Composition::new(Registration::partial(&SignerCapability::new(&signer)))
                 .unwrap()
-                .sign(&transaction)
+                .sign(&transaction, TransactionSignerConfig::default())
                 .await,
             Err(error)
         );
@@ -206,7 +211,7 @@ fn erased_local_future_prototype_also_suspends_but_loses_send() {
     let signer = signer(None);
     let transaction = support::transaction(signer.address, 1);
     let mut erased: Pin<Box<dyn Future<Output = Result<SignatureOutput, Error>> + '_>> =
-        Box::pin(signer.sign_transaction(&transaction));
+        Box::pin(signer.sign_transaction(&transaction, TransactionSignerConfig::default()));
     let waker = Waker::from(Arc::new(Counter::default()));
     let mut context = Context::from_waker(&waker);
     assert!(erased.as_mut().poll(&mut context).is_pending());
@@ -227,7 +232,11 @@ impl Signer for Secondary {
 }
 impl TransactionPartialSigner for Secondary {
     type Sign<'a> = Operation<'a>;
-    fn sign_transaction<'a>(&'a self, tx: &'a Transaction) -> Self::Sign<'a> {
-        self.0.sign_transaction(tx)
+    fn sign_transaction<'a>(
+        &'a self,
+        tx: &'a Transaction,
+        config: TransactionSignerConfig,
+    ) -> Self::Sign<'a> {
+        self.0.sign_transaction(tx, config)
     }
 }

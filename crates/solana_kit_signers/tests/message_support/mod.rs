@@ -1,6 +1,6 @@
 use solana_kit_core::{Address, Signature};
 use solana_kit_signers::{
-    Signer,
+    Signer, SignerConfig,
     message::{MessageError, MessagePartialSigner, MessageSignatureOutput, SignableMessage},
 };
 use std::{
@@ -80,7 +80,11 @@ impl Signer for Backend {
 impl MessagePartialSigner for Backend {
     type Sign<'a> = Ready<Result<Vec<MessageSignatureOutput>, MessageError>>;
 
-    fn sign_messages<'a>(&'a self, messages: &'a [SignableMessage]) -> Self::Sign<'a> {
+    fn sign_messages<'a>(
+        &'a self,
+        messages: &'a [SignableMessage],
+        _config: SignerConfig,
+    ) -> Self::Sign<'a> {
         self.calls.set(self.calls.get() + 1);
         self.items.set(self.items.get() + messages.len());
         let mut outputs: Vec<_> = messages.iter().map(|m| output(self.seed, m)).collect();

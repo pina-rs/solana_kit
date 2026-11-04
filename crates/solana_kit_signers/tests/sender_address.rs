@@ -7,7 +7,7 @@ use solana_kit_core::{
 };
 use solana_kit_signers::{
     Error, SignatureOutput, Signer, SignerCapability, TransactionPartialSigner,
-    TransactionSendingSigner, TransactionSigners,
+    TransactionSendingSigner, TransactionSignerConfig, TransactionSigners,
 };
 use std::cell::Cell;
 
@@ -31,7 +31,11 @@ impl Signer for ObservedSender {
 impl TransactionPartialSigner for ObservedSender {
     type Sign<'a> = Ready<Result<SignatureOutput, Error>>;
 
-    fn sign_transaction<'a>(&'a self, _: &'a Transaction) -> Self::Sign<'a> {
+    fn sign_transaction<'a>(
+        &'a self,
+        _: &'a Transaction,
+        _config: TransactionSignerConfig,
+    ) -> Self::Sign<'a> {
         ready(Err(Error::Rejected))
     }
 }
@@ -39,7 +43,11 @@ impl TransactionPartialSigner for ObservedSender {
 impl TransactionSendingSigner for ObservedSender {
     type Send<'a> = Ready<Result<Signature, Error>>;
 
-    fn send_transaction<'a>(&'a self, _: &'a Transaction) -> Self::Send<'a> {
+    fn send_transaction<'a>(
+        &'a self,
+        _: &'a Transaction,
+        _config: TransactionSignerConfig,
+    ) -> Self::Send<'a> {
         self.submissions.set(self.submissions.get() + 1);
         ready(Err(Error::Rejected))
     }
@@ -76,7 +84,13 @@ async fn sender_address_is_observed_per_slot_before_missing_signature_rejects() 
     let capability = SignerCapability::new(&sender);
     let partials = TransactionSigners::<ObservedSender>::new(&[]).unwrap();
     let transaction = two_signer_transaction();
-    let result = partials.sign_and_send(&transaction, &[&capability]).await;
+    let result = partials
+        .sign_and_send(
+            &transaction,
+            &[&capability],
+            TransactionSignerConfig::default(),
+        )
+        .await;
 
     assert_eq!(
         result,

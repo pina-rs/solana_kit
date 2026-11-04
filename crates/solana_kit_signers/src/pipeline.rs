@@ -9,7 +9,7 @@ use solana_kit_core::{Address, Signature, transaction::Transaction};
 
 use crate::{
     Error, SignatureOutput, Signer, SignerCapability, TransactionModifyingSigner,
-    TransactionPartialSigner, TransactionSendingSigner,
+    TransactionPartialSigner, TransactionSendingSigner, TransactionSignerConfig,
 };
 
 /// A deduplicated, insertion-ordered set of caller-selected partial capabilities.
@@ -33,16 +33,31 @@ impl<'a, P: TransactionPartialSigner> TransactionSigners<'a, P> {
 
     /// Signs one shared immutable snapshot concurrently, merging in input order.
     ///
-    /// Dropping this future drops every unfinished backend future. No task is
-    /// detached. Backend errors propagate without retrying or committing output.
+    /// The same configuration is delivered unchanged to every partial backend.
+    /// An aborted configuration returns [`Error::Cancelled`] before any backend
+    /// operation starts. Dropping this future drops every unfinished backend
+    /// future. No task is detached. Backend errors propagate without retrying or
+    /// committing output.
     ///
     /// # Errors
-    /// Propagates rejection, cancellation, foreign owners, and changed snapshots.
-    pub async fn partially_sign(&self, transaction: &Transaction) -> Result<Transaction, Error> {
+    /// Propagates cancellation, rejection, foreign owners, and changed snapshots.
+    pub async fn partially_sign(
+        &self,
+        transaction: &Transaction,
+        config: TransactionSignerConfig,
+    ) -> Result<Transaction, Error> {
+        if config.aborted {
+            return Err(Error::Cancelled);
+        }
+
         let mut pending: Vec<_> = self
             .partials
             .iter()
-            .map(|signer| Some(Box::pin(signer.signer.sign_transaction(transaction))))
+            .map(|signer| {
+                Some(Box::pin(
+                    signer.signer.sign_transaction(transaction, config),
+                ))
+            })
             .collect();
         let mut outputs = vec![None; pending.len()];
 
@@ -61,13 +76,21 @@ impl<'a, P: TransactionPartialSigner> TransactionSigners<'a, P> {
     ///
     /// # Errors
     /// Also rejects missing signatures. With `crypto`, verifies every signature.
-    pub async fn sign(&self, transaction: &Transaction) -> Result<Transaction, Error> {
-        let result = self.partially_sign(transaction).await?;
+    pub async fn sign(
+        &self,
+        transaction: &Transaction,
+        config: TransactionSignerConfig,
+    ) -> Result<Transaction, Error> {
+        let result = self.partially_sign(transaction, config).await?;
         require_complete(&result)?;
         Ok(result)
     }
 
     /// Applies modifiers sequentially before partial signing the final snapshot.
+    ///
+    /// Every modifier and partial receives the same configuration. An aborted
+    /// configuration returns [`Error::Cancelled`] before role validation or any
+    /// backend operation.
     ///
     /// # Errors
     /// Rejects capability conflicts, foreign output, and reused stale signatures.
@@ -75,7 +98,12 @@ impl<'a, P: TransactionPartialSigner> TransactionSigners<'a, P> {
         &self,
         transaction: &Transaction,
         modifiers: &[&SignerCapability<'_, M>],
+        config: TransactionSignerConfig,
     ) -> Result<Transaction, Error> {
+        if config.aborted {
+            return Err(Error::Cancelled);
+        }
+
         let modifiers = deduplicate(modifiers)?;
         let mut current = transaction.clone();
 
@@ -88,18 +116,21 @@ impl<'a, P: TransactionPartialSigner> TransactionSigners<'a, P> {
         }
 
         for modifier in modifiers {
-            let next = modifier.signer.modify_transaction(&current).await?;
+            let next = modifier.signer.modify_transaction(&current, config).await?;
             validate_modification(&current, &next, modifier.address())?;
             current = next;
         }
 
-        self.partially_sign(&current).await
+        self.partially_sign(&current, config).await
     }
 
     /// Partially signs, then invokes exactly one explicit sending capability once.
     ///
     /// The sender may authorize its own remaining slot. A returned signature is
     /// a submission identifier, with no execution or confirmation guarantee.
+    /// Every partial backend and the sender receive the same configuration. An
+    /// aborted configuration returns [`Error::Cancelled`] before sender
+    /// cardinality or any backend operation.
     ///
     /// # Errors
     /// Rejects missing or multiple senders and duplicate roles before any signing.
@@ -107,7 +138,12 @@ impl<'a, P: TransactionPartialSigner> TransactionSigners<'a, P> {
         &self,
         transaction: &Transaction,
         senders: &[&SignerCapability<'_, S>],
+        config: TransactionSignerConfig,
     ) -> Result<Signature, Error> {
+        if config.aborted {
+            return Err(Error::Cancelled);
+        }
+
         let sender = match senders {
             [] => return Err(Error::MissingSender),
             [sender] => *sender,
@@ -122,9 +158,9 @@ impl<'a, P: TransactionPartialSigner> TransactionSigners<'a, P> {
             return Err(Error::ConflictingSigner);
         }
 
-        let signed = self.partially_sign(transaction).await?;
+        let signed = self.partially_sign(transaction, config).await?;
         validate_sending_slots(&signed, sender)?;
-        let identifier = sender.signer.send_transaction(&signed).await?;
+        let identifier = sender.signer.send_transaction(&signed, config).await?;
 
         if identifier.as_bytes() == &[0; 64] {
             return Err(solana_kit_core::transaction::Error::InvalidSignature.into());

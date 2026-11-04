@@ -15,6 +15,11 @@
 //! offers explicit [`local`] adapters and [`native`] adapters whose erased futures
 //! retain `Send` under checked associated-future bounds.
 //!
+//! Every signing call takes a per-call [`SignerConfig`] or
+//! [`TransactionSignerConfig`]. The configuration is delivered unchanged to each
+//! backend operation, never stored by a pipeline or adapter, and
+//! [`Default`] preserves the previous behavior.
+//!
 //! ```compile_fail
 //! use core::{future::Future, pin::Pin};
 //! fn requires_send<T: Send>(_: T) {}
@@ -29,6 +34,7 @@ extern crate alloc;
 
 mod capability;
 mod composition;
+mod config;
 pub mod local;
 pub mod message;
 pub mod native;
@@ -41,6 +47,7 @@ use solana_kit_core::{Address, Signature, transaction::Transaction};
 
 pub use capability::SignerCapability;
 pub use composition::Role;
+pub use config::{SignerConfig, TransactionSignerConfig};
 pub use pipeline::TransactionSigners;
 pub use snapshot::SignatureOutput;
 
@@ -58,7 +65,10 @@ pub trait MessageSigner<Failure = Error>: Signer {
         Self: 'a;
 
     /// Signs the exact supplied bytes without modifying them.
-    fn sign_message<'a>(&'a self, bytes: &'a [u8]) -> Self::Sign<'a>;
+    ///
+    /// An aborted configuration returns the backend's cancellation failure
+    /// before signing.
+    fn sign_message<'a>(&'a self, bytes: &'a [u8], config: SignerConfig) -> Self::Sign<'a>;
 }
 
 /// Adds only this signer's signature to an immutable transaction snapshot.
@@ -69,7 +79,15 @@ pub trait TransactionPartialSigner<Failure = Error>: Signer {
         Self: 'a;
 
     /// Returns the address, bytes, and signature actually authorized.
-    fn sign_transaction<'a>(&'a self, transaction: &'a Transaction) -> Self::Sign<'a>;
+    ///
+    /// An aborted configuration returns the backend's cancellation failure
+    /// before signing. The slot hint is supplied to every backend; a local
+    /// implementation that does not simulate may ignore it.
+    fn sign_transaction<'a>(
+        &'a self,
+        transaction: &'a Transaction,
+        config: TransactionSignerConfig,
+    ) -> Self::Sign<'a>;
 }
 
 /// May replace a transaction before subsequent signers authorize its bytes.
@@ -80,7 +98,14 @@ pub trait TransactionModifyingSigner<Failure = Error>: Signer {
         Self: 'a;
 
     /// Returns an immutable replacement, with no reused signature on changed bytes.
-    fn modify_transaction<'a>(&'a self, transaction: &'a Transaction) -> Self::Modify<'a>;
+    ///
+    /// An aborted configuration returns the backend's cancellation failure
+    /// before modification or signing.
+    fn modify_transaction<'a>(
+        &'a self,
+        transaction: &'a Transaction,
+        config: TransactionSignerConfig,
+    ) -> Self::Modify<'a>;
 }
 
 /// Explicit caller-granted submission capability.
@@ -91,7 +116,15 @@ pub trait TransactionSendingSigner<Failure = Error>: Signer {
         Self: 'a;
 
     /// Authorizes and submits the supplied snapshot once under caller policy.
-    fn send_transaction<'a>(&'a self, transaction: &'a Transaction) -> Self::Send<'a>;
+    ///
+    /// An aborted configuration returns the backend's cancellation failure
+    /// before submission. The slot hint is supplied to every backend; a local
+    /// implementation that does not simulate may ignore it.
+    fn send_transaction<'a>(
+        &'a self,
+        transaction: &'a Transaction,
+        config: TransactionSignerConfig,
+    ) -> Self::Send<'a>;
 }
 
 /// A capability failure or an invalid result at the signer boundary.

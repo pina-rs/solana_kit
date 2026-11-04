@@ -1,7 +1,7 @@
 use signer_capability_consumer::{message_batches, message_snapshots};
 use solana_kit_core::crypto::Keypair;
 use solana_kit_signers::{
-    SignerCapability,
+    SignerCapability, SignerConfig,
     message::{
         SignableMessage, SingularMessageSigner,
         native::{Composition, Registration},
@@ -23,7 +23,10 @@ async fn pinned_whole_slice_keypair_goldens_and_explicit_singular_adapter() {
         SignableMessage::new([0, 255, 128]),
         SignableMessage::new(b"exact bare bytes"),
     ];
-    let results = pipeline.sign(&inputs).await.unwrap();
+    let results = pipeline
+        .sign(&inputs, SignerConfig::default())
+        .await
+        .unwrap();
     let oracle = include_str!("../fixtures/dart-messages.tsv");
     let mut lines = oracle.lines();
     assert_eq!(lines.next(), Some(key.address().to_string().as_str()));
@@ -42,7 +45,13 @@ async fn pinned_whole_slice_keypair_goldens_and_explicit_singular_adapter() {
     let adapter = SingularMessageSigner(Keypair::from_seed(&[7; 32]));
     let handle = SignerCapability::new(&adapter);
     let adapter = Composition::new(vec![Registration::partial(&handle)]).unwrap();
-    assert_eq!(adapter.sign(&inputs).await.unwrap(), results);
+    assert_eq!(
+        adapter
+            .sign(&inputs, SignerConfig::default())
+            .await
+            .unwrap(),
+        results
+    );
     assert!(message_snapshots());
     assert!(message_batches().await);
 }
