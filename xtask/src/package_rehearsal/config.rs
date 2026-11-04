@@ -1,11 +1,11 @@
 //! Authenticates the absolute paths and tool identities of one rehearsal.
 
-use anyhow::{Result, ensure};
+use anyhow::{Context, Result, ensure};
 use serde::Deserialize;
 use sha2::{Digest, Sha256};
 use std::{
     fs,
-    path::{Path, PathBuf},
+    path::{Component, Path, PathBuf},
 };
 
 /// Owned, absolute paths and exact tool identities for one rehearsal.
@@ -70,6 +70,7 @@ pub(super) fn validate(config: &Config) -> Result<()> {
 /// Keeps every generated tree outside the source checkout.
 fn outside(config: &Config) -> Result<()> {
     let workspace = config.workspace.canonicalize()?;
+    ensure!(workspace.is_dir(), "workspace must be a directory");
 
     for path in [
         &config.evidence,
@@ -81,13 +82,64 @@ fn outside(config: &Config) -> Result<()> {
         &config.sparse_index,
     ] {
         ensure!(
-            !path.starts_with(&workspace),
+            !resolved(path)?.starts_with(&workspace),
             "rehearsal data must stay outside the source tree: {}",
             path.display()
         );
     }
 
+    let outputs = [
+        &config.evidence,
+        &config.target,
+        &config.registry,
+        &config.consumer,
+        &config.cargo_home,
+    ]
+    .into_iter()
+    .map(|path| resolved(path))
+    .collect::<Result<Vec<_>>>()?;
+
+    for (index, path) in outputs.iter().enumerate() {
+        ensure!(
+            outputs[index + 1..]
+                .iter()
+                .all(|other| { !path.starts_with(other) && !other.starts_with(path) }),
+            "rehearsal output namespaces must not overlap"
+        );
+    }
+
     Ok(())
+}
+
+/// Resolves existing ancestors before appending any not-yet-created components.
+fn resolved(path: &Path) -> Result<PathBuf> {
+    ensure!(
+        !path
+            .components()
+            .any(|part| matches!(part, Component::ParentDir)),
+        "rehearsal paths must not contain parent traversal"
+    );
+    let mut ancestor = path;
+    let mut missing = Vec::new();
+
+    loop {
+        match fs::symlink_metadata(ancestor) {
+            Ok(_) => break,
+            Err(error) if error.kind() == std::io::ErrorKind::NotFound => {
+                missing.push(ancestor.file_name().ok_or(error)?);
+                ancestor = ancestor.parent().context("rehearsal path has no parent")?;
+            }
+            Err(error) => return Err(error.into()),
+        }
+    }
+
+    let mut path = ancestor.canonicalize()?;
+
+    for part in missing.into_iter().rev() {
+        path.push(part);
+    }
+
+    Ok(path)
 }
 
 /// Requires new output namespaces and an existing credential-free Cargo home.
@@ -105,11 +157,19 @@ fn fresh(config: &Config) -> Result<()> {
         "consumer directory must be fresh"
     );
     ensure!(config.cargo_home.is_dir(), "Cargo home must already exist");
-    ensure!(
-        !config.cargo_home.join("credentials.toml").exists()
-            && !config.cargo_home.join("credentials").exists(),
-        "Cargo home must not contain registry credentials"
-    );
+    for name in [
+        "credentials.toml",
+        "credentials",
+        "config.toml",
+        "config",
+        "registry/src",
+    ] {
+        match fs::symlink_metadata(config.cargo_home.join(name)) {
+            Err(error) if error.kind() == std::io::ErrorKind::NotFound => {}
+            Err(error) => return Err(error.into()),
+            Ok(_) => anyhow::bail!("Cargo home must not contain {name}"),
+        }
+    }
     ensure!(config.cache.is_dir(), "crate cache must be a directory");
     ensure!(
         config.sparse_index.is_dir(),
@@ -140,7 +200,7 @@ fn authenticate(path: &Path, expected: &str) -> Result<()> {
 
 #[cfg(test)]
 mod tests {
-    use super::{Config, validate};
+    use super::{Config, fresh, outside, validate};
 
     fn config() -> Config {
         serde_json::from_str(
@@ -175,5 +235,73 @@ mod tests {
         config.workspace = "/workspace".into();
         config.evidence = "/workspace/evidence".into();
         assert!(validate(&config).is_err());
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn output_paths_cannot_alias_the_source_or_each_other() {
+        use std::{fs, os::unix::fs::symlink};
+
+        let directory =
+            std::env::temp_dir().join(format!("rehearsal-paths-{}", std::process::id()));
+        fs::create_dir(&directory).unwrap();
+        let workspace = directory.join("workspace");
+        fs::create_dir(&workspace).unwrap();
+        let mut config = config();
+        config.workspace = workspace.clone();
+        config.evidence = directory.join("evidence");
+        config.target = directory.join("target");
+        config.registry = directory.join("registry");
+        config.consumer = directory.join("consumer");
+        config.cargo_home = directory.join("cargo");
+        config.cache = directory.join("cache");
+        config.sparse_index = directory.join("index");
+        outside(&config).unwrap();
+        config.evidence = workspace.join("new-evidence");
+        let inside = outside(&config);
+        let alias = directory.join("alias");
+        symlink(&workspace, &alias).unwrap();
+        config.evidence = alias.join("new-evidence");
+        let escaped = outside(&config);
+        config.evidence = directory.join("nested/../workspace/evidence");
+        let traversal = outside(&config);
+        config.evidence = config.target.join("evidence");
+        let overlap = outside(&config);
+        fs::remove_dir_all(&directory).unwrap();
+        assert!(inside.is_err(), "source child was accepted");
+        assert!(escaped.is_err(), "source alias was accepted");
+        assert!(traversal.is_err(), "parent traversal was accepted");
+        assert!(overlap.is_err(), "overlapping outputs were accepted");
+    }
+
+    #[test]
+    fn cargo_home_admits_caches_but_not_configuration_or_extracted_sources() {
+        use std::fs;
+
+        let directory = std::env::temp_dir().join(format!("rehearsal-home-{}", std::process::id()));
+        fs::create_dir(&directory).unwrap();
+        let mut config = config();
+        config.evidence = directory.join("evidence");
+        config.registry = directory.join("registry");
+        config.consumer = directory.join("consumer");
+        config.cargo_home = directory.join("home");
+        config.cache = config.cargo_home.join("registry/cache");
+        config.sparse_index = config.cargo_home.join("registry/index");
+        fs::create_dir_all(&config.cache).unwrap();
+        fs::create_dir_all(&config.sparse_index).unwrap();
+        fresh(&config).unwrap();
+        let mut rejected = Vec::new();
+
+        for name in ["config.toml", "credentials.toml"] {
+            let path = config.cargo_home.join(name);
+            fs::write(&path, b"fixture").unwrap();
+            rejected.push(fresh(&config).is_err());
+            fs::remove_file(path).unwrap();
+        }
+
+        fs::create_dir(config.cargo_home.join("registry/src")).unwrap();
+        rejected.push(fresh(&config).is_err());
+        fs::remove_dir_all(directory).unwrap();
+        assert!(rejected.into_iter().all(|value| value));
     }
 }

@@ -31,6 +31,7 @@ pub(super) fn run(
     archives: &[archives::ReviewedArchive],
     metadata: &serde_json::Value,
     directory: &Path,
+    label: &str,
 ) -> Result<usize> {
     let lock = model::parse_lockfile(&fs::read_to_string(directory.join("Cargo.lock"))?)?;
     let lock: BTreeMap<_, _> = lock
@@ -60,7 +61,7 @@ pub(super) fn run(
     }
 
     fs::write(
-        config.evidence.join("consumer-audit.json"),
+        config.evidence.join(label),
         serde_json::to_vec_pretty(&audits)?,
     )?;
     Ok(audits.len())

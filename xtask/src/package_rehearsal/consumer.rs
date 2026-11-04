@@ -1,7 +1,7 @@
 //! Builds an external consumer against the exact local-registry archives.
 
 use super::{Config, model, success};
-use anyhow::{Context, Result};
+use anyhow::{Context, Result, ensure};
 use serde::Serialize;
 use std::{
     fs,
@@ -22,6 +22,7 @@ pub(super) struct ConsumerEvidence {
     pub tests: usize,
     pub selected_tests: usize,
     pub audits: usize,
+    pub selected_audits: usize,
     pub msrv: Option<String>,
     pub wasm: Vec<String>,
     pub negative_missing: negative::Negative,
@@ -39,14 +40,30 @@ pub(super) fn run(
     fs::create_dir(directory)?;
     fixture::write(plan, directory, &registry.destination)?;
     lock(config, directory)?;
-    let metadata = metadata(config, directory, "consumer-default-metadata")?;
-    let audits = audit::run(config, plan, archives, &metadata, directory)?;
+    let metadata = read_metadata(config, directory, "consumer-default-metadata", false)?;
+    let audits = audit::run(
+        config,
+        plan,
+        archives,
+        &metadata,
+        directory,
+        "consumer-audit.json",
+    )?;
     let default = test(config, directory, &[], "consumer-default")?;
     let selected = test(
         config,
         directory,
         &["--features", "selected"],
         "consumer-selected",
+    )?;
+    let metadata = read_metadata(config, directory, "consumer-selected-metadata", true)?;
+    let selected_audits = audit::run(
+        config,
+        plan,
+        archives,
+        &metadata,
+        directory,
+        "consumer-selected-audit.json",
     )?;
     let msrv = toolchain(config, directory)?;
     let wasm = wasm(config, plan)?;
@@ -76,6 +93,7 @@ pub(super) fn run(
         tests: default,
         selected_tests: selected,
         audits,
+        selected_audits,
         msrv,
         wasm,
         negative_missing,
@@ -94,9 +112,18 @@ fn lock(config: &Config, directory: &Path) -> Result<()> {
 }
 
 /// Queries the exact resolved package identities through Cargo metadata.
-fn metadata(config: &Config, directory: &Path, label: &str) -> Result<serde_json::Value> {
+fn read_metadata(
+    config: &Config,
+    directory: &Path,
+    label: &str,
+    selected: bool,
+) -> Result<serde_json::Value> {
     let mut command = cargo(directory);
     command.args(["metadata", "--format-version", "1", "--locked", "--offline"]);
+
+    if selected {
+        command.args(["--features", "selected"]);
+    }
     command.env("CARGO_TARGET_DIR", config.target.join("consumer-metadata"));
     let output = success(config, &mut command, label)?;
     let path = config.evidence.join(format!("{label}.json"));
@@ -111,7 +138,7 @@ fn test(config: &Config, directory: &Path, arguments: &[&str], label: &str) -> R
     command.args(arguments);
     command.env("CARGO_TARGET_DIR", config.target.join(label));
     let output = success(config, &mut command, label)?;
-    Ok(passed(&output.stdout))
+    passed(&output.stdout)
 }
 
 /// Runs the declared MSRV when the configuration supplies one.
@@ -156,13 +183,15 @@ fn negative(
 }
 
 /// Sums Cargo's executed `test result` rows without counting ignored tests.
-fn passed(stdout: &[u8]) -> usize {
-    String::from_utf8_lossy(stdout)
+fn passed(stdout: &[u8]) -> Result<usize> {
+    let count = String::from_utf8_lossy(stdout)
         .lines()
         .filter_map(|line| line.strip_prefix("test result: ok. "))
         .filter_map(|line| line.split_once(" passed").map(|(count, _)| count))
         .filter_map(|count| count.parse::<usize>().ok())
-        .sum()
+        .sum();
+    ensure!(count > 0, "consumer executed no tests");
+    Ok(count)
 }
 
 /// Uses the selected Cargo binary without forwarding any caller flags.
@@ -179,6 +208,8 @@ mod tests {
     #[test]
     fn sums_only_executed_test_rows() {
         let stdout = b"test result: ok. 7 passed; 0 failed; 1 ignored\nrunning 0 tests\ntest result: ok. 0 passed; 0 failed;\n";
-        assert_eq!(passed(stdout), 7);
+        assert_eq!(passed(stdout).unwrap(), 7);
+        assert!(passed(b"").is_err());
+        assert!(passed(b"test result: ok. 0 passed; 0 failed; 3 ignored").is_err());
     }
 }

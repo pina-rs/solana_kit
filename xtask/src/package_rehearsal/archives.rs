@@ -155,8 +155,8 @@ fn fresh(receipt: &Path) -> Result<Reviewed> {
     Ok(Reviewed {
         review: Review::FreshAnalysis,
         members: serde_json::from_slice::<Vec<serde_json::Value>>(&fs::read(members)?)?.len(),
-        readability: score(&quality, "readability")?,
-        complexity: score(&quality, "complexity")?,
+        readability: Some(score(&quality, "readability")?),
+        complexity: Some(score(&quality, "complexity")?),
         limitation: None,
     })
 }
@@ -170,13 +170,15 @@ fn unsupported(error: &anyhow::Error) -> bool {
 }
 
 /// Reads one aggregate score from the retained analyzer report.
-fn score(path: &Path, category: &str) -> Result<Option<f64>> {
+fn score(path: &Path, category: &str) -> Result<f64> {
     let report: serde_json::Value = serde_json::from_slice(&fs::read(path)?)?;
 
-    Ok(report
+    report
         .get(category)
         .and_then(|value| value.get("value"))
-        .and_then(serde_json::Value::as_f64))
+        .and_then(serde_json::Value::as_f64)
+        .filter(|value| value.is_finite())
+        .ok_or_else(|| anyhow::anyhow!("archive review lacks a numeric {category} score"))
 }
 
 /// Hashes actual archive bytes after copying them into owned evidence custody.

@@ -100,6 +100,7 @@ fn selected_archives(config: &Config) -> Result<BTreeMap<(String, String), PathB
         "primary implementation identity is empty"
     );
     index_path(&config.package)?;
+    version(&config.version)?;
     ensure!(
         selected
             .insert(
@@ -116,6 +117,7 @@ fn selected_archives(config: &Config) -> Result<BTreeMap<(String, String), PathB
             "additional implementation identity is empty"
         );
         index_path(&addition.package)?;
+        version(&addition.version)?;
         ensure!(
             selected
                 .insert(
@@ -137,6 +139,18 @@ fn selected_archives(config: &Config) -> Result<BTreeMap<(String, String), PathB
     }
 
     Ok(selected)
+}
+
+/// Keeps configured versions within a single archive filename component.
+fn version(value: &str) -> Result<()> {
+    ensure!(
+        !value.is_empty()
+            && value
+                .bytes()
+                .all(|byte| byte.is_ascii_alphanumeric() || b".+-".contains(&byte)),
+        "invalid registry package version"
+    );
+    Ok(())
 }
 
 /// Parses only the package identity/checksum cells from a standard Cargo-generated lockfile.
@@ -248,6 +262,9 @@ mod tests {
         assert!(selected_archives(&config(path, &duplicate)).is_err());
 
         let escaped = format!(r#"[{{"archive":"{path}","package":"../core","version":"0.1.0"}}]"#);
+        assert!(selected_archives(&config(path, &escaped)).is_err());
+        let escaped =
+            format!(r#"[{{"archive":"{path}","package":"other","version":"../escape"}}]"#);
         assert!(selected_archives(&config(path, &escaped)).is_err());
         std::fs::remove_dir_all(directory).unwrap();
     }
