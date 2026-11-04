@@ -62,6 +62,18 @@ enum Intent {
     Remote(RemoteAction),
 }
 
+/// How one interaction loop ended. Dropping an in-flight request during a
+/// pending cancellation already ended the native lease, so only an explicit
+/// release from the idle panel must still close the wallet owner.
+enum Step {
+    /// Continue the loop with this status line.
+    Next(String),
+    /// The pending request was cancelled; the session is already unloaded.
+    Cancelled,
+    /// The person released the wallet; close the native owner explicitly.
+    Released,
+}
+
 /// The wallet's observed answer to a reviewed transaction.
 enum TransferOutcome {
     Rejected,
@@ -104,6 +116,8 @@ pub(super) async fn run(
     )
     .await?;
 
+    // A cancelled pending request already unloaded its lease with the dropped
+    // call; closing again would fail an already-ended session.
     if close {
         wallet.close().await?;
     }
@@ -135,7 +149,7 @@ async fn interact(
         );
 
         let intent = next(actions, &mut remote_actions).await?;
-        let Some(next) = dispatch(
+        match dispatch(
             intent,
             wallet,
             encoded,
@@ -148,16 +162,16 @@ async fn interact(
             generation,
         )
         .await?
-        else {
-            return Ok(true);
-        };
-
-        *status = next;
+        {
+            Step::Next(next) => *status = next,
+            Step::Cancelled => return Ok(false),
+            Step::Released => return Ok(true),
+        }
     }
 }
 
-/// Applies one intent without nested client checks. `None` ends the selection
-/// only after the wallet owner has been explicitly closed.
+/// Applies one intent without nested client checks. `Step::Cancelled` ends the
+/// selection on an already-unloaded lease; `Step::Released` closes it.
 #[allow(clippy::too_many_arguments)]
 async fn dispatch(
     intent: Intent,
@@ -170,22 +184,26 @@ async fn dispatch(
     actions: &mut LocalWalletEvents,
     commands: &LocalWalletCommands,
     generation: &mut u64,
-) -> Result<Option<String>, AppError> {
+) -> Result<Step, AppError> {
     match (intent, client) {
-        (Intent::Wallet(Action::Cancel | Action::Disconnect), _) => Ok(None),
+        (Intent::Wallet(Action::Cancel | Action::Disconnect), _) => Ok(Step::Released),
         (Intent::Wallet(Action::Review), _) => {
-            review(wallet, encoded, &address, generation, actions, commands).await
+            review(wallet, encoded, &address, generation, actions, commands)
+                .await
+                .map(step)
         }
         (Intent::Remote(RemoteAction::Balance), Some(client)) => {
-            Ok(Some(balance(client, address, actions).await))
+            Ok(Step::Next(balance(client, address, actions).await))
         }
         (Intent::Remote(RemoteAction::Transfer), Some(client)) => {
-            transfer(wallet, client, address, generation, actions, commands).await
+            transfer(wallet, client, address, generation, actions, commands)
+                .await
+                .map(step)
         }
         (Intent::Remote(RemoteAction::Subscription), Some(client)) => {
             *generation = next_generation(*generation)?;
 
-            Ok(Some(
+            Ok(Step::Next(
                 watch(
                     &address.to_string(),
                     *generation,
@@ -198,10 +216,19 @@ async fn dispatch(
                 .await,
             ))
         }
-        (Intent::Remote(_), None) => Ok(Some(
+        (Intent::Remote(_), None) => Ok(Step::Next(
             "RPC service is unavailable in this host".into(),
         )),
-        (Intent::Wallet(_), _) => Ok(Some("Android wallet authorized".into())),
+        (Intent::Wallet(_), _) => Ok(Step::Next("Android wallet authorized".into())),
+    }
+}
+
+/// Maps one reviewed operation onto the loop: `None` means the pending request
+/// was cancelled and its lease already ended with the dropped call.
+fn step(status: Option<String>) -> Step {
+    match status {
+        Some(status) => Step::Next(status),
+        None => Step::Cancelled,
     }
 }
 
