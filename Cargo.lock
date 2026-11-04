@@ -1984,6 +1984,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "solana_kit_test_support"
+version = "0.1.0"
+dependencies = [
+ "base64 0.22.1",
+ "futures",
+ "serde_json",
+ "solana_kit_client",
+ "solana_kit_core",
+ "solana_kit_signers",
+]
+
+[[package]]
 name = "solana_kit_token"
 version = "0.1.0"
 dependencies = [

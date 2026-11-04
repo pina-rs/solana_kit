@@ -238,3 +238,9 @@ publish = { enabled = false }
 path = "crates/solana_kit_dapp_publisher"
 type = "cargo"
 publish = { enabled = false }
+
+[package.solana_kit_test_support]
+path = "crates/solana_kit_test_support"
+type = "cargo"
+changelog = false
+publish = { enabled = false }
