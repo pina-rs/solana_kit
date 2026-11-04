@@ -217,7 +217,10 @@ fn pending_rows(capabilities: &str) -> Result<Vec<(String, String, String)>, Str
         .collect::<Result<_, _>>()?;
 
     if rows.len() != ADDED {
-        return Err(format!("expected {ADDED} pending rows, found {}", rows.len()));
+        return Err(format!(
+            "expected {ADDED} pending rows, found {}",
+            rows.len()
+        ));
     }
 
     Ok(rows)
@@ -227,8 +230,7 @@ fn pending_rows(capabilities: &str) -> Result<Vec<(String, String, String)>, Str
 fn is_pending(line: &str) -> bool {
     let fields: Vec<_> = line.split('\t').collect();
 
-    fields.get(PACKAGE_COLUMN) == Some(&PACKAGE)
-        && fields.get(STATUS_COLUMN) == Some(&PENDING)
+    fields.get(PACKAGE_COLUMN) == Some(&PACKAGE) && fields.get(STATUS_COLUMN) == Some(&PENDING)
 }
 
 /// Splits one pending row into its complete identity and symbol suffix.
@@ -457,16 +459,16 @@ fn reviewed_diagnostic(suffix: &str) -> Option<Claim> {
             "Complete: the field accessor returns the identical signed value for known and unknown codes and is exercised on five hosts.",
         ),
         "SolanaError.context" => claim(
-            "complete",
+            "partial",
             DIAGNOSTIC,
             "context() returns every inserted fact unchanged and cannot be mutated through the error.",
-            "Complete: null, integer, boolean, text, list and object facts survive construction; the map is immutable by borrow.",
+            "Stored supported facts are preserved, but Context restricts keys, size and value kinds; Dart permits arbitrary Object values, including fractional numbers.",
         ),
         "SolanaError.new" => claim(
-            "complete",
+            "partial",
             DIAGNOSTIC,
             "Construction stores an immutable context and accepts an omitted empty context.",
-            "Complete for storage: code and context are retained exactly. Message text is produced by the separate bounded renderer.",
+            "Rust takes prevalidated bounded Context and renders messages on demand; Dart accepts arbitrary Object context and eagerly formats the message during construction.",
         ),
         "SolanaError.toString" => claim(
             "partial",

@@ -29,7 +29,7 @@ The fifteen new groups follow the two catalog groups:
 - `error-json-rpc-projection`
 - `error-simulation-unwrap`
 
-The three source-owned negative controls run before their matching evidence
+The four source-owned negative controls run before their matching evidence
 cases. Each control mutates a fixture value in memory and requires the intended
 failure field; the following evidence case still runs and must pass. Every case
 returns a reportable error instead of panicking the guest.
@@ -38,6 +38,12 @@ returns a reportable error instead of panicking the guest.
 
 On 2026-11-04 the required command completed with exit 0 from the final working
 tree:
+
+The executable source is signed commit
+`da68fad205b1bfff6391096d071211bd44ae6abf`, based on `cbbdb2d1`.
+Subsequent review narrowed two adjudications and corrected control-count prose;
+it did not change executable behavior. The full host output is retained at
+`/tmp/solana-kit-error-contracts-parent/xtask-all-evidence.log`.
 
 ```sh
 CHROME='/Applications/Google Chrome.app/Contents/MacOS/Google Chrome' \
@@ -54,6 +60,9 @@ cargo xtask all
 | Wasmtime 50 Preview 1     | 476/476, exit 0              | 475/476, exit 1              |
 | Wasmtime 50 Preview 2     | 476/476, exit 0              | 475/476, exit 1              |
 | Pinned LeptosKit WasmHost | Full JSON, 476/476 committed | Full JSON, 475/476 committed |
+
+Chrome and LeptosKit compare complete reports internally; these counts are not
+separate stdout summaries.
 
 The corrupt mode fails only `sha256-fips-abc`; no group is filtered or skipped.
 The actual interpreter also ran a fresh guest with one fuel and trapped with
@@ -87,6 +96,6 @@ and
 
 These cases prove the contracts described in the
 [error-contract adjudication](../parity/error-contracts-adjudication.md). They do
-not complete the package, Phase 2 or the SDK. The 37 complete rows cover only
-the exact contracts listed there; the 36 partial rows keep their concrete
+not complete the package, Phase 2 or the SDK. The 35 complete rows cover only
+the exact contracts listed there; the 38 partial rows keep their concrete
 representation and boundary differences.

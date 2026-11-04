@@ -18,7 +18,7 @@ constants were already adjudicated. This batch reviews exactly the other 73.
 | Reference pin       | `0138bb956d2d81ccc0c56edc602401c0df2f2b46`              |
 | Defining files      | twelve files under `packages/solana_kit_errors/lib/src` |
 | Canonical ID prefix | `dart:solana_kit_errors:lib/src/`                       |
-| Rows                | 37 complete, 36 partial                                 |
+| Rows                | 35 complete, 38 partial                                 |
 | Evidence            | `verification/conformance/evidence/native-success.txt`  |
 | Suite               | `solana-kit-core-v59`, 476 cases                        |
 
@@ -101,15 +101,14 @@ that difference instead of pretending the Dart API classifies those integers.
 
 ## Complete and partial rows
 
-The 37 complete rows are the 25 domain constants, `SolanaErrorCode.new`,
-`SolanaErrorCode.value`, `SolanaError.context`, `SolanaError.code`,
-`SolanaError.new`, `solanaErrorMessages`,
+The 35 complete rows are the 25 domain constants, `SolanaErrorCode.new`,
+`SolanaErrorCode.value`, `SolanaError.code`, `solanaErrorMessages`,
 `SolanaErrorCodeDomainExtension.solanaErrorDomain`,
 `SolanaErrorCodeDomainExtension.isSolanaErrorDomain`,
 `SolanaErrorDomainExtension.domain`, `SolanaErrorDomainExtension.isInDomain`,
 `getSolanaErrorDomain` and `isSolanaErrorCodeInDomain`.
 
-The 36 partial rows keep concrete residuals:
+The 38 partial rows keep concrete residuals:
 
 - The Rust `ErrorCode` is a struct plus associated constants, not an enum, so
   `SolanaErrorCode` and `fromValue` omit `values()`, `name` and `index`
@@ -121,6 +120,11 @@ The 36 partial rows keep concrete residuals:
   emits only `SolanaError#<code>`; the message is rendered separately and
   capped at 4096 bytes. `isSolanaError` uses `ErrorFacts` and therefore also
   matches non-diagnostic errors that expose facts.
+- `SolanaError.context` represents supported facts through a bounded `Context`
+  with restricted keys and value kinds; Dart accepts arbitrary `Object` values,
+  including fractional numbers. `SolanaError.new` takes that prevalidated context
+  and renders messages on demand; Dart eagerly formats its message during
+  construction. Storage tests do not establish these broader source contracts.
 - Context encoding preserves the five pinned literals and three additional
   unicode/boolean/nesting literals, but sorts keys, rejects non-ASCII keys and
   enforces explicit size limits. Decoding keeps 128-bit integers where Dart
@@ -162,8 +166,8 @@ dependency, budget or security limit changed.
 
 ## Status and totals
 
-The canonical ledger now has 404 complete, 59 partial and 17,485 pending rows
-across 17,948 declarations. Phase 2 is 404 complete, 59 partial and 924
+The canonical ledger now has 402 complete, 61 partial and 17,485 pending rows
+across 17,948 declarations. Phase 2 is 402 complete, 61 partial and 924
 pending. Every package disposition remains `inventoried`; the 73 reviewed rows
 do not claim `SolanaErrorCode` as an enum, any future-phase integration or the
 package itself.

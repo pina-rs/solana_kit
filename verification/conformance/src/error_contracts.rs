@@ -1,6 +1,6 @@
 //! Portable proof for the remaining pinned `solana_kit_errors` contracts.
 //!
-//! Every body is shared with the native integration tests. The two negative
+//! Every body is shared with the native integration tests. The negative
 //! controls precede their matching evidence case so a broken comparison cannot
 //! suppress later results.
 

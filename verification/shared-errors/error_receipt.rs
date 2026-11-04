@@ -10,11 +10,7 @@
 //! /tmp/solana-kit-error-receipt
 //! ```
 
-use std::{
-    collections::BTreeMap,
-    fs,
-    process::ExitCode,
-};
+use std::{collections::BTreeMap, fs, process::ExitCode};
 
 const CAPABILITIES: &str = "docs/parity/capabilities.tsv";
 const MANIFEST: &str = "docs/parity/adjudications.tsv";
@@ -134,7 +130,10 @@ fn targets(capabilities: &str) -> Result<Vec<(String, String, String)>, String> 
     }
 
     if rows.len() != ROWS {
-        return Err(format!("expected {ROWS} declarations, found {}", rows.len()));
+        return Err(format!(
+            "expected {ROWS} declarations, found {}",
+            rows.len()
+        ));
     }
 
     Ok(rows)

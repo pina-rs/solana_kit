@@ -19,18 +19,18 @@ declarations across **70** packages with extracted declarations. The
 
 | Phase | Declarations | Partial | Pending | Complete |
 | ----- | -----------: | ------: | ------: | -------: |
-| 2     |        1,387 |      59 |     924 |      404 |
+| 2     |        1,387 |      61 |     924 |      402 |
 | 3     |          746 |       0 |     746 |        0 |
 | 4     |        1,403 |       0 |   1,403 |        0 |
 | 5     |          262 |       0 |     262 |        0 |
 | 6     |        9,991 |       0 |   9,991 |        0 |
 | 7     |          751 |       0 |     751 |        0 |
 | 8     |        3,408 |       0 |   3,408 |        0 |
-| Total |       17,948 |      59 |  17,485 |      404 |
+| Total |       17,948 |      61 |  17,485 |      402 |
 
 These totals include the address pilot, the twelve numeric adjudications, the
 365 `SolanaErrorCode` name/integer claims and the 73 remaining
-`solana_kit_errors` contracts (37 complete, 36 partial).
+`solana_kit_errors` contracts (35 complete, 38 partial).
 All 71 package-disposition rows are `inventoried`, with no `implemented`,
 `verified`, or `blocked` claim. `rustc tools/check_plan.rs` reports
 `verified 71 unique package records and their planning states`.
@@ -140,8 +140,8 @@ manifest corruption in addition to missing, duplicate and invented rows.
 The committed reviews are the twelve address declarations (two complete, ten
 partial), twelve numeric/fixed-point declarations (all partial), 365
 `SolanaErrorCode` declarations (all complete for exact name and integer only),
-and the 73 remaining `solana_kit_errors` declarations (37 complete, 36 partial).
-The canonical ledger therefore has 404 complete, 59 partial and 17,485 pending
+and the 73 remaining `solana_kit_errors` declarations (35 complete, 38 partial).
+The canonical ledger therefore has 402 complete, 61 partial and 17,485 pending
 rows. No package disposition is promoted: every package remains `inventoried`.
 The error reviews do not claim the enum class as a whole, later-phase
 integration or the package itself.
@@ -806,7 +806,7 @@ functional computer-use proof distinct from the automated driver route.
 ## Achievable order
 
 1. **RW-01a**: adjudication manifest plus the twelve-address pilot are complete.
-   The error reviews add 365 complete name/integer rows and 37 complete plus 36
+   The error reviews add 365 complete name/integer rows and 35 complete plus 38
    partial contract rows. Continue with reviewed family-by-family adjudication
    under RW-01b.
 2. **RW-02**: publication projections in the shared suite. Closed by the
