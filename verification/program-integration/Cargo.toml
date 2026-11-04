@@ -1,0 +1,40 @@
+[package]
+name = "solana_kit_program_integration"
+version = "0.0.0"
+edition = "2024"
+publish = false
+rust-version = "1.89"
+description = "Owned local-validator integration for the real Solana Kit program clients"
+
+[workspace]
+
+[dependencies]
+base64 = "=0.22.1"
+serde_json = "1.0.154"
+sha2 = "0.10.9"
+solana_kit_address_lookup_table = { path = "../../crates/solana_kit_address_lookup_table", features = ["pda"] }
+solana_kit_associated_token_account = { path = "../../crates/solana_kit_associated_token_account", features = ["crypto"] }
+solana_kit_client = { path = "../../crates/solana_kit_client", features = ["parsed-accounts"] }
+solana_kit_compute_budget = { path = "../../crates/solana_kit_compute_budget" }
+solana_kit_config = { path = "../../crates/solana_kit_config" }
+solana_kit_core = { path = "../../crates/solana_kit_core", features = ["crypto"] }
+solana_kit_loader = { path = "../../crates/solana_kit_loader" }
+solana_kit_memo = { path = "../../crates/solana_kit_memo" }
+solana_kit_native = { path = "../../crates/solana_kit_native", features = ["keys"] }
+solana_kit_stake = { path = "../../crates/solana_kit_stake" }
+solana_kit_system = { path = "../../crates/solana_kit_system" }
+solana_kit_token = { path = "../../crates/solana_kit_token", features = ["plans"] }
+solana_kit_token_2022 = { path = "../../crates/solana_kit_token_2022" }
+tokio = { version = "=1.54.1", features = ["rt", "macros", "time"] }
+
+[target.'cfg(unix)'.dependencies]
+libc = "0.2.191"
+
+[dev-dependencies]
+solana_kit_account_compression = { path = "../../crates/solana_kit_account_compression" }
+solana_kit_anchor = { path = "../../crates/solana_kit_anchor" }
+solana_kit_mpl_bubblegum = { path = "../../crates/solana_kit_mpl_bubblegum", features = ["hashing", "pda", "tree"] }
+solana_kit_mpl_core = { path = "../../crates/solana_kit_mpl_core", features = ["pda"] }
+solana_kit_mpl_token_metadata = { path = "../../crates/solana_kit_mpl_token_metadata", features = ["pda"] }
+solana_kit_squads = { path = "../../crates/solana_kit_squads", features = ["pda"] }
+solana_kit_subscriptions = { path = "../../crates/solana_kit_subscriptions", features = ["pda"] }
