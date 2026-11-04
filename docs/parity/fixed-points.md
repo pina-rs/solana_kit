@@ -40,7 +40,8 @@ parser, avoiding separate overflowing numerator/denominator conversions. A finit
 result succeeds, including subnormal values and signed underflow to zero;
 nonfinite results return `Error::Overflow`. Work stays bounded by the validated
 width and scale. This presentation contract is not an exact floating arithmetic
-API; complete extreme IEEE754 parity with Dart remains open.
+API; the pinned-source differences for nonfinite, underflow and rounding cases
+are recorded in [the composition note](fixed-point-composition.md).
 
 Codecs require byte alignment, use core `Encoder`/`Decoder`/`Endian`/cursors,
 charge raw output bytes against the shared decoder allocation budget, preserve
@@ -51,11 +52,16 @@ write cases from being constructible.
 
 The canonical 126-entry [receipt](fixed-points.tsv) preserves source IDs and
 hashes, mapping 121 bounded equivalents and listing [five remaining IDs](fixed-points-remaining.tsv).
-Neither the package nor Phase 2 is claimed complete. The source pin is Dart
+Their typed substitutes and the conversion deviations are recorded in
+[the composition note](fixed-point-composition.md). Neither the package nor
+Phase 2 is claimed complete. The source pin is Dart
 `0138bb956d2d81ccc0c56edc602401c0df2f2b46`, package `solana_kit_fixed_points`.
 Reference vectors are from its decimal/binary, arithmetic, formatting,
 conversion, comparison, range, codec and security tests. The retained MIT notice
-in the shared fixture provenance applies. No Dart execution is claimed.
+in the shared fixture provenance applies. A separate scratch oracle executed
+pinned source for the two conversion rows and callback-constructor semantics; it
+does not claim the reference test suite ran. See
+[the composition note](fixed-point-composition.md).
 
 Eleven original native tests cover those vectors, 32,340 independently bracketed rational
 rounding checks, malformed inputs, budget and signed overflow edges, byte

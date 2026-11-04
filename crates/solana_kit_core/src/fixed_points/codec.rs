@@ -41,6 +41,10 @@ impl<const RADIX: u8> FixedPointCodec<RADIX> {
 }
 
 impl<const RADIX: u8> Encoder<FixedPoint<RADIX>> for FixedPointCodec<RADIX> {
+    fn encode_size(&self) -> Result<codecs::Size, codecs::Error> {
+        Ok(codecs::Size::Fixed(self.size))
+    }
+
     fn encoded_len(&self, value: &FixedPoint<RADIX>) -> Result<usize, codecs::Error> {
         if value.shape() != self.shape {
             return Err(codecs::Error::InvalidValue);
@@ -83,6 +87,10 @@ impl<const RADIX: u8> Encoder<FixedPoint<RADIX>> for FixedPointCodec<RADIX> {
 }
 
 impl<const RADIX: u8> Decoder<FixedPoint<RADIX>> for FixedPointCodec<RADIX> {
+    fn decode_size(&self) -> Result<codecs::Size, codecs::Error> {
+        Ok(codecs::Size::Fixed(self.size))
+    }
+
     fn read(&self, reader: &mut Reader<'_>) -> Result<FixedPoint<RADIX>, codecs::Error> {
         reader.claim(self.size)?;
         let bytes = reader.take(self.size)?;
