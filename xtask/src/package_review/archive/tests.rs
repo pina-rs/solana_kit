@@ -36,8 +36,13 @@ fn reads_actual_member_bytes_and_rejects_links_and_extensions() {
     assert_eq!(members.len(), 1);
     assert_eq!(members[0], ("core-0.1/lib.rs".into(), &b"x"[..]));
 
-    for kind in *b"125xgL" {
+    for kind in *b"125xg" {
         assert!(entries(&fixture(kind)).is_err(), "{kind}");
+    }
+
+    for kind in *b"LK" {
+        let error = entries(&fixture(kind)).unwrap_err().to_string();
+        assert!(error.contains("GNU long-name extension"), "{kind}: {error}");
     }
 }
 

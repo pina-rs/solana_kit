@@ -23,6 +23,7 @@ pub(crate) enum Command {
     DependencyFixture(PathBuf),
     PackageReview(PathBuf),
     PackageReport(PathBuf),
+    PackageRehearsal(PathBuf),
     RegistryFixture(PathBuf),
     All,
 }
@@ -53,6 +54,7 @@ pub(crate) fn parse(arguments: &[OsString]) -> Result<Command> {
         "dependency-fixture" => Ok(Command::DependencyFixture(required_path(paths, command)?)),
         "package-review" => Ok(Command::PackageReview(required_path(paths, command)?)),
         "package-report" => Ok(Command::PackageReport(required_path(paths, command)?)),
+        "package-rehearsal" => Ok(Command::PackageRehearsal(required_path(paths, command)?)),
         "registry-fixture" => Ok(Command::RegistryFixture(required_path(paths, command)?)),
         "native" => no_arguments(paths, command, Command::Native),
         "browser" => no_arguments(paths, command, Command::Browser),

@@ -8,6 +8,7 @@ mod consumer;
 mod gates;
 #[path = "../../verification/leptoskit-app-journey/wallet/prepare.rs"]
 mod generated_wallet;
+mod package_rehearsal;
 mod package_review;
 mod process;
 mod registry_fixture;
@@ -45,6 +46,7 @@ fn main() -> Result<()> {
         Command::DependencyFixture(path) => gates::check_dependency_fixture(&path),
         Command::PackageReview(path) => package_review::run(&path),
         Command::PackageReport(path) => package_review::check_report(&path),
+        Command::PackageRehearsal(path) => package_rehearsal::run(&path),
         Command::RegistryFixture(path) => registry_fixture::run(&path),
         Command::All => {
             runtimes::native()?;

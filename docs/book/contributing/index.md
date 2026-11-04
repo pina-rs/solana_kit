@@ -67,7 +67,7 @@ cargo run -p solana_kit_conformance --locked -- --corrupt-fixture
 | `cargo xtask all`               | `native`, `browser`, `wasi`, `leptoskit`, `gates` and `consumer`, in that order |
 | `cargo xtask style [root]`      | The per-file Monostyle gate                                                     |
 
-Other commands take a path: `style-report`, `imports`, `dependency-fixture`, `package-review`, `package-report`, `registry-fixture`, `artifact-capture`, `prepare-wallet` and `prepare-wallet-rpc`. To keep nested Cargo calls offline, set the environment rather than a flag: `CARGO_NET_OFFLINE=true cargo xtask consumer`.
+Other commands take a path: `style-report`, `imports`, `dependency-fixture`, `package-review`, `package-report`, `package-rehearsal`, `registry-fixture`, `artifact-capture`, `prepare-wallet` and `prepare-wallet-rpc`. The `package-rehearsal` path is its absolute-path JSON configuration; see the [SDK package rehearsal receipt](../../verification/sdk-package-rehearsal-current.md) for the archive, registry and clean-consumer evidence. To keep nested Cargo calls offline, set the environment rather than a flag: `CARGO_NET_OFFLINE=true cargo xtask consumer`.
 
 ## Style and formatting
 

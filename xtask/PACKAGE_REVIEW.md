@@ -39,9 +39,9 @@ Registry consumption must use the exact reviewed archive by name and version,
 under a fresh local registry namespace with original source access denied.
 
 `cargo xtask registry-fixture CONFIG.json` builds that local registry from exact
-offline inputs. Its configuration names `archive`, packaged `lockfile`, actual
-Cargo `metadata`, cached archive directory `cache`, cached `sparse_index`, a new
-`destination`, and the selected `package` and `version`.
+offline inputs. Its configuration names `archive`, packaged or derived `lockfile`,
+actual Cargo `metadata`, cached archive directory `cache`, sparse-index root
+`sparse_index`, a new `destination`, and the selected `package` and `version`.
 
 Only lockfile-selected packages enter the fixture. Each dependency's actual
 archive digest must match both its lockfile checksum and its exact cached sparse
@@ -49,10 +49,23 @@ index record. The implementation's record comes from actual Cargo metadata;
 local source paths are excluded. Archives are hardlinked into the owned fixture.
 The tool creates no Git repository and performs no network request.
 
+Optional `additions` names further reviewed archives in the same registry. Each
+entry supplies `archive`, `package` and `version`; additions not present in the
+derived lock input are installed with metadata records after the lock pass. The
+original single-archive configuration remains unchanged.
+
 Optional `omit_archive` and `corrupt_archive` package names construct real Cargo
 failure controls in fresh destinations. The latter changes a gzip timestamp byte,
 preserving decompression while invalidating the archive checksum. It copies that
 one control archive before changing bytes; cached source archives remain intact.
+
+`cargo xtask package-rehearsal CONFIG.json` composes these commands into the
+current SDK package gate. It selects `crates/*` workspace roots from Cargo
+metadata, packages them in dependency order, reviews each archive, installs the
+complete lock closure into a fresh local registry, and executes a clean external
+consumer with default/selected features, MSRV, Wasm and negative controls. It
+records the exact publish-dry-run blockers without uploading anything. See the
+[SDK package rehearsal receipt](../docs/verification/sdk-package-rehearsal-current.md).
 
 Consumers use an exact dependency version and a Cargo source replacement whose
 `local-registry` points at the fixture. Keep positive and negative compiler targets

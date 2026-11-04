@@ -139,6 +139,10 @@ fn parse_header(header: &[u8]) -> Result<(String, usize)> {
         "unsupported GNU extension data"
     );
     ensure!(
+        !matches!(header[TYPE_OFFSET], b'L' | b'K'),
+        "archive uses GNU long-name extension records"
+    );
+    ensure!(
         matches!(header[TYPE_OFFSET], 0 | b'0'),
         "archive contains a nonregular member"
     );
