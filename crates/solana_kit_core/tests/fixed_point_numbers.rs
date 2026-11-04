@@ -9,6 +9,24 @@ const SUBNORMAL_BINARY_SCALE: u32 = 1074;
 const MAX_FINITE_SHIFT: u32 = 971;
 const F64_SIGNIFICAND_BITS: u32 = 53;
 
+const DECIMAL_ROUNDING_SCALE: u32 = 25;
+const DECIMAL_UNDERFLOW_SCALE: u32 = 309;
+const BINARY_SUBNORMAL_SCALE: u32 = 1024;
+const BINARY_ROUNDING_RAW: u64 = (1 << 54) + 3;
+
+const DECIMAL_CANCELLATION_SCALE: u32 = 400;
+const BINARY_CANCELLATION_SCALE: u32 = 2048;
+const BINARY_CANCELLATION_EXPONENT: u32 = 1024;
+const BINARY_2_POW_MINUS_1024: f64 = f64::from_bits(1u64 << 50);
+
+const DECIMAL_ROUNDING_VALUE: f64 = 1e-25;
+const DECIMAL_UNDERFLOW_VALUE: f64 = 1e-309;
+const BINARY_ROUNDING_VALUE: f64 = 9_007_199_254_740_994.0;
+const EXACT_ONE: f64 = 1.0;
+
+const ONE_AND_A_QUARTER: f64 = 1.25;
+const THREE_QUARTERS: f64 = 0.75;
+
 fn number<const RADIX: u8>(raw: BigInt, scale: u32, signedness: Signedness) -> Result<f64, Error> {
     Shape::<RADIX>::new(signedness, MAX_WIDTH, scale)
         .unwrap()
@@ -94,16 +112,65 @@ fn finite_extremes_and_subnormal_values_remain_representable() {
     assert_eq!(signed::<10>(BigInt::from(1), 324), Ok(0.0));
 }
 
+/// Pinned Dart 3.13.3 converts through `BigInt.toDouble()` and iterated powers.
+/// These literals are the deliberate Rust deviations recorded in
+/// `docs/parity/fixed-point-composition.md`.
+#[test]
+fn pinned_dart_float_deviations_are_explicit() {
+    // Dart: 1.0000000000000002e-25 (0x3abef2d0f5da7dda).
+    assert_eq!(
+        signed::<10>(BigInt::from(1), DECIMAL_ROUNDING_SCALE),
+        Ok(DECIMAL_ROUNDING_VALUE)
+    );
+
+    // Dart: 9007199254740992.0 (0x4340000000000000).
+    assert_eq!(
+        signed::<2>(BigInt::from(BINARY_ROUNDING_RAW), 1),
+        Ok(BINARY_ROUNDING_VALUE)
+    );
+
+    // Dart: 0.0 (0x0000000000000000), losing the finite subnormal.
+    assert_eq!(
+        signed::<10>(BigInt::from(1), DECIMAL_UNDERFLOW_SCALE),
+        Ok(DECIMAL_UNDERFLOW_VALUE)
+    );
+    assert_eq!(
+        signed::<2>(BigInt::from(1), BINARY_SUBNORMAL_SCALE),
+        Ok(BINARY_2_POW_MINUS_1024)
+    );
+
+    // Dart: NaN (0x7ff8000000000000) for both exactly finite values.
+    assert_eq!(
+        signed::<10>(
+            BigInt::from(10).pow(DECIMAL_CANCELLATION_SCALE),
+            DECIMAL_CANCELLATION_SCALE
+        ),
+        Ok(EXACT_ONE)
+    );
+    assert_eq!(
+        signed::<2>(
+            BigInt::from(1) << BINARY_CANCELLATION_EXPONENT,
+            BINARY_CANCELLATION_SCALE
+        ),
+        Ok(BINARY_2_POW_MINUS_1024)
+    );
+
+    // Dart: Infinity (0x7ff0000000000000) instead of a typed error.
+    let beyond_finite = BigInt::from(1) << BINARY_CANCELLATION_EXPONENT;
+    assert_eq!(signed::<10>(beyond_finite.clone(), 0), Err(Error::Overflow));
+    assert_eq!(signed::<2>(beyond_finite, 0), Err(Error::Overflow));
+}
+
 #[test]
 fn ordinary_lossy_presentation_values_remain_finite() {
     for sign in [-1, 1] {
         assert_eq!(
             signed::<10>(BigInt::from(sign * 125), 2),
-            Ok(f64::from(sign) * 1.25)
+            Ok(f64::from(sign) * ONE_AND_A_QUARTER)
         );
         assert_eq!(
             signed::<2>(BigInt::from(sign * 3), 2),
-            Ok(f64::from(sign) * 0.75)
+            Ok(f64::from(sign) * THREE_QUARTERS)
         );
     }
 }
