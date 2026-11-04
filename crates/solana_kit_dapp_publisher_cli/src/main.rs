@@ -4,14 +4,21 @@ mod adapters;
 mod execute;
 
 use solana_kit_dapp_publisher::cli::{
-    CLI_VERSION, DOCS_URL, Flags, NewVersionOptions, PortalTargets, ResumeOptions,
-    enforce_self_update_policy, new_version_options, parse_flags, resolve_api_key,
-    resolve_portal_targets, resume_options, validate_new_version, validate_resume,
+    DOCS_URL, Flags, NewVersionOptions, PortalTargets, ResumeOptions, enforce_self_update_policy,
+    new_version_options, parse_flags, resolve_api_key, resolve_portal_targets, resume_options,
+    validate_new_version, validate_resume,
 };
 use std::{
     collections::BTreeMap,
     io::{IsTerminal, Read},
 };
+
+/// Version of this executable's own Cargo package.
+///
+/// The binary and the `solana_kit_dapp_publisher` library are separate packages
+/// that can be released independently, so the executable must not reuse the
+/// library's `CLI_VERSION` constant.
+const PACKAGE_VERSION: &str = env!("CARGO_PKG_VERSION");
 
 fn main() {
     std::process::exit(run(std::env::args().skip(1).collect()));
@@ -37,7 +44,7 @@ fn execute(arguments: &[String]) -> Result<(), String> {
     }
 
     if arguments.iter().any(|argument| argument == "--version") {
-        println!("solana-kit-publisher {CLI_VERSION}");
+        println!("solana-kit-publisher {PACKAGE_VERSION}");
 
         return Ok(());
     }
@@ -184,7 +191,7 @@ fn environment() -> BTreeMap<String, String> {
 
 fn print_help() {
     println!(
-        "solana-kit-publisher {CLI_VERSION}
+        "solana-kit-publisher {PACKAGE_VERSION}
 
 Publish a Solana dApp Store release through the approved portal.
 
