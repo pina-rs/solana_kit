@@ -2,8 +2,12 @@
 
 This is a source inventory and implementation worklist for the immutable Dart
 Solana Kit revision `0138bb956d2d81ccc0c56edc602401c0df2f2b46`. An inventoried
-symbol is not implemented SDK behavior. All entries are pending except one
-explicitly partial native role-merge mapping; no entry is verified or complete.
+symbol is not implemented SDK behavior. The source-derived default is `pending`
+except for one explicitly partial native role-merge mapping; reviewed rows in
+[`adjudications.tsv`](adjudications.tsv) may replace only `status`, `evidence`
+and `notes`. The current pilot adjudicates the twelve `solana_kit_address`
+declarations in [`address-adjudication.md`](address-adjudication.md); it does not
+complete the package or the SDK.
 
 The target is an off-chain client SDK for application code. Program clients build
 and decode interactions with deployed programs. `no_std + alloc` supports portable
@@ -44,12 +48,18 @@ cargo test --manifest-path tools/capability_inventory/Cargo.toml --locked
 
 `write` replaces only the three generated worklists. `check` regenerates them in
 memory and rejects missing, extra, duplicate or altered rows, source hashes,
-status/evidence claims, and delivery membership. `controls` deletes a real
-extracted capability row and source-file row, duplicates both, and inserts an
-invented verified/evidence claim; each must be rejected. Tests also reject absent
-pilot evidence and a missing reference checkout. Only the
-native role-merge artifact is allowlisted as partial; adding real implementation
-evidence requires an intentional reviewable change to the mapping/checker.
+status/evidence claims, and delivery membership. Reviewed claims are loaded from
+`adjudications.tsv` after extraction and may replace only `status`, `evidence`
+and `notes` for the complete canonical ID they key. A claim must match the
+defining source hash; a `complete` claim needs at least one exact case that is a
+successful `<case>: Ok(())` entry in its cited evidence file. Unknown and
+duplicate IDs, hash drift, absent or unsafe evidence paths, prose evidence,
+blank or invented cases, malformed headers/field counts and unknown statuses all
+fail. `controls` deletes a real extracted capability row and source-file row,
+duplicates both, inserts an invented verified/evidence claim, and corrupts the
+reviewed manifest in every way above; each must be rejected. Tests also reject
+absent pilot evidence and a missing reference checkout. Adding real
+implementation evidence requires an intentional reviewable manifest row.
 
 The dedicated parity CI checks the actual pinned source, runs syntax and negative
 fixtures, repeats the check deterministically, and enforces monostyle 0.3.27 with

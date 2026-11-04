@@ -1,5 +1,6 @@
 //! Extracts a pinned, reviewable capability worklist without claiming SDK parity.
 
+mod adjudication;
 mod catalog;
 mod inventory;
 mod ledger;
@@ -35,12 +36,12 @@ fn main() -> Result<()> {
     ledger::validate_pilot(repository)?;
     let inventory = Inventory::load(reference, repository)?;
     let catalogs = Catalogs::load(reference, &inventory.packages)?;
-    let tables = Tables::build(&inventory)?;
+    let tables = Tables::build(&inventory, repository)?;
     let directory = repository.join("docs/parity");
 
     match mode.as_str() {
         "write" => tables.write(&directory)?,
-        "controls" => tables.controls()?,
+        "controls" => tables.controls(repository)?,
         _ => tables.check(&directory)?,
     }
 

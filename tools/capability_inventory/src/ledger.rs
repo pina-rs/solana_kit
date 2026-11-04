@@ -1,12 +1,25 @@
 //! Produces canonical tables whose exact contents are checked against source.
 
 use crate::{
+    adjudication::{self, Manifest},
     inventory::Inventory,
     model::{PIN, Result, Source},
 };
+use std::{
+    collections::{BTreeMap, BTreeSet},
+    fs,
+    path::Path,
+};
 
 const UNIT_CAPACITY: usize = 200;
-use std::{collections::BTreeMap, fs, path::Path};
+const ADJUDICATION_EVIDENCE: &str = "verification/conformance/evidence/native-success.txt";
+const ADJUDICATION_CASE: &str = "address-base58-golden";
+const ADJUDICATION_ALPHA: &str = "dart:demo:lib/demo.dart#alpha";
+const ADJUDICATION_BETA: &str = "dart:demo:lib/demo.dart#beta";
+const ADJUDICATION_HASH_A: &str =
+    "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
+const ADJUDICATION_HASH_B: &str =
+    "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb";
 
 pub(crate) const CAPABILITIES: &str = "id\tpackage\tpath\tsymbol\tkind\tline\towner\tphase\tstatus\tevidence\tnotes\tunit\tsha256\tprovenance\n";
 pub(crate) const FILES: &str = "package\tpath\tsha256\tlines\tgenerated\tdeclarations\texported\tentrypoints\tparser_coverage\tunresolved\tprovenance\n";
@@ -20,13 +33,15 @@ pub(crate) struct Tables {
 
 impl Tables {
     /// A declaration is one capability even when getter/setter signatures share it.
-    pub fn build(inventory: &Inventory) -> Result<Self> {
+    pub fn build(inventory: &Inventory, repository: &Path) -> Result<Self> {
         let mut output = Self {
             capabilities: CAPABILITIES.into(),
             sources: FILES.into(),
             units: units_header(),
             counts: BTreeMap::new(),
         };
+        let manifest = Manifest::load(repository)?;
+        let mut observed = BTreeSet::new();
 
         for package in &inventory.packages {
             let mut entries = BTreeMap::new();
@@ -43,7 +58,16 @@ impl Tables {
 
             for (index, (id, (source, declaration))) in entries.iter().enumerate() {
                 let unit = format!("{}-{:03}", package.name, index / UNIT_CAPACITY + 1);
-                let (status, evidence, notes) = pilot(&source.package, &declaration.symbol);
+
+                let (status, evidence, notes) = match manifest.claim(id, &source.hash)? {
+                    Some(claim) => (
+                        claim.status.as_str(),
+                        claim.evidence.as_str(),
+                        claim.notes.as_str(),
+                    ),
+                    None => pilot(&source.package, &declaration.symbol),
+                };
+                observed.insert(id.clone());
                 let provenance = format!("{PIN}:{}", source.path);
                 let fields = [
                     id.clone(),
@@ -78,6 +102,7 @@ impl Tables {
             output.unit_rows(package, &entries);
         }
 
+        manifest.ensure_observed(&observed)?;
         output.units = format_units(&output.units);
         Ok(output)
     }
@@ -112,7 +137,7 @@ impl Tables {
     }
 
     /// Applies corruption controls to the full extracted worklist in memory.
-    pub fn controls(&self) -> Result<()> {
+    pub fn controls(&self, repository: &Path) -> Result<()> {
         row_controls(&self.capabilities, "capability")?;
         row_controls(&self.sources, "source file")?;
         let fake =
@@ -123,8 +148,10 @@ impl Tables {
             return Err("an invented verified/evidence claim was accepted".into());
         }
 
+        let reviewed = adjudication_controls(repository)?;
+
         println!(
-            "controls: missing/duplicate capability and source rows rejected; invented evidence rejected"
+            "controls: missing/duplicate capability and source rows rejected; invented evidence rejected; {reviewed} adjudication corruptions rejected"
         );
         Ok(())
     }
@@ -195,11 +222,8 @@ fn format_units(document: &str) -> String {
         result.push('|');
 
         for (cell, width) in rows[row_index].iter().zip(&widths) {
-            let value = if row_index == 1 {
-                "-".repeat(*width)
-            } else {
-                format!("{cell:width$}")
-            };
+            let value = format_cell(cell, *width, row_index == 1);
+
             result.push_str(&format!(" {value} |"));
         }
 
@@ -208,6 +232,15 @@ fn format_units(document: &str) -> String {
     }
 
     result
+}
+
+/// Formats one padded table cell, using dashes for the separator row.
+fn format_cell(cell: &str, width: usize, separator: bool) -> String {
+    if separator {
+        return "-".repeat(width);
+    }
+
+    format!("{cell:width$}")
 }
 
 /// Exercise missing and duplicate entries against the actual extracted tables.
@@ -226,6 +259,118 @@ fn row_controls(expected: &str, kind: &str) -> Result<()> {
     }
 
     Ok(())
+}
+
+/// Builds one reviewed fixture row for the in-memory manifest controls.
+fn adjudication_row(id: &str, hash: &str, status: &str, evidence: &str, cases: &str) -> String {
+    format!("{id}\t{hash}\t{status}\t{evidence}\t{cases}\treviewed note\treviewed decision")
+}
+
+/// Returns a valid manifest and the canonical IDs/hashes it claims.
+fn adjudication_fixture() -> (String, BTreeMap<String, String>) {
+    let valid = format!(
+        "{}\n{}\n{}\n",
+        adjudication::HEADER,
+        adjudication_row(
+            ADJUDICATION_ALPHA,
+            ADJUDICATION_HASH_A,
+            "partial",
+            ADJUDICATION_EVIDENCE,
+            ADJUDICATION_CASE
+        ),
+        adjudication_row(
+            ADJUDICATION_BETA,
+            ADJUDICATION_HASH_B,
+            "complete",
+            ADJUDICATION_EVIDENCE,
+            ADJUDICATION_CASE
+        )
+    );
+    let canonical = BTreeMap::from([
+        (
+            ADJUDICATION_ALPHA.to_owned(),
+            ADJUDICATION_HASH_A.to_owned(),
+        ),
+        (ADJUDICATION_BETA.to_owned(), ADJUDICATION_HASH_B.to_owned()),
+    ]);
+
+    (valid, canonical)
+}
+
+/// Enumerates each reviewed-manifest corruption the controls must reject.
+fn adjudication_corruptions(valid: &str) -> Vec<(&'static str, String)> {
+    let evidence = ADJUDICATION_EVIDENCE;
+    let case = ADJUDICATION_CASE;
+    let complete = format!("\tcomplete\t{evidence}\t{case}\t");
+    let unknown = adjudication_row(
+        "dart:demo:lib/demo.dart#gamma",
+        ADJUDICATION_HASH_B,
+        "pending",
+        "-",
+        "-",
+    );
+    let duplicate = adjudication_row(
+        ADJUDICATION_ALPHA,
+        ADJUDICATION_HASH_A,
+        "partial",
+        evidence,
+        case,
+    );
+
+    vec![
+        ("unknown id", format!("{valid}{unknown}\n")),
+        ("duplicate id", format!("{valid}{duplicate}\n")),
+        (
+            "hash drift",
+            valid.replace(ADJUDICATION_HASH_A, ADJUDICATION_HASH_B),
+        ),
+        (
+            "absent evidence",
+            valid.replace(
+                evidence,
+                "verification/conformance/evidence/absent-success.txt",
+            ),
+        ),
+        (
+            "complete without case",
+            valid.replace(&complete, &format!("\tcomplete\t{evidence}\t-\t")),
+        ),
+        ("invented case", valid.replace(case, "invented-case-name")),
+        ("blank case", valid.replace(case, "address-base58-golden;;")),
+        (
+            "unsafe evidence path",
+            valid.replace(evidence, "../outside-success.txt"),
+        ),
+        (
+            "prose evidence",
+            valid.replace(evidence, "docs/parity/README.md"),
+        ),
+        ("field count", valid.replace("\treviewed decision", "")),
+        (
+            "header",
+            valid.replace(adjudication::HEADER, "id\tsha256\tstatus"),
+        ),
+    ]
+}
+
+/// Reviewed-manifest corruptions must fail before any ledger column changes.
+fn adjudication_controls(repository: &Path) -> Result<usize> {
+    let (valid, canonical) = adjudication_fixture();
+
+    Manifest::parse(&valid, repository)?.validate(&canonical)?;
+
+    let corruptions = adjudication_corruptions(&valid);
+
+    for (label, text) in &corruptions {
+        let outcome =
+            Manifest::parse(text, repository).and_then(|manifest| manifest.validate(&canonical));
+
+        if outcome.is_ok() {
+            return Err(format!("adjudication control accepted: {label}").into());
+        }
+    }
+
+    Ok(corruptions.len())
 }
 
 /// Coalesces repeated declarations of the same symbol, such as accessors.
