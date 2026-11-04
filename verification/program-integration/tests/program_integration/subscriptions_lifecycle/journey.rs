@@ -134,6 +134,14 @@ pub(crate) async fn expect_wrong_subscriber_cancel(
 }
 
 pub(crate) async fn cancel(env: &IntegrationEnv, lifecycle: &Lifecycle) -> Result<i64, Error> {
+    let mut expected = subscription_account(env, lifecycle.subscription)
+        .await?
+        .data;
+    let expected_expiry = expected
+        .current_period_start_ts
+        .checked_add(PERIOD_SECONDS)
+        .expect("the test clock stays inside the i64 domain");
+    expected.expires_at_ts = expected_expiry;
     let instruction = cancel_instruction(lifecycle, lifecycle.subscriber.address())?;
     let signature = env
         .submit(&[instruction], &[env.payer(), &lifecycle.subscriber])
@@ -141,10 +149,7 @@ pub(crate) async fn cancel(env: &IntegrationEnv, lifecycle: &Lifecycle) -> Resul
 
     let account = subscription_account(env, lifecycle.subscription).await?;
     let state = &account.data;
-    let expected_expiry = state
-        .current_period_start_ts
-        .checked_add(PERIOD_SECONDS)
-        .expect("the test clock stays inside the i64 domain");
+    assert_eq!(state, &expected, "cancel may change only the expiry");
     assert_eq!(state.expires_at_ts, expected_expiry);
     assert_eq!(state.amount_pulled_in_period, 0);
 
@@ -206,6 +211,11 @@ pub(crate) async fn resume(
     lifecycle: &Lifecycle,
     expires_at_ts: i64,
 ) -> Result<(), Error> {
+    let mut expected = subscription_account(env, lifecycle.subscription)
+        .await?
+        .data;
+    assert_eq!(expected.expires_at_ts, expires_at_ts);
+    expected.expires_at_ts = 0;
     let instruction = resume_instruction(lifecycle, expires_at_ts)?;
     let signature = env
         .submit(&[instruction], &[env.payer(), &lifecycle.subscriber])
@@ -213,6 +223,7 @@ pub(crate) async fn resume(
 
     let account = subscription_account(env, lifecycle.subscription).await?;
     let state = &account.data;
+    assert_eq!(state, &expected, "resume may clear only the expiry");
     assert_eq!(state.expires_at_ts, 0);
     assert_eq!(state.amount_pulled_in_period, 0);
     assert_eq!(state.terms, lifecycle.plan_terms);
@@ -248,7 +259,9 @@ async fn expect_rejection(
     code: u32,
     label: &str,
 ) -> Result<(), Error> {
-    let before = env.account(subscription).await?;
+    let before = env.account(subscription).await?.ok_or(Error::Client(
+        "the subscription must exist before a rejection test",
+    ))?;
 
     let error = match env.submit(&[instruction], signers).await {
         Ok(signature) => {
@@ -260,7 +273,9 @@ async fn expect_rejection(
     };
 
     expect_custom_error(&error, 0, code);
-    let after = env.account(subscription).await?;
+    let after = env.account(subscription).await?.ok_or(Error::Client(
+        "the subscription disappeared after a rejected instruction",
+    ))?;
 
     assert_eq!(
         before, after,

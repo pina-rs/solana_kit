@@ -115,35 +115,19 @@ fn collect_program_data(
 ) -> Result<Vec<Vec<u8>>, Error> {
     let mut events = Vec::new();
 
-    for group in groups {
-        for instruction in group.instructions {
-            let data = compiled_data(instruction)?;
+    for instruction in groups.into_iter().flat_map(|group| group.instructions) {
+        let InnerInstruction::Compiled(compiled) = instruction else {
+            return Err(Error::Client(
+                "the lifecycle transaction returned resolved inner instructions",
+            ));
+        };
 
-            if data.index == program_index {
-                events.push(data.bytes);
-            }
+        if usize::from(compiled.program_id_index) == program_index {
+            events.push(compiled.data);
         }
     }
 
     Ok(events)
-}
-
-struct ProgramData {
-    index: usize,
-    bytes: Vec<u8>,
-}
-
-fn compiled_data(instruction: InnerInstruction) -> Result<ProgramData, Error> {
-    let InnerInstruction::Compiled(compiled) = instruction else {
-        return Err(Error::Client(
-            "the lifecycle transaction returned resolved inner instructions",
-        ));
-    };
-
-    Ok(ProgramData {
-        index: usize::from(compiled.program_id_index),
-        bytes: compiled.data,
-    })
 }
 
 fn decode_event(data: Vec<u8>) -> Result<SubscriptionEvent, Error> {

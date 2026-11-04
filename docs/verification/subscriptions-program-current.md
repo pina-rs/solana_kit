@@ -14,7 +14,7 @@ real `Subscribe`, `CancelSubscription` and `ResumeSubscription` transactions aga
 assertions, decoded events from confirmed transaction inner instructions, and four confirmed
 rejection transitions with byte-identical unchanged state.
 
-The executed run, from the repository root:
+The original 18-case run, from the repository root:
 
 ```text
 running 18 tests
@@ -24,6 +24,15 @@ test result: ok. 18 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; fin
 Two existing harness unit regressions also passed (`2 passed`, 0.16 s). The previous 17 program
 journeys are unchanged; the new case is
 `subscriptions_lifecycle::executes_subscribe_cancel_resume_with_exact_state_and_events`.
+
+After review, the full suite passed 19 integration cases and the two existing
+unit regressions. The additional case starts two owned validators at once,
+checks distinct identities/genesis/payers and cross-ledger absence, then closes
+both while preserving cleanup errors. Cancel and resume now compare the full
+decoded record against the pre-transaction state, allowing only the expiry field
+to change. The final run log is retained at
+`/tmp/solana-kit-subscriptions-parent-evidence/full-suite.log`; the literal tables
+below retain observations from the original 18-case run.
 
 ```sh
 CARGO_INCREMENTAL=0 CARGO_BUILD_JOBS=2 \
@@ -36,27 +45,28 @@ cargo +1.99.1 test --locked --offline \
 No SDK production crate, root manifest, root lockfile, workflow, fixture, canonical ledger, shared
 conformance or other program case was changed.
 
-## Source contract at the fixture pin
+## Contract exercised against the pinned artifact
 
-The pinned artifact is the `subscriptions-v0.5.0.so` recorded in the fixture manifest; the executed
-behavior follows the pinned program source:
+The fixture manifest identifies `subscriptions-v0.5.0.so` by version and program
+ID; this harness additionally pins its SHA-256. The manifest does not record an
+upstream Rust source commit, so this receipt does not establish reproducible
+build provenance for the ELF. Its execution establishes the following behavior:
 
-- `program/src/instructions/initialize_subscription_authority.rs` creates the authority PDA and
+- `InitSubscriptionAuthority` creates the authority PDA and
   approves it as the user ATA's SPL Token delegate with `u64::MAX`.
-- `program/src/instructions/subscribe.rs` validates the plan PDA, live plan status, expiry and
-  approved terms; validates the authority's user, mint and `init_id`; derives the subscription PDA
-  from `["subscription", plan, subscriber]`; creates the 155-byte account with a 107-byte header,
+- `Subscribe` accepts the supplied live plan, approved terms and matching authority;
+  creates the PDA from `["subscription", plan, subscriber]` as a 155-byte account with a 107-byte header,
   snapshotted terms, `amount_pulled_in_period = 0`, `current_period_start_ts = Clock::unix_timestamp`
   and `expires_at_ts = 0`; then emits `SubscriptionCreated` through a self-CPI.
-- `program/src/instructions/cancel_subscription.rs` rejects a non-subscriber with `Unauthorized`
+- `CancelSubscription` rejects a non-subscriber with `Unauthorized`
   (130) and a second cancellation with `SubscriptionAlreadyCancelled` (509); sets `expires_at_ts`
   to the end of the current period (period start plus 86,400 s for a 24-hour plan with `end_ts = 0`);
   then emits `SubscriptionCancelled`.
-- `program/src/instructions/resume_subscription.rs` rejects an active subscription with
+- `ResumeSubscription` rejects an active subscription with
   `SubscriptionNotCancelled` (510), a wrong approval echo with `StaleSubscriptionApproval` (521),
   and only then clears `expires_at_ts` while preserving period accounting; then emits
   `SubscriptionResumed`.
-- `program/src/event_engine.rs` emits events by invoking the program's own `EmitEvent`
+- The program emits events by invoking its own `EmitEvent`
   instruction, so the wire payload is inner instruction data, not a `Program data:` log line.
 
 The generated Rust client's source-literal checks are asserted too: instruction discriminators

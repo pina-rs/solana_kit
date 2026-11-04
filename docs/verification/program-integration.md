@@ -11,21 +11,24 @@ This receipt is the executed acceptance slice for the existing Rust program clie
 local Agave 4.2 validator per test. It does not claim whole-SDK, Phase 4–8, release, registry, browser,
 WASI, LeptosKit, device or mainnet completion.
 
-The executed run:
+The final reviewed run:
 
 ```text
-running 18 tests
-test result: ok. 18 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 90.56s
+running 19 tests
+test result: ok. 19 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 100.81s
 ```
 
-The new case is the Subscriptions subscribe/cancel/resume lifecycle; its literal addresses,
+The new program case is the Subscriptions subscribe/cancel/resume lifecycle; its literal addresses,
 signatures, state and rejection evidence are in
 [the Subscriptions lifecycle receipt](subscriptions-program-current.md). The previous 17 program
-journeys are unchanged.
+journeys are unchanged. A separate nineteenth integration case starts two owned
+validators together and verifies distinct identities, genesis hashes and payer
+ledgers, exercising the explicit gossip-port reservation.
 
 Two existing harness unit regressions for bounded reaping and confirmed read ordering also passed.
 Strict all-target Clippy (`-D warnings`), warning-free docs, formatting and the repository style gate
-passed locally with Rust 1.99.1 (2,265 files, readability 97.24, complexity 98.53).
+passed locally with Rust 1.99.1. The final retained style report records the
+repository and per-file floors.
 
 Command, from the repository root after extracting the pinned artifacts as described in the
 [workspace README](../../verification/program-integration/README.md):

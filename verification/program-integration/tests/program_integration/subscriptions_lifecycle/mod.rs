@@ -1,7 +1,6 @@
 //! Real Subscriptions lifecycle: subscribe, cancel and resume with events.
 //!
-//! The pinned `subscriptions-v0.5.0.so` program snapshot lives on `program/src`
-//! at the fixture pin. Its `subscribe` instruction creates the subscription
+//! The pinned `subscriptions-v0.5.0.so` artifact's `subscribe` instruction creates the subscription
 //! delegation account, `cancel_subscription` sets `expires_at_ts` to the end of
 //! the current period, and `resume_subscription` clears that value after a
 //! checked approval. This journey observes those transitions independently

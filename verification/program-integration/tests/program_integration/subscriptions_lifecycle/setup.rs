@@ -25,7 +25,7 @@ const SUBSCRIBER_FUNDING: u64 = 1_000_000_000;
 const MERCHANT_FUNDING: u64 = 1_000_000_000;
 const INTRUDER_FUNDING: u64 = 1_000_000_000;
 
-// Source literals from the pinned program, asserted against the node rather
+// Fixture layout literals, asserted against the node rather
 // than trusted from the client encoder.
 const PLAN_ACCOUNT_LEN: u64 = 491;
 const AUTHORITY_ACCOUNT_LEN: u64 = 106;

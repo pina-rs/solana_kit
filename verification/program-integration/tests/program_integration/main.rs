@@ -6,6 +6,7 @@ mod anchor_id_mismatch;
 mod bubblegum;
 
 mod compute_budget;
+mod concurrent;
 mod config;
 mod loader;
 mod loader_deploy;
