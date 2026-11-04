@@ -81,8 +81,10 @@ fn direct(config: &Config, workspace: &Path) -> Result<Outcome> {
     let stderr = String::from_utf8_lossy(&output.stderr);
     let (result, blocker) = if output.status.success() {
         ("passed".into(), None)
-    } else {
+    } else if stderr.contains("no matching package named") {
         ("missing-registry-dependency".into(), Some(missing(&stderr)))
+    } else {
+        ("failed".into(), Some(missing(&stderr)))
     };
 
     Ok(Outcome {

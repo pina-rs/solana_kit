@@ -42,6 +42,10 @@ pub(super) fn write(plan: &model::Plan, directory: &Path, registry: &Path) -> Re
     fs::create_dir_all(directory.join(".cargo"))?;
     fs::write(directory.join("Cargo.toml"), manifest(plan)?)?;
     fs::write(
+        directory.join("build.rs"),
+        include_str!("../../../rehearsal/build.rs"),
+    )?;
+    fs::write(
         directory.join("src/lib.rs"),
         "//! Compile surface for the external registry consumer.\n#![forbid(unsafe_code)]\n",
     )?;

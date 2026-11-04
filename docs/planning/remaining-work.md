@@ -465,52 +465,54 @@ wrapper.
 
 ### RW-07 Whole-workspace registry and package release rehearsal
 
-**Kind.** Evidence plus external release prerequisite.
+**Kind.** Executed local rehearsal, with archive-form and external publication
+prerequisites still open.
 
-**Acceptance criterion.** Phase 1: repeatable release preview for a real initial
-package. Phase 8: clean-consumer packaging succeeds, release readiness succeeds,
-and only implemented crates are published.
+**Acceptance criterion.** Phase 1 requires repeatable release preparation.
+Phase 8 requires clean-consumer packaging and real release readiness; only
+implemented crates may be published.
 
-**Current finding.** `monochange check` passes with 0 issues. A read-only preview
-at `79444fb8` reports 35 affected packages, 29 release targets and 110
-changesets, but every target has `release: false`, `package_publications` is
-empty, and all 29 targets plan `0.1.1`. It computes versions/changelogs but does
-not execute the configured lockfile refresh or a publish rehearsal. Twenty crates
-explicitly set `publish = false`; none sets `publish = true`.
+**Executed follow-up.** The [package rehearsal receipt](../verification/sdk-package-rehearsal-current.md)
+records a successful disposable Monochange apply and lock refresh, 34
+dependency-ordered archives, 32 fresh archive reviews over 1,103 members, and a
+207-package offline registry. The downstream consumer passes 9 default and
+12 selected-feature tests on current Rust and actual Rust 1.89, plus a portable
+Wasm compile check. Default and selected PackageID/member audits are separate;
+missing-archive and checksum controls use fresh namespaces.
 
-Only `solana_kit_core 0.1.0` has a local-registry and clean-consumer receipt
-([core package delivery](../verification/core-package-delivery.md)). The Codama
-NPM tarball has a separate packed consumer. There is no full workspace
-dependency-ordered package set, no clean downstream consumer of
-`solana_kit_client`/`native`/`wallet` from that set, and no `cargo publish
---dry-run` result for the SDK closure.
+The rehearsal exposed a stale target-specific Browser-to-Wallet requirement
+during Wallet's planned 0.2.0 bump. Browser now inherits the shared requirement,
+and Wallet's typed release writer updates it before lock refresh. Repository
+versions and publication settings stay unchanged; all version writes occur in
+the disposable preparation.
 
-**Owning code/source.** `monochange.toml`, `crates/*/Cargo.toml`,
-`xtask/src/registry_fixture.rs`, `.github/workflows/publish.yml`,
-`docs/verification/core-package-delivery.md`.
+**Remaining limits.** Wallet filenames with spaces and Token-2022 GNU long-name
+records are outside the maintained archive gate's supported forms. Those two
+archives have checksum custody but no fresh style/member audit. LeptosKit's Git
+upstream is not a registry package. Twenty included crates retain
+`publish = false`; the others stop at an offline registry-API dry run. Actual
+registry versions, publication decisions and authorization are still required.
+
+**Owning code.** `monochange.toml`, the shared Wallet dependency,
+`xtask/src/package_rehearsal/`, `xtask/src/registry_fixture.rs`, and
+`xtask/PACKAGE_REVIEW.md`.
 
 **Verification.**
 
 ```sh
 monochange check
 monochange preview --format json
-monochange preview --diff
-cargo package -p solana_kit_core --all-features --locked
-cargo package -p solana_kit --locked
+# Prepare only in an owned disposable source copy.
+monochange prepare
+cargo xtask package-rehearsal /absolute/path/to/rehearsal.json
 ```
 
-For the missing rehearsal, package every implemented crate in dependency order,
-materialize a fresh local registry from the complete closure, and build a clean
-consumer outside the repository. `cargo publish --dry-run` is the final check;
-do not publish. The exact commands depend on the release metadata unit and must
-be recorded, not inferred.
-
-**Next minimal unit.** On a dedicated release-rehearsal branch (not in this docs
-unit), enable publish metadata only for implemented crates, run Monochange's
-planned apply/lock refresh in a disposable copy, inspect the complete diff, then
-exercise the full local registry and downstream consumer. Keep the CLI registry
-install blocked until this succeeds. Record external authorization before any
-real publication.
+**Next minimal unit.** Add bounded archive-form support and requalify both
+remaining archives without weakening existing rejection controls or scores.
+The local-registry CLI installation also exposed a hard-coded version display:
+the prepared 0.1.1 package reports 0.1.0. Fix and requalify that executable.
+Real registry API acceptance and publication remain explicitly authorized
+release work; this local gate does not enable them.
 
 ### RW-08 Native Linux and Windows execution evidence
 
@@ -781,8 +783,9 @@ functional computer-use proof distinct from the automated driver route.
 6. **RW-06**: publisher reconciliation decision. The caller-explicit
    cleanup/resume contract is accepted; CLI registry enablement stays in RW-07.
 7. **RW-08**: Linux/Windows CI evidence; can run in parallel with the above.
-8. **RW-07**: full release rehearsal, after the release metadata and evidence
-   decisions are stable.
+8. **RW-07**: the local prepared-package rehearsal is executed; finish the two
+   archive-form reviews and CLI version display, then address real-registry
+   release prerequisites.
 9. **RW-09**: remaining program breadth. The twelve RW-10/RW-11 residual IDs
    have reviewed partial adjudications; broader numeric-family closure stays
    under RW-01.

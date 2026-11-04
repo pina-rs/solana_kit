@@ -144,6 +144,7 @@ fn resolved(path: &Path) -> Result<PathBuf> {
 
 /// Requires new output namespaces and an existing credential-free Cargo home.
 fn fresh(config: &Config) -> Result<()> {
+    ensure!(!config.target.exists(), "target directory must be fresh");
     ensure!(
         !config.evidence.exists(),
         "evidence directory must be fresh"
@@ -284,6 +285,7 @@ mod tests {
         config.evidence = directory.join("evidence");
         config.registry = directory.join("registry");
         config.consumer = directory.join("consumer");
+        config.target = directory.join("target");
         config.cargo_home = directory.join("home");
         config.cache = config.cargo_home.join("registry/cache");
         config.sparse_index = config.cargo_home.join("registry/index");

@@ -67,6 +67,11 @@ consumer with default/selected features, MSRV, Wasm and negative controls. It
 records the exact publish-dry-run blockers without uploading anything. See the
 [SDK package rehearsal receipt](../docs/verification/sdk-package-rehearsal-current.md).
 
+The rehearsal requires fresh, disjoint output namespaces and a cache-only Cargo
+home without configuration, credentials or unpacked registry sources. It audits
+resolved SDK PackageIDs and member bytes separately for default and selected
+features, rejects empty test runs, and selects the MSRV compiler explicitly.
+
 Consumers use an exact dependency version and a Cargo source replacement whose
 `local-registry` points at the fixture. Keep positive and negative compiler targets
 separate. Record the resolved package identity, actual compiler invocation and

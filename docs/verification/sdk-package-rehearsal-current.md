@@ -1,212 +1,188 @@
 # SDK package rehearsal (current)
 
-This receipt covers the local RW-07 package and release rehearsal for the
-implemented `crates/*` packages. It is not a publication, a registry reservation,
-or a whole-SDK completion claim. Normal publishing remains disabled: Monochange
-keeps `release: false`, every package publication is off, and twenty crates retain
-`publish = false`.
+On 2026-11-04, the local RW-07 rehearsal completed release preparation, assembled
+34 SDK archives in dependency order, and ran an external offline-registry consumer.
+This is local package evidence, not publication or whole-SDK release readiness.
+All publish settings remain disabled; twenty crates retain `publish = false`.
 
-The executable gate is `cargo xtask package-rehearsal CONFIG.json`. It packages the
-selected crates in dependency order, reviews their actual archives, installs the
-complete closure into a fresh offline local registry, and builds and executes an
-external consumer. The current run used Rust 1.99.1 and MSRV 1.89.0, a fresh
-task-owned `CARGO_HOME` with no credentials, and an exact `git archive` of commit
-`6606f80f` as the source tree. The source-tree digest over `crates/`,
-`Cargo.toml`, `Cargo.lock`, `monochange.toml` and `rust-toolchain.toml` is
-`8730aad3609ce00b5464951deba232a6f980d9c774aea881ba365a14ef462629`.
-No archive, registry cache, staging tree or build output is committed. The
-transient archives, registry namespaces, Cargo cache and compiler targets were
-removed after the hashes below were recorded; the retained command logs, summaries
-and JSON evidence remain outside the repository.
+The executable gate is `cargo xtask package-rehearsal CONFIG.json`. The recorded
+prepared source starts from `17311782`, adds the three release-metadata changes
+described below, and runs Monochange only in a disposable copy. Its source-tree
+digest is `398a35ae80b0e76b2a4b023cbd451de8a3ef4a9a9feef6f811cb0fe7d774ad8a`.
+That digest covers `crates/`, `Cargo.toml`, `Cargo.lock`, `monochange.toml` and
+`rust-toolchain.toml`, including the staged versions and changelogs. The repository
+keeps its current versions; no release was committed, tagged or uploaded.
 
-## Monochange planning and apply
+## Release preparation and the fixed dependency gap
 
-`monochange check` passed with zero issues: 109 Cargo files under seven rules and
-111 changesets under twenty rules. `monochange preview --format json` reported 35
-packages, 29 release targets, 111 changesets, 62 planned changed files, and zero
-`package_publications`. Every one of the 29 targets had `release: false`. The plan
-is one major bump (`solana_kit_wallet 0.2.0`) and 34 minor bumps (`0.1.1`); the
-0.0.0 umbrella reservation has no bump. The preview JSON SHA256 is
-`2e647114249e94b746c2b8237cabfa4b7064baa591d82a57546539a8ab02159d`;
-the human diff SHA256 is
-`497c85fcd3e4808941b232b89ba135b6de130e0e013ce52bae9099c3f77209c5`.
+The original `6606f80f` rehearsal exposed a real preparation failure: Wallet was
+planned at 0.2.0, while Browser's target-specific dependency still required
+`^0.1.0`. Monochange's discovered graph omitted that target-specific edge.
+It wrote package versions but could not refresh the workspace lock.
 
-The supported apply was attempted only in a disposable staging tree made from the
-same archived source. `monochange prepare` wrote 34 Cargo versions, 26 changelogs
-and the Codama package/lock pair (62 files), then failed in its configured
-`cargo update --workspace` command:
+Browser now inherits Wallet from `workspace.dependencies`, and Wallet's typed
+`versioned_files` entry updates `workspace.dependencies.solana_kit_wallet` during
+preparation. The shared dependency disables default features, preserving Browser's
+previous setting; Wallet's default feature set is empty, so other workspace
+callers gain no feature change.
 
-```text
-error: failed to select a version for the requirement `solana_kit_wallet = "^0.1.0"`
-candidate versions found which didn't match: 0.2.0
-location searched: crates/solana_kit_wallet
-required by package `solana_kit_browser v0.1.1 (crates/solana_kit_browser)`
-```
+With those changes, `monochange prepare` exited 0 in the disposable copy:
+35 packages and 64 changed files, including the root requirement and refreshed
+lockfile. Wallet becomes 0.2.0; the other 33 included Cargo components become
+0.1.1; the dependency-free umbrella stays at 0.0.0. The excluded LeptosKit crate
+also plans 0.1.1. The NPM package's planned files are preparation evidence only;
+its packed-consumer proof remains a separate receipt.
 
-The diff contains 33 `0.1.1` Cargo versions and one `0.2.0` version, but no changed
-internal dependency requirement and no `Cargo.lock` change. `cargo update` therefore
-cannot resolve the stale browser-to-wallet requirement. `monochange versions sync
---dry-run --format json` also reports zero changes. This is a release-plan
-prerequisite, not a packaging failure: the computed major bump is not propagated
-to the explicit path dependency. No dependency requirement was edited by hand and
-no successful apply is claimed.
-
-`monochange publish packages --dry-run` also fails with
-`no monochange release record found in first-parent ancestry from HEAD`. The apply
-diff SHA256 is
-`4bce5a3d40f297a14037534aeae345f20e2f88c1ea0e06fb7a6c1dc9b9caf060`;
-its command log SHA256 is
-`1c768e58a1b961480971071de2ef827314c9939dc96116d184c7b6f943d9f6d5`.
-Because the staged tree is not a valid post-apply workspace, the package rehearsal
-uses the exact unmodified 0.1.0 source snapshot.
+The initial preview had 111 changesets, 29 release targets and no package
+publications. Every target retained `release: false`. The initial failed apply
+and its logs remain historical evidence; the successful prepared copy is the
+input to the current archive rehearsal. No publish policy was enabled.
 
 ## Package set and archive review
 
-Cargo metadata identifies 35 SDK roots under `crates/`. Thirty-four enter the local
-rehearsal: twenty retain `publish = false`, thirteen are publishable components, and
-the remaining publishable entry is the 0.0.0 `solana_kit` reservation. The only
-excluded root is `solana_kit_leptoskit 0.1.0`, whose pinned upstream
-`git+https://github.com/ifiokjr/leptoskit?rev=7437097c52aa68a3401bd378764e051ed4c9165a`
-is not a registry package. It remains an external release prerequisite.
+Cargo metadata finds 35 SDK roots under `crates/`. Thirty-four enter this
+rehearsal. The excluded `solana_kit_leptoskit` depends on the pinned LeptosKit Git
+upstream `7437097c52aa68a3401bd378764e051ed4c9165a`, which is not a registry
+package. That remains an external release prerequisite.
 
-Cargo created the 34 archives in dependency order with
-`cargo package --locked --offline --exclude-lockfile --no-verify`. The consumer
-then proves the resulting bytes build; archive creation alone is never treated as
-compile acceptance. The maintained [archive gate](../../xtask/PACKAGE_REVIEW.md)
-performed 32 fresh analyses over 1,090 regular members. Every supported source and
-document met the 90-point readability and complexity floors; no floor was lowered.
+Cargo produced actual archives with
+`cargo package --locked --offline --exclude-lockfile --no-verify`.
+The [maintained archive gate](../../xtask/PACKAGE_REVIEW.md) freshly analyzed
+32 archives and 1,103 regular members. Every scored member met both 90-point
+floors. Two archives remain outside that gate's supported forms:
 
-Two archives could not enter the maintained gate because of archive form, not a
-score or a bad source byte:
+- Wallet contains `assets/coinbase wallet.uri` and `assets/huobi wallet.uri`;
+  the gate rejects filenames containing spaces.
+- Token-2022 uses GNU long-name records for three instruction paths; the gate
+  rejects those extension records.
 
-- `solana_kit_wallet 0.1.0` contains `assets/coinbase wallet.uri` and
-  `assets/huobi wallet.uri`. The gate rejects filenames containing spaces.
-- `solana_kit_token_2022 0.1.0` uses GNU long-name records for three instruction
-  source paths longer than 100 bytes. The gate explicitly rejects GNU `L`/`K`
-  records.
+Both archives are checksum-locked in the registry. Wallet's public behavior is
+executed by the consumer, but neither archive has a fresh style/member audit.
+No score threshold or existing rejection control was weakened.
 
-Both archives are still materialized and checksum-locked in the registry. The
-consumer executes Wallet Standard metadata and MWA behavior from the wallet archive;
-no style review is claimed for either archive. The gate now distinguishes a GNU
-long-name rejection from a nonregular member, but it still rejects the archive.
+| Package                 | Version | SHA256                                                             | Reviewed members |
+| ----------------------- | ------- | ------------------------------------------------------------------ | ---------------: |
+| `solana_kit_core`       | 0.1.1   | `4c31af052a50d38e82631e8e9c525f0b1a353f145b2d02bc106f3cfbd2ad4e8d` |              103 |
+| `solana_kit_client`     | 0.1.1   | `3b704b8d481acdd333f344af6ffc0db2c52aecc854c390fb2eb55f14a9f7396b` |              191 |
+| `solana_kit_signers`    | 0.1.1   | `7cf66874448c9377de36c6a64bb38eac844e3fc46fbd314734fc06a5d70ce2a8` |               24 |
+| `solana_kit_native`     | 0.1.1   | `5c9ad1c0b56998039c7d9671be26004837198eeb2fa0979b3a39985377f8f29f` |               68 |
+| `solana_kit_system`     | 0.1.1   | `5e2dfefc3b0264d7eef5c99eed52e261b7782fa462c062dd800c94c072ec20d0` |               11 |
+| `solana_kit_token`      | 0.1.1   | `dac1f4d1bd59f2d754f09330cd17f46b90343d2ee0a599f79a126f9efadfc1c8` |               15 |
+| `solana_kit_anchor`     | 0.1.1   | `704f1802f2bc260364360acd5b5f93ef09a31a9fc66519b1a02e695a5a6f4005` |               17 |
+| `solana_kit_wallet`     | 0.2.0   | `9fc4b8eebec3d4083d992ef9ae2373ff2b3e98d0751e55638130aa2d386ab2e6` |     form-limited |
+| `solana_kit_token_2022` | 0.1.1   | `c0f5c54696286d72d218add6499947b4bf554720eb1ffacd5a5378a3e1e010db` |     form-limited |
 
-Representative reviewed archive hashes:
+All 34 archive hashes and per-member receipts are retained with the run summary.
+Archive creation alone is not compile acceptance; the consumer proves the
+selected dependency closure builds.
 
-| Package                 | Version | SHA256                                                             | Members      |
-| ----------------------- | ------- | ------------------------------------------------------------------ | ------------ |
-| `solana_kit_core`       | 0.1.0   | `25d56493e18f6a4a517199eb15ae30763729eb20cef34f9507b584e0cf25362e` | 103          |
-| `solana_kit_client`     | 0.1.0   | `e92a9fb84204bfbe764debb3c67b5d086352c90c5fa14c01daea47217804ad65` | 191          |
-| `solana_kit_signers`    | 0.1.0   | `77aa81a238d53ecf4366b67e5ae3cb02caf9098844cd78ac0bb527fd58926524` | 24           |
-| `solana_kit_native`     | 0.1.0   | `58ca348b8956f3c85aaa8513cebb9a6f511116fd94d2e341d36b18b989a4eabc` | 68           |
-| `solana_kit_system`     | 0.1.0   | `70929fbd5ceb21ad2cdcce7af05898af1a4b06989f86b017ed09601ba8eb4799` | 11           |
-| `solana_kit_token`      | 0.1.0   | `8a691cb6dabf8a0e805926bff26e9be0c530ff0162c70d27f6af96456140110e` | 14           |
-| `solana_kit_anchor`     | 0.1.0   | `470a77164e380b6f4449a9bae514b51f11029ee7adb040a03bb9049abc3eafa9` | 17           |
-| `solana_kit_wallet`     | 0.1.0   | `e75cc64d16f46f9e59a66ad969cc635e9f277bf1f0cf447cb6ea1b5253737180` | form-limited |
-| `solana_kit_token_2022` | 0.1.0   | `08ab548098496c23ae1727e3e427e0dfdeca8e5c8ee4ec26b7271271158c679c` | form-limited |
+## Offline registry and consumer evidence
 
-The complete archive-set digest
-`b9eff25dd008efd478b5b451864cfb28f2e6d65b306d5c0d862eb4c54bdac50a` is the SHA256
-of the sorted per-archive SHA256 list.
+The fresh local registry contains 207 packages: the 34 SDK archives and 173
+checksum-verified cached dependencies. Each external archive matches both its
+lockfile checksum and exact sparse-index record. The Cargo home admits cached
+inputs, but rejects credentials, configuration files and pre-existing unpacked
+registry sources. Output namespaces cannot overlap or resolve into the source
+tree through aliases or parent traversal.
 
-## Offline registry and external consumer
+The consumer uses exact registry versions with a Cargo source replacement,
+without SDK path dependencies or `[patch]`. Its default configuration executes
+9 tests and the selected-feature configuration executes 12. Assertions cover
+literal address/message/System/Memo/ATA bytes, Anchor discriminators, wallet
+metadata, signer message ownership, scripted client correlation, owned-loopback
+Native HTTP, crypto, MWA association metadata and a two-leaf Token plan.
 
-`registry-fixture` installed all 34 selected archives plus 173 checksum-verified
-dependencies from the exact closure lock, for 207 packages. Each external archive
-matched both its `Cargo.lock` checksum and its cached sparse-index record. The
-consumer uses only a `[source.crates-io]` local-registry replacement with exact
-`=0.1.0` version requirements. It contains no `[patch]`, path dependency, original
-checkout path or registry credential.
+Cargo metadata is audited separately for both configurations: 10 resolved SDK
+packages by default and 12 with selected features. The latter adds Compute Budget
+and Surfpool. Every resolved SDK PackageID has a registry source, a manifest under
+the fresh Cargo home, and a consumer-lock checksum matching its archive. Reviewed
+unpacked members are rehashed against archive receipts; Wallet is checksum-bound
+but remains form-limited. A successful command with no executed tests is rejected.
 
-The consumer depends on Core, Client, Signers, Wallet, Native, Token, System, Memo,
-Associated Token Account and Anchor. Its default closure executed 9 tests and its
-selected feature closure executed 12. The selected closure enables Core
-crypto/fixed-points/text-codecs/bigint-codecs/keccak, Client
-confirmation/resource/parsed/reactive features, Signers crypto, Wallet MWA, Native
-MWA and Surfpool, Token plans and ATA crypto. The tests assert independent literals:
-address and legacy message bytes, System/Memo/ATA instruction bytes, Anchor
-discriminators, Wallet metadata and MWA association round trips, immutable signer
-messages, a scripted `getBalance` client exchange, a caller-owned
-`127.0.0.1:0` Native HTTP exchange, Core signing and PDA rejection, and a two-leaf
-Token transfer plan. No production network or user key is used.
+Actual Rust 1.89.0 (`29483883e`, 2025-08-04) executes the same 9 default and
+12 selected tests. The harness resolves Cargo, rustc and rustdoc independently
+through `rustup which --toolchain` and sets all three explicitly, so an inherited
+Rust 1.99 compiler override cannot invalidate the MSRV result. The compiler's
+verbose version and both corrected executions are retained separately.
+The consumer build script compares Cargo's actual compiler with the selected
+version. The replay passes on 1.89; deliberately using 1.99 with a 1.89 expectation
+fails with `MSRV compiler mismatch` before any consumer tests can pass.
 
-Ten resolved SDK packages were audited through Cargo metadata. Every selected package
-has a registry source, its manifest is under the fresh Cargo home rather than this
-checkout, and its consumer lock checksum equals the reviewed archive hash. The audit
-rehashed 446 unpacked members for the nine packages with a fresh review, including all
-103 Core, 191 Client, 24 Signers, 68 Native, 14 Token, 11 System, 17 Anchor, 10 ATA
-and 8 Memo members. Wallet is checksum-locked but has no member audit because its
-archive is form-limited.
+The portable Core/Client/Signers/Wallet consumer also passes a locked offline
+`wasm32-unknown-unknown` check. This is compilation, not Wasm execution or a proof
+of every feature combination.
 
-The same consumer passes under Rust 1.89.0 in both default and selected modes. A
-portable consumer depending on Core, Client, Signers and Wallet passes
-`cargo check --target wasm32-unknown-unknown --locked --offline`.
+Fresh missing-Core and corrupted-Client controls use independent Cargo homes,
+registry namespaces and compiler targets. They fail for the intended missing
+archive and checksum diagnostics, each naming the affected package. No cached
+positive build is accepted as a negative result.
 
-Fresh negative registries use separate Cargo homes and target directories. The
-missing-Core control fails while downloading
-`registry-negative-missing/solana_kit_core-0.1.0.crate` with `No such file or
-directory`. The corrupted-Client control changes only a gzip timestamp byte and
-fails with `failed to verify the checksum of solana_kit_client v0.1.0`.
+## Dry-run outcomes and remaining release prerequisites
 
-## Publish dry-run outcomes
+Only offline `cargo publish --dry-run --no-verify` was executed, with no registry
+credential or upload. Twenty packages refuse because of `publish = false`;
+fourteen stop at the offline registry API requirement. A direct dependent package
+without the local registry reports
+`no matching package named solana_kit_compute_budget found`.
+Unknown failures are recorded as failures, not mislabeled as missing packages.
 
-Only dry-run was executed, offline, with the fresh Cargo home, `--no-verify`, and
-no `--registry` or `--index`. Twenty packages fail with `publish = false`. The
-remaining fourteen reach Cargo's registry API check and fail with
-`attempting to make an HTTP request, but --offline was specified`; no upload or
-registry mutation occurred. The umbrella is included in that fourteen because its
-manifest is publishable, but its current 0.0.0 reservation is not a release.
+The initial `monochange publish packages --dry-run` had no committed release
+record in its ancestry. Successful disposable preparation is not a published
+release, and this rehearsal does not manufacture a release commit or credentials.
 
-A direct `cargo package -p solana_kit_client` without the local registry fails on
-`no matching package named solana_kit_compute_budget found` in the crates.io index.
-This is the concrete absent-registry-dependency evidence for a dependent package.
-No local registry API fixture was used, because a fixture pass would simulate
-availability rather than prove it. The local registry consumer is separate local
-evidence, not a crates.io readiness result.
+Remaining prerequisites are:
 
-## Remaining release prerequisites
+1. Publish or replace the LeptosKit Git upstream before a whole-SDK registry closure
+   can exist.
+2. Decide which of the twenty private crates should ship and resolve the umbrella's
+   0.0.0 reservation. This gate deliberately leaves all publication disabled.
+3. Make the required internal versions available in the real registry, then
+   perform authorized registry-API dry runs.
+4. Extend archive-form support before claiming fresh Wallet and Token-2022 audits.
+5. Recheck immutable publish archives with their generated lockfiles; this
+   rehearsal uses `--exclude-lockfile` to assemble unpublished dependencies.
 
-1. Fix the Monochange major-bump dependency update before any apply: the Wallet
-   0.2.0 plan must update browser's explicit `solana_kit_wallet` requirement, or
-   the release must choose a compatible bump. Then rerun apply and lock refresh.
-2. Publish or replace the pinned `leptoskit` Git upstream in a real registry before
-   any whole-SDK closure can be assembled from registries.
-3. Resolve the twenty `publish = false` decisions and the 0.0.0 umbrella
-   reservation for the crates that should actually ship.
-4. Provide actual registry versions for every internal dependency; the direct
-   dependent package currently has no crates.io Core/Compute Budget versions.
-5. Complete `cargo publish --dry-run` against a real registry API with authorized
-   credentials only during an approved release, never from this gate.
-6. Decide whether the archive gate should support spaces and GNU long-name records;
-   until then Wallet and Token-2022 have no style claim.
+The prepared CLI archive also installs into an isolated root from this registry,
+and `--help` exits 0. Cargo records package version 0.1.1, but help reports 0.1.0
+because the executable imports a hard-coded library constant. That exposed a
+separate version-display defect; correct version reporting remains unqualified.
+Cargo also warns that the archive has no published lockfile, so `--locked` here
+does not prove an immutable published dependency lock.
 
-## Reproduction
+The rehearsal does not prove public-registry CLI availability, Linux/Windows execution,
+production network behavior, publication, or every feature of every SDK root.
+Registry resolution is evidenced by PackageIDs, checksums and manifest paths,
+not a filesystem read-denial sandbox around the source checkout.
 
-The configuration is an absolute-path JSON file with `workspace`, `evidence`,
-`target`, `registry`, `consumer`, `cargo_home`, `cache`, `sparse_index`, `engine`,
-`engine_sha256`, `policy`, `gzip`, `gzip_sha256`, optional `msrv`, optional
-`wasm_targets`, and optional `publish_dry_run`. `sparse_index` names the Cargo
-sparse-index root (the directory containing `.cache`), not `.cache` itself.
+## Local gates and reproduction
+
+The xtask unit/CLI suites, warning-denied Clippy and rustdoc, repository formatting,
+Monochange check and the full style gate pass. Workspace checks and the existing
+dependency-graph and single-core consumer controls are recorded alongside the
+package evidence. The [single-core receipt](core-package-delivery.md) and Codama's
+packed-consumer receipt retain their separate scopes.
+
+The JSON configuration supplies absolute paths for `workspace`, `evidence`,
+`target`, `registry`, `consumer`, `cargo_home`, cached archives, sparse index,
+and exact analyzer/gzip binaries and SHA256 values. The sparse-index path is the
+directory containing `.cache`. It optionally selects `msrv`, `wasm_targets`
+and `publish_dry_run`.
 
 ```sh
+monochange check
+monochange preview --format json
+# Run prepare only in an owned disposable source copy.
+monochange prepare
 cargo xtask package-rehearsal /absolute/path/to/rehearsal.json
 ```
 
-The command creates one fresh evidence tree containing `packages.json`,
-`metadata.json`, `closure-Cargo.lock`, `summary.json`, `consumer-audit.json`,
-`commands/`, `archives/` and `reviews/`. Re-run `cargo xtask package-review` on any
-retained archive for an independent membership and source review. The
-[existing core receipt](core-package-delivery.md) remains the single-core consumer
-record; `registry-fixture` keeps its original single-archive configuration, and its
-`additions` array is optional.
+The gate emits the source digest, package plan, archive/review records, lock
+closure, default and selected consumer audits, command outputs and negative
+controls. `registry-fixture` preserves its single-archive configuration;
+`additions` is optional.
 
-Dependent archives use Cargo's `--exclude-lockfile` option so internal unpublished
-versions are not required during assembly. The archive source and normalized
-manifest are real; the lockfile is generated metadata and must be rechecked when a
-release actually packages immutable publish artifacts. The rehearsal proves registry
-resolution through PackageID sources and fresh-Cargo-home manifest paths, not through
-a read-denial sandbox around the original checkout.
-
-This rehearsal does not prove publication, a clean installation of the CLI, Linux
-or Windows execution, or every feature combination of every SDK crate. It proves the
-selected archive closure, the offline registry consumer, the negative controls, and
-the exact blockers above for the recorded source and tool versions.
+The initial worker's logs remain outside build targets. Reviewed preparation,
+corrected MSRV and local-gate logs are under
+`/tmp/solana-kit-package-parent-evidence`; the prepared registry evidence is under
+`/tmp/solana-kit-package-prepared-run/evidence`. Build targets are disposable;
+hashes, public source snapshots and receipts are retained outside them.
