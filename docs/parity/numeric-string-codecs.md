@@ -75,10 +75,11 @@ and 17,920 additional BigInt radix comparisons. The clean external consumer also
 executes on MSRV 1.89. An unchanged independent consumer replays 19,158 actual
 Dart oracle rows against the integrated public package with zero mismatches.
 
-Three portable groups now execute in the shared 59-case suite natively, in
+Three portable groups entered the then-current shared 59-case suite natively, in
 Chrome, in Wasmtime Preview 1 and Preview 2, and in the pinned actual LeptosKit
-host. The [runtime receipt](../verification/runtimes.md) records the executed
-source and artifact hashes. This bounded evidence does not complete Phase 2,
+host. They remain in the current v57/459 suite. The
+[runtime receipt](../verification/runtimes.md) records the executed source and
+artifact hashes. This bounded evidence does not complete Phase 2,
 installed-app journeys, or the seven partial capabilities.
 The original MIT license is retained beside the generated fixtures. Component
 publication remains disabled.

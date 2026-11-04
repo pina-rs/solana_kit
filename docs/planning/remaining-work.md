@@ -419,7 +419,7 @@ snapshot/session/release at `engine.rs:125-157`. The workflow receipt says it
 does not invent automatic uncertain-effect reconciliation, and the book says the
 CLI never replays an ambiguous step.
 
-**Accepted decision.** The parent accepts the caller-explicit
+**Accepted decision.** The SDK keeps the caller-explicit
 `cleanup_failed` -> `CleanupOutcome::PreservedSubmitted` -> `resume` sequence as
 the replacement for the source's automatic catch/cleanup/recovery. It is a
 deliberate caller contract, not byte-for-byte automatic behavior: no destructive
@@ -755,8 +755,8 @@ functional computer-use proof distinct from the automated driver route.
 
 ## Achievable order
 
-1. **RW-01a**: adjudication manifest plus the twelve-address pilot. This unlocks
-   honest incremental closure and prevents a later mass-promotion pass.
+1. **RW-01a**: adjudication manifest plus the twelve-address pilot are complete.
+   Continue with reviewed family-by-family adjudication under RW-01b.
 2. **RW-02**: publication projections in the shared suite. Closed by the
    v57/459 five-host receipt.
 3. **RW-05**: WASI socket/clock named-host receipt. Closed for its named host;
@@ -782,24 +782,23 @@ This order is achievable because each step has an independent executable result.
 It is not a promise that every item is small: declaration closure and external
 wallet acceptance are long-horizon work.
 
-## Next unit to brief
+## Next declaration unit
 
-**RW-01a: canonical adjudication manifest and one-family pilot.**
+**RW-01b: bounded Phase 2 family adjudication.**
 
-- Goal: prove honest incremental adjudication without changing any canonical ID,
-  hash, source extraction, threshold, or existing failure control.
-- Files to add/change: `docs/parity/adjudications.tsv`,
-  `tools/capability_inventory/src/ledger.rs`, its tests and README, and the
-  twelve `solana_kit_address` rows in `docs/parity/capabilities.tsv` after
-  successful regeneration.
+- Start with the fixed-point and numeric residual mappings above, one family at
+  a time. Review the source contract, executable cases and documented
+  substitutions before choosing a status. A receipt link alone cannot complete
+  a declaration.
+- Use the checked manifest introduced by the address pilot. Preserve every
+  canonical ID, source hash and provenance field, and all corruption controls.
 - Do not touch production SDK crates, root manifests/locks, workflows, shared
-  conformance, fixtures/goldens, or the other family receipts.
-- Acceptance: the extractor check passes with the same 17,948 IDs and hashes;
-  exactly the piloted rows change status/evidence/notes; unknown, duplicate,
-  hash-drift, missing-evidence and complete-without-case controls all fail;
-  `rustc tools/check_plan.rs` still reports 71 package records.
-- Parallel quick win if the parent wants a smaller first change: RW-02, adding
-  the 32 existing publication projection bodies to shared conformance.
+  conformance or fixtures merely to promote a status. A real uncovered contract
+  becomes its own implementation or execution unit.
+- Require successful extractor regeneration, unchanged source identity columns,
+  justified case mappings, and rejection of unknown IDs, hash drift, missing
+  evidence and invented cases. Package completion stays separate from a small
+  declaration pilot.
 
-The whole SDK remains incomplete after either unit. The honest completion claim
+The whole SDK remains incomplete after these bounded units. The completion claim
 requires the remaining backlog plus a full release rehearsal.
