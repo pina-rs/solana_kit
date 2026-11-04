@@ -249,12 +249,23 @@ through balance fetch, signing, send/confirm, subscribe/unsubscribe and
 pending-I/O unload; record wallet/platform availability instead of assuming
 Android MWA exists on iOS.
 
-**Current finding.** The implementation is materially ahead of the current
+**Current finding.** The acceptance criterion is met on the owned emulator. The
+[external Android wallet execution
+receipt](../verification/installed-external-wallet-android-current.md) records
+the 2026-11-04 final invocation at `da4aaef2` (branch
+`test/android-external-wallet-final`): the installed `android-mwa` controller
+drove a fresh ordinary generated application through authorization, funding,
+message signature, rejection and approval of one exact 1,000,000-lamport System
+transfer, the subscription race, cancellation of an actual pending wallet
+prompt, fresh authorization, awaited disconnect and a genuine process relaunch
+against the independently built pinned
+`com.solana.mobilewalletadapter.fakewallet` at revision `100e0230`, exit 0, 18
+and 6 named checkpoints. The implementation is materially ahead of the current
 parity wording:
 
 - `crates/solana_kit_native/src/mwa/mod.rs` implements a caller-owned local
   WebSocket association, HELLO negotiation, encrypted requests, deadlines and
-  close.
+  close, with the wallet sequence fix from `008f7285`.
 - `crates/solana_kit_leptoskit/src/wallet_platform.rs` implements the Android
   availability/Intent/entropy guest calls.
 - `crates/solana_kit_leptoskit/src/wallet_guest.rs` connects the association,
@@ -262,34 +273,36 @@ parity wording:
 - `crates/solana_kit_leptoskit/android/MwaPlatform.kt` performs the foreground
   Activity handover.
 - `verification/leptoskit-app-journey/wallet/guest/flow.rs` selects the Android
-  mobile wallet path.
+  mobile wallet path, and `flow/mobile.rs` now ends a cancelled pending request
+  on its already-unloaded lease while an explicit idle-panel release still
+  closes the owner.
 
-Five native loopback/transport tests pass:
+Twenty-six focused native tests pass:
 
 ```sh
 cargo test -p solana_kit_native --features mwa --lib mwa --offline
 ```
 
-Result at `79444fb8`: 5 passed, 0 failed. That proves protocol transport against
-an independent peer, not an installed external wallet. The installed iOS,
-Android and macOS receipts exercise the **local** wallet controller, not MWA.
+The earlier installed iOS, Android and macOS receipts exercise the **local**
+wallet controller; the external-wallet acceptance above is the separate MWA
+evidence and does not claim production wallets or physical devices.
 
 **Owning source.** Dart
 `packages/solana_kit_mobile_wallet_adapter/lib/src/local_association_scenario.dart`,
 `intent_launcher_io.dart`, `platform_check_io.dart`; current Rust paths above.
 
-**Verification.** The existing loopback command is above. The missing acceptance
-is a real emulator/application run with a named installed wallet: launch the
-association Intent, approve authorization, sign a message and a transaction,
-reject one request, disconnect, and verify the wallet/ledger effects
-independently. There is no single executable command for that yet.
+**Verification.** The [installed external-wallet controller](../verification/leptoskit-app-journey/installed/README.md) is the
+executable acceptance (`android-mwa` platform, explicit device, adb binary and
+wallet package). The owned validator and an independent observer verify the
+ledger bytes, signature, fee and balances; the wallet package/version is
+recorded before any UI action and a missing wallet stays an environment
+prerequisite. The retained final run and its hashes are listed in the receipt.
 
-**Next minimal unit.** Add one explicitly gated installed-wallet scenario to
-`verification/leptoskit-app-journey/installed` that selects Android MWA and
-records the wallet package/version and availability. Run it once on the existing
-API 35 arm64 emulator against a named external wallet, with the owned validator
-and an independent observer. Do not treat a missing wallet installation as a
-code failure; record the external prerequisite.
+**Next minimal unit.** The emulator acceptance is complete; the remaining gap
+is a physical-device run (the attached Seeker) or a production-wallet
+compatibility statement, both of which need an explicit owner decision about
+personal devices and funds. If neither is wanted, retire this entry with the
+receipt as terminal evidence.
 
 **Blocker/substitution.** External wallet availability is an environment
 prerequisite. MWA on iOS is not offered by the platform and should be recorded
