@@ -54,15 +54,18 @@ one-fuel control and a fresh packaged-core consumer passed through
 `cargo xtask all` at that checkpoint. Those counts are historical evidence for
 that source, not the current suite.
 
-The current shared suite is `solana-kit-core-v56` with 455 cases. It passes
-455/455 natively, in actual Chrome, in both Wasmtime 50 previews and in the
-pinned LeptosKit interpreter. The corruption control is 454/455 and exits 1,
-with only `sha256-fips-abc` failing. The first 448 report rows remain the
-captured v55 prefix. The seven appended groups cover grinding and cancellation,
+The current shared suite is `solana-kit-core-v57` with 459 cases. It passes
+459/459 natively, in actual Chrome, in both Wasmtime 50 previews and in the
+pinned LeptosKit interpreter. The corruption control is 458/459 and exits 1,
+with only `sha256-fips-abc` failing. The first 455 report rows remain
+byte-identical to the v56 report, which itself preserves the captured 448-row
+v55 prefix. The four appended groups cover normalized publication bundle/source
+projection, diagnostic redaction, ingestion translation, and session checkpoint
+precedence. The earlier seven groups cover grinding and cancellation,
 legacy/v0/v1 message decompilation, explicit signer configuration, Token plans,
 typed parsed-account families, fixed-point composition, and test-support
 exchanges. Import/dependency controls, the one-fuel control and a fresh
-packaged-core consumer passed in the same invocation. See the [parity-completion runtime receipt](../verification/parity-completion-runtime.md) and the [current runtime receipt](../verification/runtimes.md).
+packaged-core consumer passed in the same invocation. See the [publication runtime receipt](../verification/publication-runtime.md) and the [current runtime receipt](../verification/runtimes.md).
 
 At the earlier checkpoint the grinding/decompilation tests had only native
 execution and Wasm compilation evidence, and the explicit configuration tests

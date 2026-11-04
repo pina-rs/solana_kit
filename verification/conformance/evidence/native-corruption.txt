@@ -460,4 +460,8 @@ token-mint-ata-plans: Ok(())
 client-parsed-account-families: Ok(())
 fixed-point-codec-pairing: Ok(())
 test-support-scripted-client: Ok(())
-solana-kit-core-v56: 454/455 cases passed
+publisher-publication-bundle-source-projection: Ok(())
+publisher-publication-diagnostic-redaction: Ok(())
+publisher-publication-ingestion-projection: Ok(())
+publisher-publication-session-checkpoint-precedence: Ok(())
+solana-kit-core-v57: 458/459 cases passed

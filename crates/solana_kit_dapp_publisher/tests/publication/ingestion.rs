@@ -1,9 +1,11 @@
 //! Independently authored normalized-projection behavior.
 
+use std::string::String;
+
 use super::support::*;
 
-#[test]
-fn source_kind_inference_preserves_unknown_values() {
+#[cfg_attr(test, test)]
+pub fn source_kind_inference_preserves_unknown_values() -> Outcome {
     assert_eq!(
         infer_publication_source_kind(None),
         PortalSourceKind::PortalUpload
@@ -28,6 +30,8 @@ fn source_kind_inference_preserves_unknown_values() {
         infer_publication_source_kind(Some("signedUrl")),
         PortalSourceKind::Unrecognized("signedUrl".into())
     );
+
+    Ok(())
 }
 
 fn ready_ingestion() -> PublicationIngestionSession {
@@ -60,8 +64,8 @@ fn ready_ingestion() -> PublicationIngestionSession {
     )
 }
 
-#[test]
-fn translates_ready_ingestion_identity_and_progress() {
+#[cfg_attr(test, test)]
+pub fn translates_ready_ingestion_identity_and_progress() -> Outcome {
     let projected = ready_ingestion();
 
     assert!(projected.is_ready());
@@ -91,10 +95,12 @@ fn translates_ready_ingestion_identity_and_progress() {
         projected.processing_detail.as_deref(),
         Some("APK processed")
     );
+
+    Ok(())
 }
 
-#[test]
-fn translates_ready_ingestion_bundle_and_source() {
+#[cfg_attr(test, test)]
+pub fn translates_ready_ingestion_bundle_and_source() -> Outcome {
     let projected = ready_ingestion();
     let bundle = projected.bundle.as_ref().expect("attached bundle");
 
@@ -115,10 +121,12 @@ fn translates_ready_ingestion_bundle_and_source() {
         PublicationSource::ExternalUrl { ref url, ref file_name }
             if url == "https://files.example.com/app.apk" && file_name.as_deref() == Some("app.apk")
     ));
+
+    Ok(())
 }
 
-#[test]
-fn ingestion_status_and_source_fallbacks_are_distinct() {
+#[cfg_attr(test, test)]
+pub fn ingestion_status_and_source_fallbacks_are_distinct() -> Outcome {
     let defaulted =
         translate_backend_ingestion_session(&ingestion_session(json!({"id": "ing-4"})), None);
     assert_eq!(defaulted.status, "portalUpload");
@@ -156,11 +164,13 @@ fn ingestion_status_and_source_fallbacks_are_distinct() {
     let case_sensitive =
         translate_backend_ingestion_session(&ingestion_session(json!({"status": "READY"})), None);
     assert!(!case_sensitive.is_ready());
+
+    Ok(())
 }
 
 /// Existing releases reuse the translated bundle identity before the session field.
-#[test]
-fn existing_release_source_uses_the_translated_identity() {
+#[cfg_attr(test, test)]
+pub fn existing_release_source_uses_the_translated_identity() -> Outcome {
     let existing = translate_backend_ingestion_session(
         &ingestion_session(json!({
             "id": "ing-6",
@@ -175,11 +185,13 @@ fn existing_release_source_uses_the_translated_identity() {
         existing.source,
         PublicationSource::ExistingRelease { ref source_release_id } if source_release_id == "rel-6"
     ));
+
+    Ok(())
 }
 
 /// Future kinds retain their raw fields; portal uploads infer the final path name.
-#[test]
-fn unknown_and_portal_upload_sources_preserve_reported_fields() {
+#[cfg_attr(test, test)]
+pub fn unknown_and_portal_upload_sources_preserve_reported_fields() -> Outcome {
     let unknown = translate_backend_ingestion_session(
         &ingestion_session(json!({
             "id": "ing-7",
@@ -223,10 +235,12 @@ fn unknown_and_portal_upload_sources_preserve_reported_fields() {
             && name == "app.apk"
             && size.as_u64() == Some(1024)
     ));
+
+    Ok(())
 }
 
-#[test]
-fn explicit_attachments_replace_embedded_records() {
+#[cfg_attr(test, test)]
+pub fn explicit_attachments_replace_embedded_records() -> Outcome {
     let backend = ingestion_session(json!({
         "id": "ing-9",
         "releaseId": "rel-9",
@@ -248,10 +262,12 @@ fn explicit_attachments_replace_embedded_records() {
             .checkpoint,
         PublicationCheckpoint::MintSubmitted
     );
+
+    Ok(())
 }
 
-#[test]
-fn metadata_uri_prefers_the_session_then_the_release_record() {
+#[cfg_attr(test, test)]
+pub fn metadata_uri_prefers_the_session_then_the_release_record() -> Outcome {
     let backend = ingestion_session(json!({
         "id": "ing-10",
         "releaseId": "rel-10",
@@ -294,4 +310,6 @@ fn metadata_uri_prefers_the_session_then_the_release_record() {
             .as_deref(),
         Some("https://meta.example/release.json")
     );
+
+    Ok(())
 }

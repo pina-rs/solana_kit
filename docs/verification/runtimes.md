@@ -52,14 +52,34 @@ from the official v50.0.0 release metadata; Chrome digests were calculated from
 the exact official Chrome for Testing downloads.
 
 The private host uses upstream `leptoskit_wasm` at revision
-`fecf8628d326ff7b03f295523e6bb584c3fdf88d`, with its own locked workspace. It is
+`7437097c52aa68a3401bd378764e051ed4c9165a`, with its own locked workspace. It is
 excluded from the SDK workspace and core dependency graph. The actual host runs
 the Rust guest, reads every case name/error from committed node properties, then
 dispatches a `Press` event and requires the corrupted report and second commit.
 The guest's small unsafe FFI wrappers implement that pinned synchronous copy ABI;
 core and the host harness forbid unsafe code.
 
-## Current v56 local execution
+## Current v57 local execution
+
+On 2026-11-04, `cargo xtask all` passed in this checkout (`test/publication-portable`,
+parent `e05362ee`). Native Rust, Chrome and ChromeDriver 156.0.8078.80, Wasmtime
+50.0.0 Preview 1 and Preview 2, and the actual pinned LeptosKit host each executed
+459/459 canonical cases and rejected only the corrupt hash at 458/459 with exit 1.
+The one-fuel control, exact imports, dependency negative controls and the fresh
+packaged-core consumer also passed. Actual command outputs and statuses were
+retained under `target/runtime-evidence/` for that execution.
+
+The four appended publication-projection groups exercise normalized bundle/source
+mapping, diagnostic redaction, ingestion translation, and session checkpoint
+precedence. The [publication runtime receipt](publication-runtime.md) records the
+host results, artifact hashes and fuel accounting. All 455 preceding report rows
+remain byte-identical to the v56 report, and the first 448 remain the captured
+[v55 prefix](../../verification/conformance/evidence/parity-completion-prefix-v55.txt).
+Installed iOS and Android wallet execution is recorded
+[separately](installed-wallet-current.md); the macOS computer-use journey has
+its own [receipt](installed-wallet-macos-current.md).
+
+## Historical v56 local execution
 
 On 2026-11-04, `cargo +1.99.1 xtask all` passed at signed executable
 `444dd895` (parent `a0cc1cf0`). Native Rust, Chrome and ChromeDriver

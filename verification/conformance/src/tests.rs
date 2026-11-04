@@ -4,7 +4,7 @@ use super::{EXPECTED_CASE_COUNT, FixtureMode, SUITE_ID, run};
 
 const CAPTURED_V55: &str = include_str!("../evidence/parity-completion-prefix-v55.txt");
 const CURRENT_SUCCESS: &str = include_str!("../evidence/native-success.txt");
-const APPENDED_NAMES: [&str; 7] = [
+const APPENDED_NAMES: [&str; 11] = [
     "grind-entropy-cancellation",
     "message-decompile-roundtrip",
     "signer-explicit-config",
@@ -12,6 +12,10 @@ const APPENDED_NAMES: [&str; 7] = [
     "client-parsed-account-families",
     "fixed-point-codec-pairing",
     "test-support-scripted-client",
+    "publisher-publication-bundle-source-projection",
+    "publisher-publication-diagnostic-redaction",
+    "publisher-publication-ingestion-projection",
+    "publisher-publication-session-checkpoint-precedence",
 ];
 
 #[test]
