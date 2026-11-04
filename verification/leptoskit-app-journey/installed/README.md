@@ -180,12 +180,12 @@ never uploads ledger keypairs. The driver quits only the tested application.
 The workflow pins Agave 4.2.0 archives and checks their SHA-256 digests before
 execution. The native driver dependencies and framework revision are also pinned.
 Compilation, Clippy and protocol tests do not establish installed OS acceptance;
-the actual CI journey must pass for each platform. The save/relaunch/restore
-and subscription/cancellation phases above are implemented in source but require
-their current-source CI execution before claiming installed acceptance. The new
-activity boundary, quiet rendering and new regressions remain **UNEXECUTED** until their actual
-compiler and macOS, Android and iOS runs are recorded. Browser subscription
-acceptance remains separate work.
+the actual journey must pass for each platform. The complete iOS controller,
+including save/relaunch/restore and subscription/cancellation, passed twice
+locally on 2026-11-04. The [current execution receipt](../../../docs/verification/installed-wallet-current.md)
+records the source, artifacts and limits. Current macOS and Android installed
+journeys remain unexecuted successfully. Browser subscription acceptance remains
+separate work.
 
 This is exclusively off-chain client verification. Use Pina or official Solana
 program libraries for on-chain programs.

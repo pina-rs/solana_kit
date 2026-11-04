@@ -46,8 +46,9 @@ granted validator socket, acknowledged cancellation, a held genuine callback and
 continuing slot notifications. An explicit SDK HTTP observation supplies the
 confirmed context which a later same-socket slot must exceed. Background socket
 traffic keeps draining without rebuilding the visible panel. The repaired
-initial and recovered-session activity checks remain
-**UNEXECUTED** until current-source macOS, Android and iOS artifacts are recorded.
+initial and recovered-session activity checks passed twice in the complete
+installed iOS controller on 2026-11-04; see the [execution receipt](../../../docs/verification/installed-wallet-current.md).
+Successful current-source macOS and Android artifacts remain outstanding.
 A native runtime test or a generated guest build does not prove those journeys.
 
 The normal runtime test suite imports the generated guest's actual delivery
@@ -55,7 +56,9 @@ reducer and includes cancellation and replacement-generation regressions. Removi
 the generation check from `Delivery::apply` must fail those assertions. It also
 imports the actual activity state: equal and earlier slots cannot complete an
 observation, and background slots cannot request repeated redraws. The new
-activity regressions are **UNEXECUTED** until a compiler run is recorded.
+activity regressions passed in the 11-test native suite on 2026-11-04. The six
+generated-wallet protocol tests also passed using the actual newly compiled iOS
+guest artifact through production wasmi.
 
 This is exclusively off-chain client verification. On-chain programs use Pina or
 official Solana program libraries.

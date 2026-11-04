@@ -114,5 +114,5 @@ nonce-shape non-inference, and untouched signed bytes and signature slots.
   Browser, WASI and interpreted-host execution of the new cases is not.
 - No `capabilities.tsv` row, ID, status, checker, threshold, shared golden or
   suite version changed in this unit.
-- Per-call transaction signer configuration remains pending and is not part of
-  this receipt.
+- Per-call signer configuration was implemented subsequently; its separate
+  [receipt](signer-call-config.md) records the evidence.
