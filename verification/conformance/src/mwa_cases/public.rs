@@ -40,6 +40,7 @@ fn fixture() -> Value {
     serde_json::from_str(include_str!("dart.json")).unwrap()
 }
 
+/// Checks Rust association, session-frame and JWS output against the pinned Dart vectors.
 pub(super) fn dart_crypto_vectors_and_rust_signature_output() -> Result<(), &'static str> {
     let vectors = fixture();
     let (association, alice, bob) = association_and_hello(&vectors)?;
@@ -254,6 +255,7 @@ pub(super) fn authenticated_ordering_replay_tampering_and_exhaustion() -> Result
     Ok(())
 }
 
+/// Checks that association URI round trips retain the wallet's path prefix.
 pub(super) fn associations_preserve_wallet_prefix() -> Result<(), &'static str> {
     let key = AssociationKey::from_scalar(&scalar(1))
         .unwrap()
@@ -273,6 +275,7 @@ pub(super) fn associations_preserve_wallet_prefix() -> Result<(), &'static str> 
     Ok(())
 }
 
+/// Accepts the ephemeral port endpoints and rejects values outside the allowed range.
 pub(super) fn association_port_boundaries() -> Result<(), &'static str> {
     let minimum_port = MIN_EPHEMERAL_PORT;
     let maximum_port = MAX_U16_PORT;
@@ -288,6 +291,7 @@ pub(super) fn association_port_boundaries() -> Result<(), &'static str> {
     Ok(())
 }
 
+/// Checks reflector identity and query escaping through remote association round trips.
 pub(super) fn reflector_ids_and_query_escaping_round_trip() -> Result<(), &'static str> {
     let key = AssociationKey::from_scalar(&scalar(1))
         .unwrap()
@@ -444,6 +448,7 @@ pub(super) fn siws_matches_dart_and_verifies_exact_signer_message_and_algorithm(
     Ok(())
 }
 
+/// Rejects injected line breaks in sign-in fields and resource entries.
 pub(super) fn siws_rejects_injection_in_every_field_and_resource() -> Result<(), &'static str> {
     for field in [
         "domain",
@@ -480,6 +485,7 @@ pub(super) fn siws_rejects_injection_in_every_field_and_resource() -> Result<(),
     Ok(())
 }
 
+/// Checks omission, null handling, address validation and canonical wallet JSON models.
 pub(super) fn json_models_preserve_omission_null_and_solana_address_validation()
 -> Result<(), &'static str> {
     identity_and_account_models_preserve_json_contract()?;
@@ -574,6 +580,7 @@ fn wallet_capabilities_and_options_serialize_canonically() -> Result<(), &'stati
     Ok(())
 }
 
+/// Exercises encrypted handshake, authorization, deauthorization and explicit session close.
 pub(super) fn encrypted_memory_session_handshake_authorization_and_close()
 -> Result<(), &'static str> {
     let (mut app, mut wallet, version) = encrypted_session_handshake();
@@ -698,6 +705,7 @@ fn expected_payload() -> SignInPayload {
     }
 }
 
+/// Checks sign-in wire keys, optional fields and the containing authorize request.
 pub(super) fn siws_wire_keys_preserve_full_payload_message_and_authorize_envelope()
 -> Result<(), &'static str> {
     let wire = wire_payload();
