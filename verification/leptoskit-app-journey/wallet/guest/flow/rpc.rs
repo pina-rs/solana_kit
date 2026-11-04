@@ -1,7 +1,7 @@
 //! A local-wallet controller uses the actual host-granted typed RPC client.
 mod error;
 mod panel;
-mod submission;
+pub(super) mod submission;
 mod subscription;
 mod transfer;
 
@@ -21,7 +21,7 @@ use solana_kit_core::Address;
 use solana_kit_leptoskit::{GuestHttp, GuestLocalWallet, wallet_ui::local_wallet_panel};
 use std::{collections::VecDeque, future::Future};
 
-type Rpc = Client<GuestHttp>;
+pub(super) type Rpc = Client<GuestHttp>;
 const REQUEST_TIMEOUT_MILLIS: u64 = 30_000;
 
 struct Connected {
@@ -32,6 +32,21 @@ struct Connected {
 struct Routing<'a> {
     events: &'a mut Events,
     unrelated: &'a mut VecDeque<Event>,
+}
+
+/// An external wallet shares the same granted client and subscription owners as
+/// the local wallet; only signing authority comes from the external application.
+pub(super) async fn watch(
+    address: &str,
+    generation: u64,
+    events: &mut Events,
+    unrelated: &mut VecDeque<Event>,
+    actions: &mut LocalWalletEvents,
+    commands: &LocalWalletCommands,
+    client: &Rpc,
+) -> Result<(), AppError> {
+    let mut routing = Routing { events, unrelated };
+    subscription::run(address, generation, &mut routing, actions, commands, client).await
 }
 
 /// The selected key and RPC action receiver share one lifetime. Closing the
@@ -134,7 +149,7 @@ async fn update(
     Ok(Some(connected))
 }
 
-fn available() -> Result<Option<Rpc>, AppError> {
+pub(super) fn available() -> Result<Option<Rpc>, AppError> {
     match GuestHttp::new("solana.rpc") {
         Ok(http) => Ok(Some(Client::new(http, Limits::default()))),
         Err(error) if error.kind == TransportFailureKind::Unavailable => Ok(None),
@@ -202,26 +217,26 @@ async fn retain(
     Ok((wallet, status))
 }
 
-fn read_config() -> Option<ReadConfig> {
+pub(super) fn read_config() -> Option<ReadConfig> {
     Some(ReadConfig {
         commitment: Some(Commitment::Confirmed),
         min_context_slot: None,
     })
 }
 
-async fn balance(client: &Rpc, address: Address) -> Result<u64, AppError> {
+pub(super) async fn balance(client: &Rpc, address: Address) -> Result<u64, AppError> {
     Ok(client.call(Balance(address, read_config())).await?.value)
 }
 
 /// The same native timer bounds quiet network operations; no browser or OS clock is assumed.
-async fn sleep(millis: u64) -> Result<(), AppError> {
+pub(super) async fn sleep(millis: u64) -> Result<(), AppError> {
     Plugin::new("journey.timer")?
         .call(MethodId(1), &millis.to_le_bytes())?
         .await?;
     Ok(())
 }
 
-async fn bounded<T, E: Into<AppError>>(
+pub(super) async fn bounded<T, E: Into<AppError>>(
     operation: impl Future<Output = Result<T, E>>,
     actions: &mut LocalWalletEvents,
 ) -> Result<T, AppError> {

@@ -149,11 +149,15 @@ impl Diagnostics {
             WalletFailure::Worker(_) => "worker",
             WalletFailure::Json(_) => "json",
         };
+        let mobile = match &failure {
+            WalletFailure::Mobile(error) => Some(mobile_kind(error)),
+            _ => None,
+        };
 
         let details = error_details(&failure);
 
         self.record(&format!(
-            "failure {category} io={:?} published={:?} stage={:?}",
+            "failure {category} mobile={mobile:?} io={:?} published={:?} stage={:?}",
             details.io, details.published, details.stage
         ))?;
 
@@ -177,6 +181,24 @@ impl Diagnostics {
         } else {
             writeln!(self.file, "{receipt}")
         }
+    }
+}
+
+/// Fixed transport category; no wallet, endpoint or payload data is retained.
+fn mobile_kind(error: &solana_kit_native::mwa::MwaError) -> &'static str {
+    use solana_kit_native::mwa::MwaError;
+
+    match error {
+        MwaError::Entropy(_) => "entropy",
+        MwaError::Io(_) => "io",
+        MwaError::Socket(_) => "socket",
+        MwaError::Protocol(_) => "protocol",
+        MwaError::Config(_) => "configuration",
+        MwaError::Deadline(_) => "deadline",
+        MwaError::Closed => "closed",
+        MwaError::Capacity => "capacity",
+        MwaError::Handshake => "handshake",
+        MwaError::Scalar => "scalar",
     }
 }
 
