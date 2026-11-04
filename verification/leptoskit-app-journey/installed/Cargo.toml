@@ -11,6 +11,7 @@ description = "Private OS-driven generated application and validator journey"
 
 [dependencies]
 bs58 = "=0.5.1"
+ed25519-dalek = { version = "=2.2.0", default-features = false, features = ["std"] }
 getrandom = "=0.4.3"
 leptoskit_testing = { version = "=0.1.0", git = "https://github.com/ifiokjr/leptoskit", rev = "7437097c52aa68a3401bd378764e051ed4c9165a", features = ["native-ui"] }
 quick-xml = "=0.42.0"

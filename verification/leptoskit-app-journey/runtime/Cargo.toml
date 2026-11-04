@@ -17,13 +17,13 @@ name = "generated_wallet"
 required-features = ["generated-wallet-tests"]
 
 [dependencies]
-solana_kit_app_journey_android_support = { path = "android-support" }
 leptoskit_bridge = { version = "=0.1.0", git = "https://github.com/ifiokjr/leptoskit", rev = "7437097c52aa68a3401bd378764e051ed4c9165a" }
 leptoskit_bridge_ffi = { version = "=0.1.0", git = "https://github.com/ifiokjr/leptoskit", rev = "7437097c52aa68a3401bd378764e051ed4c9165a", features = ["app"] }
 leptoskit_native = { version = "=0.1.0", git = "https://github.com/ifiokjr/leptoskit", rev = "7437097c52aa68a3401bd378764e051ed4c9165a" }
 leptoskit_wasm = { version = "=0.1.0", git = "https://github.com/ifiokjr/leptoskit", rev = "7437097c52aa68a3401bd378764e051ed4c9165a" }
 serde = { version = "=1.0.229", features = ["derive"] }
 serde_json = "=1.0.154"
+solana_kit_app_journey_android_support = { path = "android-support" }
 solana_kit_leptoskit = { path = "../../../crates/solana_kit_leptoskit", features = ["wallet-verification"] }
 solana_kit_native = { path = "../../../crates/solana_kit_native" }
 tokio = { version = "=1.54.1", features = ["rt-multi-thread", "time"] }

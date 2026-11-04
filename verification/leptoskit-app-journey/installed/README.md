@@ -190,7 +190,19 @@ the unavailable Mac2 driver. The maintained Android controller then completed th
 same three-process journey twice on a freshly created arm64 API 35 emulator; its
 [receipt](../../../docs/verification/installed-wallet-android-current.md) records
 the artifacts, subscriptions and limits, and distinguishes emulator evidence from
-a physical device and from CI. Browser subscription acceptance is separate evidence.
+a physical device and from CI.
+
+The gated `android-mwa` platform selects one already-installed external wallet
+package and records its public package/version before any UI action. It drives
+the generated app's existing authorization, message and transaction requests
+through the real wallet UI, requires the SDK to submit the approved bytes once
+to the owned validator, and rejects a separate review without submission. It
+also runs the existing subscription/cancellation race, cancels a pending wallet
+request, re-authorizes, disconnects, and terminates the app before a genuine
+relaunch. `wallet::inspect` is the only ADB read; wallet private storage is
+never accessed. The installed receipt is
+[external Android wallet execution](../../../docs/verification/installed-external-wallet-android-current.md).
+Browser subscription acceptance is separate evidence.
 
 This is exclusively off-chain client verification. Use Pina or official Solana
 program libraries for on-chain programs.
