@@ -182,12 +182,16 @@ mod continuation {
             .lines()
             .filter_map(|line| line.strip_suffix(": Ok(())"))
             .collect();
-        let committed = &captured[captured.len() - APPENDED.len()..];
+        let start = captured
+            .iter()
+            .position(|name| *name == APPENDED[0])
+            .expect("committed report is missing the publication groups");
+        let committed = &captured[start..start + APPENDED.len()];
 
         assert_eq!(
             committed,
             &APPENDED[..],
-            "committed report does not end with the appended publication groups"
+            "committed report changed the appended publication groups"
         );
 
         let live = cases();
@@ -204,7 +208,12 @@ mod continuation {
         );
 
         let report = crate::run(crate::FixtureMode::Canonical);
-        let tail: alloc::vec::Vec<_> = report.cases[report.cases.len() - APPENDED.len()..]
+        let start = report
+            .cases
+            .iter()
+            .position(|case| case.name == APPENDED[0])
+            .expect("publication groups are not registered");
+        let tail: alloc::vec::Vec<_> = report.cases[start..start + APPENDED.len()]
             .iter()
             .map(|case| case.name)
             .collect();
@@ -212,7 +221,7 @@ mod continuation {
         assert_eq!(
             tail.as_slice(),
             &APPENDED[..],
-            "registered suite tail changed"
+            "registered publication group order changed"
         );
     }
 

@@ -91,8 +91,8 @@ the clean pinned Dart checkout. Unit 886 verified exactly 573 owner-only changes
 all declaration IDs, pending states and other fields remain unchanged.
 
 Portable-host execution for the shared publisher policy, portal, workflow and
-publication-projection groups is now recorded by the [v57/459 publication runtime receipt](../verification/publication-runtime.md): native, Chrome, both Wasmtime
-previews and the pinned LeptosKit host pass 459/459, with the 458/459 deliberate
+publication-projection groups is now recorded by the [v58/461 publication runtime receipt](../verification/publication-runtime.md): native, Chrome, both Wasmtime
+previews and the pinned LeptosKit host pass 461/461, with the 460/461 deliberate
 hash control. The new cross-language Dart signature oracle remains unexecuted.
 Source formatting and per-file Monostyle checks establish no behavioral result.
 

@@ -464,4 +464,6 @@ publisher-publication-bundle-source-projection: Ok(())
 publisher-publication-diagnostic-redaction: Ok(())
 publisher-publication-ingestion-projection: Ok(())
 publisher-publication-session-checkpoint-precedence: Ok(())
-solana-kit-core-v57: 458/459 cases passed
+error-code-catalog-rejects-wrong-literal: Ok(())
+error-code-catalog-exact-365: Ok(())
+solana-kit-core-v58: 460/461 cases passed

@@ -54,18 +54,20 @@ one-fuel control and a fresh packaged-core consumer passed through
 `cargo xtask all` at that checkpoint. Those counts are historical evidence for
 that source, not the current suite.
 
-The current shared suite is `solana-kit-core-v57` with 459 cases. It passes
-459/459 natively, in actual Chrome, in both Wasmtime 50 previews and in the
-pinned LeptosKit interpreter. The corruption control is 458/459 and exits 1,
-with only `sha256-fips-abc` failing. The first 455 report rows remain
-byte-identical to the v56 report, which itself preserves the captured 448-row
-v55 prefix. The four appended groups cover normalized publication bundle/source
-projection, diagnostic redaction, ingestion translation, and session checkpoint
-precedence. The earlier seven groups cover grinding and cancellation,
-legacy/v0/v1 message decompilation, explicit signer configuration, Token plans,
-typed parsed-account families, fixed-point composition, and test-support
-exchanges. Import/dependency controls, the one-fuel control and a fresh
-packaged-core consumer passed in the same invocation. See the [publication runtime receipt](../verification/publication-runtime.md) and the [current runtime receipt](../verification/runtimes.md).
+The current shared suite is `solana-kit-core-v58` with 461 cases. It passes
+461/461 natively, in actual Chrome, in both Wasmtime 50 previews and in the
+pinned LeptosKit interpreter. The corruption control is 460/461 and exits 1,
+with only `sha256-fips-abc` failing. The first 459 report rows remain
+byte-identical to the v57 report, which itself preserves the captured 448-row
+v55 prefix. The last two groups are the error-code catalog negative control and
+the exact 365-constant comparison. The four preceding appended groups cover
+normalized publication bundle/source projection, diagnostic redaction,
+ingestion translation, and session checkpoint precedence. The earlier seven
+groups cover grinding and cancellation, legacy/v0/v1 message decompilation,
+explicit signer configuration, Token plans, typed parsed-account families,
+fixed-point composition, and test-support exchanges. Import/dependency controls,
+the one-fuel control and a fresh packaged-core consumer passed in the same
+invocation. See the [publication runtime receipt](../verification/publication-runtime.md) and the [current runtime receipt](../verification/runtimes.md).
 
 At the earlier checkpoint the grinding/decompilation tests had only native
 execution and Wasm compilation evidence, and the explicit configuration tests
