@@ -38,7 +38,7 @@ become 0.1.1; the dependency-free umbrella stays at 0.0.0. The excluded LeptosKi
 crate also plans 0.1.1. The NPM package's planned files are preparation evidence
 only; its packed-consumer proof remains a separate receipt.
 
-The preview has 111 changesets, 29 release targets and no package publications.
+The preview has 113 changesets, 29 release targets and no package publications.
 Every target retains `release: false`. The initial failed apply and its logs
 remain historical evidence; the fresh prepared copy is the input to this archive
 rehearsal. No publish policy was enabled.

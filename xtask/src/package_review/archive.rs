@@ -17,7 +17,7 @@ const NAME_LENGTH: usize = 100;
 const LONG_NAME_LIMIT: usize = 4096;
 const LONG_LINK_NAME: &str = "././@LongLink";
 
-/// Bounds decompression and requires every actual header to be a regular-file record.
+/// Bounds decompression and materializes only validated regular-file members.
 pub(super) fn review(config: &Config) -> Result<Vec<Member>> {
     let bytes = decompress(config)?;
     let entries = entries(&bytes)?;

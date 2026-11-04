@@ -16,7 +16,7 @@ spaces, and bounded GNU `L` long-name metadata for the immediately following
 regular file. A long name must be NUL-terminated, unambiguous UTF-8, within its
 bound, and match the truncated name in the next header. Orphaned, repeated,
 oversized or mismatched metadata is rejected. Every header and metadata checksum,
-payload offset, padding and end marker is validated before any member is written.
+payload offset, padding bound and end marker is validated before any member is written.
 All other tar extensions and every nonregular member are rejected, including GNU
 `K`, links, directories and pax records. Duplicate effective names, conflicting
 roots, escaped or ambiguous paths and control characters remain failures.
