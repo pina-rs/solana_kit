@@ -3,6 +3,8 @@
 /// Modifiers run in declaration order, followed by concurrent partial operations
 /// over one immutable final snapshot. Results merge in declaration order. Dropping
 /// this future drops unfinished operations; no task or runtime is started here.
+/// Every selected backend receives the same per-call
+/// [`TransactionSignerConfig`].
 pub struct Composition<'a, Failure = Error> {
     registrations: Vec<Registration<'a, Failure>>,
     duplicate_sender_only: bool,
@@ -60,16 +62,29 @@ impl<'a, Failure: From<Error>> Composition<'a, Failure> {
 
     /// Modifies sequentially and partially signs the final snapshot concurrently.
     ///
+    /// The same configuration is delivered unchanged to every modifier and
+    /// partial backend. An aborted configuration returns cancellation before role
+    /// resolution or any backend operation.
+    ///
     /// # Errors
     /// Propagates backend failures and rejects tampered or foreign authorization.
-    pub async fn partially_sign(&self, tx: &Transaction) -> Result<Transaction, Failure> {
+    pub async fn partially_sign(
+        &self,
+        tx: &Transaction,
+        config: crate::TransactionSignerConfig,
+    ) -> Result<Transaction, Failure> {
+        if config.aborted {
+            return Err(Error::Cancelled.into());
+        }
+
         let roles = self.roles(false)?;
-        self.apply(tx, &roles).await
+        self.apply(tx, &roles, config).await
     }
     async fn apply(
         &self,
         tx: &Transaction,
         roles: &[(Address, Role)],
+        config: crate::TransactionSignerConfig,
     ) -> Result<Transaction, Failure> {
         let mut current = tx.clone();
 
@@ -79,7 +94,7 @@ impl<'a, Failure: From<Error>> Composition<'a, Failure> {
                     .modify
                     .as_ref()
                     .ok_or(Error::ConflictingSigner)?;
-                let next = operation.modify(&current).await?;
+                let next = operation.modify(&current, config).await?;
                 crate::pipeline::validate_modification(&current, &next, registration.info.address)?;
                 current = next;
             }
@@ -99,7 +114,7 @@ impl<'a, Failure: From<Error>> Composition<'a, Failure> {
                 .partial
                 .as_ref()
                 .ok_or(Error::ConflictingSigner)?;
-            pending.push(Some(operation.partial(&current)));
+            pending.push(Some(operation.partial(&current, config)));
         }
 
         let mut outputs = vec![None; pending.len()];
@@ -118,8 +133,12 @@ impl<'a, Failure: From<Error>> Composition<'a, Failure> {
     ///
     /// # Errors
     /// Also rejects missing signatures and, with crypto, invalid signatures.
-    pub async fn sign(&self, tx: &Transaction) -> Result<Transaction, Failure> {
-        let result = self.partially_sign(tx).await?;
+    pub async fn sign(
+        &self,
+        tx: &Transaction,
+        config: crate::TransactionSignerConfig,
+    ) -> Result<Transaction, Failure> {
+        let result = self.partially_sign(tx, config).await?;
         crate::pipeline::require_complete(&result)?;
         Ok(result)
     }
@@ -128,12 +147,22 @@ impl<'a, Failure: From<Error>> Composition<'a, Failure> {
     ///
     /// Unlike Dart, missing non-sender signatures and zero submission identifiers
     /// reject. Existing signatures are validated. An identifier is not confirmation.
+    /// Every selected backend receives the same configuration; an aborted
+    /// configuration returns cancellation before role resolution or effects.
     ///
     /// # Errors
     /// Resolves sender cardinality before effects; propagates backend failures.
-    pub async fn sign_and_send(&self, tx: &Transaction) -> Result<Signature, Failure> {
+    pub async fn sign_and_send(
+        &self,
+        tx: &Transaction,
+        config: crate::TransactionSignerConfig,
+    ) -> Result<Signature, Failure> {
+        if config.aborted {
+            return Err(Error::Cancelled.into());
+        }
+
         let roles = self.roles(true)?;
-        let signed = self.apply(tx, &roles).await?;
+        let signed = self.apply(tx, &roles, config).await?;
         let sender = self
             .registrations
             .iter()
@@ -159,7 +188,7 @@ impl<'a, Failure: From<Error>> Composition<'a, Failure> {
             .send
             .as_ref()
             .ok_or(Error::MissingSender)?
-            .send(&signed)
+            .send(&signed, config)
             .await?;
 
         if identifier.as_bytes() == &[0; 64] {
@@ -171,6 +200,8 @@ impl<'a, Failure: From<Error>> Composition<'a, Failure> {
 
     /// Signs up to 256 transactions in input order, stopping on the first failure.
     ///
+    /// Every transaction is signed with the same configuration. An aborted
+    /// configuration returns cancellation before the size check or effects.
     /// Earlier backend effects cannot be rolled back. Size is checked before effects.
     ///
     /// # Errors
@@ -178,7 +209,12 @@ impl<'a, Failure: From<Error>> Composition<'a, Failure> {
     pub async fn sign_batch(
         &self,
         transactions: &[Transaction],
+        config: crate::TransactionSignerConfig,
     ) -> Result<Vec<Transaction>, Failure> {
+        if config.aborted {
+            return Err(Error::Cancelled.into());
+        }
+
         if transactions.len() > MAX_ITEMS {
             return Err(Error::TooManySigners.into());
         }
@@ -186,7 +222,7 @@ impl<'a, Failure: From<Error>> Composition<'a, Failure> {
         let mut results = Vec::with_capacity(transactions.len());
 
         for tx in transactions {
-            results.push(self.sign(tx).await?);
+            results.push(self.sign(tx, config).await?);
         }
 
         Ok(results)

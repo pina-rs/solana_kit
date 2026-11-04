@@ -5,7 +5,8 @@ mod support;
 use solana_kit_core::{Address, Signature, crypto::Keypair, transaction::Transaction};
 use solana_kit_signers::{
     Error, SignatureOutput, Signer, SignerCapability, TransactionModifyingSigner,
-    TransactionPartialSigner, TransactionSendingSigner, TransactionSigners,
+    TransactionPartialSigner, TransactionSendingSigner, TransactionSignerConfig,
+    TransactionSigners,
 };
 
 const PARTIAL_SEED: u8 = 7;
@@ -33,7 +34,11 @@ impl Signer for Backend {
 impl TransactionModifyingSigner for Backend {
     type Modify<'a> = Ready<Result<Transaction, Error>>;
 
-    fn modify_transaction<'a>(&'a self, transaction: &'a Transaction) -> Self::Modify<'a> {
+    fn modify_transaction<'a>(
+        &'a self,
+        transaction: &'a Transaction,
+        _config: TransactionSignerConfig,
+    ) -> Self::Modify<'a> {
         self.events.borrow_mut().push("modify");
         ready(Ok(self
             .replacement
@@ -45,7 +50,11 @@ impl TransactionModifyingSigner for Backend {
 impl TransactionPartialSigner for Backend {
     type Sign<'a> = Ready<Result<SignatureOutput, Error>>;
 
-    fn sign_transaction<'a>(&'a self, transaction: &'a Transaction) -> Self::Sign<'a> {
+    fn sign_transaction<'a>(
+        &'a self,
+        transaction: &'a Transaction,
+        _config: TransactionSignerConfig,
+    ) -> Self::Sign<'a> {
         self.events.borrow_mut().push("partial");
         ready(Ok(SignatureOutput::new(
             self.address(),
@@ -58,7 +67,11 @@ impl TransactionPartialSigner for Backend {
 impl TransactionSendingSigner for Backend {
     type Send<'a> = Ready<Result<Signature, Error>>;
 
-    fn send_transaction<'a>(&'a self, transaction: &'a Transaction) -> Self::Send<'a> {
+    fn send_transaction<'a>(
+        &'a self,
+        transaction: &'a Transaction,
+        _config: TransactionSignerConfig,
+    ) -> Self::Send<'a> {
         self.events.borrow_mut().push("send");
 
         if let Some(result) = self.submission {
@@ -96,7 +109,11 @@ async fn missing_signatures_prevent_send_and_backend_failures_propagate() {
 
     assert_eq!(
         empty
-            .sign_and_send(&transaction, &[&SignerCapability::new(&sender)])
+            .sign_and_send(
+                &transaction,
+                &[&SignerCapability::new(&sender)],
+                TransactionSignerConfig::default()
+            )
             .await,
         Err(Error::Transaction(
             solana_kit_core::transaction::Error::MissingSignature
@@ -108,14 +125,22 @@ async fn missing_signatures_prevent_send_and_backend_failures_propagate() {
     sender.submission = Some(Err(Error::Rejected));
     assert_eq!(
         signers
-            .sign_and_send(&transaction, &[&SignerCapability::new(&sender)])
+            .sign_and_send(
+                &transaction,
+                &[&SignerCapability::new(&sender)],
+                TransactionSignerConfig::default()
+            )
             .await,
         Err(Error::Rejected)
     );
     sender.submission = Some(Ok(Signature::from_bytes([0; 64])));
     assert_eq!(
         signers
-            .sign_and_send(&transaction, &[&SignerCapability::new(&sender)])
+            .sign_and_send(
+                &transaction,
+                &[&SignerCapability::new(&sender)],
+                TransactionSignerConfig::default()
+            )
             .await,
         Err(Error::Transaction(
             solana_kit_core::transaction::Error::InvalidSignature
@@ -135,7 +160,11 @@ async fn modifier_cannot_install_another_owners_signature() {
 
     assert_eq!(
         signers
-            .modify_and_partially_sign(&transaction, &[&SignerCapability::new(&modifier)])
+            .modify_and_partially_sign(
+                &transaction,
+                &[&SignerCapability::new(&modifier)],
+                TransactionSignerConfig::default()
+            )
             .await,
         Err(Error::ForeignSigner)
     );
@@ -171,12 +200,20 @@ async fn modifier_then_partial_then_explicit_sender() {
 
     let signers = TransactionSigners::new(&[&partial_capability]).unwrap();
     let signed = signers
-        .modify_and_partially_sign(&transaction, &[&SignerCapability::new(&modifier)])
+        .modify_and_partially_sign(
+            &transaction,
+            &[&SignerCapability::new(&modifier)],
+            TransactionSignerConfig::default(),
+        )
         .await
         .unwrap();
     assert_eq!(signed.signatures().iter().flatten().count(), 1);
     signers
-        .sign_and_send(&signed, &[&SignerCapability::new(&sender)])
+        .sign_and_send(
+            &signed,
+            &[&SignerCapability::new(&sender)],
+            TransactionSignerConfig::default(),
+        )
         .await
         .unwrap();
     assert_eq!(*events.borrow(), ["modify", "partial", "partial", "send"]);
@@ -192,7 +229,9 @@ async fn sender_ambiguity_and_capability_conflicts_fail_before_invocation() {
     let partial_capability = SignerCapability::new(&partial);
     let signers = TransactionSigners::new(&[&partial_capability]).unwrap();
     assert_eq!(
-        signers.sign_and_send::<Backend>(&transaction, &[]).await,
+        signers
+            .sign_and_send::<Backend>(&transaction, &[], TransactionSignerConfig::default())
+            .await,
         Err(Error::MissingSender)
     );
 
@@ -203,20 +242,29 @@ async fn sender_ambiguity_and_capability_conflicts_fail_before_invocation() {
                 &[
                     &SignerCapability::new(&sender),
                     &SignerCapability::new(&other)
-                ]
+                ],
+                TransactionSignerConfig::default()
             )
             .await,
         Err(Error::MultipleSenders)
     );
     assert_eq!(
         signers
-            .sign_and_send(&transaction, &[&partial_capability])
+            .sign_and_send(
+                &transaction,
+                &[&partial_capability],
+                TransactionSignerConfig::default()
+            )
             .await,
         Err(Error::ConflictingSigner)
     );
     assert_eq!(
         signers
-            .modify_and_partially_sign(&transaction, &[&partial_capability])
+            .modify_and_partially_sign(
+                &transaction,
+                &[&partial_capability],
+                TransactionSignerConfig::default()
+            )
             .await,
         Err(Error::ConflictingSigner)
     );
@@ -235,7 +283,11 @@ async fn changed_bytes_clear_old_signatures_and_partial_signs_final_snapshot() {
     let partial_capability = SignerCapability::new(&partial);
     let signers = TransactionSigners::new(&[&partial_capability]).unwrap();
     let signed = signers
-        .modify_and_partially_sign(&transaction, &[&SignerCapability::new(&modifier)])
+        .modify_and_partially_sign(
+            &transaction,
+            &[&SignerCapability::new(&modifier)],
+            TransactionSignerConfig::default(),
+        )
         .await
         .unwrap();
 
@@ -267,7 +319,11 @@ async fn stale_signature_on_changed_bytes_is_rejected() {
 
     assert_eq!(
         signers
-            .modify_and_partially_sign(&transaction, &[&SignerCapability::new(&modifier)])
+            .modify_and_partially_sign(
+                &transaction,
+                &[&SignerCapability::new(&modifier)],
+                TransactionSignerConfig::default()
+            )
             .await,
         Err(Error::ChangedSnapshot)
     );
@@ -297,7 +353,11 @@ async fn automatic_composition_preserves_snapshot_and_sender_failure_boundaries(
     let m = SignerCapability::new(&modifier);
 
     let c = Composition::new(vec![R::partial(&p), R::modifying(&m)]).unwrap();
-    assert_eq!(c.partially_sign(&tx).await, Err(Error::ChangedSnapshot));
+    assert_eq!(
+        c.partially_sign(&tx, TransactionSignerConfig::default())
+            .await,
+        Err(Error::ChangedSnapshot)
+    );
     assert_eq!(*events.borrow(), ["modify"]);
     drop(c);
     events.borrow_mut().clear();
@@ -309,7 +369,7 @@ async fn automatic_composition_preserves_snapshot_and_sender_failure_boundaries(
     assert_eq!(
         Composition::new(vec![R::partial(&p), R::modifying(&m)])
             .unwrap()
-            .partially_sign(&unsigned)
+            .partially_sign(&unsigned, TransactionSignerConfig::default())
             .await,
         Err(Error::ForeignSigner)
     );
@@ -331,7 +391,7 @@ async fn automatic_composition_preserves_snapshot_and_sender_failure_boundaries(
         assert_eq!(
             Composition::new(vec![R::partial(&p), R::sending(&s)])
                 .unwrap()
-                .sign_and_send(&unsigned)
+                .sign_and_send(&unsigned, TransactionSignerConfig::default())
                 .await,
             expected
         );

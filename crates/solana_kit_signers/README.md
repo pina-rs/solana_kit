@@ -24,8 +24,24 @@ borrowed, including for zero-sized backends, without allocation or entropy.
 ```rust,ignore
 let capability = SignerCapability::new(&backend);
 let signers = TransactionSigners::new(&[&capability, &capability])?;
-let signed = signers.sign(&transaction).await?;
+let signed = signers.sign(&transaction, TransactionSignerConfig::default()).await?;
 ```
+
+Every signing call takes a per-call `SignerConfig` or `TransactionSignerConfig`.
+`TransactionSignerConfig` carries `aborted` and `min_context_slot`. The same value
+is delivered unchanged to every backend: typed pipelines, local and native
+heterogeneous compositions, modifiers, partials, senders, and message adapters
+never store it. `Default::default()` preserves the previous behavior. An aborted
+configuration fails with the existing `Error::Cancelled` or
+`MessageError::Cancelled` before signing, prompting, simulation, or network
+effects. Dropping an in-flight future remains the cancellation mechanism after an
+operation starts.
+
+`min_context_slot` is an exact optional simulation hint, not authenticated
+freshness. Every transaction backend receives it, including modifiers and
+partials. A local keypair does not simulate and explicitly ignores the hint. A
+backend that converts the slot to a narrower or rounded representation must reject
+values it cannot represent exactly.
 
 `TransactionSigners` polls partial signers concurrently and merges results in
 input order. Its futures support local state. Native generic callers can require
@@ -58,7 +74,7 @@ let signers = Composition::new(vec![
     Registration::partial(&first),
     Registration::composite(&second),
 ])?;
-let identifier = signers.sign_and_send(&transaction).await?;
+let identifier = signers.sign_and_send(&transaction, TransactionSignerConfig::default()).await?;
 ```
 
 Automatic composition selects a sender-only registration when present, otherwise
@@ -72,12 +88,13 @@ Native registrations require `Sync` backends and `Send` associated futures for
 every declared interface, preserving `Send` in their erased futures. Local
 registrations support `Rc` state across suspension. The explicit choice prevents
 a local future from silently losing native scheduling capability. The backend
-GAT contracts remain unchanged.
+associated-future contracts remain unchanged; every backend call now receives the
+caller's per-call configuration explicitly.
 
 Composition accepts at most 256 registrations. `sign_batch` accepts at most 256
 transactions, signs in input order, and stops at the first failure. Earlier
-backend effects cannot be rolled back. Attachment/configuration, key generation,
-and persistence remain pending.
+backend effects cannot be rolled back. Instruction attachment, key generation and
+persistence remain pending.
 
 Use `message::SignableMessage` for exact bare bytes and an immutable signature
 dictionary. `from_text` copies UTF-8 without normalization or an automatic off-chain
@@ -85,8 +102,9 @@ envelope. Snapshot construction imposes no content-length limit.
 
 `message::MessagePartialSigner` receives the whole bounded slice once and returns
 one exact-byte signature dictionary per input. `message::MessageModifyingSigner`
-returns one replacement per input. Choose `message::local` or `message::native`
-registrations explicitly. A composite backend is registered in one role.
+returns one replacement per input. Both receive the same per-call `SignerConfig`.
+Choose `message::local` or `message::native` registrations explicitly. A composite
+backend is registered in one role.
 Modifiers run sequentially before partials share one immutable final slice.
 Results merge in registration order. At most 256 messages and registrations
 are accepted before effects. Changed bytes cannot retain stale signatures,
@@ -97,9 +115,10 @@ partial outputs cannot claim foreign owners, and cardinality is checked.
 directly for a backend-native bulk operation. The adapter preserves the singular
 future's actual auto traits and stops at its first failure.
 
-Low-level capability traits accept a defaulted failure parameter. Existing
-implementations keep `Error`; a local host backend can instead return its concrete
-error without discarding an original platform cause. Transaction `local` and
+Low-level capability traits require a per-call configuration argument and accept a
+defaulted failure parameter. Existing implementations keep `Error`; a local host
+backend can instead return its concrete error without discarding an original
+platform cause. Transaction `local` and
 `native` registrations and compositions preserve that parameter. Construct a typed
 composition with `Composition::<Failure>::with_failure`, where `Failure:
 From<Error>` retains protocol-validation failures. `Composition::new` keeps the

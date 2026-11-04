@@ -7,7 +7,7 @@ pub const ACCEPTED_MESSAGES: usize = 256;
 use alloc::{vec, vec::Vec};
 use solana_kit_core::crypto::Keypair;
 use solana_kit_signers::{
-    SignerCapability,
+    SignerCapability, SignerConfig,
     message::{
         MessageError, SignableMessage,
         local::{Composition, Registration},
@@ -38,7 +38,7 @@ pub async fn message_batches() -> bool {
         .map(|n| SignableMessage::new([n as u8]))
         .collect();
 
-    let Ok(results) = pipeline.sign(&messages).await else {
+    let Ok(results) = pipeline.sign(&messages, SignerConfig::default()).await else {
         return false;
     };
     results.len() == ACCEPTED_MESSAGES
@@ -46,6 +46,11 @@ pub async fn message_batches() -> bool {
             result.content() == input.content()
                 && result.signatures().get(&key.address()) == Some(&key.sign(input.content()))
         })
-        && pipeline.sign(&vec![SignableMessage::new([]); 257]).await
+        && pipeline
+            .sign(
+                &vec![SignableMessage::new([]); 257],
+                SignerConfig::default(),
+            )
+            .await
             == Err(MessageError::TooManyMessages)
 }

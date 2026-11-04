@@ -65,10 +65,10 @@ original test evidence without modifying reference files.
 
 Automatic heterogeneous transaction roles and bounded ordered transaction batches
 are implemented through explicit `local` and `native` registrations. Instruction
-signer attachment, dynamic runtime type introspection, key grinding and generation,
-file persistence, and signer configuration
-remain uncovered. Those gaps explain the
-partial and pending statuses. They are not placeholder APIs.
+signer attachment, dynamic runtime type introspection, file persistence and
+remaining keypair contracts remain uncovered. Per-call signer configuration is
+documented in the [signer-call-config receipt](signer-call-config.md). Those gaps
+explain the partial and pending statuses. They are not placeholder APIs.
 
 Regenerate the receipt from the repository root with these commands.
 

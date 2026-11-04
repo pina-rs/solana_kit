@@ -9,12 +9,16 @@ use solana_kit_core::Address;
 use super::{
     MAX_MESSAGES, MessageError, MessagePartialSigner, MessageSignatureOutput, SignableMessage,
 };
-use crate::{MessageSigner, Signer};
+use crate::{MessageSigner, Signer, SignerConfig};
 
 /// Explicit ordered adapter from singular signing to the bulk interface.
 ///
 /// This adapter deliberately invokes the singular backend once per message.
 /// Implement MessagePartialSigner directly for a genuine backend-native bulk call.
+///
+/// Every singular call receives the same per-call [`SignerConfig`] supplied to
+/// the bulk interface. An aborted configuration returns
+/// [`MessageError::Cancelled`] before the first call.
 pub struct SingularMessageSigner<S>(pub S);
 
 impl<S: Signer> Signer for SingularMessageSigner<S> {
@@ -29,10 +33,15 @@ impl<S: MessageSigner> MessagePartialSigner for SingularMessageSigner<S> {
     where
         Self: 'a;
 
-    fn sign_messages<'a>(&'a self, messages: &'a [SignableMessage]) -> Self::Sign<'a> {
+    fn sign_messages<'a>(
+        &'a self,
+        messages: &'a [SignableMessage],
+        config: SignerConfig,
+    ) -> Self::Sign<'a> {
         SingularBatch {
             signer: &self.0,
             messages,
+            config,
             pending: None,
             outputs: Vec::with_capacity(messages.len().min(MAX_MESSAGES)),
         }
@@ -43,6 +52,7 @@ impl<S: MessageSigner> MessagePartialSigner for SingularMessageSigner<S> {
 pub struct SingularBatch<'a, S: MessageSigner> {
     signer: &'a S,
     messages: &'a [SignableMessage],
+    config: SignerConfig,
     pending: Option<Pin<Box<S::Sign<'a>>>>,
     outputs: Vec<MessageSignatureOutput>,
 }
@@ -53,14 +63,18 @@ impl<S: MessageSigner> Future for SingularBatch<'_, S> {
     fn poll(self: Pin<&mut Self>, context: &mut Context<'_>) -> Poll<Self::Output> {
         let this = self.get_mut();
 
+        if this.config.aborted {
+            return Poll::Ready(Err(MessageError::Cancelled));
+        }
+
         if this.messages.len() > MAX_MESSAGES {
             return Poll::Ready(Err(MessageError::TooManyMessages));
         }
 
         while let Some(message) = this.messages.get(this.outputs.len()) {
-            let pending = this
-                .pending
-                .get_or_insert_with(|| Box::pin(this.signer.sign_message(message.content())));
+            let pending = this.pending.get_or_insert_with(|| {
+                Box::pin(this.signer.sign_message(message.content(), this.config))
+            });
             let output =
                 core::task::ready!(pending.as_mut().poll(context)).map_err(MessageError::Signer)?;
             this.pending = None;

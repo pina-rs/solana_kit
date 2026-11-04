@@ -4,7 +4,8 @@ use solana_kit_core::{
     transaction::{Lifetime, Message, Transaction, Version},
 };
 use solana_kit_signers::{
-    Error, SignatureOutput, Signer, SignerCapability, TransactionPartialSigner, TransactionSigners,
+    Error, SignatureOutput, Signer, SignerCapability, TransactionPartialSigner,
+    TransactionSignerConfig, TransactionSigners,
 };
 use std::{
     future::Future,
@@ -49,7 +50,11 @@ impl Signer for Native {
 impl TransactionPartialSigner for Native {
     type Sign<'a> = Suspended<'a>;
 
-    fn sign_transaction<'a>(&'a self, transaction: &'a Transaction) -> Self::Sign<'a> {
+    fn sign_transaction<'a>(
+        &'a self,
+        transaction: &'a Transaction,
+        _config: TransactionSignerConfig,
+    ) -> Self::Sign<'a> {
         Suspended {
             signer: self,
             transaction,
@@ -67,7 +72,7 @@ where
         tokio::task::yield_now().await;
         TransactionSigners::new(&[&SignerCapability::new(&signer)])
             .unwrap()
-            .sign(&transaction)
+            .sign(&transaction, TransactionSignerConfig::default())
             .await
             .unwrap()
     })

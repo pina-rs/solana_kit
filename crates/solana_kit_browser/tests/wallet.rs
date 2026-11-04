@@ -3,7 +3,10 @@
 use js_sys::{Function, Object, Reflect, Uint8Array};
 use solana_kit_browser::{
     BrowserCause,
-    wallet::{BrowserWalletPanel, Connection, WalletController, WalletDiscovery, WalletFailure},
+    wallet::{
+        BrowserWalletPanel, Connection, WalletController, WalletDiscovery, WalletFailure,
+        WalletSigner,
+    },
 };
 use solana_kit_core::{
     Hash,
@@ -11,7 +14,8 @@ use solana_kit_core::{
     transaction::{Lifetime, Message, Transaction, Version},
 };
 use solana_kit_signers::{
-    MessageSigner, Signer, SignerCapability, TransactionPartialSigner, local,
+    MessageSigner, Signer, SignerCapability, SignerConfig, TransactionPartialSigner,
+    TransactionSignerConfig, local,
 };
 use solana_kit_wallet::ui::{PanelAction, PanelState};
 use solana_kit_wallet::{Wallet, WalletErrorCode, WalletRegistry};
@@ -29,6 +33,15 @@ wasm_bindgen_test_configure!(run_in_browser);
 
 #[path = "wallet/corrections.rs"]
 mod corrections;
+
+#[path = "wallet/config.rs"]
+mod config;
+
+const MESSAGE_CONFIG: SignerConfig = SignerConfig { aborted: false };
+const TRANSACTION_CONFIG: TransactionSignerConfig = TransactionSignerConfig {
+    aborted: false,
+    min_context_slot: None,
+};
 
 #[wasm_bindgen(module = "/tests/wallet_fixture.js")]
 extern "C" {
@@ -115,6 +128,27 @@ fn transaction(keypair: &Keypair) -> Transaction {
     )
 }
 
+async fn assert_typed_signatures(signer: &WalletSigner, keypair: &Keypair) {
+    let signed =
+        MessageSigner::<WalletFailure>::sign_message(signer, b"exact message", MESSAGE_CONFIG)
+            .await
+            .unwrap();
+    signed.validate(signer.address(), b"exact message").unwrap();
+    let input = transaction(keypair);
+    let output = TransactionPartialSigner::<WalletFailure>::sign_transaction(
+        signer,
+        &input,
+        TRANSACTION_CONFIG,
+    )
+    .await
+    .unwrap();
+    output
+        .apply(signer.address(), &input)
+        .unwrap()
+        .verify()
+        .unwrap();
+}
+
 #[wasm_bindgen_test]
 async fn public_discovery_controller_and_typed_signatures() {
     let harness = Harness::new();
@@ -134,19 +168,7 @@ async fn public_discovery_controller_and_typed_signatures() {
         Connection::Connected { .. }
     ));
     let signer = controller.signer().unwrap();
-    let signed = MessageSigner::<WalletFailure>::sign_message(&signer, b"exact message")
-        .await
-        .unwrap();
-    signed.validate(signer.address(), b"exact message").unwrap();
-    let input = transaction(&harness.keypair);
-    let output = TransactionPartialSigner::<WalletFailure>::sign_transaction(&signer, &input)
-        .await
-        .unwrap();
-    output
-        .apply(signer.address(), &input)
-        .unwrap()
-        .verify()
-        .unwrap();
+    assert_typed_signatures(&signer, &harness.keypair).await;
     assert_eq!(wallet.accounts().len(), 1);
     assert!(discovery.take_failures().is_empty());
     harness.call("close");
@@ -156,7 +178,7 @@ async fn public_discovery_controller_and_typed_signatures() {
         Connection::Disconnected
     ));
     assert_eq!(
-        MessageSigner::<WalletFailure>::sign_message(&signer, b"stale")
+        MessageSigner::<WalletFailure>::sign_message(&signer, b"stale", MESSAGE_CONFIG)
             .await
             .unwrap_err()
             .code(),
@@ -179,7 +201,7 @@ async fn original_js_rejection_and_account_revocation_remain_visible() {
     Reflect::set(&original, &"private".into(), &"never print this".into()).unwrap();
     harness.runtime("mode", &"reject".into());
     harness.runtime("error", &original);
-    let error = MessageSigner::<WalletFailure>::sign_message(&signer, b"message")
+    let error = MessageSigner::<WalletFailure>::sign_message(&signer, b"message", MESSAGE_CONFIG)
         .await
         .unwrap_err();
     let cause = error
@@ -197,7 +219,7 @@ async fn original_js_rejection_and_account_revocation_remain_visible() {
     harness.runtime("mode", &"ready".into());
     harness.call("restore");
     assert_eq!(
-        MessageSigner::<WalletFailure>::sign_message(&signer, b"stale")
+        MessageSigner::<WalletFailure>::sign_message(&signer, b"stale", MESSAGE_CONFIG)
             .await
             .unwrap_err()
             .code(),
@@ -242,11 +264,19 @@ async fn mixed_local_and_wallet_pipeline_preserves_backend_causes() {
         )
         .unwrap(),
     );
-    composition.sign(&input).await.unwrap().verify().unwrap();
+    composition
+        .sign(&input, TRANSACTION_CONFIG)
+        .await
+        .unwrap()
+        .verify()
+        .unwrap();
     let original = Object::new();
     harness.runtime("mode", &"reject".into());
     harness.runtime("error", &original);
-    let error = composition.sign(&input).await.unwrap_err();
+    let error = composition
+        .sign(&input, TRANSACTION_CONFIG)
+        .await
+        .unwrap_err();
     assert!(Object::is(
         error
             .source()
@@ -306,7 +336,8 @@ async fn pending_wallet_promise_is_woken_and_rejected_when_accounts_are_revoked(
     let counter = Arc::new(Counter::default());
     let waker = Waker::from(counter.clone());
     let mut context = Context::from_waker(&waker);
-    let mut operation = MessageSigner::<WalletFailure>::sign_message(&signer, b"pending");
+    let mut operation =
+        MessageSigner::<WalletFailure>::sign_message(&signer, b"pending", MESSAGE_CONFIG);
     assert!(matches!(
         operation.as_mut().poll(&mut context),
         Poll::Pending
@@ -337,7 +368,7 @@ async fn malformed_results_and_replaced_feature_versions_are_rejected() {
         .unwrap();
     let signer = controller.signer().unwrap();
     harness.runtime("mode", &"empty".into());
-    let failure = MessageSigner::<WalletFailure>::sign_message(&signer, b"message")
+    let failure = MessageSigner::<WalletFailure>::sign_message(&signer, b"message", MESSAGE_CONFIG)
         .await
         .unwrap_err();
     assert_eq!(failure.code(), WalletErrorCode::InvalidResponse);
@@ -345,7 +376,7 @@ async fn malformed_results_and_replaced_feature_versions_are_rejected() {
     harness.runtime("mode", &"ready".into());
     harness.call("unsupported");
     assert_eq!(
-        MessageSigner::<WalletFailure>::sign_message(&signer, b"stale")
+        MessageSigner::<WalletFailure>::sign_message(&signer, b"stale", MESSAGE_CONFIG)
             .await
             .unwrap_err()
             .code(),
@@ -353,7 +384,7 @@ async fn malformed_results_and_replaced_feature_versions_are_rejected() {
     );
     let current = controller.signer().unwrap();
     assert_eq!(
-        MessageSigner::<WalletFailure>::sign_message(&current, b"current")
+        MessageSigner::<WalletFailure>::sign_message(&current, b"current", MESSAGE_CONFIG)
             .await
             .unwrap_err()
             .code(),
@@ -423,7 +454,8 @@ async fn panel_uses_actual_metadata_and_cancel_invalidates_pending_signing() {
     let signer = panel.controller().signer().unwrap();
     harness.runtime("mode", &"pending".into());
     let mut context = Context::from_waker(Waker::noop());
-    let mut operation = MessageSigner::<WalletFailure>::sign_message(&signer, b"awaiting approval");
+    let mut operation =
+        MessageSigner::<WalletFailure>::sign_message(&signer, b"awaiting approval", MESSAGE_CONFIG);
     assert!(operation.as_mut().poll(&mut context).is_pending());
 
     panel.dispatch(PanelAction::Cancel).unwrap().await.unwrap();

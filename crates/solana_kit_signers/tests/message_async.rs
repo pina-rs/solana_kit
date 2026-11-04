@@ -1,6 +1,6 @@
 use solana_kit_core::{Address, Signature};
 use solana_kit_signers::{
-    Signer, SignerCapability,
+    Signer, SignerCapability, SignerConfig,
     message::{
         MessageError, MessageModifyingSigner, MessagePartialSigner, MessageSignatureOutput,
         SignableMessage, local, native,
@@ -105,7 +105,11 @@ fn local_output(
 impl MessagePartialSigner for Local {
     type Sign<'a> = LocalOperation<'a>;
 
-    fn sign_messages<'a>(&'a self, messages: &'a [SignableMessage]) -> Self::Sign<'a> {
+    fn sign_messages<'a>(
+        &'a self,
+        messages: &'a [SignableMessage],
+        _config: SignerConfig,
+    ) -> Self::Sign<'a> {
         LocalOperation {
             backend: self,
             messages,
@@ -143,7 +147,7 @@ fn rc_pending_wake_reverse_completion_ordered_merge_and_cancellation() {
     let wake = Arc::new(WakeCount::default());
     let waker = Waker::from(Arc::clone(&wake));
     let mut cx = Context::from_waker(&waker);
-    let mut future = Box::pin(pipeline.sign(&input));
+    let mut future = Box::pin(pipeline.sign(&input, SignerConfig::default()));
     assert!(future.as_mut().poll(&mut cx).is_pending());
     assert!(future.as_mut().poll(&mut cx).is_pending());
     assert_eq!(*events.borrow(), [2]);
@@ -167,7 +171,7 @@ fn rc_pending_wake_reverse_completion_ordered_merge_and_cancellation() {
         local::Registration::partial(&one),
     ])
     .unwrap();
-    let mut future = Box::pin(reversed.sign(&input));
+    let mut future = Box::pin(reversed.sign(&input, SignerConfig::default()));
     assert!(future.as_mut().poll(&mut cx).is_pending());
     assert!(future.as_mut().poll(&mut cx).is_pending());
     assert_eq!(
@@ -175,7 +179,7 @@ fn rc_pending_wake_reverse_completion_ordered_merge_and_cancellation() {
         Poll::Ready(Err(MessageError::ChangedSnapshot))
     );
     drop(future);
-    let mut cancelled = Box::pin(pipeline.sign(&input));
+    let mut cancelled = Box::pin(pipeline.sign(&input, SignerConfig::default()));
     assert!(cancelled.as_mut().poll(&mut cx).is_pending());
     drop(cancelled);
     assert_eq!((first.drops.get(), second.drops.get()), (3, 3));
@@ -206,7 +210,7 @@ fn first_backend_failure_drops_later_unpolled_work() {
     ])
     .unwrap();
     let input = [SignableMessage::new([])];
-    let mut future = Box::pin(pipeline.sign(&input));
+    let mut future = Box::pin(pipeline.sign(&input, SignerConfig::default()));
     assert_eq!(
         future
             .as_mut()
@@ -260,7 +264,11 @@ impl<const SEED: u8> MessagePartialSigner for Native<SEED> {
         Box<dyn Future<Output = Result<Vec<MessageSignatureOutput>, MessageError>> + Send + 'a>,
     >;
 
-    fn sign_messages<'a>(&'a self, messages: &'a [SignableMessage]) -> Self::Sign<'a> {
+    fn sign_messages<'a>(
+        &'a self,
+        messages: &'a [SignableMessage],
+        _config: SignerConfig,
+    ) -> Self::Sign<'a> {
         Box::pin(async move {
             PendingOnce {
                 polls: &self.0,
@@ -286,7 +294,11 @@ impl<const SEED: u8> MessageModifyingSigner for Native<SEED> {
     type Modify<'a> =
         Pin<Box<dyn Future<Output = Result<Vec<SignableMessage>, MessageError>> + Send + 'a>>;
 
-    fn modify_messages<'a>(&'a self, messages: &'a [SignableMessage]) -> Self::Modify<'a> {
+    fn modify_messages<'a>(
+        &'a self,
+        messages: &'a [SignableMessage],
+        _config: SignerConfig,
+    ) -> Self::Modify<'a> {
         Box::pin(async move {
             PendingOnce {
                 polls: &self.0,
@@ -332,7 +344,10 @@ where
             SignableMessage::new(b"native"),
             SignableMessage::from_text("é"),
         ];
-        let results = pipeline.sign(&inputs).await.unwrap();
+        let results = pipeline
+            .sign(&inputs, SignerConfig::default())
+            .await
+            .unwrap();
         assert_eq!(results.len(), 2);
         assert_eq!(results[0].signatures().len(), 2);
         assert_eq!(results[1].content(), [195, 169]);

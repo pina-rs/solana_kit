@@ -69,7 +69,11 @@ impl Signer for Backend {
 
 impl TransactionPartialSigner for Backend {
     type Sign<'a> = Operation<'a>;
-    fn sign_transaction<'a>(&'a self, transaction: &'a Transaction) -> Self::Sign<'a> {
+    fn sign_transaction<'a>(
+        &'a self,
+        transaction: &'a Transaction,
+        _config: TransactionSignerConfig,
+    ) -> Self::Sign<'a> {
         Operation {
             backend: self,
             transaction,
@@ -104,7 +108,7 @@ fn ordered() -> Outcome {
     let waker = Waker::from(counter.clone());
     let mut cx = Context::from_waker(&waker);
     let tx = transaction(a.address())?;
-    let mut future = Box::pin(composition.partially_sign(&tx));
+    let mut future = Box::pin(composition.partially_sign(&tx, TransactionSignerConfig::default()));
 
     crate::require(
         future.as_mut().poll(&mut cx).is_pending() && (a.polls.get(), b.polls.get()) == (1, 1),
@@ -140,7 +144,7 @@ fn reversed<'a>(
         Registration::partial(first),
     ])
     .map_err(|_| "reverse local composition")?;
-    let mut future = Box::pin(reverse.partially_sign(tx));
+    let mut future = Box::pin(reverse.partially_sign(tx, TransactionSignerConfig::default()));
 
     crate::require(
         future.as_mut().poll(cx).is_pending(),
@@ -170,7 +174,7 @@ fn cancelled() -> Outcome {
     let waker = Waker::from(Arc::new(Counter::default()));
     let mut cx = Context::from_waker(&waker);
     let tx = transaction(a.address())?;
-    let mut future = Box::pin(composition.partially_sign(&tx));
+    let mut future = Box::pin(composition.partially_sign(&tx, TransactionSignerConfig::default()));
 
     crate::require(
         future.as_mut().poll(&mut cx) == Poll::Ready(Err(Error::Cancelled)),
@@ -185,7 +189,7 @@ fn cancelled() -> Outcome {
 
     let pending = Composition::new(Registration::partial(&second_handle))
         .map_err(|_| "pending composition")?;
-    let mut future = Box::pin(pending.partially_sign(&tx));
+    let mut future = Box::pin(pending.partially_sign(&tx, TransactionSignerConfig::default()));
     crate::require(
         future.as_mut().poll(&mut cx).is_pending(),
         "drop control must suspend",

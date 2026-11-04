@@ -15,7 +15,7 @@ use solana_kit_core::{
 };
 use solana_kit_signers::{
     Error, Role, SignatureOutput, Signer, SignerCapability, TransactionModifyingSigner,
-    TransactionPartialSigner, TransactionSendingSigner,
+    TransactionPartialSigner, TransactionSendingSigner, TransactionSignerConfig,
     local::{Composition, Registration},
 };
 
@@ -101,7 +101,11 @@ impl Signer for Stateless {
 
 impl TransactionPartialSigner for Stateless {
     type Sign<'a> = Ready<Result<SignatureOutput, Error>>;
-    fn sign_transaction<'a>(&'a self, _: &'a Transaction) -> Self::Sign<'a> {
+    fn sign_transaction<'a>(
+        &'a self,
+        _: &'a Transaction,
+        _config: TransactionSignerConfig,
+    ) -> Self::Sign<'a> {
         ready(Err(Error::Rejected))
     }
 }
@@ -143,7 +147,8 @@ fn identity() -> Outcome {
     )?;
     let tx = transaction(first.address())?;
     crate::require(
-        complete(composition.partially_sign(&tx))? == Err(Error::Rejected),
+        complete(composition.partially_sign(&tx, TransactionSignerConfig::default()))?
+            == Err(Error::Rejected),
         "shared ZST must invoke actual backend",
     )
 }
@@ -161,7 +166,11 @@ impl Signer for Cached {
 
 impl TransactionPartialSigner for Cached {
     type Sign<'a> = Ready<Result<SignatureOutput, Error>>;
-    fn sign_transaction<'a>(&'a self, tx: &'a Transaction) -> Self::Sign<'a> {
+    fn sign_transaction<'a>(
+        &'a self,
+        tx: &'a Transaction,
+        _config: TransactionSignerConfig,
+    ) -> Self::Sign<'a> {
         self.effects.set(self.effects.get() + 1);
 
         if !tx.message().signers().contains(&self.address()) {
@@ -194,8 +203,8 @@ pub fn batches() -> Result<(), &'static str> {
         Composition::new(Registration::partial(&handle)).map_err(|_| "batch composition")?;
 
     let exact = vec![tx.clone(); MAX_BATCH];
-    let output =
-        complete(composition.sign_batch(&exact))?.map_err(|_| "exact 256 transaction batch")?;
+    let output = complete(composition.sign_batch(&exact, TransactionSignerConfig::default()))?
+        .map_err(|_| "exact 256 transaction batch")?;
     crate::require(
         output.len() == MAX_BATCH && backend.effects.get() == MAX_BATCH,
         "exact batch boundary effects",
@@ -208,13 +217,17 @@ pub fn batches() -> Result<(), &'static str> {
         "batch output order and immutable signed bytes",
     )?;
     crate::require(
-        complete(composition.sign_batch(&vec![tx.clone(); MAX_BATCH + 1]))?
-            == Err(Error::TooManySigners)
+        complete(composition.sign_batch(
+            &vec![tx.clone(); MAX_BATCH + 1],
+            TransactionSignerConfig::default(),
+        ))? == Err(Error::TooManySigners)
             && backend.effects.get() == MAX_BATCH,
         "257 batch must reject before effects",
     )?;
     let bad = transaction(Address::from_bytes([99; 32]))?;
-    let result = complete(composition.sign_batch(&[tx.clone(), bad, tx]))?;
+    let result = complete(
+        composition.sign_batch(&[tx.clone(), bad, tx], TransactionSignerConfig::default()),
+    )?;
     crate::require(
         result
             == Err(Error::Transaction(

@@ -4,7 +4,7 @@ use solana_kit_core::{Address, Signature, transaction::Transaction};
 use solana_kit_signers::local::{Composition, Registration as R};
 use solana_kit_signers::{
     Error, Role, SignatureOutput, Signer, SignerCapability, TransactionModifyingSigner,
-    TransactionPartialSigner, TransactionSendingSigner,
+    TransactionPartialSigner, TransactionSendingSigner, TransactionSignerConfig,
 };
 use std::sync::{Arc, Mutex};
 
@@ -35,7 +35,11 @@ fn address(seed: u8) -> Address {
 }
 impl TransactionPartialSigner for First {
     type Sign<'a> = Pause<Ready<Result<SignatureOutput, Error>>>;
-    fn sign_transaction<'a>(&'a self, tx: &'a Transaction) -> Self::Sign<'a> {
+    fn sign_transaction<'a>(
+        &'a self,
+        tx: &'a Transaction,
+        _config: TransactionSignerConfig,
+    ) -> Self::Sign<'a> {
         self.events.lock().unwrap().push((self.seed, 'p'));
         #[cfg(feature = "crypto")]
         let signature = solana_kit_core::crypto::Keypair::from_seed(&[self.seed; 32])
@@ -54,34 +58,54 @@ impl TransactionPartialSigner for First {
 }
 impl TransactionModifyingSigner for First {
     type Modify<'a> = Ready<Result<Transaction, Error>>;
-    fn modify_transaction<'a>(&'a self, tx: &'a Transaction) -> Self::Modify<'a> {
+    fn modify_transaction<'a>(
+        &'a self,
+        tx: &'a Transaction,
+        _config: TransactionSignerConfig,
+    ) -> Self::Modify<'a> {
         self.events.lock().unwrap().push((self.seed, 'm'));
         ready(Ok(tx.clone()))
     }
 }
 impl TransactionSendingSigner for First {
     type Send<'a> = Ready<Result<Signature, Error>>;
-    fn send_transaction<'a>(&'a self, _: &'a Transaction) -> Self::Send<'a> {
+    fn send_transaction<'a>(
+        &'a self,
+        _: &'a Transaction,
+        _config: TransactionSignerConfig,
+    ) -> Self::Send<'a> {
         self.events.lock().unwrap().push((self.seed, 's'));
         ready(Ok(Signature::from_bytes([self.seed; 64])))
     }
 }
 impl TransactionPartialSigner for Second {
     type Sign<'a> = Pause<Ready<Result<SignatureOutput, Error>>>;
-    fn sign_transaction<'a>(&'a self, tx: &'a Transaction) -> Self::Sign<'a> {
-        self.0.sign_transaction(tx)
+    fn sign_transaction<'a>(
+        &'a self,
+        tx: &'a Transaction,
+        config: TransactionSignerConfig,
+    ) -> Self::Sign<'a> {
+        self.0.sign_transaction(tx, config)
     }
 }
 impl TransactionModifyingSigner for Second {
     type Modify<'a> = Ready<Result<Transaction, Error>>;
-    fn modify_transaction<'a>(&'a self, tx: &'a Transaction) -> Self::Modify<'a> {
-        self.0.modify_transaction(tx)
+    fn modify_transaction<'a>(
+        &'a self,
+        tx: &'a Transaction,
+        config: TransactionSignerConfig,
+    ) -> Self::Modify<'a> {
+        self.0.modify_transaction(tx, config)
     }
 }
 impl TransactionSendingSigner for Second {
     type Send<'a> = Ready<Result<Signature, Error>>;
-    fn send_transaction<'a>(&'a self, tx: &'a Transaction) -> Self::Send<'a> {
-        self.0.send_transaction(tx)
+    fn send_transaction<'a>(
+        &'a self,
+        tx: &'a Transaction,
+        config: TransactionSignerConfig,
+    ) -> Self::Send<'a> {
+        self.0.send_transaction(tx, config)
     }
 }
 fn backends() -> (First, Second) {
@@ -195,20 +219,28 @@ async fn heterogeneous_modifiers_partials_and_batches_observe_order() {
     let y = SignerCapability::new(&b);
     let tx = support::transaction(a.address(), 1);
     let composition = Composition::new(R::modifying(&x).and(R::modifying(&y))).unwrap();
-    composition.partially_sign(&tx).await.unwrap();
+    composition
+        .partially_sign(&tx, TransactionSignerConfig::default())
+        .await
+        .unwrap();
     assert_eq!(*a.events.lock().unwrap(), vec![(7, 'm'), (8, 'm')]);
     a.events.lock().unwrap().clear();
 
     let composition = Composition::new(R::partial(&x).and(R::partial(&x))).unwrap();
     let result = composition
-        .sign_batch(&[tx.clone(), tx.clone()])
+        .sign_batch(
+            &[tx.clone(), tx.clone()],
+            TransactionSignerConfig::default(),
+        )
         .await
         .unwrap();
     assert_eq!(result.len(), 2);
     assert_eq!(*a.events.lock().unwrap(), vec![(7, 'p'), (7, 'p')]);
     a.events.lock().unwrap().clear();
     assert_eq!(
-        composition.sign_batch(&vec![tx; 257]).await,
+        composition
+            .sign_batch(&vec![tx; 257], TransactionSignerConfig::default())
+            .await,
         Err(Error::TooManySigners)
     );
     assert!(a.events.lock().unwrap().is_empty());
@@ -247,7 +279,9 @@ where
             solana_kit_signers::native::Registration::partial(&a),
             solana_kit_signers::native::Registration::sending(&b),
         ])?;
-        composition.sign_and_send(&tx).await
+        composition
+            .sign_and_send(&tx, TransactionSignerConfig::default())
+            .await
     })
 }
 
@@ -286,7 +320,11 @@ fn composition_zst_handle_identity_and_pre_effect_bounds() {
     }
     impl TransactionPartialSigner for Stateless {
         type Sign<'a> = Ready<Result<SignatureOutput, Error>>;
-        fn sign_transaction<'a>(&'a self, _: &'a Transaction) -> Self::Sign<'a> {
+        fn sign_transaction<'a>(
+            &'a self,
+            _: &'a Transaction,
+            _config: TransactionSignerConfig,
+        ) -> Self::Sign<'a> {
             CALLS.fetch_add(1, Ordering::SeqCst);
             ready(Err(Error::Rejected))
         }
@@ -377,7 +415,12 @@ async fn transaction_batch_stops_at_first_failure() {
     let good = support::transaction(a.address(), 1);
     let bad = support::transaction(b.address(), 1);
     assert_eq!(
-        composition.sign_batch(&[good.clone(), bad, good]).await,
+        composition
+            .sign_batch(
+                &[good.clone(), bad, good],
+                TransactionSignerConfig::default()
+            )
+            .await,
         Err(Error::Transaction(
             solana_kit_core::transaction::Error::UnknownSigner
         ))
@@ -394,14 +437,14 @@ async fn sender_resolution_errors_precede_all_backend_effects() {
     assert_eq!(
         Composition::new(R::partial(&x))
             .unwrap()
-            .sign_and_send(&tx)
+            .sign_and_send(&tx, TransactionSignerConfig::default())
             .await,
         Err(Error::MissingSender)
     );
     assert_eq!(
         Composition::new(vec![R::sending(&x), R::sending(&y)])
             .unwrap()
-            .sign_and_send(&tx)
+            .sign_and_send(&tx, TransactionSignerConfig::default())
             .await,
         Err(Error::MultipleSenders)
     );

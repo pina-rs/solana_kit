@@ -43,7 +43,11 @@ impl<const TAG: u8> Signer for Backend<TAG> {
 
 impl<const TAG: u8> TransactionPartialSigner for Backend<TAG> {
     type Sign<'a> = Ready<Result<SignatureOutput, Error>>;
-    fn sign_transaction<'a>(&'a self, _: &'a Transaction) -> Self::Sign<'a> {
+    fn sign_transaction<'a>(
+        &'a self,
+        _: &'a Transaction,
+        _config: TransactionSignerConfig,
+    ) -> Self::Sign<'a> {
         self.0.set(self.0.get() + 1);
         ready(Err(Error::Rejected))
     }
@@ -51,7 +55,11 @@ impl<const TAG: u8> TransactionPartialSigner for Backend<TAG> {
 
 impl<const TAG: u8> TransactionModifyingSigner for Backend<TAG> {
     type Modify<'a> = Ready<Result<Transaction, Error>>;
-    fn modify_transaction<'a>(&'a self, tx: &'a Transaction) -> Self::Modify<'a> {
+    fn modify_transaction<'a>(
+        &'a self,
+        tx: &'a Transaction,
+        _config: TransactionSignerConfig,
+    ) -> Self::Modify<'a> {
         self.0.set(self.0.get() + 1);
         ready(Ok(tx.clone()))
     }
@@ -59,7 +67,11 @@ impl<const TAG: u8> TransactionModifyingSigner for Backend<TAG> {
 
 impl<const TAG: u8> TransactionSendingSigner for Backend<TAG> {
     type Send<'a> = Ready<Result<Signature, Error>>;
-    fn send_transaction<'a>(&'a self, _: &'a Transaction) -> Self::Send<'a> {
+    fn send_transaction<'a>(
+        &'a self,
+        _: &'a Transaction,
+        _config: TransactionSignerConfig,
+    ) -> Self::Send<'a> {
         self.0.set(self.0.get() + 1);
         ready(Ok(Signature::from_bytes([TAG; 64])))
     }

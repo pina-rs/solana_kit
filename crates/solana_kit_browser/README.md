@@ -126,6 +126,15 @@ Transaction version and account/chain capabilities are checked before a request.
 A submitted identifier is checked against the supplied transaction and is never
 confirmation of execution.
 
+Calls take the Kit per-call `SignerConfig` or `TransactionSignerConfig`. An
+aborted configuration returns the existing cancellation mapping before an
+operation guard or wallet prompt. For transaction features, a
+`min_context_slot` value is forwarded exactly as Wallet Standard
+`options.minContextSlot`, including `Some(0)`; `None` omits the field. Because a
+JavaScript number cannot represent every `u64` exactly, a slot above
+`2^53 - 1` rejects with `InvalidRequest` before the wallet is invoked rather than
+rounding the value.
+
 A wallet and ordinary local key can use the regular
 `solana_kit_signers::local::Composition::<WalletFailure>::with_failure` path. Register
 the wallet with `Registration::partial` and the key with

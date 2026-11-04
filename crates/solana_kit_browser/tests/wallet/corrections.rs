@@ -6,7 +6,7 @@ use solana_kit_client::{
     subscriptions::SignatureInfo,
 };
 use solana_kit_core::{AccountMeta, AccountRole, Address, Instruction, Signature};
-use solana_kit_signers::TransactionSendingSigner;
+use solana_kit_signers::{TransactionSendingSigner, TransactionSignerConfig};
 use std::future::{Ready, pending, ready};
 
 #[wasm_bindgen_test]
@@ -171,10 +171,13 @@ async fn secondary_wallet_returns_only_primary_identifier_to_confirmation() {
 
     assert_ne!(primary, secondary);
 
-    let identifier =
-        TransactionSendingSigner::<WalletFailure>::send_transaction(&wallet, &transaction)
-            .await
-            .unwrap();
+    let identifier = TransactionSendingSigner::<WalletFailure>::send_transaction(
+        &wallet,
+        &transaction,
+        TransactionSignerConfig::default(),
+    )
+    .await
+    .unwrap();
     assert_eq!(identifier, primary);
 
     let confirmation = Confirmation::new(identifier, lifetime(), Policy::default()).unwrap();
@@ -187,10 +190,14 @@ async fn secondary_wallet_returns_only_primary_identifier_to_confirmation() {
         &Uint8Array::from(secondary.as_bytes().as_slice()),
     );
     assert_eq!(
-        TransactionSendingSigner::<WalletFailure>::send_transaction(&wallet, &transaction)
-            .await
-            .unwrap_err()
-            .code(),
+        TransactionSendingSigner::<WalletFailure>::send_transaction(
+            &wallet,
+            &transaction,
+            TransactionSignerConfig::default()
+        )
+        .await
+        .unwrap_err()
+        .code(),
         WalletErrorCode::InvalidResponse
     );
 }
@@ -211,19 +218,27 @@ async fn submission_supplies_missing_payer_and_rejects_a_mismatched_payer_signat
     );
 
     assert_eq!(
-        TransactionSendingSigner::<WalletFailure>::send_transaction(&wallet, &unsigned)
-            .await
-            .unwrap(),
+        TransactionSendingSigner::<WalletFailure>::send_transaction(
+            &wallet,
+            &unsigned,
+            TransactionSignerConfig::default()
+        )
+        .await
+        .unwrap(),
         primary
     );
     let mismatched = transaction
         .with_signature(payer.address(), transaction.message().bytes(), secondary)
         .unwrap();
     assert_eq!(
-        TransactionSendingSigner::<WalletFailure>::send_transaction(&wallet, &mismatched)
-            .await
-            .unwrap_err()
-            .code(),
+        TransactionSendingSigner::<WalletFailure>::send_transaction(
+            &wallet,
+            &mismatched,
+            TransactionSignerConfig::default()
+        )
+        .await
+        .unwrap_err()
+        .code(),
         WalletErrorCode::InvalidResponse
     );
 }
