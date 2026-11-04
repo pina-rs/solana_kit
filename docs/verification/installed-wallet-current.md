@@ -85,9 +85,11 @@ that app's installed sandbox for every invocation.
 
 ## Remaining limits
 
-The corresponding macOS application built, but Mac2's XCTest runner timed out
-while enabling automation before app launch. Developer-tool authorization was
-disabled; this receipt does not claim a successful macOS installed journey.
+The macOS application subsequently completed the same three-process functional journey through the
+existing computer-use connection, including independent ledger checks and both subscription races;
+see the [macOS execution receipt](installed-wallet-macos-current.md). Mac2's XCTest runner still timed
+out while enabling automation, and developer-tool authorization was unchanged. The successful manual
+native journey is separate from that unavailable automated driver route.
 Android's device opener failed to boot its advertised emulator, and its
 suggested diagnostic reported an unknown AVD name. No current Android installed
 execution is claimed. Physical devices, production networks, external wallet
