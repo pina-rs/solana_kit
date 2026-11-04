@@ -179,6 +179,7 @@ export TC=/path/to/rustup/toolchains/1.99.1-aarch64-apple-darwin
 export PATH="$TC/bin:$PATH" CARGO="$TC/bin/cargo" RUSTC="$TC/bin/rustc" RUSTDOC="$TC/bin/rustdoc"
 export CARGO_INCREMENTAL=0 CARGO_BUILD_JOBS=4 CARGO_HTTP_USER_AGENT=build
 manifest=verification/wasi-text-sockets/Cargo.toml
+mkdir -p /tmp/solana-kit-rw05-evidence
 
 cargo fmt --manifest-path "$manifest" --all --check
 cargo test --locked --manifest-path "$manifest" --bin runner embedded::tests

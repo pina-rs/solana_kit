@@ -337,6 +337,13 @@ acceptance in RW-03.
 
 **Kind.** Evidence. The implementation and a CI harness exist.
 
+**Executed follow-up.** RW-05 is now closed for its named host by the
+[public socket/clock receipt](../verification/wasi-text-sockets-current.md):
+18 CLI modes and 17 embedded executions passed under Wasmtime 50 on macOS
+ARM64, including actual Store destruction and replacement. The audit findings
+and reproduction plan below describe the earlier snapshot. Broader WASI hosts
+and Linux/Windows evidence remain separate work.
+
 **Acceptance criterion.** Phase 4/5: WASI execution plus host unload, late
 replies and quiet-stream cancellation across transports.
 

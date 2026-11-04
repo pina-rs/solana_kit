@@ -106,7 +106,7 @@ successfully elapsed deadline. No separate timer scheduler or executor exists.
 
 The socket and clock path, including a typed `Session`, executes in
 `verification/wasi-text-sockets` under Wasmtime 50.0.0 on macOS ARM64: real
-WS/WSS peers, explicit TLS trust/name negatives, frame/message/write bounds,
+WS/WSS peers, explicit TLS trust/name negatives, frame bounds,
 quiet cancellation, CLI process unload and embedded Store
 destruction/replacement. The [current receipt](../../docs/verification/wasi-text-sockets-current.md)
 records the exact cases, imports and hashes. The application still drives its
