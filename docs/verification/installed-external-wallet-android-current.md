@@ -11,9 +11,10 @@ prompt. The final invocation exited 0 and is the current acceptance. This is an
 installed reference-wallet acceptance on an owned emulator, not a
 production-wallet, physical-device, or CI claim.
 
-The SDK source for the final run is branch `test/android-external-wallet-final`
-at `da4aaef2`, which carries the four reviewed implementation commits, the
-parent's acceptance fixes, and the fixture cancellation repair described below.
+The final run used the source tree based on `da4aaef2`, which carries the four
+reviewed implementation commits and the controller's stronger assertions, plus
+the fixture cancellation repair subsequently committed as `75c31455`. That repair
+is not part of the earlier `da4aaef2` commit itself.
 The generated application used the public generator/runtime framework pin
 `7437097c52aa68a3401bd378764e051ed4c9165a` and the ordinary
 `prepare-wallet-rpc` composition. No generated native host was replaced.
@@ -266,10 +267,11 @@ cargo test --locked -p solana_kit_native --features mwa --lib mwa --offline
 reported 2,282 files, every category at or above 90, and overall 97.9. The
 feature-gated `generated-wallet` host suite
 (`cargo test ... --features generated-wallet-tests --test generated_wallet`)
-currently fails its `failed_private_copy` case in this environment on both the
-pristine reviewed sources and the final sources, so that failure predates and
-is unrelated to the fixture repair; that suite is not part of the scoped gates
-above.
+exposed a diagnostic-prefix regression introduced by the initial MWA observer
+change: it inserted `mobile=None` before the storage `io` field. The observer
+now appends the mobile category, preserving the established storage-error
+prefix. That maintenance change requires a fresh host-suite replay; it does not
+change the installed run's recorded artifact hashes or transport behavior.
 
 ## Retained evidence
 

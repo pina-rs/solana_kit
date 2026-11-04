@@ -182,7 +182,7 @@ impl Diagnostics {
         let details = error_details(&failure);
 
         self.record(&format!(
-            "failure {category} mobile={mobile:?} io={:?} published={:?} stage={:?}",
+            "failure {category} io={:?} published={:?} stage={:?} mobile={mobile:?}",
             details.io, details.published, details.stage
         ))?;
 
