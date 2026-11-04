@@ -24,3 +24,8 @@ DNS callbacks, arbitrary hosts, installed applications and untested schedules.
 
 This entire SDK is off-chain application code. Use Pina or official Solana program
 libraries for on-chain programs.
+
+The committed [execution transcript](evidence/execution.txt) and
+[artifact hashes](evidence/artifacts.sha256) record one actual macOS ARM64 run.
+The [current receipt](../../docs/verification/wasi-text-sockets-current.md)
+maps each mode to its assertion and lists the remaining host limits.
