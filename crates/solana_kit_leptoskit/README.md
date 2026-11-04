@@ -52,7 +52,7 @@ controls, four compiled ABI controls, and an unchanged independent public consum
 The HTTP application guest requires exactly three renderer and eight plugin-v1
 imports. The separate portable-core guest keeps its exact three-import policy.
 
-The source-only socket extension uses `GuestWebSocket` and `SocketDriver` with the
+The socket extension uses `GuestWebSocket` and `SocketDriver` with the
 same application-owned Events receiver and short host borrows. `GuestSubscriptionSocket`
 connects that actual socket to the client `Session`; route events through
 `Session::socket_mut().route` between polls. Incoming text and binary use the same
@@ -61,8 +61,11 @@ OPENED/TEXT/ENDED events remain unchanged. Binary uses additive event kind 4.
 Outbound commands remain text. A complete close Call observes the native actor
 join; Drop cancels outstanding work and the host must still drain and join it.
 The maintained interpreted fixture adds Helius pre-ack binary delivery and close.
-This extension is uncompiled and unexecuted in the current checkpoint. The
-historical HTTP receipt above does not verify this source pin or socket extension.
+The [current installed iOS wallet receipt](../../docs/verification/installed-wallet-current.md)
+exercises the granted validator socket, cancellation and continuing slot activity
+through this source pin. It does not establish successful current macOS or Android
+installed execution. The historical HTTP receipt above does not verify this source
+pin or socket extension.
 
 The unverified REST source extension adds `GuestRest<D>` and
 `HttpDriver::install_rest`. The application binds provider destinations to named

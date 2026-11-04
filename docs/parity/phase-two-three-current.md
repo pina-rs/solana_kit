@@ -1,0 +1,67 @@
+# Current Phase 2 and Phase 3 reconciliation
+
+This additive receipt reconciles the source audit with the implementation at
+`65c502f9044d320ec809fc0b45670b7860a8b4e3` on 2026-11-04. The Dart reference
+remains `0138bb956d2d81ccc0c56edc602401c0df2f2b46`. Historical slice receipts
+retain their original counts and limits; their outstanding lists are not a
+current implementation inventory.
+
+## Implemented families and executable evidence
+
+| Family                                      | Current Rust contract                                                                                             | Evidence in this repository                                                                                                       |
+| ------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| Addresses, constants and PDA                | Validated `Address`, collation, seeded derivation, typed PDA ownership and optional audited curve operations      | `core_parity`, `address_collation`, shared address cases                                                                          |
+| Errors, account models and sysvars          | Typed error catalog, account decoding and sysvar layouts                                                          | `accounts_sysvars`, shared core parity and sysvar cases                                                                           |
+| Numeric and string codecs                   | Exact bounded integers, optional arbitrary widths, byte/text/radix codecs including UTF-16 symbol handling        | `codecs`, `text_codecs`, `core_parity`                                                                                            |
+| Composite codecs                            | Collections, records, tuples, selected unions, framing, offsets, transformations and shared allocation accounting | `composite_codecs`, `codec_framing`, `codec_cursors`, `codec_size`                                                                |
+| Fixed points                                | Bounded typed shapes, exact arithmetic and codecs, explicitly lossy finite presentation                           | `fixed_points`, `fixed_point_numbers`, `core_parity`; the [receipt](fixed-points.md) retains its five unresolved declaration rows |
+| Instructions and program-client composition | Owned typed account roles, instruction data and explicit client composition                                       | Core instruction/program tests and shared portable cases                                                                          |
+| Legacy, v0 and v1 messages                  | Compilation, received-wire decoding, lookup provenance, inline v1 configuration and exact packet limits           | `codec_transactions`, `lookup_origin`, `v1_transactions`, shared message cases                                                    |
+| Transactions and lifetimes                  | Immutable signed bytes, signer slots, explicit unresolved/expiry/nonce metadata and structural nonce inspection   | Core transaction tests and shared transaction/nonce cases                                                                         |
+| Offchain messages                           | Typed domain/version formats and bounded message preparation                                                      | `offchain_golden`, `offchain_boundaries`, `offchain_malformed`                                                                    |
+| Introspection                               | Typed RPC/wire decoding, loaded account roles, inner instructions and walking order                               | Client `introspection` tests and shared introspection cases                                                                       |
+| Confirmation                                | Reducers, polling and composed observation factories, timeout/cancellation and cleanup                            | Client `confirmation`, `confirmation_factory`, `confirmation_watch`, `confirmation_races`                                         |
+| Instruction plans                           | Typed plans, packing, planning and execution with ordered results and failure boundaries                          | Core/client `plans`, client `async_planning`, shared plan cases                                                                   |
+
+These are test-target names under `crates/solana_kit_core/tests` and
+`crates/solana_kit_client/tests`, or modules under `verification/conformance/src`.
+They identify executable behavior rather than asserting that every source
+declaration has been individually adjudicated.
+
+The three concrete API gaps identified by the audit were subsequently addressed:
+
+- [Bounded key grinding, constant-time equality and signer wrappers](key-grinding-and-decompilation.md).
+- [Transaction-message decompilation](key-grinding-and-decompilation.md), retaining
+  lookup provenance and explicit lifetime metadata without authenticating it.
+- [Per-call signer configuration](signer-call-config.md) throughout message and
+  transaction capabilities, local/native composition and browser wallet adapters.
+
+Rust `Option`, trait implementations, explicit typed composition, codec mapping,
+and existing account-role or transaction operations replace several named Dart
+wrappers. A missing matching function name alone does not establish absent
+behavior. Deliberate bounds, error differences and non-invertible privilege
+merging remain documented in the owning receipts.
+
+## Current execution and limits
+
+The unchanged `solana-kit-core-v55` shared suite passed 448/448 natively, in real
+Chrome, in both Wasmtime previews and in the actual pinned LeptosKit interpreter.
+Each corrupt-fixture run returned 447/448 and exit 1. Import/dependency negative
+controls, the interpreter's one-fuel control and a fresh packaged-core consumer
+passed through `cargo xtask all` at this source checkpoint. See the
+[runtime receipt](../verification/runtimes.md).
+
+The later grinding/decompilation tests have native execution and Wasm compilation
+evidence. The explicit configuration tests also have real Chrome wallet fixture
+execution. They were not appended to the shared suite, so its portable execution
+does not prove those new operations on every host.
+
+The [installed wallet receipt](../verification/installed-wallet-current.md)
+records two complete current-source iOS controller runs, including native wallet
+recovery and real local-validator effects. Successful current macOS and Android
+installed runs remain outstanding.
+
+No canonical capability ID, hash, status, checker, threshold, shared golden or
+suite version changes in this reconciliation. Declaration-level evidence
+adjudication and bounded differences remain explicit; this receipt does not
+declare either phase or the whole ecosystem complete.

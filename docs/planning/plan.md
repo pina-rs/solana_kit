@@ -82,8 +82,8 @@ All five narrow experiments have executed evidence. The
 [Phase 1 evidence matrix](../verification/phase-one.md) links their source,
 commands, pins, negative controls, and limits. `cargo xtask all` reproduces the
 shared portable suite, import/dependency gates, and a clean packaged-core consumer.
-The current suite passes all 105 cases and rejects only the corrupt-hash
-case in the 104/105 negative run on native Rust, Chrome, both WASI previews, and the
+The current v55 suite passes all 448 cases and rejects only the corrupt-hash
+case in the 447/448 negative run on native Rust, Chrome, both WASI previews, and the
 actual pinned LeptosKit `WasmHost`. The
 [portable runtime receipt](../verification/runtimes.md)
 records this expanded suite. The [Token runtime receipt](../verification/token-runtime.md)
@@ -132,11 +132,13 @@ Acceptance: cross-language golden vectors plus malformed lengths, seeds, curve
 points, overflow, truncated data, invalid discriminators, and trailing-data
 policy. Execute the portable layer across all four environment classes.
 
-The bounded codec slice implements 53 wire operations and partially implements
-21 factories from the 1,387-ID Phase 2 inventory. Its per-unit receipt leaves
-1,313 other IDs uncovered; Phase 2 remains incomplete. See the
-[codec receipt](../verification/core-codecs.md) for exact supported configurations,
-remaining IDs, provenance, and tests.
+The historical [codec receipt](../verification/core-codecs.md) records its original
+53-operation slice. Later implementations include composite codecs, arbitrary
+integer widths, UTF-16 handling, accounts/sysvars and bounded fixed points.
+The [current Phase 2/3 reconciliation](../parity/phase-two-three-current.md)
+maps their executable evidence and remaining adjudication. Historical uncovered
+counts are not current implementation gap counts; canonical declarations remain
+unchanged, and Phase 2 is not declared complete.
 
 ## Phase 3: messages, transactions, and signing
 
@@ -157,18 +159,20 @@ construction requirements from validation of externally received transactions.
 The immutable legacy/v0/v1 slice compiles owned instructions and lookup snapshots,
 preserves exact signed bytes, validates received protocol wire independently of
 local compiler restrictions, and signs/verifies through optional deterministic
-crypto. Transaction cases execute in the shared suite, now 105 cases, including
+crypto. Transaction cases execute in the shared v55 suite, now 448 cases, including
 version-one message-first envelopes, inline configuration, exact 4096/4097-byte
 boundaries and signature tampering. Legacy/v0 retain their 1232-byte packet cap. The
 [transaction ledger](../parity/message-transactions.md) retains all 746 source
 IDs: 46 partial and 700 pending, none complete. Bounded durable nonce construction
 and structural inspection have [portable runtime evidence](../verification/nonce-runtime.md).
-Authenticated nonce account state, expiry, full
-portable introspection, remaining signer capabilities, confirmation,
-and instruction plans remain outstanding; Phase 3 is incomplete.
+Later receipts cover introspection, confirmation factories, instruction plans,
+bounded grinding, decompilation and explicit per-call signer configuration.
+Their [current reconciliation](../parity/phase-two-three-current.md) separates
+implemented behavior, bounded differences and declaration-level evidence debt.
+Phase 3 is not declared complete.
 
 The [transaction introspection receipt](../parity/transaction-introspection.md)
-adds all 30 public contracts to the maintained 111-case portable suite through
+added all 30 public contracts to the historical 111-case portable suite through
 existing typed RPC models and core wire decoding. Native Rust, Chrome, both WASI
 previews and the actual LeptosKit host execute those contracts. All 42 canonical
 IDs remain partial; exact Dart value spellings, validator and installed-device
@@ -182,10 +186,12 @@ explicit local/native heterogeneous composition, borrowed logical identity and
 bounded ordered transaction batches. All seven signer groups execute with the
 wallet frontier in its historical 97-case suite. The accepted
 [message integration](../verification/message-runtime.md) appends exact bare
-snapshots and all 256 distinct message signing/oracle assertions to the current
+snapshots and all 256 distinct message signing/oracle assertions to its historical
 105-case suite. Its declaration receipt retains 39 partial, 46 pending and zero
-complete IDs. Full dynamic discovery, attachment, configuration, generation and
-persistence remain pending.
+complete IDs. Typed composition replaces dynamic discovery and attachment.
+Explicit configuration and bounded key generation now have their own receipts;
+the installed iOS wallet controller also exercises native persistence and recovery.
+These additions do not silently adjudicate the historical declaration rows.
 
 ## Phase 4: RPC and host transports
 
