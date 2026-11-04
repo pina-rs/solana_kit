@@ -39,6 +39,24 @@ pub(crate) fn configure(adb: &Path, device: &str, identifier: &str, bytes: &[u8]
     )
 }
 
+/// Reads a public receipt created by the generated application. Only the
+/// fixture's bounded observer file is addressed; private wallet files are never
+/// read or copied.
+pub(crate) fn read(adb: &Path, device: &str, identifier: &str, relative: &str) -> Result<Vec<u8>> {
+    let output = Command::new(adb)
+        .args(["-s", device])
+        .args(["shell", "run-as", identifier, "cat"])
+        .arg(relative)
+        .stdin(Stdio::null())
+        .output()?;
+    require(
+        output.status.success(),
+        "Android public receipt read failed",
+    )?;
+
+    Ok(output.stdout)
+}
+
 fn run(
     adb: &Path,
     device: &str,

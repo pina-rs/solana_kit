@@ -87,14 +87,14 @@ async fn exchange_hello(
     let agreement = mwa::AgreementKey::from_scalar(&scalar).unwrap();
     let key = agreement.session_key(&public, &association);
     let mut response = agreement.public_key().to_bytes().to_vec();
-    response.extend(mwa::encrypt_message("{\"v\":1}", 0, &[0; 12], &key).unwrap());
+    response.extend(mwa::encrypt_message("{\"v\":1}", 1, &[0; 12], &key).unwrap());
     send(peer, encoding, response).await;
 
     key
 }
 
 async fn serve_calls(peer: &mut Peer, encoding: Encoding, key: SessionKey) {
-    let mut session = mwa::Session::new(key, 1, 1);
+    let mut session = mwa::Session::new(key, 2, 1);
     let request = receive(peer, encoding).await;
     let request: Value = serde_json::from_str(&session.decrypt(&request).unwrap()).unwrap();
     assert_eq!(request["method"], "get_capabilities");
@@ -694,7 +694,7 @@ async fn dropping_a_borrowed_remote_call_closes_the_session_and_actual_peer() {
         let association = key_rx.await.unwrap();
         send_empty(&mut peer, Encoding::Binary).await;
         let key = exchange_hello(&mut peer, Encoding::Binary, association).await;
-        let mut session = mwa::Session::new(key, 1, 1);
+        let mut session = mwa::Session::new(key, 2, 1);
         let request = receive(&mut peer, Encoding::Binary).await;
         let request: Value = serde_json::from_str(&session.decrypt(&request).unwrap()).unwrap();
         assert_eq!(request["method"], "sign_messages");

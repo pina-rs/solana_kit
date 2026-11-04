@@ -39,9 +39,12 @@ The fixture's generated guest offers balance reads, an explicitly approved
 local-validator SOL transfer and typed account/slot subscriptions through the
 public SDK client. Compilation and
 headless service tests do not establish an installed application journey.
-This runtime selection does not install Android's external wallet
-Intent capability; the original `prepare-wallet` selection continues to exercise
-that capability. The installed controller's subscription probe uses the real
+This runtime selection now packages the SDK's Android external-wallet Intent
+capability through its source-equality-checked native-support dependency. The
+[external-wallet receipt](../../../docs/verification/installed-external-wallet-android-current.md)
+records reference-wallet authorization, signing, rejection, pending-prompt
+cancellation and relaunch on the emulator. The original `prepare-wallet`
+selection keeps its direct SDK plugin path. The installed controller's subscription probe uses the real
 granted validator socket, acknowledged cancellation, a held genuine callback and
 continuing slot notifications. An explicit SDK HTTP observation supplies the
 confirmed context which a later same-socket slot must exceed. Background socket

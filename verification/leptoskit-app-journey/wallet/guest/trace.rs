@@ -1,4 +1,4 @@
-//! Verification-only receipts carry node identities and action kinds, never payloads.
+//! Verification-only receipts carry action kinds and explicit public journey data.
 use leptoskit_bridge::{
     Error, MethodId,
     guest::{Call, Client},
@@ -7,6 +7,7 @@ use solana_kit_leptoskit::{WalletSessionError, wallet_ui::LocalWalletAction};
 use std::{cell::RefCell, future::Future, pin::Pin, task::Context};
 
 const LIMIT: usize = 128;
+const RECEIPT_BYTES: usize = 512;
 
 thread_local! {
     static CALLS: RefCell<Vec<Call>> = const { RefCell::new(Vec::new()) };
@@ -48,6 +49,16 @@ pub(super) fn result(result: &Result<(), super::AppError>) {
     };
 
     send(2, &[category]);
+}
+
+/// Retains only public journey evidence: labels, addresses, signatures and
+/// lamport amounts. Private wallet material never reaches this observer.
+pub(super) fn receipt(line: &str) {
+    if line.len() > RECEIPT_BYTES || line.contains(['\n', '\r']) {
+        return;
+    }
+
+    send(3, line.as_bytes());
 }
 
 fn send(method: u32, payload: &[u8]) {

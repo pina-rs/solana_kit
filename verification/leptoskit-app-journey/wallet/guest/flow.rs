@@ -135,9 +135,7 @@ async fn select(
                 return Ok(());
             };
 
-            mobile::run(wallet?, actions, commands, generation)
-                .await
-                .map_err(Into::into)
+            mobile::run(wallet?, events, unrelated, actions, commands, generation).await
         }
 
         _ => Ok(()),

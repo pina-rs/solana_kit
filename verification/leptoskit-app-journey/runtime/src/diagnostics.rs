@@ -11,6 +11,8 @@ use std::{
 
 const LIMIT: usize = 128;
 const FAILURE_LIMIT: usize = 16;
+const RECEIPT_LIMIT: usize = 64;
+const RECEIPT_LINE_BYTES: usize = 512;
 const ERROR_DEPTH: usize = 8;
 const NODE_BYTES: usize = 8;
 const ACTIONS: [&str; 11] = [
@@ -29,6 +31,8 @@ const ACTIONS: [&str; 11] = [
 
 pub(super) struct Diagnostics {
     file: File,
+    receipt: File,
+    receipt_count: usize,
     count: usize,
     plugin: PluginId,
     failures: VecDeque<WalletFailure>,
@@ -44,17 +48,20 @@ struct ErrorDetails {
 impl Diagnostics {
     pub(super) fn new(host: &mut crate::Host, data: &Path) -> Result<Self, Error> {
         let file = File::create(data.join("journey-diagnostics.txt")).map_err(crate::native)?;
+        let receipt = File::create(data.join("journey-mwa.txt")).map_err(crate::native)?;
         let plugin = host.plugins().register(
             "solana-journey-observer",
-            [MethodId(0), MethodId(1), MethodId(2)],
+            [MethodId(0), MethodId(1), MethodId(2), MethodId(3)],
         )?;
 
-        for method in [MethodId(0), MethodId(1), MethodId(2)] {
+        for method in [MethodId(0), MethodId(1), MethodId(2), MethodId(3)] {
             host.plugins().grant(plugin, method, true)?;
         }
 
         Ok(Self {
             file,
+            receipt,
+            receipt_count: 0,
             count: 0,
             plugin,
             failures: VecDeque::new(),
@@ -102,6 +109,7 @@ impl Diagnostics {
             (2, [1]) => self.record("guest result bridge-native"),
             (2, [2]) => self.record("guest result bridge-cancelled"),
             (2, [3]) => self.record("guest result other"),
+            (3, line) => self.mwa_receipt(line),
             _ => self.record("invalid-receipt"),
         }
     }
@@ -115,6 +123,23 @@ impl Diagnostics {
         }
 
         self.record(&format!("press node={node} handled={handled}"))
+    }
+
+    /// Public journey lines only. Newlines and oversized lines are rejected so
+    /// one guest call cannot forge a second receipt.
+    fn mwa_receipt(&mut self, line: &[u8]) -> io::Result<()> {
+        let valid = !line.is_empty()
+            && line.len() <= RECEIPT_LINE_BYTES
+            && !line.iter().any(|byte| matches!(byte, b'\n' | b'\r'));
+
+        if !valid || self.receipt_count == RECEIPT_LIMIT {
+            return Ok(());
+        }
+
+        self.receipt.write_all(line)?;
+        self.receipt.write_all(b"\n")?;
+        self.receipt_count += 1;
+        Ok(())
     }
 
     fn action(&mut self, action: &[u8]) -> io::Result<()> {
@@ -149,11 +174,15 @@ impl Diagnostics {
             WalletFailure::Worker(_) => "worker",
             WalletFailure::Json(_) => "json",
         };
+        let mobile = match &failure {
+            WalletFailure::Mobile(error) => Some(mobile_kind(error)),
+            _ => None,
+        };
 
         let details = error_details(&failure);
 
         self.record(&format!(
-            "failure {category} io={:?} published={:?} stage={:?}",
+            "failure {category} io={:?} published={:?} stage={:?} mobile={mobile:?}",
             details.io, details.published, details.stage
         ))?;
 
@@ -177,6 +206,26 @@ impl Diagnostics {
         } else {
             writeln!(self.file, "{receipt}")
         }
+    }
+}
+
+/// Fixed transport category; no wallet, endpoint or payload data is retained.
+fn mobile_kind(error: &solana_kit_native::mwa::MwaError) -> &'static str {
+    use solana_kit_native::mwa::MwaError;
+
+    match error {
+        MwaError::Entropy(_) => "entropy",
+        MwaError::Io(_) => "io",
+        MwaError::Socket(_) => "socket",
+        MwaError::Transport(_) => "transport",
+        MwaError::Protocol(_) => "protocol",
+        MwaError::Reflector => "reflector",
+        MwaError::Config(_) => "configuration",
+        MwaError::Deadline(_) => "deadline",
+        MwaError::Closed => "closed",
+        MwaError::Capacity => "capacity",
+        MwaError::Handshake => "handshake",
+        MwaError::Scalar => "scalar",
     }
 }
 

@@ -11,7 +11,7 @@ use std::{
 const DRIVER_STARTUP_SECONDS: u64 = 900;
 const UI_WAIT_SECONDS: u64 = 30;
 const APP_NOT_RUNNING: u64 = 1;
-const USAGE: &str = "usage: installed_wallet <macos|ios|android> <loopback-driver> <application> <fresh-config-directory> <fresh-run-directory> <validator-binary> [<device> <prebuilt-wda-directory|adb-binary>]";
+const USAGE: &str = "usage: installed_wallet <macos|ios|android|android-mwa> <loopback-driver> <application> <fresh-config-directory> <fresh-run-directory> <validator-binary> [<device> <prebuilt-wda-directory|adb-binary> [<wallet-package>]]";
 
 enum Target {
     Macos(String),
@@ -24,6 +24,7 @@ enum Target {
         identifier: String,
         device: String,
         adb: PathBuf,
+        wallet: Option<String>,
     },
 }
 
@@ -82,6 +83,19 @@ impl Launch {
                     identifier,
                     device: text(device)?,
                     adb: PathBuf::from(adb).canonicalize()?,
+                    wallet: None,
+                }
+            }
+            (Some("android-mwa"), [device, adb, wallet]) => {
+                let identifier = text(app)?;
+                let wallet = text(wallet)?;
+                android::validate_package(&identifier)?;
+                android::validate_package(&wallet)?;
+                Target::Android {
+                    identifier,
+                    device: text(device)?,
+                    adb: PathBuf::from(adb).canonicalize()?,
+                    wallet: Some(wallet),
                 }
             }
             _ => return Err(Error::Configuration(USAGE.into())),
@@ -94,6 +108,32 @@ impl Launch {
             directory: directory.into(),
             validator: validator.clone(),
         })
+    }
+
+    /// The generated application package installed on the explicit device.
+    pub(crate) fn app_identifier(&self) -> Option<&str> {
+        match &self.target {
+            Target::Android { identifier, .. } => Some(identifier),
+            _ => None,
+        }
+    }
+
+    /// The independent wallet package selected by the MWA acceptance mode.
+    pub(crate) fn wallet(&self) -> Option<&str> {
+        match &self.target {
+            Target::Android {
+                wallet: Some(wallet),
+                ..
+            } => Some(wallet),
+            _ => None,
+        }
+    }
+
+    pub(crate) fn adb(&self) -> Option<(&Path, &str)> {
+        match &self.target {
+            Target::Android { adb, device, .. } => Some((adb, device)),
+            _ => None,
+        }
     }
 
     pub(crate) fn configure(&self, node: &Validator, data: &Path) -> Result<()> {
@@ -110,6 +150,7 @@ impl Launch {
             identifier,
             device,
             adb,
+            ..
         } = &self.target
         {
             android::configure(adb, device, identifier, &bytes)?;
@@ -137,6 +178,31 @@ impl Launch {
         require(
             state.as_u64() == Some(APP_NOT_RUNNING),
             "app still running before relaunch",
+        )
+    }
+
+    /// Explicitly terminate only the selected external wallet after the app.
+    pub(crate) fn stop_wallet(&self, tester: &NativeTester) -> Result<()> {
+        let Some(wallet) = self.wallet() else {
+            return Ok(());
+        };
+        let arguments = json!({"appId": wallet});
+        let running = tester.native_command("mobile: queryAppState", &arguments)?;
+
+        if running.as_u64() == Some(APP_NOT_RUNNING) {
+            return Ok(());
+        }
+
+        let stopped = tester.native_command("mobile: terminateApp", &arguments)?;
+
+        require(
+            self.target.acknowledges_termination(&stopped),
+            "driver did not acknowledge wallet termination",
+        )?;
+        let state = tester.native_command("mobile: queryAppState", &arguments)?;
+        require(
+            state.as_u64() == Some(APP_NOT_RUNNING),
+            "wallet still running after termination",
         )
     }
 
@@ -221,6 +287,7 @@ mod tests {
             identifier: "test.app".into(),
             device: "emulator".into(),
             adb: "adb".into(),
+            wallet: Some("wallet.app".into()),
         };
 
         for (response, desktop, mobile) in [

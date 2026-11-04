@@ -1,0 +1,11 @@
+[package]
+name = "solana_kit_app_journey_android_support"
+version = "0.0.0"
+edition = "2024"
+license = "Unlicense"
+publish = false
+rust-version = "1.89"
+description = "Packages the SDK Android MWA host for the composed journey runtime"
+
+[package.metadata.leptoskit.native-support]
+android = true

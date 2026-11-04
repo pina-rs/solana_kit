@@ -1,5 +1,6 @@
 //! Real OS controls, fresh native wallet entropy and independently checked ledger effects.
 mod effect;
+pub(crate) mod mobile;
 mod persistence;
 mod subscription;
 

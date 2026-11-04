@@ -11,7 +11,7 @@ const POLL_MILLIS: u64 = 250;
 /// Validate frozen signed wire before the sole submission. Reconciliation only
 /// reads status and authenticated lifetime state; it never retries the transfer.
 /// A confirmed status still needs an independently fetched recipient effect.
-pub(super) async fn send(
+pub(crate) async fn send(
     client: &Rpc,
     transaction: &Transaction,
     recipient: Address,

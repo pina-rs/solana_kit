@@ -162,8 +162,15 @@ second full invocation then recorded exit 0.
 
 ## Remaining limits
 
-This is installed acceptance of one ordinary generated Android app against an
-owned emulator and loopback validator. It does not establish physical-device
+The separate installed external-wallet journey is recorded in
+[current external Android wallet execution](installed-external-wallet-android-current.md).
+That receipt uses the same public generator and owned-validator pattern but an
+independently installed Solana Mobile reference wallet; it is not additional
+evidence for the local wallet described here.
+
+This local-wallet receipt is installed acceptance of one ordinary generated
+Android app against an owned emulator and loopback validator. It does not
+establish physical-device
 behavior, the Solana Mobile Seeker, external wallet Intents, production networks,
 Code Push, or a whole-SDK/platform claim. No CI workflow was dispatched, and no
 artifact was published. The Android startup receipt remains the explicit

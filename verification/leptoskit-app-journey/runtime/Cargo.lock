@@ -1395,6 +1395,10 @@ dependencies = [
 ]
 
 [[package]]
+name = "solana_kit_app_journey_android_support"
+version = "0.0.0"
+
+[[package]]
 name = "solana_kit_app_journey_runtime"
 version = "0.0.0"
 dependencies = [
@@ -1409,6 +1413,7 @@ dependencies = [
  "leptoskit_yoga",
  "serde",
  "serde_json",
+ "solana_kit_app_journey_android_support",
  "solana_kit_leptoskit",
  "solana_kit_native",
  "tokio",

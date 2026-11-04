@@ -205,8 +205,10 @@ fn establish_wallet(
         config,
     } = seed;
     let (key, properties) = agreement.accept_hello(hello, &association.public_key())?;
-    let incoming = if properties.is_some() { 0 } else { 1 };
-    let mut session = Session::new(key, 1, incoming);
+    // A real wallet consumes sequence 1 for HELLO_RSP session properties.
+    // Receive therefore starts at 1, leaving 2 for its first actual reply.
+    // The client's first request still uses sequence 1.
+    let mut session = Session::new(key, 1, 1);
     let capacity = config
         .max_requests
         .checked_mul(2)
