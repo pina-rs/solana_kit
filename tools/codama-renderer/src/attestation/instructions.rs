@@ -92,9 +92,8 @@ const TOKENIZED_INSTRUCTIONS: &[InstructionSpec] = &[
     ),
 ];
 
-const EVENT_INSTRUCTIONS: &[InstructionSpec] = &[
-    ("emitEvent", EMIT_EVENT_TAG, "eventAuthority:s", ""),
-];
+const EVENT_INSTRUCTIONS: &[InstructionSpec] =
+    &[("emitEvent", EMIT_EVENT_TAG, "eventAuthority:s", "")];
 
 /// Ordered groups preserve the exact tag sequence of the pinned Dart source.
 const INSTRUCTION_GROUPS: &[&[InstructionSpec]] = &[

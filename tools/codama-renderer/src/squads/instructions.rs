@@ -201,25 +201,31 @@ pub(super) fn instructions() -> Result<Vec<Value>, Error> {
         .iter()
         .flat_map(|group| group.iter().copied())
         .map(|(name, accounts, payload)| {
-            let mut arguments = vec![json!({"kind":"instructionArgumentNode","name":"discriminator",
+            let mut arguments = vec![
+                json!({"kind":"instructionArgumentNode","name":"discriminator",
                 "type":{
                     "kind":"fixedSizeTypeNode","size":HEADER_BYTES,
                     "type":{"kind":"bytesTypeNode"}
                 },
                 "defaultValue":{"kind":"bytesValueNode","encoding":"base16",
                     "data":discriminator("global", &identifier(name)?)
-                },"defaultValueStrategy":"omitted"})];
-            arguments.extend(fields(payload,"instructionArgumentNode")?);
+                },"defaultValueStrategy":"omitted"}),
+            ];
+            arguments.extend(fields(payload, "instructionArgumentNode")?);
             let mut output = json!({"kind":"instructionNode","name":name,
-                "accounts":roles(accounts)?,"arguments":arguments,
-                "optionalAccountStrategy":"programId",
-                "discriminators":[{
-                    "kind":"fieldDiscriminatorNode","name":"discriminator","offset":0
-                }]});
+            "accounts":roles(accounts)?,"arguments":arguments,
+            "optionalAccountStrategy":"programId",
+            "discriminators":[{
+                "kind":"fieldDiscriminatorNode","name":"discriminator","offset":0
+            }]});
 
             if [
-                "configTransactionExecute", "vaultTransactionExecute", "batchExecuteTransaction"
-            ].contains(&name) {
+                "configTransactionExecute",
+                "vaultTransactionExecute",
+                "batchExecuteTransaction",
+            ]
+            .contains(&name)
+            {
                 output["remainingAccounts"] = json!([{"kind":"instructionRemainingAccountsNode",
                     "value":{"kind":"argumentValueNode","name":"remaining"},"isOptional":true,
                     "privilegePolicy":"callerProvided"}]);
