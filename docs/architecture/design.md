@@ -292,7 +292,7 @@ keeps interpreter ownership with the application. Native waiting uses no hidden
 runtime or platform pump. Swift and Kotlin scheduling and awaited close hooks
 remain future work. The installed local-wallet iOS, Android and macOS receipts
 now execute `Client<GuestHttp>` in generated applications; external MWA and
-remote-reflector acceptance remain separate gaps.
+public-reflector interoperability remain separate gaps.
 
 ## Portable wallet protocol
 

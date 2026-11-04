@@ -4,7 +4,7 @@ This note supplies current evidence for the five rows in
 [fixed-points-remaining.tsv](fixed-points-remaining.tsv): the two
 `*FixedPointToNumber` presentation functions and the three custom callback
 constructors in `fixed_point_codec.dart`. The accompanying reconciliation
-refreshes only those rows' reason/notes text in that file and the canonical
+refreshes only those rows' reason/notes text in that file and the
 126-entry scoped [receipt](fixed-points.tsv); no ID, status, count, threshold, golden or
 source hash changes. The source pin is Dart
 `0138bb956d2d81ccc0c56edc602401c0df2f2b46`, package

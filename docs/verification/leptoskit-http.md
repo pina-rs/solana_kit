@@ -112,7 +112,7 @@ local-wallet applications now execute `Client<GuestHttp>` balance calls in the
 [installed iOS](installed-wallet-current.md),
 [Android](installed-wallet-android-current.md) and
 [macOS](installed-wallet-macos-current.md) receipts. Those are local-wallet
-journeys, not external MWA or remote-reflector acceptance. Registry publication
+journeys, not external MWA or public-reflector interoperability. Registry publication
 requires compatible published upstream crates; component publishing remains
 disabled. The unchanged portable protocol and five-host conformance receipts
 remain separate evidence.

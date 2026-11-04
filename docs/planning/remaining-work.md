@@ -687,11 +687,11 @@ lone-surrogate result.
 one docs-only change:
 
 - `leptoskit-http.md` now records installed local-wallet `Client<GuestHttp>`
-  journeys and keeps external MWA/remote-reflector acceptance separate.
+  journeys and keeps external MWA/public-reflector interoperability separate.
 - `design.md` no longer calls those installed journeys future work.
 - `mobile-wallet-protocol.md` records local transport, Android handover and the
-  wallet control surface as implemented while leaving external-wallet and
-  remote-reflector evidence unaccepted at this snapshot.
+  wallet control surface as implemented, and links the later native reflector
+  TLS receipt. External-wallet and public-reflector interoperability stay open.
 - `dapp-publisher.md` links the v57/459 five-host receipt and keeps the
   cross-language signature oracle unexecuted.
 - `subscriptions.md` links the four appended portable groups.
@@ -741,7 +741,7 @@ functional computer-use proof distinct from the automated driver route.
 | Automatic failed-release deletion                     | Deliberate safe substitution                     | Do not port as default; require an explicit caller action         |
 | Automatic preserved-submission recovery               | Accepted caller-explicit contract                | Recorded decision; use cleanup/resume, no automatic recovery      |
 | MWA local transport / Android handover / wallet UI    | Implemented; local-wallet evidence exists        | Keep local paths; RW-03 remains for external-wallet proof         |
-| MWA remote reflector                                  | Missing source behavior                          | Implement RW-04 or accept local-only scope explicitly             |
+| MWA remote reflector                                  | Native transport and TLS proof implemented       | Preserve RW-04 receipt; public interoperability stays separate    |
 | Publication projections                               | Implemented; five-host proof recorded            | RW-02 closed; preserve the receipt                                |
 | WASI public socket/clock                              | Implemented; named-host receipt recorded         | RW-05 closed for the named host; broader hosts remain open        |
 | Linux/Windows                                         | CI jobs exist; no executed evidence              | RW-08                                                             |
@@ -763,7 +763,8 @@ functional computer-use proof distinct from the automated driver route.
    broader WASI hosts remain open.
 4. **RW-03**: external Android wallet acceptance. This is the largest genuine
    Phase 7 behavior proof still absent; it may reveal small implementation fixes.
-5. **RW-04**: remote reflector transport, unless a local-only decision is made.
+5. **RW-04**: native reflector transport and owned TLS evidence are complete;
+   public-reflector interoperability remains a separate acceptance boundary.
 6. **RW-06**: publisher reconciliation decision. The caller-explicit
    cleanup/resume contract is accepted; CLI registry enablement stays in RW-07.
 7. **RW-08**: Linux/Windows CI evidence; can run in parallel with the above.
