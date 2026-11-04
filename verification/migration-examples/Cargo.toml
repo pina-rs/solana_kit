@@ -1,0 +1,25 @@
+[package]
+name = "solana_kit_migration_examples"
+version = "0.0.0"
+edition = "2024"
+publish = false
+rust-version = "1.89"
+description = "Private compilation checks for the Dart-to-Rust migration guide"
+
+[workspace]
+
+[dependencies]
+solana_kit_signers = { path = "../../crates/solana_kit_signers", features = ["crypto"] }
+solana_kit_wallet = { path = "../../crates/solana_kit_wallet", features = ["mwa"] }
+
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+futures = "=0.3.31"
+serde_json = { version = "=1.0.154", features = ["raw_value"] }
+solana_kit_client = { path = "../../crates/solana_kit_client", features = ["parsed-accounts"] }
+solana_kit_core = { path = "../../crates/solana_kit_core", features = ["crypto"] }
+solana_kit_native = { path = "../../crates/solana_kit_native", features = ["mwa"] }
+solana_kit_token = { path = "../../crates/solana_kit_token", features = ["plans"] }
+solana_kit_test_support = { path = "../../crates/solana_kit_test_support" }
+
+[target.'cfg(all(target_arch = "wasm32", target_os = "unknown"))'.dependencies]
+solana_kit_browser = { path = "../../crates/solana_kit_browser", features = ["wallet"] }

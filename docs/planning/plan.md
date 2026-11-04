@@ -312,6 +312,8 @@ remain partial.
 
 Deliver Anchor, Helius, Jupiter, Pyth, SNS, Surfpool, the dApp publishing CLI,
 Rust test support, documentation, migration examples, and equivalent lint policy.
+The [Dart-to-Rust migration guide](../migration/from-dart.md) maps current public
+APIs and links its compiled example inventory.
 Keep paid-service tests credential-optional but retain deterministic replay tests;
 missing credentials must not masquerade as end-to-end verification.
 
