@@ -36,10 +36,13 @@ Run the script through the normal Codama CLI. For in-memory output, use
 Repeated generation updates the selected generated modules. It preserves
 unrelated files and does not delete stale modules from an earlier IDL. Only the
 current modules appear in `mod.rs`. IDL resolution and path validation complete
-before any output write. Existing symlink destinations are rejected. Filesystem
-write failures can leave a partially updated generated set, following Codama's
-ordinary writer behavior; callers needing a release transaction can generate in
-a separate directory first.
+before any output write. Existing symlink destinations are rejected. Ancestor
+paths are checked without resolving links, so the output path must be canonical:
+a trusted alias such as macOS's `/var` to `/private/var` is rejected. Canonicalize
+a temporary root with `realpathSync(tmpdir())` before creating output beneath it.
+Filesystem write failures can leave a partially updated generated set, following
+Codama's ordinary writer behavior; callers needing a release transaction can
+generate in a separate directory first.
 
 The shared Rust frontend accepts the pinned Codama1.8 schema emitted by
 `@codama/nodes`1.10.2 and the legacy1.0 fixtures. It expands the documented omitted
@@ -98,11 +101,14 @@ collision-free PDA helpers including account-free programs, and numeric layouts 
 both byte orders, 128-bit values, f32 bit patterns and checked prefixes. The `pda` feature is
 enabled in this consumer so those helpers must compile. `test:packed` requires concrete `CARGO`, `RUSTC`
 and `RUSTDOC` paths, executes those groups and runs strict Clippy. Its guest
-contains the same assertions behind the ordinary LeptosKit ABI; maintaining that
-source does not prove that the portable guest has executed.
+contains the same assertions behind the ordinary LeptosKit ABI. Pass an optional
+second absolute directory to `test:packed` to preserve the six packed-renderer
+modules after the consumer checks pass. The destination must be new; an existing
+directory is rejected to preserve caller files.
 
-A later admitted verification must compile and execute generated Rust consumers
-on native Rust, browser Wasm, both WASI previews and the normal LeptosKit wasmi
-route; compare native/NPM output, malformed-IDL controls, dependency/import
-closures and all supported packaged/generated source scores. Source-only work
+The [current package receipt](../../docs/verification/codama-package-current.md)
+records actual native Rust 1.99.1 and 1.89.0, Chrome wasm-bindgen, both Wasmtime
+50 WASI previews and pinned LeptosKit `WasmHost` executions of those preserved
+bytes, including the one-fuel negative. It also records the archive, consumer,
+malformed-IDL, native/NPM equality and source-score controls. Source-only work
 does not establish those results. Registry publication remains disabled.
