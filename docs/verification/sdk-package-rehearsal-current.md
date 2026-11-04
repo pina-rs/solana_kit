@@ -143,11 +143,50 @@ Remaining prerequisites are:
    rehearsal uses `--exclude-lockfile` to assemble unpublished dependencies.
 
 The prepared CLI archive also installs into an isolated root from this registry,
-and `--help` exits 0. Cargo records package version 0.1.1, but help reports 0.1.0
-because the executable imports a hard-coded library constant. That exposed a
-separate version-display defect; correct version reporting remains unqualified.
-Cargo also warns that the archive has no published lockfile, so `--locked` here
-does not prove an immutable published dependency lock.
+and `--help` exits 0. The first install exposed a version-display defect: Cargo
+recorded package version 0.1.1, but help and version output reported 0.1.0 from a
+hard-coded library constant. The correction and its requalification follow.
+
+## Publisher CLI version correction
+
+`solana_kit_dapp_publisher_cli` now reports its own Cargo package version in
+`--version` and the help heading. The executable uses its own
+`env!("CARGO_PKG_VERSION")`; the retained public `CLI_VERSION` constant follows
+the library package metadata and documents that it is not an executable version.
+No runtime dependency, argument parser or public function changed.
+
+`tests/version_display.rs` runs the actual executable and compares both outputs
+with the version read from that binary package's authored `Cargo.toml`. A
+disposable staged copy with CLI 9.8.7 and library 1.2.3 also passes, and its
+built executable prints `solana-kit-publisher 9.8.7`; that split was never
+committed. The old installed reproducer still shows the defect: its package
+record says 0.1.1 while its output says 0.1.0.
+
+Corrected archives were built from an owned copy of the prepared source with an
+explicit Rust 1.99.1 toolchain. Both passed `cargo xtask package-review` as fresh
+analyses: the library has 90 regular members with readability 98.84 and
+complexity 97.97; the CLI has 9 members with readability 99.40 and complexity
+100.00. Exact archive SHA256 values are:
+
+| Package                         | SHA256                                                             |
+| ------------------------------- | ------------------------------------------------------------------ |
+| `solana_kit_dapp_publisher`     | `166f1d59386d756f4c12d5bf8228e85eec8541e6fccab82386cb3f0b60a67a32` |
+| `solana_kit_dapp_publisher_cli` | `b953d1562cf26e9ab1702104eb5fd49e3c9c1cfc53136326efe555c9e4e405f2` |
+
+The 32 unchanged archives stayed read-only. A fresh 207-package registry used the
+same lock closure, metadata and cached inputs, replacing only these two archive
+inputs. Every unpacked corrected member matched its reviewed receipt. A fresh
+Cargo home and install root then installed package ID
+`solana_kit_dapp_publisher_cli 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)`;
+`--version` and `--help` both start with `solana-kit-publisher 0.1.1`. The
+installed binary SHA256 is
+`d925eb1f70a93649c382a955155e73bfac64c08313c3c466f232fd0f46a154eb`.
+
+These archives were still created with `--exclude-lockfile`. The install resolved
+80 packages because no lockfile is published, so this is not immutable publish
+artifact evidence and does not prove real crates.io availability. Only the two
+changed archives were requalified; the unchanged default/selected/MSRV/Wasm
+consumer suites were not rerun.
 
 The rehearsal does not prove public-registry CLI availability, Linux/Windows execution,
 production network behavior, publication, or every feature of every SDK root.

@@ -486,12 +486,21 @@ and Wallet's typed release writer updates it before lock refresh. Repository
 versions and publication settings stay unchanged; all version writes occur in
 the disposable preparation.
 
+The same local-registry installation exposed a hard-coded CLI version display.
+The executable now reports its own Cargo package version, while the retained
+library constant follows library metadata. A staged CLI 9.8.7/library 1.2.3 copy
+passed the black-box version tests, and corrected 0.1.1 archives installed from a
+fresh 207-package registry report `solana-kit-publisher 0.1.1`. Only those two
+archives were rebuilt and reviewed; the remaining 32 stayed read-only.
+
 **Remaining limits.** Wallet filenames with spaces and Token-2022 GNU long-name
 records are outside the maintained archive gate's supported forms. Those two
 archives have checksum custody but no fresh style/member audit. LeptosKit's Git
 upstream is not a registry package. Twenty included crates retain
 `publish = false`; the others stop at an offline registry-API dry run. Actual
 registry versions, publication decisions and authorization are still required.
+The corrected archives still exclude their lockfiles, so installation resolves a
+fresh dependency graph instead of proving an immutable published lock.
 
 **Owning code.** `monochange.toml`, the shared Wallet dependency,
 `xtask/src/package_rehearsal/`, `xtask/src/registry_fixture.rs`, and
@@ -509,8 +518,6 @@ cargo xtask package-rehearsal /absolute/path/to/rehearsal.json
 
 **Next minimal unit.** Add bounded archive-form support and requalify both
 remaining archives without weakening existing rejection controls or scores.
-The local-registry CLI installation also exposed a hard-coded version display:
-the prepared 0.1.1 package reports 0.1.0. Fix and requalify that executable.
 Real registry API acceptance and publication remain explicitly authorized
 release work; this local gate does not enable them.
 

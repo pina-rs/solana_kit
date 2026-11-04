@@ -9,8 +9,12 @@ use std::{collections::BTreeMap, fmt, string::String, vec::Vec};
 mod urls;
 use urls::{derive_api_base, is_https, is_localhost, normalize_url};
 
-/// CLI version reported by `--version`.
-pub const CLI_VERSION: &str = "0.1.0";
+/// Version of the `solana_kit_dapp_publisher` library package.
+///
+/// This follows this crate's own Cargo metadata. It is not the version of a
+/// dependent executable: the `solana_kit_dapp_publisher_cli` binary reports its
+/// own package version so the two packages can be released independently.
+pub const CLI_VERSION: &str = env!("CARGO_PKG_VERSION");
 
 /// Documentation shown with CLI usage errors.
 pub const DOCS_URL: &str = "https://docs.solanamobile.com/dapp-store/publishing-cli";
