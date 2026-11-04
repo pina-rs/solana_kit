@@ -9,8 +9,10 @@ The scoped receipt accounts for exactly 88 canonical IDs from Dart source
 records 81 implemented bounded equivalents and
 [seven partial capabilities](numeric-string-codecs-remaining.tsv). The checked
 [manifest adjudication](numeric-adjudication.md) records those seven rows and
-their executed evidence. The canonical global ledger and older historical
-receipts remain unchanged. Phase 2 and whole package parity are not complete.
+their executed evidence. The canonical ledger changes only status, evidence
+and notes for those seven rows and five fixed-point rows; declaration identities
+and older historical receipts remain unchanged. Phase 2 and whole package parity
+are not complete.
 
 `Number<T>` preserves the existing exact primitive and 256-bit wire types. Its
 explicit constructor, default LE selection and byte-order accessor replace the

@@ -68,8 +68,9 @@ The four BigInt helpers are dynamic and accept caller-selected sizes and offsets
   `size <= 0` is a no-op. `BigUint` cannot be negative and `BigNumber::new`
   rejects zero width; over-width input returns `NumberOutOfRange`.
 - `writeBigIntSigned` adds `2^(size*8)` for negatives, then truncates to `size`
-  bytes. Over-width values truncate, `size == 0` writes nothing, and negative
-  sizes throw. Rust rejects zero width and over-range values.
+  bytes. Over-width values truncate and `size == 0` writes nothing. With a
+  negative size, a negative value throws during the shift; a nonnegative value
+  writes nothing. Rust rejects zero width and over-range values.
 - `readBigIntUnsigned` returns `0` for `size <= 0` and reads a caller-selected
   offset slice. Rust rejects zero width and uses a `Reader` cursor with the
   shared byte/element budget.
@@ -81,7 +82,8 @@ A narrow oracle against the pinned `utils.dart` copied to scratch confirmed
 those edge outcomes with Dart 3.13.3: unsigned writes of `256` and `-1` at
 `size = 1` produced `00` and `ff`; signed writes of `128` and `-129` at
 `size = 1` produced `80` and `7f`; `size = 0` was a no-op; signed reads and
-negative-size signed writes threw `ArgumentError`; offsets wrote and read the
+negative-size signed writes of negative values threw `ArgumentError`, while a
+positive value wrote nothing; offsets wrote and read the
 selected byte and an out-of-bounds offset threw `IndexError`.
 
 The three BaseX rows are not limited by string representation. `BaseX` covers
@@ -108,11 +110,15 @@ never compares encoder and decoder widths. Rust requires the final write positio
 rejects trailing bytes in `decode`, reports the next offset through
 `decode_prefix`, and rejects a declared width mismatch in `Paired::try_new`.
 Those are deliberate safety checks, so the constructor rows remain partial.
+The six tests in `fixed_point_composition.rs` provide native evidence for
+custom callbacks. The shared cases prove built-in fixed-point codecs and
+pairing; they do not execute those custom callback bodies on portable hosts.
 
 ## Evidence binding and residual work
 
 The extractor accepts executable evidence only from the maintained conformance
-success report, binds cited cases to the live registry, and rejects unknown or
+success report. A separate conformance integrity test binds that report's case
+names to the live registry. The extractor rejects unknown or
 duplicate IDs, hash drift, absent or unsafe evidence paths, blank or invented
 cases, and malformed manifests. The historical `*-remaining.tsv` lists are the
 source of the twelve IDs, not separate execution evidence. No production SDK,
