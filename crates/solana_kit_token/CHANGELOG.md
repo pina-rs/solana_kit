@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **Add generated off-chain Token instruction and account codecs, explicit ordered.** account builders, strict parsers, custom identities and lossless program errors.
   _Owner:_ Ifiok Jr. · _Introduced in:_ [bd424a9](https://github.com/pina-rs/solana_kit/commit/bd424a9992c56f4232abd0cfe8f36e1d74fd387c)
+
 #### Add the pinned handwritten Token plan helpers behind an optional `plans`
 
 _Owner:_ Ifiok Jr. · _Introduced in:_ [ccf7c60](https://github.com/pina-rs/solana_kit/commit/ccf7c604466ad8ebaa2659301c25e7473440634c)

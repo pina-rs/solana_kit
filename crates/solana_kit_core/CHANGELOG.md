@@ -189,6 +189,7 @@ parity. Publication remains disabled.
 - **Add an explicitly configured Tokio HTTP/1 and verified TLS transport with bounded.** response parsing, streaming body limits, deadlines and owned cancellation.
   _Packages:_ 🟢 _solana_kit_core_, 🟢 _solana_kit_client_, 🟠 _solana_kit_native_
   _Owner:_ Ifiok Jr. · _Introduced in:_ [064052a](https://github.com/pina-rs/solana_kit/commit/064052aa6b095a1fa0d5ab501039251d58773329)
+
 #### Add bounded numeric and string codec capabilities
 
 _Packages:_ 🟠 _solana_kit_core_
@@ -295,6 +296,7 @@ outstanding. Publication stays disabled.
 - **Add typed parsed account projection.** Project node `jsonParsed` token, stake, vote, nonce, address lookup table, BPF upgradeable loader, config and sysvar payloads behind the opt-in `parsed-accounts` feature. Exact integers, opaque extension and config payloads, bounded admission and explicit unknown variants keep every original raw account untouched.
   _Packages:_ 🟠 _solana_kit_client_
   _Owner:_ Ifiok Jr. · _Introduced in:_ [22e7416](https://github.com/pina-rs/solana_kit/commit/22e74168c57b983f5d3e62e9e839d1d3e5b0fe5c)
+
 #### Retain original browser HTTP JavaScript failures behind redacted diagnostics.
 
 _Packages:_ 🟠 _solana_kit_client_, 🟢 _solana_kit_browser_
@@ -310,6 +312,7 @@ WASI Send and Sync error bounds. Component publishing remains disabled.
 - **Share provider REST requests and bounded JSON admission in the client.** Extend the existing platform HTTP owners with explicit named routes and body representations.
   _Packages:_ 🟠 _solana_kit_client_, 🟠 _solana_kit_native_, 🟠 _solana_kit_browser_, 🟠 _solana_kit_leptoskit_, 🟠 _solana_kit_wasi_
   _Owner:_ Ifiok Jr. · _Introduced in:_ [7813ae4](https://github.com/pina-rs/solana_kit/commit/7813ae404422e26e0d686d8f015a86941be187ab)
+
 #### Combine initial and subscribed RPC values by slot
 
 _Packages:_ 🟠 _solana_kit_client_
@@ -437,6 +440,7 @@ failed backups reach the guest as native failures.
 - **Add optional wallet view models, browser controller projections, Android Intent.** and entropy assets, and a caller-owned native binary Mobile Wallet Adapter.
   _Packages:_ 🟠 _solana_kit_native_, 🟠 _solana_kit_browser_, 🟠 _solana_kit_leptoskit_
   _Owner:_ Ifiok Jr. · _Introduced in:_ [eb1e6ac](https://github.com/pina-rs/solana_kit/commit/eb1e6ac886f2693c19894268efb6cf88d9d8c97a)
+
 #### Add owned browser Wallet Standard discovery, account authorization and Kit signing capabilities.
 
 _Packages:_ 🟠 _solana_kit_signers_, 🟠 _solana_kit_browser_
@@ -450,6 +454,7 @@ Browser failures retain their original JavaScript causes behind redacted diagnos
 - **Add immutable bare signable messages, bounded whole-slice partial and modifying.** capabilities, explicit local/native composition, and a singular signing adapter.
   _Packages:_ 🟠 _solana_kit_signers_
   _Owner:_ Ifiok Jr. · _Introduced in:_ [9c56e9d](https://github.com/pina-rs/solana_kit/commit/9c56e9ddbefb73196fdf1a8dea95e26a663a38ce)
+
 #### Add explicit per-call `SignerConfig` and `TransactionSignerConfig` values to every
 
 _Packages:_ 🟠 _solana_kit_signers_, 🟠 _solana_kit_browser_
@@ -522,6 +527,7 @@ until join, and provide explicit admission-closing abort-and-join shutdown.
 - **Add explicit fixed-service interpreted guest HTTP with actual LeptosKit host.** ownership, bounded admission, native deadlines and awaited cancellation cleanup.
   _Packages:_ 🟠 _solana_kit_leptoskit_
   _Owner:_ Ifiok Jr. · _Introduced in:_ [39ce66f](https://github.com/pina-rs/solana_kit/commit/39ce66f847a62c3e4736a50ca4fdbd9d5cb11153)
+
 #### Add an optional application-owned wallet session service and guest leases, with
 
 _Packages:_ 🟠 _solana_kit_leptoskit_
@@ -563,6 +569,7 @@ now produce the same frozen legacy, v0 and v1 message bytes.
 - **Add standalone account snapshot contracts and bounded shared error diagnostics for off-chain clients.**
   _Packages:_ 🟢 _solana_kit_core_, 🟢 _solana_kit_client_
   _Owner:_ Ifiok Jr. · _Introduced in:_ [7cdc6cd](https://github.com/pina-rs/solana_kit/commit/7cdc6cd2b54d576e41f93090b75875f71c8678cc)
+
 #### Declare fixed-point codec widths for composition
 
 _Packages:_ 🟢 _solana_kit_core_
@@ -587,6 +594,7 @@ composition callers through the existing client transport and core codecs.
 - **Clarify client validation and verification flows while preserving their wire contracts.**
   _Packages:_ 🟢 _solana_kit_core_, 🟢 _solana_kit_client_, 🟢 _solana_kit_signers_, 🟢 _solana_kit_wasi_
   _Owner:_ Ifiok Jr. · _Introduced in:_ [af19680](https://github.com/pina-rs/solana_kit/commit/af196807568fa0fc5a34a89f074f39f0453dc475)
+
 #### Reject completed packers that append no instructions
 
 _Packages:_ 🟢 _solana_kit_core_
@@ -614,6 +622,7 @@ exact wire bytes, scalar-parameter validation and existing error distinctions.
 - **Treat an explicit null RPC enum payload as absent when invoking the context callback.**
   _Packages:_ 🟢 _solana_kit_client_
   _Owner:_ Ifiok Jr. · _Introduced in:_ [c4851b5](https://github.com/pina-rs/solana_kit/commit/c4851b5ba41e253bab3ab126af7ee82e8f13b690)
+
 #### Preserve signature execution failures
 
 _Packages:_ 🟢 _solana_kit_client_
@@ -646,6 +655,7 @@ changes.
 - **Add bounded caller-owned native text WebSockets with explicit TLS roots, deadlines and cancellation ownership.**
   _Packages:_ 🟢 _solana_kit_native_
   _Owner:_ Ifiok Jr. · _Introduced in:_ [1b4d6c6](https://github.com/pina-rs/solana_kit/commit/1b4d6c63a29a2eb7ee42fb55841e84f8c802171b)
+
 #### Retain wallet service requests across completion wakes and bounded routing turns,
 
 _Packages:_ 🟢 _solana_kit_browser_, 🟢 _solana_kit_leptoskit_
@@ -661,6 +671,7 @@ metadata, and decode private key files into bounded zeroizing storage.
 - **Align LeptosKit sources for generated wallet apps.** Use one framework revision for SDK transports, generated guests and native hosts, including iOS startup error layout before the first view pass.
   _Packages:_ 🟢 _solana_kit_leptoskit_
   _Owner:_ Ifiok Jr. · _Introduced in:_ [3edda48](https://github.com/pina-rs/solana_kit/commit/3edda48b17c1bdea65118497adaedeca26fde1f8)
+
 #### Align runtime dependencies and generated application manifests with the verified
 
 _Packages:_ 🟢 _solana_kit_leptoskit_

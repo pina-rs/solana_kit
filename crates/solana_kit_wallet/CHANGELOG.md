@@ -45,6 +45,7 @@ malformed authorities before opening a socket.
 
 - **Add optional wallet view models, browser controller projections, Android Intent.** and entropy assets, and a caller-owned native binary Mobile Wallet Adapter.
   _Owner:_ Ifiok Jr. · _Introduced in:_ [eb1e6ac](https://github.com/pina-rs/solana_kit/commit/eb1e6ac886f2693c19894268efb6cf88d9d8c97a)
+
 #### Add portable off-chain Wallet Standard account and icon metadata, concrete-future
 
 _Owner:_ Ifiok Jr. · _Introduced in:_ [35979c6](https://github.com/pina-rs/solana_kit/commit/35979c616ef1a88b319f04ca9e2d0c138e06a444)
@@ -61,6 +62,7 @@ remain outside registry borrows.
 
 - **Restore the optional MWA feature's no_std + alloc support with dependency-free.** URI validation, preserving strict association URI and reflector authority rules.
   _Owner:_ Ifiok Jr. · _Introduced in:_ [2796281](https://github.com/pina-rs/solana_kit/commit/2796281284959ebbf88ca4810563f751f0cd8412)
+
 #### Correct SIWS JSON interoperability with MWA wallets by encoding and decoding
 
 _Owner:_ Ifiok Jr. · _Introduced in:_ [2796281](https://github.com/pina-rs/solana_kit/commit/2796281284959ebbf88ca4810563f751f0cd8412)
