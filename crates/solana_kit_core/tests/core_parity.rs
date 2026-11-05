@@ -5,6 +5,9 @@ extern crate alloc;
 mod bigints;
 #[path = "core_parity/constants.rs"]
 mod constants;
+#[cfg(feature = "crypto")]
+#[path = "core_parity/curve.rs"]
+mod curve;
 #[path = "core_parity/dynamic.rs"]
 mod dynamic;
 #[cfg(feature = "fixed-points")]
@@ -73,6 +76,24 @@ fn float32_mapping_matches_extreme_conversion() {
 #[test]
 fn canonical_address_constants_match_literal_text() {
     constants::constant_literals();
+    constants::sysvar_literals().unwrap();
+}
+
+#[test]
+fn canonical_address_constants_reject_mutated_literal() {
+    constants::rejects_mutated_literal().unwrap();
+}
+
+#[cfg(feature = "crypto")]
+#[test]
+fn compressed_curve_classification_matches_pinned_edges() {
+    curve::classification().unwrap();
+}
+
+#[cfg(feature = "crypto")]
+#[test]
+fn compressed_curve_rejects_wrong_expected() {
+    curve::rejects_wrong_expected().unwrap();
 }
 
 #[cfg(feature = "bigint-codecs")]
