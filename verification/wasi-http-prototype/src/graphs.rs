@@ -55,7 +55,7 @@ fn expected(preview2: bool) -> BTreeSet<String> {
         .lines()
         .map(str::to_owned)
         .collect();
-    expected.insert("solana_kit_wasi v0.1.0".to_owned());
+    expected.insert("solana_kit_wasi".to_owned());
 
     if preview2 {
         expected.extend(
@@ -78,10 +78,19 @@ fn matches_policy(tree: &str, expected: &BTreeSet<String>) -> bool {
             line.split_once(" (")
                 .map_or(line, |(package, _)| package)
                 .trim()
-                .to_owned()
         })
+        .map(policy_identity)
         .filter(|line| !line.is_empty())
+        .map(str::to_owned)
         .collect();
 
     &actual == expected
+}
+
+/// Workspace versions are governed by Cargo.lock; external versions stay exact here.
+fn policy_identity(package: &str) -> &str {
+    match package.split_once(" v") {
+        Some((name @ ("solana_kit_client" | "solana_kit_core" | "solana_kit_wasi"), _)) => name,
+        _ => package,
+    }
 }

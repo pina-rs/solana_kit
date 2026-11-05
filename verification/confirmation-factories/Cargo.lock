@@ -483,7 +483,7 @@ checksum = "0c790de23124f9ab44544d7ac05d60440adc586479ce501c1d6d7da3cd8c9cf5"
 
 [[package]]
 name = "solana_kit_browser"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "js-sys",
  "solana_kit_client",
@@ -494,7 +494,7 @@ dependencies = [
 
 [[package]]
 name = "solana_kit_client"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "base64",
  "bs58",
@@ -523,21 +523,21 @@ dependencies = [
 
 [[package]]
 name = "solana_kit_core"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "bs58",
 ]
 
 [[package]]
 name = "solana_kit_system"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "solana_kit_core",
 ]
 
 [[package]]
 name = "solana_kit_wasi"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "solana_kit_client",
  "wasip2",

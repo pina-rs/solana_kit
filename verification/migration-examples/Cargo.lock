@@ -944,14 +944,14 @@ dependencies = [
 
 [[package]]
 name = "solana_kit_associated_token_account"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "solana_kit_core",
 ]
 
 [[package]]
 name = "solana_kit_browser"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "js-sys",
  "solana_kit_client",
@@ -965,7 +965,7 @@ dependencies = [
 
 [[package]]
 name = "solana_kit_client"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "base64",
  "bs58",
@@ -976,7 +976,7 @@ dependencies = [
 
 [[package]]
 name = "solana_kit_core"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "bs58",
  "curve25519-dalek",
@@ -1004,7 +1004,7 @@ dependencies = [
 
 [[package]]
 name = "solana_kit_native"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "base64",
  "bytes",
@@ -1026,21 +1026,21 @@ dependencies = [
 
 [[package]]
 name = "solana_kit_signers"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "solana_kit_core",
 ]
 
 [[package]]
 name = "solana_kit_system"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "solana_kit_core",
 ]
 
 [[package]]
 name = "solana_kit_test_support"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "base64",
  "serde_json",
@@ -1050,7 +1050,7 @@ dependencies = [
 
 [[package]]
 name = "solana_kit_token"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "solana_kit_associated_token_account",
  "solana_kit_core",
@@ -1059,7 +1059,7 @@ dependencies = [
 
 [[package]]
 name = "solana_kit_wallet"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "aes",
  "aes-gcm",

@@ -92,7 +92,7 @@ fn audit_graph(path: &Path) -> Result<(), Box<dyn Error>> {
     assert!(!clean("solana_kit_signers\n tokio v1.54.1"));
     assert_eq!(graph.lines().count(), 3);
     assert!(graph.contains("bs58 v0.5.1"));
-    assert!(graph.contains("solana_kit_core v0.1.0"));
+    assert!(graph.contains("solana_kit_core v0.1.1"));
     println!(
         "PASS exact three-package default normal/build graph; Tokio negative control rejected"
     );
