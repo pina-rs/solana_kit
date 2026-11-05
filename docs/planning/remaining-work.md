@@ -519,6 +519,18 @@ and Wallet's typed release writer updates it before lock refresh. Repository
 versions and publication settings stay unchanged; all version writes occur in
 the disposable preparation.
 
+The [Publisher CLI v0.1.1 candidate receipt](../verification/publisher-release-candidate.md)
+requalifies the current base in a disposable preparation: 34 fresh archive
+reviews over 1,293 members, a 207-package checksum registry, 9 default and 12
+selected external consumer tests, actual Rust 1.89 and a portable Wasm check,
+plus an isolated install of the corrected CLI archive at 0.1.1. The external
+packaged-core consumer now derives its archive and dependency from Cargo
+metadata instead of a second `0.1.0` literal. The prepared all-package workspace
+test still stops at the exact-version `xtask/policy/client.txt` golden, which
+names client/core 0.1.0; that policy refresh or derivation remains release
+preparation work and is recorded as a blocker rather than hidden. No version,
+tag, publication or binary was committed or uploaded.
+
 The same local-registry installation exposed a hard-coded CLI version display.
 The executable now reports its own Cargo package version, while the retained
 library constant follows library metadata. A staged CLI 9.8.7/library 1.2.3 copy
