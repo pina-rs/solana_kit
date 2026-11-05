@@ -67,7 +67,9 @@ An anonymous `GET https://registry.npmjs.org/codama-renderers-rust-solana-kit`
 on 2026-11-05 returned HTTP 404. No package version is present, so this draft is
 not a registry claim.
 
-Publishing is a separate maintainer operation:
+Publishing is a separate maintainer operation. See npm's
+[trusted-publishing](https://docs.npmjs.com/trusted-publishers/) and
+[`npm trust`](https://docs.npmjs.com/cli/v11/commands/npm-trust/) requirements:
 
 - The npm account must own the package name and have 2FA enabled, or use a
   granular access token with bypass-2FA for the first direct publish.

@@ -153,10 +153,12 @@ absent from the public registry at that time. This is a registry observation,
 not an artifact qualification: it does not prove name availability, ownership,
 future publication or trusted-publisher readiness.
 
-Registry prerequisites from the official npm documentation:
+Registry prerequisites from the official [trusted-publisher documentation](https://docs.npmjs.com/trusted-publishers/)
+and [`npm trust` prerequisites](https://docs.npmjs.com/cli/v11/commands/npm-trust/):
 
-- Trusted publishing requires npm CLI 11.5.1 or later and Node 22.14.0 or later,
-  and only supports cloud-hosted GitHub Actions runners.
+- Trusted publishing requires npm CLI 11.5.1 or later and Node 22.14.0 or later.
+  This workflow uses a GitHub-hosted runner. The separate `npm trust` setup
+  command requires npm 11.15.0 or later.
 - A package must already exist before a trusted publisher can be configured
   (`npm trust` prerequisites). The first publish therefore needs a maintainer
   with 2FA or a granular access token with bypass-2FA, or a staged publish. A
@@ -188,8 +190,9 @@ request, main-push or tag-push trigger.
   archive version, name, 72-file inventory, engine imports and privacy, then
   runs `npm publish --dry-run` with a credential-free npm config.
 - A real publish requires an explicit dispatch on `main`, `dry_run: false`, the
-  exact release tag and no `checkout_ref`. Tag/version mismatch, a moved tag or
-  any failed qualification step stops before upload.
+  exact release tag and no `checkout_ref`. The checked-out commit must be an
+  ancestor of `origin/main`. Tag/version or checkout disagreement and any failed
+  qualification step stop before upload.
 - The publish step is last and uses the workflow OIDC identity with
   `id-token: write`. It does not read a repository token. The job names the
   `npm-release` GitHub environment; maintainers must protect it with required

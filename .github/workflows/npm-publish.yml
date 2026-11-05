@@ -91,6 +91,10 @@ jobs:
             test "$(git rev-parse HEAD)" = "$(git rev-parse "${RELEASE_TAG}^{commit}")"
           fi
 
+          if [ "$DRY_RUN" != "true" ]; then
+            git merge-base --is-ancestor HEAD origin/main
+          fi
+
           printf 'version=%s\n' "$version" >> "$GITHUB_ENV"
           printf 'expected_tag=%s\n' "$expected_tag" >> "$GITHUB_ENV"
 
@@ -109,12 +113,12 @@ jobs:
           npm --version
           node -e '
             const { execFileSync } = require("node:child_process");
-            const [major, minor] = execFileSync("npm", ["--version"], { encoding: "utf8" })
+            const [major, minor, patch] = execFileSync("npm", ["--version"], { encoding: "utf8" })
               .trim()
               .split(".")
               .map(Number);
 
-            if (major < 11 || (major === 11 && minor < 5)) {
+            if (major < 11 || (major === 11 && (minor < 5 || (minor === 5 && patch < 1)))) {
               console.error("npm 11.5.1 or later is required for trusted publishing.");
               process.exit(1);
             }
