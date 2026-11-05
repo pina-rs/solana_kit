@@ -230,13 +230,20 @@ fn string<'a>(value: &'a Value, key: &str) -> Result<&'a str> {
 mod tests {
     use super::{Config, index_path, locked_packages, selected_archives};
 
-    fn config(archive: &str, additions: &str) -> Config {
-        serde_json::from_str(&format!(
-            r#"{{"archive":"{archive}","lockfile":"lock","metadata":"metadata",
-            "cache":"cache","sparse_index":"index","destination":"destination",
-            "package":"core","version":"0.1.0","omit_archive":null,
-            "corrupt_archive":null,"additions":{additions}}}"#
-        ))
+    fn config(archive: &str, additions: serde_json::Value) -> Config {
+        serde_json::from_value(serde_json::json!({
+            "archive": archive,
+            "lockfile": "lock",
+            "metadata": "metadata",
+            "cache": "cache",
+            "sparse_index": "index",
+            "destination": "destination",
+            "package": "core",
+            "version": "0.1.0",
+            "omit_archive": null,
+            "corrupt_archive": null,
+            "additions": additions,
+        }))
         .unwrap()
     }
 
@@ -258,14 +265,28 @@ mod tests {
         let archive = directory.join("core-0.1.0.crate");
         std::fs::write(&archive, b"archive").unwrap();
         let path = archive.to_str().unwrap();
-        let duplicate = format!(r#"[{{"archive":"{path}","package":"core","version":"0.1.0"}}]"#);
-        assert!(selected_archives(&config(path, &duplicate)).is_err());
 
-        let escaped = format!(r#"[{{"archive":"{path}","package":"../core","version":"0.1.0"}}]"#);
-        assert!(selected_archives(&config(path, &escaped)).is_err());
-        let escaped =
-            format!(r#"[{{"archive":"{path}","package":"other","version":"../escape"}}]"#);
-        assert!(selected_archives(&config(path, &escaped)).is_err());
+        assert!(selected_archives(&config(path, serde_json::json!([]))).is_ok());
+
+        let duplicate = serde_json::json!([{"archive":path,"package":"core","version":"0.1.0"}]);
+        let error = selected_archives(&config(path, duplicate)).unwrap_err();
+        assert!(
+            error
+                .to_string()
+                .contains("duplicate implementation archive")
+        );
+
+        let escaped = serde_json::json!([{"archive":path,"package":"../core","version":"0.1.0"}]);
+        let error = selected_archives(&config(path, escaped)).unwrap_err();
+        assert!(error.to_string().contains("invalid registry package name"));
+
+        let escaped = serde_json::json!([{"archive":path,"package":"other","version":"../escape"}]);
+        let error = selected_archives(&config(path, escaped)).unwrap_err();
+        assert!(
+            error
+                .to_string()
+                .contains("invalid registry package version")
+        );
         std::fs::remove_dir_all(directory).unwrap();
     }
 }

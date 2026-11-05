@@ -272,10 +272,12 @@ mod tests {
 
         assert_eq!(package["version"], "0.2.7");
         assert_eq!(
-            package["manifest_path"],
+            Path::new(package["manifest_path"].as_str().expect("manifest path"))
+                .canonicalize()
+                .expect("canonical resolved manifest"),
             root.join("solana_kit_core-0.2.7/Cargo.toml")
-                .to_string_lossy()
-                .as_ref()
+                .canonicalize()
+                .expect("canonical staged manifest")
         );
 
         fs::remove_dir_all(root).expect("remove test directory");
