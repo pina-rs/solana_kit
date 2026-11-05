@@ -201,7 +201,7 @@ fn authenticate(path: &Path, expected: &str) -> Result<()> {
 
 #[cfg(test)]
 mod tests {
-    use super::{Config, fresh, outside, validate};
+    use super::{Config, fresh, validate};
 
     fn config() -> Config {
         serde_json::from_str(
@@ -241,6 +241,7 @@ mod tests {
     #[cfg(unix)]
     #[test]
     fn output_paths_cannot_alias_the_source_or_each_other() {
+        use super::outside;
         use std::{fs, os::unix::fs::symlink};
 
         let directory =
