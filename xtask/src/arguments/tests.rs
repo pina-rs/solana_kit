@@ -48,6 +48,7 @@ fn file_commands_require_one_path() {
         "package-report",
         "package-rehearsal",
         "registry-fixture",
+        "rust-release-selection",
         "prepare-wallet",
         "prepare-wallet-rpc",
     ] {
