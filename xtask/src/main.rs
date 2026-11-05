@@ -13,6 +13,7 @@ mod package_review;
 mod process;
 mod registry_fixture;
 mod runtimes;
+mod rust_release_selection;
 mod style;
 mod system_gate;
 
@@ -48,6 +49,7 @@ fn main() -> Result<()> {
         Command::PackageReport(path) => package_review::check_report(&path),
         Command::PackageRehearsal(path) => package_rehearsal::run(&path),
         Command::RegistryFixture(path) => registry_fixture::run(&path),
+        Command::RustReleaseSelection(path) => rust_release_selection::run(&path),
         Command::All => {
             runtimes::native()?;
             runtimes::browser()?;

@@ -531,6 +531,20 @@ every external dependency version remains exact, and unexpected dependencies
 still fail. No version,
 tag, publication or binary was committed or uploaded.
 
+The [Rust registry readiness audit](../verification/rust-registry-readiness.md)
+compacts the retained registry/archive evidence and commits the reviewed
+first-publish selection as data
+([docs/planning/rust-release-plan.json](rust-release-plan.json)): 13 public
+crates, one upstream-blocked LeptosKit, one private fixture, 19 deferred
+crates and the 0.0.0 umbrella reservation, with the five publish batches.
+`cargo xtask rust-release-selection` guards that selection against the
+configured packages, actual Cargo metadata, the committed release record and
+the observed readiness JSON, and reports only `selection-exact` or
+`selection-mismatch`; it never stamps whole-channel readiness. Trust and
+ownership stay explicitly unverified there, and the corrected out-of-tree
+policy proposal keeps trusted publishing on the existing crates.io OIDC
+workflow without a bootstrap token.
+
 The same local-registry installation exposed a hard-coded CLI version display.
 The executable now reports its own Cargo package version, while the retained
 library constant follows library metadata. A staged CLI 9.8.7/library 1.2.3 copy

@@ -25,6 +25,7 @@ pub(crate) enum Command {
     PackageReport(PathBuf),
     PackageRehearsal(PathBuf),
     RegistryFixture(PathBuf),
+    RustReleaseSelection(PathBuf),
     All,
 }
 
@@ -56,6 +57,9 @@ pub(crate) fn parse(arguments: &[OsString]) -> Result<Command> {
         "package-report" => Ok(Command::PackageReport(required_path(paths, command)?)),
         "package-rehearsal" => Ok(Command::PackageRehearsal(required_path(paths, command)?)),
         "registry-fixture" => Ok(Command::RegistryFixture(required_path(paths, command)?)),
+        "rust-release-selection" => Ok(Command::RustReleaseSelection(required_path(
+            paths, command,
+        )?)),
         "native" => no_arguments(paths, command, Command::Native),
         "browser" => no_arguments(paths, command, Command::Browser),
         "wasi" => no_arguments(paths, command, Command::Wasi),
