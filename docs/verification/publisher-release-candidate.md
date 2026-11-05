@@ -344,5 +344,31 @@ not reused; this 34-archive run is authoritative for the committed tree.
 `docs/releases/publisher-cli-v0.1.1.md`. The workflow now fails closed before the
 draft release or any target upload when the `publisher-cli-v*` tag does not equal
 `publisher-cli-v<crate version>`; local positive `0.1.1` and negative `0.1.0` /
-`0.2.0` cases were exercised. Publication remains disabled and no workflow was
-dispatched.
+`0.2.0` cases were exercised. No workflow was dispatched during that local
+qualification.
+
+## Release-build qualification
+
+The [eight-target dry run](https://github.com/pina-rs/solana_kit/actions/runs/41961284309)
+completed successfully on 2026-11-05 at
+`0981375bacf4fc5e344b4ff1f20413365c05a0e0`. Both architectures built for macOS,
+Windows MSVC, Linux glibc and Linux musl. The release-tag check passed, and the
+publication job was skipped. No tag, GitHub release or binary upload occurred.
+Subsequent fixes affect verification tooling and CI; SDK crate sources,
+manifests and lockfiles are unchanged from this build.
+
+Windows workspace testing exposed and verified fixes for the reflector's
+localhost address family and two test-fixture path representations. A later
+warning-denied check exposed an import used only by a Unix test; it now lives
+inside that test. Local xtask tests, Clippy, formatting and the existing style
+gate pass. The Helius graph policy was also updated to compare only its six
+named workspace identities independently of release versions. All six feature
+sets pass on native and the three Wasm targets, including injected-Tokio
+rejection; an external-version corruption is still rejected.
+
+The [installed iOS CI attempt](https://github.com/pina-rs/solana_kit/actions/runs/41964258623/job/127037484307)
+built the app and XCTest agent, then failed while waiting for WebDriverAgent's
+status endpoint. No wallet journey assertion ran in that attempt. This remains
+an unqualified installed-host run, separate from the successful CLI release
+builds and the earlier local installed-wallet receipts. Whole-SDK and registry
+completion remain unclaimed.

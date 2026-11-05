@@ -600,7 +600,10 @@ jobs:
             cargo +1.99.1 tree --locked -p solana_kit_helius -e normal,build \
               --prefix none --format '{p}' --no-dedupe "${arguments[@]}" \
               > "$RUNNER_TEMP/helius-raw-tree.txt"
-            sed 's/ (.*//' "$RUNNER_TEMP/helius-raw-tree.txt" | sort -u \
+            # Only these workspace identities ignore release versions; external
+            # versions and the closed dependency set remain exact.
+            sed 's/ (.*//' "$RUNNER_TEMP/helius-raw-tree.txt" | \
+              awk '$1 ~ /^solana_kit_(client|core|compute_budget|helius|stake|system)$/ {print $1; next} {print}' | sort -u \
               > "$RUNNER_TEMP/helius-tree.txt"
             check_tree "$RUNNER_TEMP/helius-tree.txt"
 
