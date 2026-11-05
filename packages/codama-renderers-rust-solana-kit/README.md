@@ -106,9 +106,11 @@ second absolute directory to `test:packed` to preserve the six packed-renderer
 modules after the consumer checks pass. The destination must be new; an existing
 directory is rejected to preserve caller files.
 
-The [current package receipt](../../docs/verification/codama-package-current.md)
+The [0.1.1 package receipt](../../docs/verification/codama-0.1.1-release.md)
 records actual native Rust 1.99.1 and 1.89.0, Chrome wasm-bindgen, both Wasmtime
 50 WASI previews and pinned LeptosKit `WasmHost` executions of those preserved
 bytes, including the one-fuel negative. It also records the archive, consumer,
 malformed-IDL, native/NPM equality and source-score controls. Source-only work
-does not establish those results. Registry publication remains disabled.
+does not establish those results. Registry publication remains disabled; the
+[0.1.1 release note](../../docs/releases/codama-renderers-rust-solana-kit-v0.1.1.md)
+is a reviewable draft, not a published release.
