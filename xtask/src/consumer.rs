@@ -287,8 +287,14 @@ mod tests {
         stage(&root, "solana_kit_core", "0.2.7");
         let claimed = PackageIdentity {
             name: "solana_kit_core".into(),
-            version: "0.2.8".into(),
+            version: "0.2.7".into(),
         };
+
+        fs::write(
+            root.join("solana_kit_core-0.2.7/Cargo.toml"),
+            "[package]\nname = \"solana_kit_core\"\nversion = \"0.2.8\"\n",
+        )
+        .expect("mismatched extracted version");
 
         let error = verify_extracted(&root, &claimed).expect_err("version disagreement");
         assert!(error.to_string().contains("0.2.8"), "{error}");

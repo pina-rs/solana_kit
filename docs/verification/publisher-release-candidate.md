@@ -124,8 +124,8 @@ The rehearsal config is
 built from the prepared source with
 `cargo package --locked --offline --exclude-lockfile --no-verify` and received a
 fresh maintained-gate analysis: 1,293 regular members, no archive-form exception.
-The lowest member readability is 92.04 and the lowest member complexity is 94.76;
-the lowest archive aggregates are 92.04 and 94.76. Every category is at least 90.
+The lowest archive aggregates are 92.04 readability and 94.76 complexity.
+Every scored member and archive category is at least 90.
 
 | Package                               | Version | SHA256                                                             | Members | Readability | Complexity |
 | ------------------------------------- | ------- | ------------------------------------------------------------------ | ------: | ----------: | ---------: |
@@ -220,25 +220,31 @@ Concrete toolchain: `rustc 1.99.1 (58cf8f9c3 2026-10-13)`,
 | Prepared workspace Clippy                                                               | Passed                                                                            |
 | Prepared workspace rustdoc                                                              | Passed                                                                            |
 | Prepared workspace tests excluding `solana_kit_xtask`                                   | Passed                                                                            |
-| Prepared workspace tests including `solana_kit_xtask`                                   | **Failed**: 68 passed, 1 failed                                                   |
+| Initial prepared workspace tests including `solana_kit_xtask`                           | Failed at the internal-version policy; historical log retained                    |
+| Final prepared workspace tests including `solana_kit_xtask`                             | Passed after the parent policy correction                                         |
 
-The one prepared-workspace failure is
+The initial prepared-workspace failure was
 `client_gate::current_client_and_jupiter_graphs_reject_tokio_on_every_target`.
 `xtask/policy/client.txt` is an exact-version golden that still names
 `solana_kit_client v0.1.0` and `solana_kit_core v0.1.0`, while the prepared tree
-resolves `0.1.1`. The actual dependency closure is otherwise identical. This
-golden was left unchanged because it is a maintained policy/golden outside this
-change; the release preparation must either refresh it with the prepared versions
-or derive the two internal versions from metadata before the all-package candidate
-can claim green workspace tests. The Publisher library and CLI tests do not
-depend on this gate. On the current `0.1.0` tree the same test passes.
+resolves `0.1.1`. The actual dependency closure is otherwise identical.
+The parent correction compares the three explicitly named workspace packages
+by name while retaining exact versions for every external dependency. Cargo.lock
+governs workspace versions. New controls reject external-version drift and an
+unexpected SDK package. The prepared source includes this tooling correction;
+the package-source digest and all reviewed SDK archives remain unchanged.
+The historical failing log is retained alongside the final parent rerun.
+The final all-feature workspace test command exited 0 in
+`logs/parent-prepared-workspace.log`. The final current-source xtask test,
+warning-denied Clippy and docs also passed (`parent-xtask.log`,
+`parent-clippy.log`, `parent-doc.log`); `parent-style.log` records all 2,334
+authored files above the existing floors. These follow-up tooling changes do
+not modify SDK package contents, version preparation or the archive hashes.
 
 ## Remaining limits
 
-1. `xtask/policy/client.txt` pins the two internal package versions and fails the
-   prepared all-package workspace test as described above. This is a genuine
-   release-preparation blocker for a green whole-workspace candidate, not a
-   Publisher package failure.
+1. Candidate version files are retained for review and have not yet landed on
+   the release branch. A release tag must identify committed version preparation.
 2. `solana_kit_leptoskit` still depends on the unpublished
    `leptoskit_bridge` Git revision
    `7437097c52aa68a3401bd378764e051ed4c9165a`; it is excluded from the 34
