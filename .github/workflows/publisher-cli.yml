@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: "Release tag (publisher-cli-v0.1.0)"
+        description: "Release tag (publisher-cli-v0.1.1)"
         required: true
         type: string
 
@@ -42,6 +42,34 @@ jobs:
       contents: write
 
     steps:
+      - name: checkout release ref
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ inputs.checkout_ref || env.RELEASE_TAG }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: install pinned toolchain
+        shell: bash
+        run: rustup toolchain install 1.99.1 --profile minimal
+
+      - name: verify release tag matches CLI version
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          version="$(cargo metadata --no-deps --format-version 1 \
+            --manifest-path crates/solana_kit_dapp_publisher_cli/Cargo.toml \
+            | jq -r '.packages[] | select(.name == "solana_kit_dapp_publisher_cli") | .version')"
+          expected="publisher-cli-v${version}"
+
+          if [ "$RELEASE_TAG" != "$expected" ]; then
+            echo "::error::release tag $RELEASE_TAG does not match solana_kit_dapp_publisher_cli $version (expected $expected)"
+            exit 1
+          fi
+
+          echo "release tag $RELEASE_TAG matches solana_kit_dapp_publisher_cli $version"
+
       - name: create draft release
         if: inputs.dry_run != true
 

@@ -494,7 +494,7 @@ checksum = "0c790de23124f9ab44544d7ac05d60440adc586479ce501c1d6d7da3cd8c9cf5"
 
 [[package]]
 name = "solana_kit_client"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "base64",
  "bs58",
@@ -505,14 +505,14 @@ dependencies = [
 
 [[package]]
 name = "solana_kit_compute_budget"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "solana_kit_core",
 ]
 
 [[package]]
 name = "solana_kit_core"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "bs58",
  "curve25519-dalek",
@@ -524,7 +524,7 @@ dependencies = [
 
 [[package]]
 name = "solana_kit_helius"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "base64",
  "http",
@@ -568,7 +568,7 @@ dependencies = [
 
 [[package]]
 name = "solana_kit_stake"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "solana_kit_core",
  "solana_kit_system",
@@ -576,7 +576,7 @@ dependencies = [
 
 [[package]]
 name = "solana_kit_system"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "solana_kit_core",
 ]

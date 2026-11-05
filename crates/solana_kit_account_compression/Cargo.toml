@@ -1,6 +1,6 @@
 [package]
 name = "solana_kit_account_compression"
-version = "0.1.0"
+version = "0.1.1"
 authors.workspace = true
 edition.workspace = true
 license = "Unlicense AND Apache-2.0 AND MIT"

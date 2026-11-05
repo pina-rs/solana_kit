@@ -365,8 +365,9 @@ async fn remote_tls_requires_selected_roots_and_exact_destination_name() {
     ));
     finish(server).await;
 
-    let (listener, authority) = reflector().await;
-    let port = authority.rsplit(':').next().unwrap();
+    // This case deliberately connects by IPv4, which is absent from the SAN.
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let port = listener.local_addr().unwrap().port();
     let server = tokio::spawn(async move {
         let (stream, _) = listener.accept().await.unwrap();
         let _ = acceptor().accept(stream).await;

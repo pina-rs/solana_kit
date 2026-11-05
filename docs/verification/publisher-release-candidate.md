@@ -279,3 +279,96 @@ not modify SDK package contents, version preparation or the archive hashes.
   `/tmp/solana-kit-cli-release-readiness/logs/cli-install.log`
 - Required check logs:
   `/tmp/solana-kit-cli-release-readiness/logs/`
+
+## Committed version preparation receipt
+
+The prepared versions are now committed on `chore/prepare-publisher-cli-0.1.1`
+instead of living only in a disposable copy. The package source commit is
+`125c261d` (signed OpenPGP, `G`) with tree
+`cd3d0c655bb390e594adc77aae1808c247c1c887`. The source digest for the package
+rehearsal is
+`94a5f417a42d4264f2063dc51ccd79f93f0db961334bb1c9cae5f053379aa083` over
+`crates/`, `Cargo.toml`, `Cargo.lock`, `monochange.toml` and
+`rust-toolchain.toml`. A documentation-only successor adds this receipt and
+`docs/releases/publisher-cli-v0.1.1.md`; neither file is a package member.
+
+Configured `monochange prepare` produced 35 package targets, 64 file writes and
+114 consumed changeset deletions. The umbrella `solana_kit` remains `0.0.0`, the
+SDK group is `0.1.1`, Wallet is `0.2.0`, and the publisher library, CLI, Codama
+renderer and remaining implemented packages are `0.1.1`. All 29 release targets
+(28 packages plus the SDK group) retain `release: false` and `tag: false`. The
+canonical record is `.monochange/releases/683bff58248659a0/release.json`; the
+root lockfile records the prepared package identities, and internal requirements
+remain `^0.1.0` where that admits `0.1.1`.
+
+After the workspace bump, 31 tracked standalone workspace lockfiles were
+resolved with real Cargo metadata. Every lockfile diff changes only
+`solana_kit_*` package identities or dependency edges; no third-party version,
+source or checksum changed. All 31 roots pass `cargo metadata --locked
+--offline`. The live signer audit, WASI HTTP graph policy and confirmation-factory
+golden now name the prepared workspace versions, and their external-version and
+Tokio negative controls are unchanged.
+
+Required local gates on the committed tree:
+
+| Check                                                                                          | Result                                                                                                                 |
+| ---------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| `cargo test --locked --workspace --all-features --offline`                                     | Passed                                                                                                                 |
+| `cargo clippy --locked --workspace --all-targets --all-features --offline -- -D warnings`      | Passed                                                                                                                 |
+| `RUSTDOCFLAGS="-D warnings" cargo doc --locked --workspace --all-features --no-deps --offline` | Passed                                                                                                                 |
+| `cargo fmt --all --check`, standalone consumer fmt checks                                      | Passed                                                                                                                 |
+| `dprint check`, `monochange check`, `cargo xtask style`                                        | Passed, 2,246 files, readability 97.24, complexity 98.54                                                               |
+| `cargo xtask all`                                                                              | Passed: Native, real Chrome, Wasmtime 50 `wasip1`/`wasip2`, pinned LeptosKit, dependency gates and fresh Core consumer |
+| Conformance reports                                                                            | 481/481 success on Native, `wasip1` and `wasip2`; 480/481 sole-hash corruption on each                                 |
+| Publisher tests                                                                                | Passed, all features, including the black-box version tests                                                            |
+| Actual release CLI                                                                             | `--version` and `--help` heading both `solana-kit-publisher 0.1.1`                                                     |
+
+The fresh package rehearsal ran from the committed tree with disjoint outputs:
+34 dependency-ordered archives, 34 fresh reviews over 1,327 regular members, a
+207-package local checksum registry, 9 default and 12 selected consumer tests on
+Rust 1.99.1 and Rust 1.89.0, the portable Wasm check, and missing-archive and
+checksum negative controls. Minimum archive scores are 92.04 readability and
+94.76 complexity. The same five expected release blockers remain: the
+unpublished LeptosKit Git prerequisite, 20 `publish = false` crates, 20
+publish-disabled dry runs, 14 offline registry-API dry runs, and the
+whole-client package check that resolves LeptosKit.
+
+The publisher library and CLI archive hashes are new because the committed
+archives now include Cargo's `.cargo_vcs_info.json`. Member-by-member comparison
+against the `e348f0be` candidate shows the library and CLI payloads are otherwise
+byte-identical, and the Core archive differs only by the generated changelog's
+owner metadata plus the same VCS file. The previous archive hashes were therefore
+not reused; this 34-archive run is authoritative for the committed tree.
+
+`Publisher CLI v0.1.1` release-note review is in
+`docs/releases/publisher-cli-v0.1.1.md`. The workflow now fails closed before the
+draft release or any target upload when the `publisher-cli-v*` tag does not equal
+`publisher-cli-v<crate version>`; local positive `0.1.1` and negative `0.1.0` /
+`0.2.0` cases were exercised. No workflow was dispatched during that local
+qualification.
+
+## Release-build qualification
+
+The [eight-target dry run](https://github.com/pina-rs/solana_kit/actions/runs/41961284309)
+completed successfully on 2026-11-05 at
+`0981375bacf4fc5e344b4ff1f20413365c05a0e0`. Both architectures built for macOS,
+Windows MSVC, Linux glibc and Linux musl. The release-tag check passed, and the
+publication job was skipped. No tag, GitHub release or binary upload occurred.
+Subsequent fixes affect verification tooling and CI; SDK crate sources,
+manifests and lockfiles are unchanged from this build.
+
+Windows workspace testing exposed and verified fixes for the reflector's
+localhost address family and two test-fixture path representations. A later
+warning-denied check exposed an import used only by a Unix test; it now lives
+inside that test. Local xtask tests, Clippy, formatting and the existing style
+gate pass. The Helius graph policy was also updated to compare only its six
+named workspace identities independently of release versions. All six feature
+sets pass on native and the three Wasm targets, including injected-Tokio
+rejection; an external-version corruption is still rejected.
+
+The [installed iOS CI attempt](https://github.com/pina-rs/solana_kit/actions/runs/41964258623/job/127037484307)
+built the app and XCTest agent, then failed while waiting for WebDriverAgent's
+status endpoint. No wallet journey assertion ran in that attempt. This remains
+an unqualified installed-host run, separate from the successful CLI release
+builds and the earlier local installed-wallet receipts. Whole-SDK and registry
+completion remain unclaimed.
