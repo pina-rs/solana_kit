@@ -1,6 +1,6 @@
 {
   "name": "codama-renderers-rust-solana-kit",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Codama renderer for off-chain Rust clients using Solana Kit",
   "license": "Unlicense",
   "repository": "https://github.com/pina-rs/solana_kit/tree/main/packages/codama-renderers-rust-solana-kit",
