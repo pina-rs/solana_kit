@@ -158,6 +158,7 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          fetch-depth: 0
           persist-credentials: false
 
       - name: Check ledger and Rust formatting
@@ -225,4 +226,10 @@ jobs:
 
           monochange discover --format json
 
-          monochange preview --format json
+          changesets="$(git ls-files -- '.changeset/*.md')"
+
+          if [ -n "$changesets" ]; then
+            monochange preview --format json
+          else
+            monochange step release-record --from HEAD --format json
+          fi
