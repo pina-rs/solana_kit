@@ -74,7 +74,9 @@ pub(super) fn mwa_config() -> MwaConfig {
 
 /// Binds a loopback listener and returns the certificate's exact authority.
 pub(super) async fn reflector() -> (TcpListener, String) {
-    let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+    // Match the client's localhost address family; a refused IPv6 attempt can
+    // consume the connection deadline on Windows before falling back to IPv4.
+    let listener = TcpListener::bind("localhost:0").await.unwrap();
     let port = listener.local_addr().unwrap().port();
 
     (listener, format!("localhost:{port}"))
