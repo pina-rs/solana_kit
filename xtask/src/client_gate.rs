@@ -1,14 +1,11 @@
-//! Independent exact-version normal/build policies for public RPC and Jupiter clients.
+//! Exact third-party normal/build policies for public RPC and Jupiter clients.
 
 use crate::process::{cargo, success};
 use anyhow::{Result, ensure};
 use std::collections::BTreeSet;
 
 const CLIENT: &str = include_str!("../policy/client.txt");
-const JUPITER: &str = concat!(
-    include_str!("../policy/client.txt"),
-    "solana_kit_jupiter v0.1.0\n"
-);
+const JUPITER: &str = concat!(include_str!("../policy/client.txt"), "solana_kit_jupiter\n");
 
 fn dependencies(tree: &str, policy: &str) -> Result<()> {
     let actual: BTreeSet<_> = tree
@@ -18,6 +15,7 @@ fn dependencies(tree: &str, policy: &str) -> Result<()> {
                 .map_or(line, |(package, _)| package)
                 .trim()
         })
+        .map(policy_identity)
         .filter(|line| !line.is_empty())
         .collect();
     let expected: BTreeSet<_> = policy.lines().collect();
@@ -27,6 +25,26 @@ fn dependencies(tree: &str, policy: &str) -> Result<()> {
     );
     println!("selected public client closure: {actual:?}");
     Ok(())
+}
+
+/// Workspace versions are governed by Cargo.lock; external versions stay exact here.
+fn policy_identity(package: &str) -> &str {
+    match package.split_once(" v") {
+        Some((name @ ("solana_kit_client" | "solana_kit_core" | "solana_kit_jupiter"), _)) => name,
+        _ => package,
+    }
+}
+
+#[test]
+fn workspace_release_versions_preserve_the_same_external_policy() {
+    dependencies(
+        "solana_kit_client v9.8.7\nsolana_kit_core v0.2.0\n",
+        "solana_kit_client\nsolana_kit_core\n",
+    )
+    .expect("workspace version changes preserve the dependency policy");
+
+    assert!(dependencies("bs58 v0.6.0\n", "bs58 v0.5.1\n").is_err());
+    assert!(dependencies("solana_kit_new v0.1.0\n", "solana_kit_core\n").is_err());
 }
 
 /// Queries the real graph separately on native and each supported Wasm target.
