@@ -539,6 +539,16 @@ fresh 207-package registry report `solana-kit-publisher 0.1.1`. In that
 correction run only those two archives were rebuilt and reviewed; the fresh
 34-archive run above requalifies all of them.
 
+**Committed version preparation.** The 0.1.1 versions are now committed on
+`chore/prepare-publisher-cli-0.1.1` at package source commit `125c261d`, not only
+in a disposable copy. Thirty-one tracked standalone workspace lockfiles were
+resolved to the prepared identities with no third-party version or checksum
+change, and all pass `cargo metadata --locked --offline`. A fresh package
+rehearsal from the committed tree produced 34 archives, 34 fresh reviews over
+1,327 members, a 207-package registry, 9 default and 12 selected consumer tests,
+and the same five expected publication blockers. The receipt is
+[Publisher CLI v0.1.1](../verification/publisher-release-candidate.md#committed-version-preparation-receipt).
+
 **Remaining limits.** LeptosKit's Git upstream is not a registry package. Twenty
 included crates retain `publish = false`; the others stop at an offline
 registry-API dry run. Actual registry versions, publication decisions and
