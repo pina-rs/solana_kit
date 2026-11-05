@@ -485,4 +485,5 @@ address-constant-rejects-wrong-literal: Ok(())
 curve-classification-rejects-wrong-expected: Ok(())
 curve-compressed-point-classification: Ok(())
 native-loader-source-literal-invalid: Ok(())
-solana-kit-core-v60: 479/480 cases passed
+address-sysvar-constant-literals: Ok(())
+solana-kit-core-v60: 480/481 cases passed

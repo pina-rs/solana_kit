@@ -9,7 +9,7 @@ pressing its report each execute the whole suite. Wasmi 2 meters Wasm operations
 dynamic copying, and first-use lazy function translation. It does not meter
 elapsed time. The upstream application default and production source are unchanged.
 
-The prepared 480-case v60 suite receives **15,565,000,000 fuel per entry**.
+The prepared 481-case v60 suite receives **15,580,000,000 fuel per entry**.
 The host computes `15_000_000 × (EXPECTED_CASE_COUNT - 3) +
 5_000_000 × (MAX_BATCH + 1 + 3 × MESSAGE_COUNT + 4 + 573 + 80)` with checked arithmetic.
 These are pooled workload
@@ -18,12 +18,12 @@ metadata, never guest reports. Missing cases, invalid batch sizes, and arithmeti
 overflow reject. A separate fresh guest with one fuel must trap with
 `OutOfFuel` before committing anything. Production host defaults are unchanged.
 
-The four appended address-family groups (two controls, one curve classification
-case and one source-defect check) add only the existing ordinary-case rate. No
+The five appended address-family groups (two controls, sysvar and curve
+classification cases and one source-defect check) add only the existing ordinary-case rate. No
 crypto unit, work category or negative control changed.
 
 The three separately accounted groups are the transaction batch and two message
-groups. The prepared total contains 473 ordinary groups and 257 authenticated
+groups. The prepared total contains 478 ordinary groups and 257 authenticated
 transactions, then accounts for 772 actual message crypto calls: 514 signing
 calls, 256 strict verification calls, and two key derivations. The batch signs
 256 distinct one-byte messages, and its comparison oracle signs all 256 again;
@@ -50,14 +50,14 @@ allowance. The two appended error-code catalog groups and fifteen error-contract
 only parse, compare and render pinned literals, so they also add only the
 existing ordinary-case rate.
 
-Current CI must execute all 480 canonical cases and the 479/480 sole-hash-corruption
+Current CI must execute all 481 canonical cases and the 480/481 sole-hash-corruption
 report through the actual pinned host. The earlier 108-case acceptance and 92-case
 minimum measurements below remain historical. No current-suite minimum,
 elapsed-time or SDK speed claim is made.
 
-The checked-in native reports record actual v60 execution: 480/480 canonical
-and 479/480 corrupted, with a failure exit for the corruption control. All
-preceding 461 result entries remain byte-identical. The five-host results for
+The checked-in native reports record actual v60 execution: 481/481 canonical
+and 480/481 corrupted, with a failure exit for the corruption control. All
+preceding 476 result entries remain byte-identical. The five-host results for
 this suite are recorded in the
 [address-family runtime receipt](../../docs/verification/address-family-runtime.md).
 

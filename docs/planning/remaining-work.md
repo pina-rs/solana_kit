@@ -82,7 +82,7 @@ These results are inputs to the backlog, not completion claims.
 
 | Area                 | Current executed evidence                                                                                                                                                                                                                                                                                                                             |
 | -------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Portable conformance | `solana-kit-core-v60` passes 480/480 natively, in Chrome, both Wasmtime 50 previews and the pinned LeptosKit interpreter; corruption is 479/480. The first 461 v58 cases are preserved. [Receipt](../verification/address-family-runtime.md)                                                                                                          |
+| Portable conformance | `solana-kit-core-v60` passes 481/481 natively, in Chrome, both Wasmtime 50 previews and the pinned LeptosKit interpreter; corruption is 480/481. The first 476 v59 cases are preserved. [Receipt](../verification/address-family-runtime.md)                                                                                                          |
 | Program clients      | 17 owned-validator tests pass for builtins and pinned external programs. [Receipt](../verification/program-integration.md)                                                                                                                                                                                                                            |
 | Codama package       | Packed NPM consumer, 9 NPM tests, 116 generator tests and the exact 9 groups on native/Chrome/WASI/LeptosKit. [Receipt](../verification/codama-package-current.md)                                                                                                                                                                                    |
 | Native wallet        | iOS controller twice, Android controller twice on a fresh API 35 arm64 emulator, and a three-process macOS computer-use journey with independent ledger/state oracles. [iOS](../verification/installed-wallet-current.md), [Android](../verification/installed-wallet-android-current.md), [macOS](../verification/installed-wallet-macos-current.md) |
@@ -210,10 +210,10 @@ partial count completes canonical rows.
 
 **Executed follow-up.** RW-02 is now closed by the
 [publication runtime receipt](../verification/publication-runtime.md). All 32
-existing projection bodies execute in four appended groups on native Rust,
+existing projection bodies execute in five appended groups on native Rust,
 Chrome, both Wasmtime previews and the pinned LeptosKit host: they passed in the
 v58/461 report and still pass in the current v60/480 report, with only the
-intended hash failure in the corruption control. The first 461 cases are
+intended hash failure in the corruption control. The first 476 cases are
 preserved. Findings below describe the earlier audit snapshot.
 
 **Acceptance criterion.** Phase 8 runtime evidence is linked; the publisher
@@ -255,7 +255,7 @@ assuming it.
 
 **Next minimal unit.** Add
 `verification/conformance/src/publisher_publication.rs` containing the four
-existing modules and four appended groups (or 32 cases if the parent wants
+existing modules and five appended groups (or 32 cases if the parent wants
 one-to-one labels). Update the registry/identity and committed reports, then run
 `cargo xtask all`. No production code should change.
 
@@ -749,7 +749,7 @@ one docs-only change:
   TLS receipt. External-wallet and public-reflector interoperability stay open.
 - `dapp-publisher.md` links the v58/461 five-host receipt and keeps the
   cross-language signature oracle unexecuted.
-- `subscriptions.md` links the four appended portable groups.
+- `subscriptions.md` links the five appended portable groups.
 - `numeric-string-codecs.md` and both numeric scoped receipts describe the
   existing `BigNumber` widths (RW-11).
 - `fixed-points-remaining.tsv` and `fixed-points.tsv` reasons point at the

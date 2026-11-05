@@ -35,7 +35,8 @@ All 49 declarations map to a public Rust constant. Forty-eight are complete for
 the declared value. The `nativeLoaderProgramAddress` declaration is partial
 because its pinned literal is not a 32-byte address; the mismatch is recorded
 below rather than silently reproducing or hiding it. The executable case
-`canonical-address-constant-literals` compares each public `Address` constant to
+`canonical-address-constant-literals` and `address-sysvar-constant-literals`
+compare each public `Address` constant to
 its independently transcribed base58 text, in both directions: the text parses
 to the exact constant and the constant displays as the exact text. The first 36
 pairs are preserved byte-for-byte; the 13 sysvar aliases were appended to the
@@ -159,24 +160,25 @@ uses one of those encodings.
 
 ## Executed evidence
 
-Four groups are appended after the preserved 476-case prefix:
+Five groups are appended after the preserved 476-case prefix:
 
-| Case                                          | Body                                                 |
-| --------------------------------------------- | ---------------------------------------------------- |
-| `address-constant-rejects-wrong-literal`      | `address_family::constants::rejects_mutated_literal` |
-| `curve-classification-rejects-wrong-expected` | `core_parity/curve.rs::rejects_wrong_expected`       |
-| `curve-compressed-point-classification`       | `core_parity/curve.rs::classification`               |
-| `native-loader-source-literal-invalid`        | `address_family::native_loader_source_literal`       |
+| Case                                          | Body                                                |
+| --------------------------------------------- | --------------------------------------------------- |
+| `address-constant-rejects-wrong-literal`      | `core_parity/constants.rs::rejects_mutated_literal` |
+| `curve-classification-rejects-wrong-expected` | `core_parity/curve.rs::rejects_wrong_expected`      |
+| `curve-compressed-point-classification`       | `core_parity/curve.rs::classification`              |
+| `native-loader-source-literal-invalid`        | `address_family::native_loader_source_literal`      |
+| `address-sysvar-constant-literals`            | `core_parity/constants.rs::sysvar_literals`         |
 
 Every mismatch returns a `CaseResult` error with a stable explanation; no guest
 panic is added, and later cases still execute. The maintained
 `verification/conformance/evidence/native-success.txt` is `solana-kit-core-v60`
-with 480/480 cases. The corruption report is 479/480 with only
+with 481/481 cases. The corruption report is 480/481 with only
 `sha256-fips-abc` failing.
 
-The four appended groups perform ordinary deterministic work. The fuel
-accounting therefore changes only by four ordinary cases at the existing
-15,000,000 rate: 15,505,000,000 becomes 15,565,000,000. No crypto-unit rate,
+The five appended groups perform ordinary deterministic work. The fuel
+accounting therefore changes only by five ordinary cases at the existing
+15,000,000 rate: 15,505,000,000 becomes 15,580,000,000. No crypto-unit rate,
 `CRYPTO_WORK` category, negative control or one-fuel trap changed.
 
 ## Status and totals
@@ -201,12 +203,12 @@ cargo run --locked --manifest-path tools/capability_inventory/Cargo.toml --offli
 
 The checked-in reports are the native execution. The
 [runtime receipt](../verification/address-family-runtime.md) records the same
-480-case suite in Chrome, both Wasmtime 50 previews and the pinned LeptosKit
+481-case suite in Chrome, both Wasmtime 50 previews and the pinned LeptosKit
 host. Those runs are not separately checked-in case reports, so this note
 claims only the receipt.
 
 | Artifact                           | SHA256                                                             |
 | ---------------------------------- | ------------------------------------------------------------------ |
-| `native-success.txt`               | `f03e4e82b4b18505e2a9ad2d9bce4dffeb04c479edc11631ab8222ef9ece6d0d` |
-| `native-corruption.txt`            | `9bea3f3e4cc46b0970654bc958a4b0322e5bf8c8d4fecc88648fc18f4c492093` |
+| `native-success.txt`               | `147043fd82c71a505461c387fc76d336e99acd12607e7bcda94276005bda21d3` |
+| `native-corruption.txt`            | `8f8e16344e4df1a27f18af4cce1077470fe6bf5499ac509e88ed8b4d9abb6ec6` |
 | `parity-completion-prefix-v55.txt` | `6602dd63618190a1fdb81dd25ca2640417fe2b681a1d9cacc1ff691f60bc8dcb` |

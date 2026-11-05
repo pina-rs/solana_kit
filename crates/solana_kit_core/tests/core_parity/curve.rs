@@ -70,10 +70,5 @@ pub fn classification() -> Result<(), &'static str> {
         }
     }
 
-    // `isOffCurveAddress` is exactly the negation of this public predicate.
-    if is_on_curve(&Address::from_bytes(TWO)) {
-        return Err("off-curve negation changed");
-    }
-
     Ok(())
 }

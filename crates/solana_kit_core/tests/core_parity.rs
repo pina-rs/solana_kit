@@ -76,6 +76,7 @@ fn float32_mapping_matches_extreme_conversion() {
 #[test]
 fn canonical_address_constants_match_literal_text() {
     constants::constant_literals();
+    constants::sysvar_literals().unwrap();
 }
 
 #[test]

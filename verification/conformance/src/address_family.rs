@@ -7,8 +7,8 @@ use crate::CaseResult;
 use alloc::string::ToString;
 use solana_kit_core::{Address, ParseError, address_constants};
 
-/// Four appended groups: two ordinary controls, curve evidence and a source-defect check.
-pub(crate) fn cases() -> [CaseResult; 4] {
+/// Two controls, sysvar and curve evidence, and a source-defect check.
+pub(crate) fn cases() -> [CaseResult; 5] {
     [
         crate::case(
             "address-constant-rejects-wrong-literal",
@@ -25,6 +25,10 @@ pub(crate) fn cases() -> [CaseResult; 4] {
         crate::case(
             "native-loader-source-literal-invalid",
             native_loader_source_literal(),
+        ),
+        crate::case(
+            "address-sysvar-constant-literals",
+            crate::core_parity::constants::sysvar_literals(),
         ),
     ]
 }

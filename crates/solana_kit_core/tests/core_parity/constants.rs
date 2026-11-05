@@ -147,6 +147,10 @@ const LITERALS: &[(Address, &str)] = &[
         address_constants::USDT_MINT,
         "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB",
     ),
+];
+
+const SYSVAR_COUNT: usize = 13;
+const SYSVAR_LITERALS: &[(Address, &str)] = &[
     (
         address_constants::SYSVAR_OWNER,
         "Sysvar1111111111111111111111111111111111111",
@@ -208,23 +212,43 @@ pub fn constant_literals() {
     }
 }
 
-/// Negative control: changing one expected sysvar literal must fail the same comparison.
-pub fn rejects_mutated_literal() -> Result<(), &'static str> {
-    // The first appended sysvar alias follows the original 36 pinned pairs.
-    const SYSVAR_OWNER_INDEX: usize = 36;
-    let Some(&(actual, expected)) = LITERALS.get(SYSVAR_OWNER_INDEX) else {
-        return Err("pinned sysvar control index is absent");
-    };
-    let mut mutated = expected.as_bytes().to_vec();
-    mutated[0] = b'T';
-    let mutated = String::from_utf8(mutated).map_err(|_| "mutated literal is not UTF-8")?;
-    let parsed: Address = mutated
-        .parse()
-        .map_err(|_| "mutated literal is not an address")?;
+/// Checks every sysvar alias without unwinding a portable host on a mismatch.
+pub fn sysvar_literals() -> Result<(), &'static str> {
+    if SYSVAR_LITERALS.len() != SYSVAR_COUNT {
+        return Err("sysvar literal count changed");
+    }
 
-    if actual == parsed {
-        return Err("mutated sysvar literal matched the constant");
+    for &(actual, expected) in SYSVAR_LITERALS {
+        compare_literal(actual, expected)?;
     }
 
     Ok(())
+}
+
+fn compare_literal(actual: Address, expected: &str) -> Result<(), &'static str> {
+    let parsed: Address = expected
+        .parse()
+        .map_err(|_| "sysvar literal is not an address")?;
+
+    if actual != parsed || actual.to_string() != expected {
+        return Err("sysvar literal differs");
+    }
+
+    Ok(())
+}
+
+/// Negative control: changing one expected sysvar literal must fail the same comparison.
+pub fn rejects_mutated_literal() -> Result<(), &'static str> {
+    let Some(&(actual, expected)) = SYSVAR_LITERALS.first() else {
+        return Err("pinned sysvar control index is absent");
+    };
+
+    let mut mutated = expected.as_bytes().to_vec();
+    mutated[0] = b'T';
+    let mutated = String::from_utf8(mutated).map_err(|_| "mutated literal is not UTF-8")?;
+
+    match compare_literal(actual, &mutated) {
+        Err("sysvar literal differs") => Ok(()),
+        _ => Err("mutated sysvar literal failed for the wrong reason"),
+    }
 }
