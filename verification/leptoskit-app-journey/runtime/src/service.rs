@@ -12,7 +12,6 @@ use std::{
     future::Future,
     path::Path,
     task::{Context, Poll},
-    thread::{self, ThreadId},
     time::Duration,
 };
 use tokio::runtime::{Builder, Handle, Runtime};
@@ -21,6 +20,14 @@ const BODY_BYTES: usize = 64 * 1024;
 const TURNS: usize = 32;
 const SOCKET_LIFETIME: Duration = Duration::from_secs(600);
 
+// LeptosKit 0.3.0 activates the service on the native UI thread, then lends the
+// whole application to its guest thread (`lk_guest_spawn`), which polls it until
+// `lk_guest_stop` returns it for close. Only a `Send` owner may move that way.
+const _: fn() = || {
+    fn assert_send<T: Send>() {}
+    assert_send::<Service>();
+};
+
 pub(super) struct Service {
     http: HttpDriver,
     sockets: SocketDriver,
@@ -28,7 +35,6 @@ pub(super) struct Service {
     wallet: WalletService,
     runtime: Runtime,
     queued: ServiceWork,
-    owner: ThreadId,
     startup: Startup,
     diagnostics: Diagnostics,
 }
@@ -40,7 +46,7 @@ impl Service {
         endpoints: Endpoints,
         startup: Startup,
     ) -> Result<Self, Error> {
-        // Public generated hosts call the service from their native UI thread.
+        // Generated hosts install the service on their native UI thread.
         // Refuse an ambient runtime before constructing an owner whose close is synchronous.
         if Handle::try_current().is_ok() {
             return Err(Error::InvalidArgument);
@@ -63,7 +69,6 @@ impl Service {
             wallet,
             runtime,
             queued: ServiceWork::default(),
-            owner: thread::current().id(),
             startup,
             diagnostics,
         })
@@ -117,7 +122,7 @@ impl AppService for Service {
     /// A completion can synchronously resume the guest into another capability.
     /// Drain that work through the same owner, retaining and waking the next quantum at the budget.
     fn poll(&mut self, host: &mut Host, context: &mut Context<'_>) -> Result<ServiceWork, Error> {
-        if thread::current().id() != self.owner || Handle::try_current().is_ok() {
+        if Handle::try_current().is_ok() {
             return Err(Error::InvalidArgument);
         }
 

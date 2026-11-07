@@ -1,6 +1,6 @@
 # LeptosKit
 
-`solana_kit_leptoskit` connects the SDK to [LeptosKit](https://github.com/ifiokjr/leptoskit) apps. A LeptosKit app has two halves: an interpreted WebAssembly guest that holds your UI and logic, and a native host that runs the interpreter on desktop or mobile. The guest has no sockets of its own. It asks the host for named services, and the host performs the real network work with [`solana_kit_native`](native.md). The guest never sees an endpoint, header or key.
+`solana_kit_leptoskit` connects the SDK to [LeptosKit](https://github.com/leptoskit/leptoskit) apps. A LeptosKit app has two halves: an interpreted WebAssembly guest that holds your UI and logic, and a native host that runs the interpreter on desktop or mobile. The guest has no sockets of its own. It asks the host for named services, and the host performs the real network work with [`solana_kit_native`](native.md). The guest never sees an endpoint, header or key.
 
 ## How the pieces fit
 
@@ -33,14 +33,14 @@ Enable `guest` only in the interpreted guest, never in a browser bundle. A brows
 
 ## Add the crate
 
-The crate depends on LeptosKit through Git, at revision `7437097c52aa68a3401bd378764e051ed4c9165a`. Your app must use the same LeptosKit revision, so that both sides agree on one bridge ABI.
+The crate depends on the published LeptosKit 0.3.0 release from crates.io. Your app must use the same `=0.3.0` release, so that both sides agree on one bridge ABI.
 
 ```toml
 # guest/Cargo.toml
 [dependencies]
 solana_kit_client = { git = "https://github.com/pina-rs/solana_kit" }
 solana_kit_leptoskit = { git = "https://github.com/pina-rs/solana_kit", features = ["guest"] }
-leptoskit_bridge = { git = "https://github.com/ifiokjr/leptoskit", rev = "7437097c52aa68a3401bd378764e051ed4c9165a", features = ["guest"] }
+leptoskit_bridge = { version = "=0.3.0", features = ["guest"] }
 ```
 
 ```toml
@@ -48,10 +48,10 @@ leptoskit_bridge = { git = "https://github.com/ifiokjr/leptoskit", rev = "743709
 [dependencies]
 solana_kit_native = { git = "https://github.com/pina-rs/solana_kit" }
 solana_kit_leptoskit = { git = "https://github.com/pina-rs/solana_kit", features = ["host"] }
-leptoskit_wasm = { git = "https://github.com/ifiokjr/leptoskit", rev = "7437097c52aa68a3401bd378764e051ed4c9165a" }
+leptoskit_wasm = { version = "=0.3.0" }
 ```
 
-Build the guest for `wasm32-unknown-unknown`. Publishing to crates.io waits on a compatible upstream LeptosKit release.
+Build the guest for `wasm32-unknown-unknown`. Both halves resolve the same published LeptosKit release.
 
 ## Guest: make an RPC call
 

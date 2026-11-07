@@ -17,6 +17,9 @@ const ENTRY: &str = concat!(
     "}\n\n",
     "pub extern \"C\" fn leptoskit_event(node: u32, kind: u32, ptr: u32, len: u32) {\n",
     "    leptoskit::guest::dispatch(node, kind, ptr, len)\n",
+    "}\n\n",
+    "pub extern \"C\" fn leptoskit_poll() {\n",
+    "\tleptoskit::guest::poll();\n",
     "}\n",
 );
 
@@ -125,7 +128,7 @@ fn assert_prepared(sandbox: &Sandbox, name: &str, runtime: NativeRuntime) {
             1,
             "{platform} dependency"
         );
-        assert!(manifest.contains(super::framework::REVISION));
+        assert!(manifest.contains(&format!("version = {:?}", super::framework::VERSION)));
     }
 
     let config = sandbox.read("leptoskit.toml");
@@ -145,7 +148,11 @@ fn assert_prepared(sandbox: &Sandbox, name: &str, runtime: NativeRuntime) {
         format!("{name}_app/Cargo.toml"),
         format!("{name}_backend/Cargo.toml"),
     ] {
-        assert!(sandbox.read(&manifest).contains(super::framework::REVISION));
+        assert!(
+            sandbox
+                .read(&manifest)
+                .contains(&format!("version = {:?}", super::framework::VERSION))
+        );
     }
 }
 
@@ -276,12 +283,19 @@ fn missing_template_leaves_every_generated_file_untouched() {
 
 #[test]
 fn upgrades_previous_guest_event_and_is_idempotent() {
-    let previous = "wallet_fixture::main();\nlet result = leptoskit::guest::dispatch(node, kind, ptr, len);\n\twallet_fixture::poll();\n\tresult\n}";
+    let previous = "wallet_fixture::main();\nlet result = leptoskit::guest::dispatch(node, kind, ptr, len);\n\twallet_fixture::poll();\n\tresult\n}\nleptoskit::guest::poll();\n}";
     let upgraded = guest_entry(previous).unwrap();
 
     assert!(upgraded.contains("wallet_fixture::event(node, kind, result);"));
+    assert!(upgraded.contains("leptoskit::guest::poll();\n\twallet_fixture::poll();\n}"));
     assert_eq!(guest_entry(&upgraded).unwrap(), upgraded);
     assert!(guest_entry("wallet_fixture::main();\nwallet_fixture::poll();").is_err());
+
+    let without_poll = previous.replace("leptoskit::guest::poll();\n}", "");
+    assert!(
+        guest_entry(&without_poll).is_err(),
+        "accepted an entry without the poll export"
+    );
 }
 
 fn config(name: &str) -> String {
@@ -317,7 +331,7 @@ default-members = ["."]
 [dependencies]
 {name}_app = {{ path = "{name}_app", default-features = false }}
 {name}_backend = {{ path = "{name}_backend" }}
-leptoskit = {{ version = "=0.1.0", default-features = false, features = ["server"] }}
+leptoskit = {{ version = "=0.3.0", default-features = false, features = ["server"] }}
 "#
     )
 }
@@ -332,10 +346,10 @@ publish = false
 
 [dependencies]
 {name}_shared = {{ path = "../{name}_shared" }}
-leptoskit = {{ version = "=0.1.0", default-features = false }}
+leptoskit = {{ version = "=0.3.0", default-features = false }}
 
 [build-dependencies]
-leptoskit_build = {{ version = "=0.1.0", default-features = false }}
+leptoskit_build = {{ version = "=0.3.0", default-features = false }}
 "#
     )
 }
@@ -350,7 +364,7 @@ publish = false
 
 [dependencies]
 {name}_shared = {{ path = "../{name}_shared" }}
-leptoskit = {{ version = "=0.1.0", default-features = false, features = ["server"] }}
+leptoskit = {{ version = "=0.3.0", default-features = false, features = ["server"] }}
 "#
     )
 }
@@ -379,7 +393,7 @@ name = "leptoskit_app"
 crate-type = ["staticlib"]
 
 [target.'cfg(target_os = "{platform}")'.dependencies]
-leptoskit_bridge_ffi = {{ version = "=0.1.0", default-features = false, features = ["app"] }}
+leptoskit_bridge_ffi = {{ version = "=0.3.0", default-features = false, features = ["app"] }}
 "#
     )
 }

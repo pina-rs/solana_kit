@@ -1,11 +1,21 @@
-//! Generated manifests use the same ordinary Git source as the SDK adapter.
+//! Generated manifests use the same published framework release as the SDK adapter.
 use super::Result;
 use std::{fs, path::Path};
 
-pub(super) const REVISION: &str = "7437097c52aa68a3401bd378764e051ed4c9165a";
-const SOURCE: &str = "https://github.com/ifiokjr/leptoskit";
-const VERSION: &str = "{ version = \"=0.1.0\"";
+/// The reviewed LeptosKit release. The generator writes the release it was
+/// built from, so the SDK adapter and every generated manifest must agree on it.
+pub(super) const VERSION: &str = "=0.3.0";
 const SDK_FRAMEWORK_DECLARATIONS: usize = 5;
+const SOURCE_KEYS: [&str; 8] = [
+    "git",
+    "path",
+    "rev",
+    "branch",
+    "tag",
+    "registry",
+    "registry-index",
+    "workspace",
+];
 
 pub(super) fn verify_sdk(sdk: &Path) -> Result<()> {
     let manifest = fs::read_to_string(sdk.join("crates/solana_kit_leptoskit/Cargo.toml"))?;
@@ -14,8 +24,45 @@ pub(super) fn verify_sdk(sdk: &Path) -> Result<()> {
 
 fn verify_manifest(manifest: &str) -> Result<()> {
     let manifest: toml::Table = manifest.parse()?;
-    let mut dependencies = Vec::new();
-    collect_dependencies(&manifest, &mut dependencies)?;
+    let dependencies = framework_dependencies(&manifest)?;
+
+    if dependencies.len() != SDK_FRAMEWORK_DECLARATIONS || !dependencies.iter().all(same_source) {
+        return Err("SDK framework dependencies must select the verified registry release".into());
+    }
+
+    Ok(())
+}
+
+/// Refuse a generated manifest unless every framework declaration already
+/// selects the reviewed registry release. A different version or source means
+/// the generator checkout and the SDK disagree, so it is reviewed rather than
+/// silently rewritten.
+pub(super) fn verify_generated(contents: &str) -> Result<()> {
+    let manifest: toml::Table = contents.parse()?;
+
+    if manifest.contains_key("patch") || manifest.contains_key("replace") {
+        return Err("generated consumer must not use Cargo source overrides".into());
+    }
+
+    if !framework_dependencies(&manifest)?.iter().all(same_source) {
+        return Err("review the generated framework dependency before changing its source".into());
+    }
+
+    Ok(())
+}
+
+/// Every framework declaration in a manifest: its own dependency sections,
+/// `[workspace.dependencies]` and each `[target.*]` table.
+fn framework_dependencies(manifest: &toml::Table) -> Result<Vec<&toml::Table>> {
+    let mut selected = Vec::new();
+    collect_dependencies(manifest, &mut selected)?;
+
+    if let Some(workspace) = manifest.get("workspace") {
+        let workspace = workspace
+            .as_table()
+            .ok_or("expected a Cargo workspace table")?;
+        collect_dependencies(workspace, &mut selected)?;
+    }
 
     if let Some(targets) = manifest.get("target") {
         for target in targets
@@ -23,22 +70,12 @@ fn verify_manifest(manifest: &str) -> Result<()> {
             .ok_or("expected Cargo target tables")?
             .values()
         {
-            collect_dependencies(
-                target.as_table().ok_or("expected a Cargo target table")?,
-                &mut dependencies,
-            )?;
+            let target = target.as_table().ok_or("expected a Cargo target table")?;
+            collect_dependencies(target, &mut selected)?;
         }
     }
 
-    if dependencies.len() != SDK_FRAMEWORK_DECLARATIONS
-        || dependencies
-            .iter()
-            .any(|dependency| !same_source(dependency))
-    {
-        return Err("SDK framework dependencies must select the verified revision".into());
-    }
-
-    Ok(())
+    Ok(selected)
 }
 
 /// Inspect Cargo's dependency sections, including renamed packages. Metadata
@@ -61,11 +98,12 @@ fn collect_dependencies<'a>(
                 .and_then(toml::Value::as_str)
                 .unwrap_or(name);
 
-            if package == "leptoskit" || package.starts_with("leptoskit_") {
+            // Select by either name so a framework key cannot alias another crate.
+            if is_framework(name) || is_framework(package) {
                 selected.push(
                     dependency
                         .as_table()
-                        .ok_or("framework requires an explicit Git source")?,
+                        .ok_or("framework requires an explicit registry source")?,
                 );
             }
         }
@@ -74,87 +112,16 @@ fn collect_dependencies<'a>(
     Ok(())
 }
 
-fn same_source(dependency: &toml::Table) -> bool {
-    dependency.get("git").and_then(toml::Value::as_str) == Some(SOURCE)
-        && dependency.get("rev").and_then(toml::Value::as_str) == Some(REVISION)
-        && [
-            "path",
-            "branch",
-            "tag",
-            "registry",
-            "registry-index",
-            "workspace",
-        ]
-        .iter()
-        .all(|key| !dependency.contains_key(*key))
+fn is_framework(package: &str) -> bool {
+    package == "leptoskit" || package.starts_with("leptoskit_")
 }
 
-pub(super) fn pin(contents: &str) -> Result<String> {
-    let manifest: toml::Table = contents.parse()?;
+fn same_source(dependency: &&toml::Table) -> bool {
+    let package = dependency.get("package").map(toml::Value::as_str);
 
-    if manifest.contains_key("patch") || manifest.contains_key("replace") {
-        return Err("generated consumer must not use Cargo source overrides".into());
-    }
-
-    let mut output = String::new();
-
-    for line in contents.split_inclusive('\n') {
-        let replacement = dependency(line)?;
-        output.push_str(replacement.as_deref().unwrap_or(line));
-    }
-
-    Ok(output)
-}
-
-fn dependency(line: &str) -> Result<Option<String>> {
-    let Some((name, value)) = line.split_once('=') else {
-        return Ok(None);
-    };
-    let name = name.trim();
-
-    if name != "leptoskit" && !name.starts_with("leptoskit_") {
-        return Ok(None);
-    }
-
-    let pinned = format!("{VERSION}, git = {SOURCE:?}, rev = {REVISION:?}");
-    let value = value.trim_start();
-
-    if let Some(suffix) = value.strip_prefix(&pinned) {
-        validate_suffix(suffix)?;
-
-        return Ok(None);
-    }
-
-    let suffix = value
-        .strip_prefix(VERSION)
-        .ok_or("generated framework dependency shape changed")?;
-
-    validate_suffix(suffix)?;
-    Ok(Some(format!("{name} = {pinned}{suffix}")))
-}
-
-fn validate_suffix(suffix: &str) -> Result<()> {
-    let declaration: toml::Table = format!("dependency = {VERSION}{suffix}").parse()?;
-    let dependency = declaration["dependency"]
-        .as_table()
-        .ok_or("expected an inline framework dependency")?;
-    let source_keys = [
-        "git",
-        "path",
-        "rev",
-        "branch",
-        "tag",
-        "package",
-        "registry",
-        "registry-index",
-        "workspace",
-    ];
-
-    if !suffix.starts_with(',') || source_keys.iter().any(|key| dependency.contains_key(*key)) {
-        return Err("review the generated framework dependency before changing its source".into());
-    }
-
-    Ok(())
+    dependency.get("version").and_then(toml::Value::as_str) == Some(VERSION)
+        && package.is_none_or(|package| package.is_some_and(is_framework))
+        && SOURCE_KEYS.iter().all(|key| !dependency.contains_key(*key))
 }
 
 #[cfg(test)]
@@ -174,11 +141,14 @@ mod tests {
     #[test]
     fn rejects_patch_tables_with_equivalent_toml_spellings() {
         for source in [
-            "[ patch . \"https://github.com/ifiokjr/leptoskit\" ]\nexample = { path = \"other\" }\n",
+            "[ patch . \"https://github.com/leptoskit/leptoskit\" ]\nexample = { path = \"other\" }\n",
             "[\"patch\".crates-io]\nexample = { path = \"other\" }\n",
             "patch = { crates-io = { example = { path = \"other\" } } }\n",
         ] {
-            assert!(pin(source).is_err(), "accepted an alternate patch table");
+            assert!(
+                verify_generated(source).is_err(),
+                "accepted an alternate patch table"
+            );
         }
     }
 
@@ -188,40 +158,50 @@ mod tests {
             "[replace]\n\"leptoskit_bridge:0.1.0\" = { path = \"other\" }\n",
             "\"replace\" = { \"leptoskit_bridge:0.1.0\" = { path = \"other\" } }\n",
         ] {
-            assert!(pin(source).is_err(), "accepted a Cargo replacement");
+            assert!(
+                verify_generated(source).is_err(),
+                "accepted a Cargo replacement"
+            );
         }
     }
 
     #[test]
-    fn pins_generated_dependencies_and_preserves_features_and_local_packages() {
-        let original = concat!(
+    fn accepts_generated_dependencies_on_the_reviewed_release() {
+        let manifest = concat!(
             "[dependencies]\n",
-            "leptoskit = { version = \"=0.1.0\", default-features = false, ",
-            "features = [\"guest\"] }\nsolana_kit_leptoskit = { path = \"sdk\" }\n"
+            "leptoskit = { version = \"=0.3.0\", default-features = false, ",
+            "features = [\"guest\"] }\nsolana_kit_leptoskit = { path = \"sdk\" }\n",
+            "renamed = { package = \"leptoskit_bridge\", version = \"=0.3.0\" }\n",
+            "[build-dependencies]\n",
+            "leptoskit_build = { version = \"=0.3.0\", default-features = false }\n",
+            "[target.'cfg(target_os = \"ios\")'.dependencies]\n",
+            "leptoskit_bridge_ffi = { version = \"=0.3.0\", features = [\"app\"] }\n",
         );
-        let changed = pin(original).unwrap();
-        assert!(changed.contains(&format!("git = {SOURCE:?}, rev = {REVISION:?}")));
-        assert!(changed.contains("default-features = false, features = [\"guest\"] }\n"));
-        assert!(changed.contains("solana_kit_leptoskit = { path = \"sdk\" }\n"));
-        assert_eq!(pin(&changed).unwrap(), changed);
+        assert!(verify_generated(manifest).is_ok());
     }
 
     #[test]
-    fn refuses_existing_overrides_and_unreviewed_framework_sources() {
-        for source in [
-            "[patch.crates-io]\n",
-            "leptoskit = { version = \"=0.2.0\", default-features = false }\n",
-            "leptoskit = { version = \"=0.1.0\", path = \"framework\" }\n",
-            "leptoskit = { version = \"=0.1.0\", git = \"other\" }\n",
+    fn refuses_other_releases_and_unreviewed_framework_sources() {
+        for dependency in [
+            "leptoskit = { version = \"=0.2.0\", default-features = false }",
+            "leptoskit = { version = \"0.3.0\", default-features = false }",
+            "leptoskit = \"=0.3.0\"",
+            "leptoskit = { version = \"=0.3.0\", path = \"framework\" }",
+            "leptoskit = { version = \"=0.3.0\", git = \"other\" }",
+            "leptoskit = { path = \"framework\" }",
+            "leptoskit = { workspace = true }",
+            "renamed = { package = \"leptoskit\", version = \"=0.2.0\" }",
+            "leptoskit = { package = \"other\", version = \"=0.3.0\" }",
+            "leptoskit_bridge = { package = 3, version = \"=0.3.0\" }",
         ] {
-            assert!(pin(source).is_err());
+            for section in [
+                "[dependencies]",
+                "[workspace.dependencies]",
+                "[target.'cfg(unix)'.build-dependencies]",
+            ] {
+                let manifest = format!("{section}\n{dependency}\n");
+                assert!(verify_generated(&manifest).is_err(), "accepted {manifest}");
+            }
         }
-    }
-
-    #[test]
-    fn refuses_extra_sources_on_an_already_pinned_dependency() {
-        let original = "leptoskit = { version = \"=0.1.0\", default-features = false }\n";
-        let changed = pin(original).unwrap().replace(" }", ", path = \"other\" }");
-        assert!(pin(&changed).is_err());
     }
 }

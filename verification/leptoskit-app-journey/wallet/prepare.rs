@@ -86,9 +86,9 @@ fn plan(sdk: &Path, project: &Path, runtime: NativeRuntime) -> Result<Vec<(PathB
         edits.push((path.clone(), fs::read_to_string(path)?));
     }
 
-    for (path, contents) in &mut edits {
+    for (path, contents) in &edits {
         if path.file_name().is_some_and(|name| name == "Cargo.toml") {
-            *contents = framework::pin(contents)?;
+            framework::verify_generated(contents)?;
         }
     }
 
@@ -219,12 +219,18 @@ fn guest_entry(original: &str) -> Result<String> {
     let original_event = "leptoskit::guest::dispatch(node, kind, ptr, len)\n}";
     let previous_event = "let result = leptoskit::guest::dispatch(node, kind, ptr, len);\n\twallet_fixture::poll();\n\tresult\n}";
     let current_event = "let result = leptoskit::guest::dispatch(node, kind, ptr, len);\n\twallet_fixture::event(node, kind, result);\n\twallet_fixture::poll();\n\tresult\n}";
+    // The generated `leptoskit_poll` export drives the runtime's own executor;
+    // the fixture's executor runs after it on the same host wake.
+    let original_poll = "leptoskit::guest::poll();\n}";
+    let current_poll = "leptoskit::guest::poll();\n\twallet_fixture::poll();\n}";
     let source = original.replace(original_main, "wallet_fixture::main();");
     let source = source.replace(original_event, current_event);
     let source = source.replace(previous_event, current_event);
+    let source = source.replace(original_poll, current_poll);
 
     if source.matches("wallet_fixture::main();").count() != 1
         || source.matches(current_event).count() != 1
+        || source.matches(current_poll).count() != 1
     {
         return Err("generated entry contract changed; inspect the new public template".into());
     }
@@ -244,7 +250,7 @@ fn guest_dependencies(sdk: &Path) -> Vec<String> {
         format!("solana_kit_wallet = {{ path = {wallet:?}, features = [\"mwa\"] }}\n"),
         format!("solana_kit_client = {{ path = {client:?}, features = [\"confirmation-factories\"] }}\n"),
         format!("solana_kit_system = {{ path = {system:?} }}\n"),
-        format!("leptoskit_bridge = {{ version = \"=0.1.0\", git = \"https://github.com/ifiokjr/leptoskit\", rev = {:?}, features = [\"guest\"] }}\n", framework::REVISION),
+        "leptoskit_bridge = { version = \"=0.3.0\", features = [\"guest\"] }\n".into(),
         "futures = { version = \"=0.3.34\", default-features = false, features = [\"executor\", \"std\"] }\n".into(),
         "base64 = \"=0.22.1\"\n".into(),
         "serde_json = \"=1.0.154\"\n".into(),
