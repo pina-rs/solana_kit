@@ -1,6 +1,8 @@
+<!-- {=brandHeader|trim} -->
 <p align="center">
   <img src="https://raw.githubusercontent.com/pina-rs/solana_kit/main/assets/brand/solana-kit-mark.png" alt="Solana Kit" width="112" height="112">
 </p>
+<!-- {/brandHeader} -->
 
 # solana_kit_surfpool
 
@@ -20,6 +22,8 @@ transport, correlation IDs, JSON admission, byte limits and depth limits. Supply
 the native, browser, WASI or interpreted Wasm transport appropriate to your host.
 Futures may retain local `Rc` values. The library starts no executor or retries.
 
+<!-- {=surfpoolFundExample|trim|codeBlock:"rust"} -->
+
 ```rust
 use solana_kit_client::{Client, Transport};
 use solana_kit_core::Address;
@@ -34,6 +38,8 @@ async fn fund<T: Transport>(rpc: Client<T>, address: Address)
     Ok(())
 }
 ```
+
+<!-- {/surfpoolFundExample} -->
 
 `cheatcodes` contains the complete method family. `builders` provides account,
 token, reset and stream builders. Numeric requests use `u64`; typed response

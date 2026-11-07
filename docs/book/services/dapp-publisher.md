@@ -8,15 +8,19 @@ Publishing to the Solana dApp Store is split across two crates. `solana_kit_dapp
 
 <Tab label="cargo install">
 
+<!-- {=publisherInstall|trim|codeBlock:"sh"} -->
 ```sh
 cargo install --git https://github.com/pina-rs/solana_kit solana_kit_dapp_publisher_cli
 ```
+<!-- {/publisherInstall} -->
 
 From a checkout:
 
+<!-- {=publisherInstallLocal|trim|codeBlock:"sh"} -->
 ```sh
 cargo install --path crates/solana_kit_dapp_publisher_cli
 ```
+<!-- {/publisherInstallLocal} -->
 
 </Tab>
 
@@ -144,6 +148,7 @@ Use `solana_kit_dapp_publisher` directly to build your own publishing tool. Ever
 | `portal`   | `portal` module: fourteen typed tRPC procedures over `rest::Transport<PortalService>`, an `Uploader` trait for the binary PUT, and `create_ingestion_with_retry` |
 | `workflow` | `workflow` module: caller-driven ingestion, resume, polling, metadata hydration and the completion stages. Implies `portal` and `crypto`.                        |
 
+<!-- {=publisherAttestationExample|trim|codeBlock:"rust"} -->
 ```rust
 use solana_kit_core::{Hash, codecs::Limits};
 use solana_kit_dapp_publisher::{AttestationMessage, RequestId};
@@ -154,6 +159,7 @@ let message = AttestationMessage::new(100, Hash::from_bytes([0; 32]), request_id
 // Present message.bytes() to the application's approved Ed25519 signer.
 # Ok::<(), solana_kit_dapp_publisher::Error>(())
 ```
+<!-- {/publisherAttestationExample} -->
 
 `validate_prepared_transaction` takes the complete wire bytes and a `ReleaseMint` or `VerifyCollection` policy. It checks that only the Compute Budget and Token Metadata programs are invoked, that the signer set is exactly what you expect, and that every signature already present is valid. It then returns a sealed transaction for you to sign. The seal confirms only that documented policy. It does not prove instruction intent, account authenticity, economic effects or blockhash freshness. The library performs no network requests, file reads or signing.
 

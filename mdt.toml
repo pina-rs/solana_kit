@@ -1,0 +1,26 @@
+# Reusable documentation is defined once in .templates/*.t.md and synced by mdt.
+# Run `mdt update` after editing a provider or one of its data inputs, and
+# `mdt check` before pushing. See docs/book/contributing/docs.md.
+[data]
+references = "docs/planning/references.toml"
+upstream = "docs/planning/upstream-versions.toml"
+
+[exclude]
+patterns = [
+  "target/",
+  "docs/dist/",
+  "docs/book/theme/ink/",
+  "node_modules/",
+]
+
+[[formatters]]
+command = "dprint fmt --stdin \"{{ filePath }}\""
+patterns = [
+  "README.md",
+  "crates/**/README.md",
+  "docs/book/reference/upstream-compatibility.md",
+]
+
+[[formatters]]
+command = "rustfmt --edition 2024"
+patterns = ["**/*.rs"]

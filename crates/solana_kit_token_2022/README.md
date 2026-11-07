@@ -7,8 +7,12 @@ custom errors and explicit program identities. Default dependencies are only Kit
 core and its pure base58 dependency. The optional `client` feature adds typed RPC
 fetching through a caller-owned Kit transport and executor.
 
-This SDK is exclusively for off-chain application clients. On-chain programs should
-use Pina or official Solana program libraries.
+<!-- {=offchainSdkNotice|trim} -->
+
+This SDK is exclusively for off-chain application clients. On-chain programs
+should use Pina or official Solana program libraries.
+
+<!-- {/offchainSdkNotice} -->
 
 ```rust
 use solana_kit_core::{Address, codecs::Limits};

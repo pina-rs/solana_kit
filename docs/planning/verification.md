@@ -15,6 +15,12 @@ rustfmt +1.99.1 --edition 2024 --check tools/check_plan.rs
 rustc +1.99.1 --edition=2024 -D warnings tools/check_plan.rs -o /tmp/solana-kit-check-plan
 /tmp/solana-kit-check-plan
 
+rustfmt +1.99.1 --edition 2024 --check tools/check_upstream.rs
+rustc +1.99.1 --edition=2024 -D warnings tools/check_upstream.rs -o /tmp/solana-kit-check-upstream
+/tmp/solana-kit-check-upstream
+
+mdt check
+
 cargo +1.99.1 fmt --all --check
 cargo +1.99.1 test --workspace --all-features --locked
 cargo +1.99.1 clippy --workspace --all-targets --all-features --locked -- -D warnings
@@ -52,7 +58,16 @@ or verified claims. Current rows are all `inventoried`. A package-level row is
 an index; implementation phases must add public-capability and runtime evidence
 before marking a whole package verified.
 
-The audit ran this check against Dart commit
+The upstream checker validates the compatibility inputs in `references.toml` and
+`upstream-versions.toml`. The tables in `README.md` and
+`docs/book/reference/upstream-compatibility.md` are rendered from those files by
+`mdt` through `.templates/upstream.t.md`; run `mdt update` after editing either
+input. The checker fails when the newest parity row disagrees with the pinned
+Dart commit or its `@solana/kit` marker, when the recorded workspace version
+disagrees with `solana_kit_core`, or when a pin is missing from the `sources`
+list.
+
+The audit ran the package check against Dart commit
 `0138bb956d2d81ccc0c56edc602401c0df2f2b46` and found all 71 top-level packages.
 Reference project tests and generated apps were not run. System Program crate
 metadata was inspected with `cargo info`; its selected target graph and behavior

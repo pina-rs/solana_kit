@@ -1,6 +1,8 @@
+<!-- {=brandHeader|trim} -->
 <p align="center">
   <img src="https://raw.githubusercontent.com/pina-rs/solana_kit/main/assets/brand/solana-kit-mark.png" alt="Solana Kit" width="112" height="112">
 </p>
+<!-- {/brandHeader} -->
 
 # solana_kit_core
 
@@ -14,9 +16,13 @@ signing and strict verification through RustCrypto implementations.
 The independent `keccak` feature adds original Keccak-256 through RustCrypto;
 `bigint-codecs` adds arbitrary-width integer codecs using `num-bigint`.
 
+<!-- {=offchainOnly:"This crate"|trim} -->
+
 This crate is only for off-chain application code. Do not use it in Solana
 on-chain programs; use Pina or official Solana program libraries instead.
 `no_std + alloc` enables portable clients and does not imply on-chain support.
+
+<!-- {/offchainOnly} -->
 
 The crate uses `no_std` plus `alloc`, with no executor, JavaScript, filesystem,
 network, or random-number source. Callers supply signing seeds and own the

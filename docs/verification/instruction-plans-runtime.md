@@ -88,5 +88,7 @@ validator coverage or installed desktop/mobile journeys. Callbacks own external
 effects already performed. Depth 512 and width 512 remain bounded probes;
 recursive Plan operations and drop do not promise arbitrary-depth stack safety.
 
+<!-- {=offchainSdkNotice|trim} -->
 This SDK is exclusively for off-chain application clients. On-chain programs
 should use Pina or official Solana program libraries.
+<!-- {/offchainSdkNotice} -->
