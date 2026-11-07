@@ -98,7 +98,8 @@ fn collect_dependencies<'a>(
                 .and_then(toml::Value::as_str)
                 .unwrap_or(name);
 
-            if package == "leptoskit" || package.starts_with("leptoskit_") {
+            // Select by either name so a framework key cannot alias another crate.
+            if is_framework(name) || is_framework(package) {
                 selected.push(
                     dependency
                         .as_table()
@@ -111,8 +112,15 @@ fn collect_dependencies<'a>(
     Ok(())
 }
 
+fn is_framework(package: &str) -> bool {
+    package == "leptoskit" || package.starts_with("leptoskit_")
+}
+
 fn same_source(dependency: &&toml::Table) -> bool {
+    let package = dependency.get("package").map(toml::Value::as_str);
+
     dependency.get("version").and_then(toml::Value::as_str) == Some(VERSION)
+        && package.is_none_or(|package| package.is_some_and(is_framework))
         && SOURCE_KEYS.iter().all(|key| !dependency.contains_key(*key))
 }
 
@@ -183,6 +191,8 @@ mod tests {
             "leptoskit = { path = \"framework\" }",
             "leptoskit = { workspace = true }",
             "renamed = { package = \"leptoskit\", version = \"=0.2.0\" }",
+            "leptoskit = { package = \"other\", version = \"=0.3.0\" }",
+            "leptoskit_bridge = { package = 3, version = \"=0.3.0\" }",
         ] {
             for section in [
                 "[dependencies]",
