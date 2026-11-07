@@ -37,11 +37,10 @@ the completion; dropping that completion abandons delivery without retaining a j
 your interpreter alive; `HttpHost` then unloads its interpreter. Drop aborts work as a last resort; only awaited
 shutdown proves that accounting and native resources have terminated.
 
-The current source selects the compatible public LeptosKit pin
-`7437097c52aa68a3401bd378764e051ed4c9165a` for the required guest Call identity API.
-The manifest and workspace lockfiles select this revision.
-Registry publication requires an
-available compatible upstream release. Component publishing remains disabled.
+The current source selects the published LeptosKit 0.3.0 release (`=0.3.0`) from
+crates.io for the required guest Call identity API. The manifest, workspace and
+verification lockfiles select this release. Registry publication remains gated by
+the repository's release selection and authorization process.
 Headless interpreted execution does not establish generated desktop, Android or
 iOS application integration. Those installed application loops must wire this
 owner and guest executor explicitly.
@@ -81,9 +80,9 @@ complete binary frame, while the existing RPC cap still applies to its JSON body
 The [current transport receipt](../../docs/verification/provider-rest-current.md)
 records actual guest REST requests, denial, body bounds, application routing and
 joined shutdown under production wasmi. Complete provider-operation replay and
-installed-platform REST journeys remain separate. The selected framework revision is public commit
-`7437097c52aa68a3401bd378764e051ed4c9165a`, tree
-`f4048de8e271deaf882de45e476fba554f937890`. A source revision identifies the
+installed-platform REST journeys remain separate. The selected framework release is LeptosKit
+0.3.0 (`v0.3.0`, commit `2e575b1e7e8100910667e7c2e1472a792d569c95`, tree
+`39afdb782bf49f3439fafcda1b6712da5bbac998`). A release identifies the
 dependency; the individual transport receipts establish execution coverage.
 
 ## Optional wallet controls and Android platform
@@ -115,9 +114,9 @@ guest. Runtime selection `solana-wallet` installs
 `wallet_service::from_app_dirs` and Android's `MwaPlatform`; these own the distinct
 bridge names `solana-wallet-session` and `solana-wallet-platform`. This hybrid
 registration uses the public framework support in
-[LeptosKit](https://github.com/ifiokjr/leptoskit/pull/181), including
-[Android scheme visibility](https://github.com/ifiokjr/leptoskit/pull/186).
-The SDK and generated application select the same Git revision. Headless tests
+[LeptosKit](https://github.com/leptoskit/leptoskit/pull/181), including
+[Android scheme visibility](https://github.com/leptoskit/leptoskit/pull/186).
+The SDK and generated application select the same published release. Headless tests
 and generated source checks do not establish installed application support.
 
 `GuestMobileWallet::connect_android` retains a real pending bridge lease while it

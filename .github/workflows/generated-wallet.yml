@@ -13,8 +13,9 @@ env:
   GIT_HTTP_USER_AGENT: solana-kit-verification
   CARGO_INCREMENTAL: "0"
   RUSTUP_TOOLCHAIN: "1.99.1"
-  LEPTOSKIT_REVISION: 7437097c52aa68a3401bd378764e051ed4c9165a
-  LEPTOSKIT_SOURCE: https://github.com/ifiokjr/leptoskit
+  LEPTOSKIT_REVISION: 2e575b1e7e8100910667e7c2e1472a792d569c95
+  LEPTOSKIT_SOURCE: https://github.com/leptoskit/leptoskit
+  LEPTOSKIT_REPOSITORY: leptoskit/leptoskit
 
 jobs:
   generated-wallet-guest:
@@ -27,7 +28,7 @@ jobs:
 
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          repository: ifiokjr/leptoskit
+          repository: ${{ env.LEPTOSKIT_REPOSITORY }}
           ref: ${{ env.LEPTOSKIT_REVISION }}
           path: framework
           persist-credentials: false
@@ -100,9 +101,11 @@ jobs:
 
             cargo +1.99.1 metadata --manifest-path "$app/Cargo.toml" --format-version 1 \
               > "$RUNNER_TEMP/$fixture-consumer-metadata.json"
-            jq -e --arg revision "$LEPTOSKIT_REVISION" --arg source "$LEPTOSKIT_SOURCE" '
-              [.packages[] | select(.name | startswith("leptoskit")) | .source] |
-              unique == ["git+\($source)?rev=\($revision)#\($revision)"]
+            jq -e '
+              [.packages[] | select(.name | startswith("leptoskit"))] |
+              length > 0 and
+              all(.source == "registry+https://github.com/rust-lang/crates.io-index" and
+                .version == "0.3.0")
             ' "$RUNNER_TEMP/$fixture-consumer-metadata.json"
           done
 
@@ -167,7 +170,7 @@ jobs:
 
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          repository: ifiokjr/leptoskit
+          repository: ${{ env.LEPTOSKIT_REPOSITORY }}
           ref: ${{ env.LEPTOSKIT_REVISION }}
           path: framework
           persist-credentials: false
@@ -441,7 +444,7 @@ jobs:
 
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          repository: ifiokjr/leptoskit
+          repository: ${{ env.LEPTOSKIT_REPOSITORY }}
           ref: ${{ env.LEPTOSKIT_REVISION }}
           path: framework
           persist-credentials: false

@@ -26,8 +26,6 @@ jobs:
           rustup toolchain install 1.99.1 --profile minimal --component rustfmt --component clippy \
             --target wasm32-unknown-unknown
 
-          rustup toolchain install 1.89.0 --profile minimal
-
       - name: Build actual guest and execute real HTTP TLS lifecycle
         run: |
           set -euo pipefail
@@ -56,7 +54,7 @@ jobs:
           cargo +1.99.1 test --locked --manifest-path verification/leptoskit-http/Cargo.toml \
             --workspace
 
-          cargo +1.89.0 check --locked -p solana_kit_leptoskit --features host
+          cargo +1.99.1 check --locked -p solana_kit_leptoskit --features host
 
           cargo +1.99.1 fmt --all --check
 

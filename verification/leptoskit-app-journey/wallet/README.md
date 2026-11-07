@@ -23,10 +23,10 @@ a bounded application queue, not consumed by a second Events receiver.
 The selected runtime is `solana-wallet`. It installs Rust
 `wallet_service::from_app_dirs` and Android `dev.solanakit.wallet.MwaPlatform`.
 Their actual bridge names are distinct: `solana-wallet-session` and
-`solana-wallet-platform`. The SDK and generated application select framework commit
-`7437097c52aa68a3401bd378764e051ed4c9165a`, which supports hybrid registration and
-Android action/scheme visibility queries. Normal Git dependencies give every
-framework package the same Rust source identity. Cargo patch and replace tables
+`solana-wallet-platform`. The SDK and generated application select the published
+LeptosKit 0.3.0 release, which supports hybrid registration and Android
+action/scheme visibility queries. Exact registry dependencies give every
+framework package the same Rust crate identity. Cargo patch and replace tables
 are rejected.
 
 `prepare-wallet-rpc` instead selects the private [composed runtime](../runtime/README.md)

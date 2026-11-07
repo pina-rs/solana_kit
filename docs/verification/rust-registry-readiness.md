@@ -39,18 +39,17 @@ The committed review artifact
 holds all 35 configured Cargo packages with an explicit decision, version and
 reason. Its scope is the reviewed first-publish set, not whole-SDK acceptance:
 
-| Decision           | Count | Packages                                                                                                                                         |
-| ------------------ | ----: | ------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `public`           |    13 | core, compute budget, memo, signers, system, wallet 0.2.0, associated token account, anchor, client, surfpool, browser, wasi, native (all 0.1.1) |
-| `blocked-upstream` |     1 | leptoskit — `leptoskit_bridge 0.1.0` exists only at Git pin `7437097c52aa68a3401bd378764e051ed4c9165a`, not in the registry                      |
-| `private-fixture`  |     1 | test support — deliberately private, must never publish                                                                                          |
-| `private-deferred` |    19 | manifest `publish = false`; each needs a separate implementation release review                                                                  |
-| `reserved`         |     1 | `solana_kit` 0.0.0 umbrella reservation, not a release target                                                                                    |
+| Decision           | Count | Packages                                                                                                                                                    |
+| ------------------ | ----: | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `public`           |    14 | core, compute budget, memo, signers, system, wallet 0.2.0, associated token account, anchor, client, surfpool, browser, wasi, native, leptoskit (all 0.1.1) |
+| `private-fixture`  |     1 | test support — deliberately private, must never publish                                                                                                     |
+| `private-deferred` |    19 | manifest `publish = false`; each needs a separate implementation release review                                                                             |
+| `reserved`         |     1 | `solana_kit` 0.0.0 umbrella reservation, not a release target                                                                                               |
 
-The plan also records the five publish batches derived from the actual
+The plan also records the six publish batches derived from the actual
 non-dev Cargo graph (normal, build and optional edges; no private transitive
 leak): 1 core → 2 anchor, associated token account, compute budget, memo,
-signers, system, wallet → 3 client → 4 browser, surfpool, wasi → 5 native.
+signers, system, wallet → 3 client → 4 browser, surfpool, wasi → 5 native → 6 leptoskit.
 
 ## The selection guard and its exact contract
 
@@ -63,7 +62,7 @@ the committed release record's `package_publications`, and the actual
 wrong-version, wrong-target (`cargo`/`crates_io`), non-ready and empty
 selections on either side, rejects a public plan entry whose manifest disables
 publication or carries a non-dev Git dependency, rejects public packages that
-depend on non-public workspace packages, and requires the five batches to
+depend on non-public workspace packages, and requires the six batches to
 partition the public set exactly. It binds each input's monochange `kind` and,
 when the config supplies `record_commit`, the readiness `record_commit`.
 
@@ -82,13 +81,13 @@ The contract is deliberately narrow:
 Against the real committed record and the real readiness output
 (`/tmp/solana-kit-all-release-readiness.json`, resolved at `98f34604…`), the
 guard exits nonzero with `selection-mismatch` and 28 blockers: the readiness
-selection is empty (13 expected, 0 observed) and the release record has no
-publication entries (13 expected). `monochange publish readiness` reporting
+selection is empty (14 expected, 0 observed) and the release record has no
+publication entries (14 expected). `monochange publish readiness` reporting
 `ready` with zero packages is correct upstream zero-selection semantics, not
 project readiness — that distinction is exactly what this guard exists to
 keep visible. The full stdout and the machine report are retained at
 `/tmp/solana-kit-rust-release-selection/`. An independently staged simulated
-fixture with the 13 exact selections and publication entries exits 0 with
+fixture with the 14 exact selections and publication entries exits 0 with
 `selection-exact`; that fixture lives only under the evidence root and is a
 unit control for the guard, not a readiness claim.
 
@@ -112,8 +111,9 @@ manifest, not re-run since:
   resolves a fresh dependency graph instead of proving an immutable published
   lock. This remains an immutability limit of the retained evidence.
 - Anonymous crates.io snapshots (38 files under `evidence/registry/`) were
-  fetched 2026-11-05. All 13 public crate names exist with only the `0.0.0`
-  placeholder version; `leptoskit_bridge` has no registry presence at all.
+  fetched 2026-11-05. All 14 public crate names exist: the original thirteen
+  carry only the `0.0.0` placeholder version, and `leptoskit_bridge` 0.3.0 is
+  now published on crates.io.
   A version being absent does not mean the name is claimable: these snapshots
   do not identify owners and are not ownership evidence.
 
@@ -142,14 +142,14 @@ Nothing here establishes trusted publishing or ownership state:
 
 `/tmp/solana-kit-rust-release-selection/policy-proposal.patch` (with its
 `README.md`, outside the repository, not applied to committed source) enables
-`monochange` publication for exactly the 13 reviewed public crates, keeps
+`monochange` publication for exactly the 14 reviewed public crates, keeps
 trusted publishing enabled through the repository's existing crates.io OIDC
 flow (`.github/workflows/publish.yml` exchanges an OIDC identity via
 `rust-lang/crates-io-auth-action`), and adds no maintainer-token bootstrap
 override. The other 22 Cargo packages, including the umbrella, and the npm
 ecosystem stay byte-identical. It was validated only in a disposable `git
 archive` copy with `git apply --check` and `monochange config`, confirming
-exactly 13 packages resolve `publish.enabled = true`. Applying it, configuring
+exactly 14 packages resolve `publish.enabled = true`. Applying it, configuring
 registry-side trusted publishers, and preparing any new release record with
 real publication entries are future authorized actions; the committed record
 must never gain hand-invented ready entries.
@@ -160,6 +160,6 @@ Local macOS evidence only; no Linux/Windows execution. No publication,
 registry write, tag, workflow dispatch, or secret access occurred. The 13
 placeholder crates have unverified owner permissions in this audit. The archives
 exclude lockfiles. `solana_kit` 0.0.0, the fixture and the 19 deferred crates
-are outside this selection by review, and LeptosKit stays blocked until its
-bridge reaches a registry. Selection exactness — the only thing this unit can
+are outside this selection by review, and the LeptosKit dependency is now
+published on crates.io. Selection exactness — the only thing this unit can
 check — is currently not met, and that is the correct, expected state.

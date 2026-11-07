@@ -1,6 +1,6 @@
 # These docs
 
-This book is plain Markdown in `docs/book`. The `docs/site` crate builds it into a static site with [leptoskit_docs](https://github.com/ifiokjr/leptoskit), which handles pages, navigation, search, highlighting and link checks. The hand-drawn look comes from the rough engine in [skribble](https://github.com/openbudgetfun/skribble) (`skribble_rough`). To fix a typo or add a page, you only edit Markdown.
+This book is plain Markdown in `docs/book`. The `docs/site` crate builds it into a static site with [leptoskit_docs](https://github.com/leptoskit/leptoskit), which handles pages, navigation, search, highlighting and link checks. The hand-drawn look comes from the rough engine in [skribble](https://github.com/openbudgetfun/skribble) (`skribble_rough`). To fix a typo or add a page, you only edit Markdown.
 
 ## Build and preview
 

@@ -7,7 +7,7 @@ include = ["src/**", "android/**", "README.md", "LICENSE"]
 license.workspace = true
 readme = "README.md"
 repository = "https://github.com/pina-rs/solana_kit/tree/main/crates/solana_kit_leptoskit"
-rust-version.workspace = true
+rust-version = "1.95"
 description = "Explicit LeptosKit transports and optional wallet controls for off-chain clients"
 
 [features]
@@ -33,10 +33,10 @@ wallet-host = [
 host = ["dep:leptoskit_native", "dep:leptoskit_wasm", "dep:solana_kit_native", "dep:tokio"]
 
 [dependencies]
-leptoskit_bridge = { version = "=0.1.0", git = "https://github.com/ifiokjr/leptoskit", rev = "7437097c52aa68a3401bd378764e051ed4c9165a" }
-leptoskit_bridge_ffi = { version = "=0.1.0", git = "https://github.com/ifiokjr/leptoskit", rev = "7437097c52aa68a3401bd378764e051ed4c9165a", features = ["app"], optional = true }
-leptoskit_native = { version = "=0.1.0", git = "https://github.com/ifiokjr/leptoskit", rev = "7437097c52aa68a3401bd378764e051ed4c9165a", optional = true }
-leptoskit_wasm = { version = "=0.1.0", git = "https://github.com/ifiokjr/leptoskit", rev = "7437097c52aa68a3401bd378764e051ed4c9165a", optional = true }
+leptoskit_bridge = { version = "=0.3.0" }
+leptoskit_bridge_ffi = { version = "=0.3.0", features = ["app"], optional = true }
+leptoskit_native = { version = "=0.3.0", optional = true }
+leptoskit_wasm = { version = "=0.3.0", optional = true }
 libc = { version = "=0.2.191", optional = true }
 serde = { version = "1.0.229", optional = true }
 serde_json = { version = "=1.0.154", optional = true }
@@ -52,7 +52,7 @@ solana_kit_browser = { workspace = true, features = ["wallet"], optional = true 
 
 [dev-dependencies]
 futures-util = { version = "=0.3.34", features = ["sink"] }
-leptoskit_bridge_ffi = { version = "=0.1.0", git = "https://github.com/ifiokjr/leptoskit", rev = "7437097c52aa68a3401bd378764e051ed4c9165a", features = ["app"] }
+leptoskit_bridge_ffi = { version = "=0.3.0", features = ["app"] }
 tokio = { version = "=1.54.1", features = ["rt-multi-thread", "macros", "net", "time", "io-util"] }
 tokio-tungstenite = "=0.29.0"
 wat = "=1.262.0"

@@ -534,9 +534,9 @@ tag, publication or binary was committed or uploaded.
 The [Rust registry readiness audit](../verification/rust-registry-readiness.md)
 compacts the retained registry/archive evidence and commits the reviewed
 first-publish selection as data
-([docs/planning/rust-release-plan.json](rust-release-plan.json)): 13 public
-crates, one upstream-blocked LeptosKit, one private fixture, 19 deferred
-crates and the 0.0.0 umbrella reservation, with the five publish batches.
+([docs/planning/rust-release-plan.json](rust-release-plan.json)): 14 public
+crates, one private fixture, 19 deferred crates and the 0.0.0 umbrella
+reservation, with the six publish batches.
 `cargo xtask rust-release-selection` guards that selection against the
 configured packages, actual Cargo metadata, the committed release record and
 the observed readiness JSON, and reports only `selection-exact` or
