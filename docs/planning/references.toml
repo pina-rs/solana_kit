@@ -1,29 +1,44 @@
 # Immutable research inputs. These pins describe references, not Rust compatibility claims.
+# Each section's `crates` and `role` feed the rendered upstream table in
+# README.md and docs/book/reference/upstream-compatibility.md. `selected_commit`
+# records a dependency revision that moved past the inspected research pin.
+# `sources` fixes the table order rendered by .templates/upstream.t.md.
 inspected_on = "2026-10-22"
+sources = ["dart", "wasm_solana", "leptoskit", "surfpool"]
 
 [dart]
 repository = "https://github.com/openbudgetfun/solana_kit"
 commit = "0138bb956d2d81ccc0c56edc602401c0df2f2b46"
+upstream_kit_repository = "https://github.com/anza-xyz/kit"
 upstream_kit_reference = "8.5.0"
 top_level_dart_packages = 70
 top_level_renderer_packages = 1
+crates = ["*"]
+role = "comparison baseline"
 
 [wasm_solana]
 repository = "https://github.com/pina-rs/wasm_solana"
 commit = "6f43f957a069902195fe55bff89b5531211e170a"
+crates = ["solana_kit_browser", "solana_kit_native"]
+role = "transport research"
 
 [leptoskit]
 repository = "https://github.com/ifiokjr/leptoskit"
 commit = "fecf8628d326ff7b03f295523e6bb584c3fdf88d"
+selected_commit = "7437097c52aa68a3401bd378764e051ed4c9165a"
 guest_target = "wasm32-unknown-unknown"
 guest_engine = "wasmi"
 guest_engine_major = 2
+crates = ["solana_kit_leptoskit"]
+role = "runtime dependency"
 
 [surfpool]
 inspected_on = "2026-10-28"
 repository = "https://github.com/solana-foundation/surfpool"
 release = "v1.7.0"
 commit = "9be726da6456b58a3b39c099885c6c5904da4543"
+crates = ["solana_kit_surfpool"]
+role = "external CLI research target"
 published_at = "2026-10-28T00:02:23Z"
 release_url = "https://github.com/solana-foundation/surfpool/releases/tag/v1.7.0"
 http_request_body_cap_bytes = 15728640

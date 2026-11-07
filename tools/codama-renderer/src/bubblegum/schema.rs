@@ -1,4 +1,6 @@
+//! <!-- {=rendererSchemaModuleDocs|trim|linePrefix:"//! ":true} -->
 //! Source-table lowering reuses the common Codama model and its closed validation.
+//! <!-- {/rendererSchemaModuleDocs} -->
 use crate::schema::{Error, identifier};
 use serde_json::{Value, json};
 use sha2::{Digest, Sha256};
@@ -7,7 +9,9 @@ pub(super) fn number(name: &str) -> Value {
     json!({"kind":"numberTypeNode","format":name,"endian":"le"})
 }
 
+/// <!-- {=rendererWireDocs|trim|linePrefix:"/// ":true} -->
 /// This small source vocabulary is not a second wire codec or emitter.
+/// <!-- {/rendererWireDocs} -->
 pub(super) fn wire(name: &str) -> Result<Value, Error> {
     if let Some(item) = name.strip_prefix('?') {
         return Ok(json!({"kind":"optionTypeNode","item":wire(item)?,"prefix":number("u8")}));

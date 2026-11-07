@@ -19,6 +19,7 @@ The optional `crypto` feature adds `get_ata`, which derives associated token add
 
 Wrap an existing `Client` in `Surfnet` and pass requests to `execute`:
 
+<!-- {=surfpoolFundExample|trim|codeBlock:"rust"} -->
 ```rust
 use solana_kit_client::{Client, Transport};
 use solana_kit_core::Address;
@@ -33,6 +34,7 @@ async fn fund<T: Transport>(rpc: Client<T>, address: Address)
     Ok(())
 }
 ```
+<!-- {/surfpoolFundExample} -->
 
 `Surfnet::rpc()` borrows the same client for ordinary Solana RPC calls, and `into_rpc()` hands it back to you. `Surfnet` also has small helpers that run cheatcodes in order and stop at the first failure: `fund_sol`, `fund_sol_many`, `fund_token`, `fund_token_many`, `set_token_balance`, `set_token_account` and `minimum_balance`.
 

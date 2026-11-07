@@ -40,6 +40,7 @@ rustup target add wasm32-unknown-unknown wasm32-wasip1 wasm32-wasip2
 
 Add the crates you need as git dependencies. Cargo finds each crate by name inside the repository workspace. A native application that reads RPC data and builds System transfers looks like this:
 
+<!-- {=clientDependencyExample|trim|codeBlock:"toml"} -->
 ```toml
 [dependencies]
 solana_kit_core = { git = "https://github.com/pina-rs/solana_kit", features = ["crypto"] }
@@ -48,6 +49,7 @@ solana_kit_native = { git = "https://github.com/pina-rs/solana_kit" }
 solana_kit_system = { git = "https://github.com/pina-rs/solana_kit" }
 tokio = { version = "1", features = ["rt-multi-thread", "macros"] }
 ```
+<!-- {/clientDependencyExample} -->
 
 All crates from one repository revision must match. Pin a commit with `rev = "…"` (the same value on every line) so a later push to `main` cannot change your build.
 

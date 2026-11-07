@@ -1,15 +1,21 @@
+<!-- {=brandHeader|trim} -->
 <p align="center">
   <img src="https://raw.githubusercontent.com/pina-rs/solana_kit/main/assets/brand/solana-kit-mark.png" alt="Solana Kit" width="112" height="112">
 </p>
+<!-- {/brandHeader} -->
 
 # solana_kit
 
 This is a name-reservation placeholder for the Rust Solana Kit project at
 <https://github.com/pina-rs/solana_kit>.
 
+<!-- {=offchainOnly:"Solana Kit"|trim} -->
+
 Solana Kit is only for off-chain application code. Do not use it in Solana
 on-chain programs; use Pina or official Solana program libraries instead.
 `no_std + alloc` enables portable clients and does not imply on-chain support.
+
+<!-- {/offchainOnly} -->
 
 There are no SDK APIs in this release. Native, browser WebAssembly, WASI, and
 embedded WebAssembly support are implementation goals, not supported capabilities

@@ -28,6 +28,8 @@ Borsh little-endian decoding: full verification has a 133-byte prefix, partial
 verification has a 134-byte prefix, and remaining account bytes are borrowed.
 Account parsing establishes no owner, guardian authentication or price freshness.
 
+<!-- {=pythAccumulatorExample|trim|codeBlock:"rust"} -->
+
 ```rust
 use solana_kit_core::codecs::{Error, Limits};
 use solana_kit_pyth::{
@@ -40,6 +42,8 @@ fn first_price(data: &[u8], limits: Limits) -> Result<PythPriceFeedMessage, Erro
     parse_pyth_price_feed_message(message, limits)
 }
 ```
+
+<!-- {/pythAccumulatorExample} -->
 
 The reference Dart Wormhole-message helper rejects the upstream fixture's actual
 `AUWV` payload. This Rust implementation follows the official magic, variant,
@@ -119,6 +123,8 @@ authority. Its public fields support explicit program and authority overrides.
 The encoded-VAA and guardian-set accounts have distinct variant fields.
 Duplicate account positions remain intact, including a payer reused as authority.
 
+<!-- {=pythReceiverExample|trim|codeBlock:"rust"} -->
+
 ```rust
 use solana_kit_core::{Address, Instruction, codecs::{Error, Limits}};
 use solana_kit_pyth::{
@@ -138,6 +144,8 @@ fn posted(
     .instruction(Limits::new(4096, 64))
 }
 ```
+
+<!-- {/pythReceiverExample} -->
 
 Parameters borrow the original VAA, message and fixed-width proof hashes.
 Their `encode` methods return Borsh parameters without the discriminator.

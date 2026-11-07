@@ -53,7 +53,7 @@ Every workflow except the publisher release runs on pull requests and on pushes 
 
 | Workflow file | Name | What it covers |
 | --- | --- | --- |
-| `plan.yml` | SDK verification | Native core on Ubuntu, macOS and Windows; MSRV 1.89 checks; conformance with committed success and corruption evidence; the package ledger; the Monostyle gate; monochange validation and release preview |
+| `plan.yml` | SDK verification | Native core on Ubuntu, macOS and Windows; MSRV 1.89 checks; conformance with committed success and corruption evidence; the package ledger; mdt documentation reuse; the generated upstream compatibility tables; the Monostyle gate; monochange validation and release preview |
 | `runtimes.yml` | Runtime conformance | `cargo xtask all`: native, Chrome, Wasmtime Preview 1 and 2, LeptosKit, gates and consumer |
 | `parity.yml` | Capability inventory | `tools/capability_inventory` check and controls against the pinned Dart source, plus `cargo xtask style` |
 | `rpc-design.yml` | Typed RPC design | `solana_kit_client` tests on three OSes, Wasm and WASI target checks, the RPC catalog against the pinned reference |

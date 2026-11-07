@@ -4,6 +4,7 @@ A Solana transaction holds a fee payer, a lifetime, and an ordered list of instr
 
 You need these dependencies:
 
+<!-- {=clientDependencyExample|trim|codeBlock:"toml"} -->
 ```toml
 [dependencies]
 solana_kit_core = { git = "https://github.com/pina-rs/solana_kit", features = ["crypto"] }
@@ -12,6 +13,7 @@ solana_kit_native = { git = "https://github.com/pina-rs/solana_kit" }
 solana_kit_system = { git = "https://github.com/pina-rs/solana_kit" }
 tokio = { version = "1", features = ["rt-multi-thread", "macros"] }
 ```
+<!-- {/clientDependencyExample} -->
 
 <Steps>
 

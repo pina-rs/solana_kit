@@ -1,4 +1,5 @@
 target/
 .monochange/local/
+.mdt/
 docs/dist/
 docs/book/theme/ink/

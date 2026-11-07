@@ -11,6 +11,8 @@ transactions. It adds audited Kit cryptography, the existing Kit Base64 codec,
 and the portable Token Metadata decoder and PDA helpers. No runtime, network
 request, entropy source, key file, signer callback or submission is started.
 
+<!-- {=publisherAttestationExample|trim|codeBlock:"rust"} -->
+
 ```rust
 use solana_kit_core::{Hash, codecs::Limits};
 use solana_kit_dapp_publisher::{AttestationMessage, RequestId};
@@ -21,6 +23,8 @@ let message = AttestationMessage::new(100, Hash::from_bytes([0; 32]), request_id
 // Present message.bytes() to the application's approved Ed25519 signer.
 # Ok::<(), solana_kit_dapp_publisher::Error>(())
 ```
+
+<!-- {/publisherAttestationExample} -->
 
 `validate_prepared_transaction` takes complete wire bytes, a typed `ReleaseMint`
 or `VerifyCollection` policy and explicit limits. Caller expectations bind the

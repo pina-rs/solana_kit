@@ -24,6 +24,7 @@ The crate is unpublished (`publish = false`).
 
 Every parser takes a `solana_kit_core::codecs::Limits` value that caps the bytes and items it allocates.
 
+<!-- {=pythAccumulatorExample|trim|codeBlock:"rust"} -->
 ```rust
 use solana_kit_core::codecs::{Error, Limits};
 use solana_kit_pyth::{
@@ -36,6 +37,7 @@ fn first_price(data: &[u8], limits: Limits) -> Result<PythPriceFeedMessage, Erro
     parse_pyth_price_feed_message(message, limits)
 }
 ```
+<!-- {/pythAccumulatorExample} -->
 
 | Function | Parses |
 | --- | --- |
@@ -86,6 +88,7 @@ Prices and confidence values are arbitrary-precision integers, capped at 8192 te
 
 `ReceiverInstruction` builds `post_update` and `post_update_atomic`. Each has an exact Anchor discriminator, Borsh parameters and seven positional accounts:
 
+<!-- {=pythReceiverExample|trim|codeBlock:"rust"} -->
 ```rust
 use solana_kit_core::{Address, Instruction, codecs::{Error, Limits}};
 use solana_kit_pyth::{
@@ -105,6 +108,7 @@ fn posted(
     .instruction(Limits::new(4096, 64))
 }
 ```
+<!-- {/pythReceiverExample} -->
 
 `ReceiverAccounts::new` uses the standard receiver program, with the payer as write authority. Its fields are public, so you can override them. `PYTH_SOLANA_RECEIVER_PROGRAM`, `PYTH_WORMHOLE_PROGRAM` and `PYTH_PUSH_ORACLE_PROGRAM` match the pinned reference. `random_treasury_id` takes exactly one byte from an entropy callback you provide. The crate has no ambient RNG.
 

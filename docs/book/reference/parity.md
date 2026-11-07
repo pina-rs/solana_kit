@@ -4,7 +4,7 @@ The project tracks its progress against a pinned reference with machine-checked 
 
 ## The reference
 
-The comparison baseline is the Dart Solana Kit at [`openbudgetfun/solana_kit`](https://github.com/openbudgetfun/solana_kit), pinned to commit `0138bb956d2d81ccc0c56edc602401c0df2f2b46`. That project is itself modelled on the TypeScript `@solana/kit`, and its own upstream compatibility marker is `@solana/kit` 8.5.0. This Rust SDK does not compare itself to `@solana/kit` directly, and it makes no compatibility claim against it.
+The comparison baseline is the Dart Solana Kit at [`openbudgetfun/solana_kit`](https://github.com/openbudgetfun/solana_kit), pinned to commit `0138bb956d2d81ccc0c56edc602401c0df2f2b46`. That project is itself modelled on the TypeScript `@solana/kit`. The exact upstream marker and every pinned upstream repository are recorded on [Upstream compatibility](upstream-compatibility.md). This Rust SDK does not compare itself to `@solana/kit` directly, and it makes no compatibility claim against it.
 
 The pinned reference has 70 Dart packages plus one TypeScript Codama renderer: the core SDK, 17 program clients, six external integrations (Helius, Jupiter, Pyth, SNS, Surfpool and the dApp Store publisher), the wallet protocols, Flutter adapters and developer tooling. Every reference pin lives in [`docs/planning/references.toml`](https://github.com/pina-rs/solana_kit/blob/main/docs/planning/references.toml), including Wasm Solana, LeptosKit and Surfpool `v1.7.0`. Area-specific records also pin primary upstream sources where they matter, such as the Pyth crosschain, the Helius SDK and the Photon schema.
 

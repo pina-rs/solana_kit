@@ -166,6 +166,20 @@ Tokio HTTP/1, TLS, and WebSockets.
 </Platforms>
 ```
 
+## Reusable documentation
+
+Some content appears in more than one place: the brand header in every crate README, the off-chain-only notices, and the upstream compatibility tables. It is defined once in `.templates/*.t.md` and synchronized by [mdt](https://github.com/ifiokjr/mdt). A provider block (`<!-- {@name} -->`) holds the content; a consumer block (`<!-- {=name} -->`) receives it. `mdt.toml` maps `docs/planning/references.toml` and `docs/planning/upstream-versions.toml` into template data.
+
+Edit the provider or its data, never a synced consumer. Install the pinned tools with `npm install --global @m-d-t/cli@0.9.8 dprint@0.64.1`, then run:
+
+```sh
+mdt update   # rewrite every consumer
+mdt check    # fail when a consumer or formatter output is stale
+mdt list     # show providers, consumers and links
+```
+
+`mdt.toml` runs dprint over the READMEs and the upstream reference page, and rustfmt over Rust, after injection; other book pages keep their existing formatting. Rust doc comments use `linePrefix` transformers, and the signers adapters and Codama renderer schemas already consume shared providers this way. Keep `*.t.md` out of formatter scope; `.templates/**` is excluded in `dprint.json`. The SDK verification workflow runs `mdt check` on every pull request. When you add a provider, define it in `.templates/`, add its consumers, and run both commands. Do not add a second copy of content just because two pages need it.
+
 ## Site settings
 
 `site()` in `docs/site/src/lib.rs` sets the title, the description, the published URL (`https://kit.pina.rs/`), the repository and the "edit this page" links (which open `docs/book/<path>` on `main`), the favicon and the stylesheet. The [`docs` workflow](https://github.com/pina-rs/solana_kit/blob/main/.github/workflows/docs.yml) runs `fmt`, `clippy`, the tests, and the build on every pull request that touches `docs/book` or `docs/site`, and deploys the site to GitHub Pages from `main`. `docs/book/CNAME` holds the custom domain, `kit.pina.rs`; GitHub redirects `https://pina-rs.github.io/solana_kit/` there.
