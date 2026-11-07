@@ -29,8 +29,9 @@ fragments are rejected. The SDK transports remain general-purpose; these bounds
 belong only to this test fixture. No ambient Solana configuration or credentials
 are used.
 
-The generated native UI thread activates, polls and closes the service outside
-Tokio. The installer remains inert until activation. Two owned Tokio workers run
+The generated native UI thread activates and closes the service outside Tokio.
+On mobile, LeptosKit polls it from its own guest thread between those steps,
+so the owner is `Send` and polling never assumes the installing thread. The installer remains inert until activation. Two owned Tokio workers run
 native I/O. Close aborts and joins HTTP, socket and timer jobs and the wallet
 worker, then drops the runtime outside its entered context. The actual
 interpreter remains owned by LeptosKit's closing application throughout cleanup.
