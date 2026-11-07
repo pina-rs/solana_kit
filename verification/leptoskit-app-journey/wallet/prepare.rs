@@ -86,9 +86,9 @@ fn plan(sdk: &Path, project: &Path, runtime: NativeRuntime) -> Result<Vec<(PathB
         edits.push((path.clone(), fs::read_to_string(path)?));
     }
 
-    for (path, contents) in &mut edits {
+    for (path, contents) in &edits {
         if path.file_name().is_some_and(|name| name == "Cargo.toml") {
-            *contents = framework::pin(contents)?;
+            framework::verify_generated(contents)?;
         }
     }
 

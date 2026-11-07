@@ -125,7 +125,7 @@ fn assert_prepared(sandbox: &Sandbox, name: &str, runtime: NativeRuntime) {
             1,
             "{platform} dependency"
         );
-        assert!(manifest.contains(super::framework::PIN));
+        assert!(manifest.contains(&format!("version = {:?}", super::framework::VERSION)));
     }
 
     let config = sandbox.read("leptoskit.toml");
@@ -145,7 +145,11 @@ fn assert_prepared(sandbox: &Sandbox, name: &str, runtime: NativeRuntime) {
         format!("{name}_app/Cargo.toml"),
         format!("{name}_backend/Cargo.toml"),
     ] {
-        assert!(sandbox.read(&manifest).contains(super::framework::PIN));
+        assert!(
+            sandbox
+                .read(&manifest)
+                .contains(&format!("version = {:?}", super::framework::VERSION))
+        );
     }
 }
 
@@ -317,7 +321,7 @@ default-members = ["."]
 [dependencies]
 {name}_app = {{ path = "{name}_app", default-features = false }}
 {name}_backend = {{ path = "{name}_backend" }}
-leptoskit = {{ version = "0.3.0", default-features = false, features = ["server"] }}
+leptoskit = {{ version = "=0.3.0", default-features = false, features = ["server"] }}
 "#
     )
 }
@@ -332,10 +336,10 @@ publish = false
 
 [dependencies]
 {name}_shared = {{ path = "../{name}_shared" }}
-leptoskit = {{ version = "0.3.0", default-features = false }}
+leptoskit = {{ version = "=0.3.0", default-features = false }}
 
 [build-dependencies]
-leptoskit_build = {{ version = "0.3.0", default-features = false }}
+leptoskit_build = {{ version = "=0.3.0", default-features = false }}
 "#
     )
 }
@@ -350,7 +354,7 @@ publish = false
 
 [dependencies]
 {name}_shared = {{ path = "../{name}_shared" }}
-leptoskit = {{ version = "0.3.0", default-features = false, features = ["server"] }}
+leptoskit = {{ version = "=0.3.0", default-features = false, features = ["server"] }}
 "#
     )
 }
@@ -379,7 +383,7 @@ name = "leptoskit_app"
 crate-type = ["staticlib"]
 
 [target.'cfg(target_os = "{platform}")'.dependencies]
-leptoskit_bridge_ffi = {{ version = "0.3.0", default-features = false, features = ["app"] }}
+leptoskit_bridge_ffi = {{ version = "=0.3.0", default-features = false, features = ["app"] }}
 "#
     )
 }
