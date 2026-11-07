@@ -219,12 +219,18 @@ fn guest_entry(original: &str) -> Result<String> {
     let original_event = "leptoskit::guest::dispatch(node, kind, ptr, len)\n}";
     let previous_event = "let result = leptoskit::guest::dispatch(node, kind, ptr, len);\n\twallet_fixture::poll();\n\tresult\n}";
     let current_event = "let result = leptoskit::guest::dispatch(node, kind, ptr, len);\n\twallet_fixture::event(node, kind, result);\n\twallet_fixture::poll();\n\tresult\n}";
+    // The generated `leptoskit_poll` export drives the runtime's own executor;
+    // the fixture's executor runs after it on the same host wake.
+    let original_poll = "leptoskit::guest::poll();\n}";
+    let current_poll = "leptoskit::guest::poll();\n\twallet_fixture::poll();\n}";
     let source = original.replace(original_main, "wallet_fixture::main();");
     let source = source.replace(original_event, current_event);
     let source = source.replace(previous_event, current_event);
+    let source = source.replace(original_poll, current_poll);
 
     if source.matches("wallet_fixture::main();").count() != 1
         || source.matches(current_event).count() != 1
+        || source.matches(current_poll).count() != 1
     {
         return Err("generated entry contract changed; inspect the new public template".into());
     }

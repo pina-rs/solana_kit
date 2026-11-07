@@ -64,8 +64,3 @@ pub fn event(node: i64, kind: i32, result: i32) {
         trace::press(node, result);
     }
 }
-
-#[unsafe(no_mangle)]
-pub extern "C" fn leptoskit_poll() {
-    poll();
-}

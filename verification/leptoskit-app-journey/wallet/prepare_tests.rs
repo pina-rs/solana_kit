@@ -17,6 +17,9 @@ const ENTRY: &str = concat!(
     "}\n\n",
     "pub extern \"C\" fn leptoskit_event(node: u32, kind: u32, ptr: u32, len: u32) {\n",
     "    leptoskit::guest::dispatch(node, kind, ptr, len)\n",
+    "}\n\n",
+    "pub extern \"C\" fn leptoskit_poll() {\n",
+    "\tleptoskit::guest::poll();\n",
     "}\n",
 );
 
@@ -280,12 +283,19 @@ fn missing_template_leaves_every_generated_file_untouched() {
 
 #[test]
 fn upgrades_previous_guest_event_and_is_idempotent() {
-    let previous = "wallet_fixture::main();\nlet result = leptoskit::guest::dispatch(node, kind, ptr, len);\n\twallet_fixture::poll();\n\tresult\n}";
+    let previous = "wallet_fixture::main();\nlet result = leptoskit::guest::dispatch(node, kind, ptr, len);\n\twallet_fixture::poll();\n\tresult\n}\nleptoskit::guest::poll();\n}";
     let upgraded = guest_entry(previous).unwrap();
 
     assert!(upgraded.contains("wallet_fixture::event(node, kind, result);"));
+    assert!(upgraded.contains("leptoskit::guest::poll();\n\twallet_fixture::poll();\n}"));
     assert_eq!(guest_entry(&upgraded).unwrap(), upgraded);
     assert!(guest_entry("wallet_fixture::main();\nwallet_fixture::poll();").is_err());
+
+    let without_poll = previous.replace("leptoskit::guest::poll();\n}", "");
+    assert!(
+        guest_entry(&without_poll).is_err(),
+        "accepted an entry without the poll export"
+    );
 }
 
 fn config(name: &str) -> String {
