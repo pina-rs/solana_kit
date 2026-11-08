@@ -6,9 +6,68 @@ include_private = false
 package_type = "cargo"
 changelog = { path = "{{ path }}/CHANGELOG.md", format = "keep_a_changelog" }
 
+[source]
+provider = "github"
+owner = "pina-rs"
+repo = "solana_kit"
+
+[source.releases]
+enabled = true
+source = "monochange"
+branches = ["main"]
+enforce_for_tags = true
+enforce_for_publish = true
+enforce_for_commit = false
+changeset_context_timeout_seconds = 120
+
+[source.pull_requests]
+enabled = true
+branch_prefix = "monochange/release"
+base = "main"
+title = "chore(release): prepare release"
+labels = ["release", "automated"]
+auto_merge = false
+
+[cli.release]
+help_text = "Prepare, format, commit, and open the release pull request."
+inputs = [
+  { name = "commit", help_text = "Create the release commit after preparing files", type = "boolean", default = true },
+  { name = "create_pr", help_text = "Push the release commit and open or update the release pull request", type = "boolean", default = true },
+]
+steps = [
+  { name = "prepare release", type = "PrepareRelease", allow_empty_changesets = true, inputs = { format = "json" } },
+  { name = "refresh standalone lockfiles", type = "Command", shell = "bash", command = "bash tools/update-release-lockfiles.sh", when = "{{ number_of_changesets > 0 }}" },
+  { name = "commit release", type = "CommitRelease", inputs = { stage_all = true, no_verify = true }, when = "{{ number_of_changesets > 0 && inputs.commit }}" },
+  { name = "open release request", type = "OpenReleaseRequest", inputs = { stage_all = true, no_verify = true }, when = "{{ number_of_changesets > 0 && inputs.commit && inputs.create_pr }}" },
+]
+
+[cli.publish-check]
+help_text = "Validate the release and preview package publishing in dry-run mode."
+steps = [
+  { name = "publish packages dry run", type = "PublishPackages" },
+]
+
+[ecosystems.cargo]
+enabled = true
+lockfile_commands = [{ command = "cargo update --workspace", cwd = ".", shell = "bash" }]
+
+[ecosystems.cargo.publish]
+enabled = true
+mode = "builtin"
+registry = "crates_io"
+trusted_publishing = { enabled = true, mode = "preferred", repository = "pina-rs/solana_kit", workflow = "publish.yml" }
+
+[ecosystems.cargo.auto_discover]
+enabled = false
+
+[changesets.affected]
+enabled = true
+required = true
+
 [package.solana_kit]
 path = "crates/solana_kit"
 type = "cargo"
+changelog = false
 
 [package.solana_kit.publish]
 enabled = false
@@ -18,38 +77,6 @@ trusted_publishing = false
 [package.solana_kit.publish.placeholder]
 readme_file = "crates/solana_kit/README.md"
 
-[package.solana_kit_core]
-path = "crates/solana_kit_core"
-type = "cargo"
-changelog = false
-publish = { enabled = false }
-
-[package.solana_kit_client]
-path = "crates/solana_kit_client"
-type = "cargo"
-changelog = false
-publish = { enabled = false }
-
-# Add implemented client/adapter packages here when their versions converge.
-[package.solana_kit_jupiter]
-path = "crates/solana_kit_jupiter"
-type = "cargo"
-changelog = false
-publish = { enabled = false }
-
-[package.solana_kit_native]
-path = "crates/solana_kit_native"
-type = "cargo"
-changelog = false
-publish = { enabled = false }
-
-[package.solana_kit_signers]
-path = "crates/solana_kit_signers"
-type = "cargo"
-changelog = false
-publish = { enabled = false }
-
-# The dependency-free umbrella reservation remains independently at 0.0.0.
 [group.sdk]
 packages = [
   "solana_kit_core",
@@ -61,73 +88,232 @@ packages = [
   "solana_kit_wasi",
 ]
 changelog = { path = "crates/solana_kit_core/CHANGELOG.md", format = "keep_a_changelog" }
+release = true
+tag = true
+version_format = "primary"
 
-[ecosystems.cargo]
-enabled = true
-lockfile_commands = [{ command = "cargo update --workspace", cwd = ".", shell = "bash" }]
-
-[ecosystems.cargo.publish]
-enabled = false
-
-[ecosystems.cargo.auto_discover]
-enabled = false
-
-[source]
-provider = "github"
-owner = "pina-rs"
-repo = "solana_kit"
-
-[changesets.affected]
-enabled = true
-required = true
-
-[package.solana_kit_system]
-path = "crates/solana_kit_system"
+[package.solana_kit_core]
+path = "crates/solana_kit_core"
 type = "cargo"
-publish = { enabled = false }
+changelog = false
+publish = { enabled = true }
+versioned_files = [
+  { path = "Cargo.toml", type = "cargo", fields = ["workspace.dependencies.solana_kit_core"] },
+]
 
-[package.solana_kit_token_2022]
-path = "crates/solana_kit_token_2022"
+[package.solana_kit_client]
+path = "crates/solana_kit_client"
 type = "cargo"
-publish = { enabled = false }
+changelog = false
+publish = { enabled = true }
+versioned_files = [
+  { path = "Cargo.toml", type = "cargo", fields = ["workspace.dependencies.solana_kit_client"] },
+]
+
+[package.solana_kit_native]
+path = "crates/solana_kit_native"
+type = "cargo"
+changelog = false
+publish = { enabled = true }
+versioned_files = [
+  { path = "Cargo.toml", type = "cargo", fields = ["workspace.dependencies.solana_kit_native"] },
+]
+
+[package.solana_kit_signers]
+path = "crates/solana_kit_signers"
+type = "cargo"
+changelog = false
+publish = { enabled = true }
+versioned_files = [
+  { path = "Cargo.toml", type = "cargo", fields = ["workspace.dependencies.solana_kit_signers"] },
+]
 
 [package.solana_kit_browser]
 path = "crates/solana_kit_browser"
 type = "cargo"
 changelog = false
-publish = { enabled = false }
+publish = { enabled = true }
+versioned_files = [
+  { path = "Cargo.toml", type = "cargo", fields = ["workspace.dependencies.solana_kit_browser"] },
+]
 
 [package.solana_kit_leptoskit]
 path = "crates/solana_kit_leptoskit"
 type = "cargo"
 changelog = false
-publish = { enabled = false }
-
-[package.solana_kit_compute_budget]
-path = "crates/solana_kit_compute_budget"
-type = "cargo"
-publish = { enabled = false }
-
-[package.solana_kit_wallet]
-path = "crates/solana_kit_wallet"
-type = "cargo"
-publish = { enabled = false }
-versioned_files = [{ path = "Cargo.toml", type = "cargo", fields = ["workspace.dependencies.solana_kit_wallet"] }]
+publish = { enabled = true }
 
 [package.solana_kit_wasi]
 path = "crates/solana_kit_wasi"
 type = "cargo"
 changelog = false
-publish = { enabled = false }
+publish = { enabled = true }
+
+[package.solana_kit_compute_budget]
+path = "crates/solana_kit_compute_budget"
+type = "cargo"
+publish = { enabled = true }
+versioned_files = [
+  { path = "Cargo.toml", type = "cargo", fields = ["workspace.dependencies.solana_kit_compute_budget"] },
+]
+release = true
+tag = true
 
 [package.solana_kit_memo]
 path = "crates/solana_kit_memo"
 type = "cargo"
-publish = { enabled = false }
+publish = { enabled = true }
+release = true
+tag = true
+
+[package.solana_kit_system]
+path = "crates/solana_kit_system"
+type = "cargo"
+publish = { enabled = true }
+versioned_files = [
+  { path = "Cargo.toml", type = "cargo", fields = ["workspace.dependencies.solana_kit_system"] },
+]
+release = true
+tag = true
+
+[package.solana_kit_wallet]
+path = "crates/solana_kit_wallet"
+type = "cargo"
+publish = { enabled = true }
+release = true
+tag = true
+versioned_files = [{ path = "Cargo.toml", type = "cargo", fields = ["workspace.dependencies.solana_kit_wallet"] }]
 
 [package.solana_kit_associated_token_account]
 path = "crates/solana_kit_associated_token_account"
 type = "cargo"
+publish = { enabled = true }
+versioned_files = [
+  { path = "Cargo.toml", type = "cargo", fields = ["workspace.dependencies.solana_kit_associated_token_account"] },
+]
+release = true
+tag = true
+
+[package.solana_kit_anchor]
+path = "crates/solana_kit_anchor"
+type = "cargo"
+publish = { enabled = true }
+release = true
+tag = true
+
+[package.solana_kit_surfpool]
+path = "crates/solana_kit_surfpool"
+type = "cargo"
+publish = { enabled = true }
+versioned_files = [
+  { path = "Cargo.toml", type = "cargo", fields = ["workspace.dependencies.solana_kit_surfpool"] },
+]
+release = true
+tag = true
+
+[package.solana_kit_account_compression]
+path = "crates/solana_kit_account_compression"
+type = "cargo"
+publish = { enabled = false }
+versioned_files = [
+  { path = "Cargo.toml", type = "cargo", fields = ["workspace.dependencies.solana_kit_account_compression"] },
+]
+
+[package.solana_kit_address_lookup_table]
+path = "crates/solana_kit_address_lookup_table"
+type = "cargo"
+publish = { enabled = false }
+
+[package.solana_kit_attestation_service]
+path = "crates/solana_kit_attestation_service"
+type = "cargo"
+publish = { enabled = false }
+
+[package.solana_kit_config]
+path = "crates/solana_kit_config"
+type = "cargo"
+publish = { enabled = false }
+
+[package.solana_kit_dapp_publisher]
+path = "crates/solana_kit_dapp_publisher"
+type = "cargo"
+publish = { enabled = false }
+versioned_files = [
+  { path = "Cargo.toml", type = "cargo", fields = ["workspace.dependencies.solana_kit_dapp_publisher"] },
+]
+
+[package.solana_kit_dapp_publisher_cli]
+path = "crates/solana_kit_dapp_publisher_cli"
+type = "cargo"
+changelog = false
+publish = { enabled = false }
+
+[package.solana_kit_helius]
+path = "crates/solana_kit_helius"
+type = "cargo"
+publish = { enabled = false }
+
+[package.solana_kit_jupiter]
+path = "crates/solana_kit_jupiter"
+type = "cargo"
+changelog = false
+publish = { enabled = false }
+
+[package.solana_kit_loader]
+path = "crates/solana_kit_loader"
+type = "cargo"
+publish = { enabled = false }
+
+[package.solana_kit_mpl_bubblegum]
+path = "crates/solana_kit_mpl_bubblegum"
+type = "cargo"
+publish = { enabled = false }
+
+[package.solana_kit_mpl_core]
+path = "crates/solana_kit_mpl_core"
+type = "cargo"
+publish = { enabled = false }
+
+[package.solana_kit_mpl_token_metadata]
+path = "crates/solana_kit_mpl_token_metadata"
+type = "cargo"
+publish = { enabled = false }
+versioned_files = [
+  { path = "Cargo.toml", type = "cargo", fields = ["workspace.dependencies.solana_kit_mpl_token_metadata"] },
+]
+
+[package.solana_kit_pyth]
+path = "crates/solana_kit_pyth"
+type = "cargo"
+publish = { enabled = false }
+
+[package.solana_kit_sns]
+path = "crates/solana_kit_sns"
+type = "cargo"
+publish = { enabled = false }
+
+[package.solana_kit_squads]
+path = "crates/solana_kit_squads"
+type = "cargo"
+publish = { enabled = false }
+
+[package.solana_kit_stake]
+path = "crates/solana_kit_stake"
+type = "cargo"
+publish = { enabled = false }
+versioned_files = [
+  { path = "Cargo.toml", type = "cargo", fields = ["workspace.dependencies.solana_kit_stake"] },
+]
+
+[package.solana_kit_subscriptions]
+path = "crates/solana_kit_subscriptions"
+type = "cargo"
+publish = { enabled = false }
+
+[package.solana_kit_test_support]
+path = "crates/solana_kit_test_support"
+type = "cargo"
+changelog = false
 publish = { enabled = false }
 
 [package.solana_kit_token]
@@ -135,8 +321,8 @@ path = "crates/solana_kit_token"
 type = "cargo"
 publish = { enabled = false }
 
-[package.solana_kit_anchor]
-path = "crates/solana_kit_anchor"
+[package.solana_kit_token_2022]
+path = "crates/solana_kit_token_2022"
 type = "cargo"
 publish = { enabled = false }
 
@@ -153,95 +339,3 @@ enabled = false
 
 [ecosystems.npm.auto_discover]
 enabled = false
-
-[package.solana_kit_address_lookup_table]
-path = "crates/solana_kit_address_lookup_table"
-type = "cargo"
-publish = { enabled = false }
-
-[package.solana_kit_config]
-path = "crates/solana_kit_config"
-type = "cargo"
-publish = { enabled = false }
-
-[package.solana_kit_stake]
-path = "crates/solana_kit_stake"
-type = "cargo"
-publish = { enabled = false }
-
-[package.solana_kit_loader]
-path = "crates/solana_kit_loader"
-type = "cargo"
-publish = { enabled = false }
-
-[package.solana_kit_account_compression]
-path = "crates/solana_kit_account_compression"
-type = "cargo"
-publish = { enabled = false }
-
-[package.solana_kit_mpl_core]
-path = "crates/solana_kit_mpl_core"
-type = "cargo"
-publish = { enabled = false }
-
-[package.solana_kit_mpl_token_metadata]
-path = "crates/solana_kit_mpl_token_metadata"
-type = "cargo"
-publish = { enabled = false }
-
-[package.solana_kit_mpl_bubblegum]
-path = "crates/solana_kit_mpl_bubblegum"
-type = "cargo"
-publish = { enabled = false }
-
-[package.solana_kit_attestation_service]
-path = "crates/solana_kit_attestation_service"
-type = "cargo"
-publish = { enabled = false }
-
-[package.solana_kit_pyth]
-path = "crates/solana_kit_pyth"
-type = "cargo"
-publish = { enabled = false }
-
-[package.solana_kit_squads]
-path = "crates/solana_kit_squads"
-type = "cargo"
-publish = { enabled = false }
-
-[package.solana_kit_subscriptions]
-path = "crates/solana_kit_subscriptions"
-type = "cargo"
-publish = { enabled = false }
-
-[package.solana_kit_helius]
-path = "crates/solana_kit_helius"
-type = "cargo"
-publish = { enabled = false }
-
-[package.solana_kit_sns]
-path = "crates/solana_kit_sns"
-type = "cargo"
-publish = { enabled = false }
-
-[package.solana_kit_surfpool]
-path = "crates/solana_kit_surfpool"
-type = "cargo"
-publish = { enabled = false }
-
-[package.solana_kit_dapp_publisher_cli]
-path = "crates/solana_kit_dapp_publisher_cli"
-type = "cargo"
-changelog = false
-publish = { enabled = false }
-
-[package.solana_kit_dapp_publisher]
-path = "crates/solana_kit_dapp_publisher"
-type = "cargo"
-publish = { enabled = false }
-
-[package.solana_kit_test_support]
-path = "crates/solana_kit_test_support"
-type = "cargo"
-changelog = false
-publish = { enabled = false }
