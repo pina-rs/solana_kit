@@ -605,7 +605,7 @@ dependencies = [
 
 [[package]]
 name = "solana_kit_client"
-version = "0.1.1"
+version = "0.2.0"
 dependencies = [
  "base64",
  "bs58",
@@ -616,14 +616,14 @@ dependencies = [
 
 [[package]]
 name = "solana_kit_core"
-version = "0.1.1"
+version = "0.2.0"
 dependencies = [
  "bs58",
 ]
 
 [[package]]
 name = "solana_kit_token_2022"
-version = "0.1.1"
+version = "0.1.2"
 dependencies = [
  "solana_kit_client",
  "solana_kit_core",

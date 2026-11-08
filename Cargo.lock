@@ -1818,21 +1818,21 @@ version = "0.0.0"
 
 [[package]]
 name = "solana_kit_account_compression"
-version = "0.1.1"
+version = "0.1.2"
 dependencies = [
  "solana_kit_core",
 ]
 
 [[package]]
 name = "solana_kit_address_lookup_table"
-version = "0.1.1"
+version = "0.1.2"
 dependencies = [
  "solana_kit_core",
 ]
 
 [[package]]
 name = "solana_kit_anchor"
-version = "0.1.1"
+version = "0.2.0"
 dependencies = [
  "base64 0.22.1",
  "serde_json",
@@ -1842,21 +1842,21 @@ dependencies = [
 
 [[package]]
 name = "solana_kit_associated_token_account"
-version = "0.1.1"
+version = "0.2.0"
 dependencies = [
  "solana_kit_core",
 ]
 
 [[package]]
 name = "solana_kit_attestation_service"
-version = "0.1.1"
+version = "0.1.2"
 dependencies = [
  "solana_kit_core",
 ]
 
 [[package]]
 name = "solana_kit_browser"
-version = "0.1.1"
+version = "0.2.0"
 dependencies = [
  "js-sys",
  "solana_kit_client",
@@ -1913,7 +1913,7 @@ dependencies = [
 
 [[package]]
 name = "solana_kit_client"
-version = "0.1.1"
+version = "0.2.0"
 dependencies = [
  "base64 0.22.1",
  "bs58",
@@ -1929,14 +1929,14 @@ dependencies = [
 
 [[package]]
 name = "solana_kit_compute_budget"
-version = "0.1.1"
+version = "0.2.0"
 dependencies = [
  "solana_kit_core",
 ]
 
 [[package]]
 name = "solana_kit_config"
-version = "0.1.1"
+version = "0.1.2"
 dependencies = [
  "solana_kit_core",
 ]
@@ -1983,7 +1983,7 @@ dependencies = [
 
 [[package]]
 name = "solana_kit_core"
-version = "0.1.1"
+version = "0.2.0"
 dependencies = [
  "base64 0.22.1",
  "bs58",
@@ -2009,7 +2009,7 @@ dependencies = [
 
 [[package]]
 name = "solana_kit_dapp_publisher"
-version = "0.1.1"
+version = "0.1.2"
 dependencies = [
  "http",
  "serde",
@@ -2021,7 +2021,7 @@ dependencies = [
 
 [[package]]
 name = "solana_kit_dapp_publisher_cli"
-version = "0.1.1"
+version = "0.1.2"
 dependencies = [
  "base64 0.22.1",
  "getrandom 0.3.4",
@@ -2043,7 +2043,7 @@ dependencies = [
 
 [[package]]
 name = "solana_kit_helius"
-version = "0.1.1"
+version = "0.1.2"
 dependencies = [
  "base64 0.22.1",
  "futures",
@@ -2063,7 +2063,7 @@ dependencies = [
 
 [[package]]
 name = "solana_kit_jupiter"
-version = "0.1.1"
+version = "0.1.2"
 dependencies = [
  "serde",
  "serde_json",
@@ -2073,7 +2073,7 @@ dependencies = [
 
 [[package]]
 name = "solana_kit_leptoskit"
-version = "0.1.1"
+version = "0.2.0"
 dependencies = [
  "futures-util",
  "leptoskit_bridge",
@@ -2096,21 +2096,21 @@ dependencies = [
 
 [[package]]
 name = "solana_kit_loader"
-version = "0.1.1"
+version = "0.1.2"
 dependencies = [
  "solana_kit_core",
 ]
 
 [[package]]
 name = "solana_kit_memo"
-version = "0.1.1"
+version = "0.2.0"
 dependencies = [
  "solana_kit_core",
 ]
 
 [[package]]
 name = "solana_kit_mpl_bubblegum"
-version = "0.1.1"
+version = "0.1.2"
 dependencies = [
  "futures-util",
  "serde",
@@ -2123,21 +2123,21 @@ dependencies = [
 
 [[package]]
 name = "solana_kit_mpl_core"
-version = "0.1.1"
+version = "0.1.2"
 dependencies = [
  "solana_kit_core",
 ]
 
 [[package]]
 name = "solana_kit_mpl_token_metadata"
-version = "0.1.1"
+version = "0.1.2"
 dependencies = [
  "solana_kit_core",
 ]
 
 [[package]]
 name = "solana_kit_native"
-version = "0.1.1"
+version = "0.2.0"
 dependencies = [
  "base64 0.22.1",
  "bytes",
@@ -2162,7 +2162,7 @@ dependencies = [
 
 [[package]]
 name = "solana_kit_pyth"
-version = "0.1.1"
+version = "0.1.2"
 dependencies = [
  "hex-literal",
  "num-traits",
@@ -2176,7 +2176,7 @@ dependencies = [
 
 [[package]]
 name = "solana_kit_signers"
-version = "0.1.1"
+version = "0.2.0"
 dependencies = [
  "solana_kit_core",
  "tokio",
@@ -2184,21 +2184,21 @@ dependencies = [
 
 [[package]]
 name = "solana_kit_sns"
-version = "0.1.1"
+version = "0.1.2"
 dependencies = [
  "solana_kit_core",
 ]
 
 [[package]]
 name = "solana_kit_squads"
-version = "0.1.1"
+version = "0.1.2"
 dependencies = [
  "solana_kit_core",
 ]
 
 [[package]]
 name = "solana_kit_stake"
-version = "0.1.1"
+version = "0.1.2"
 dependencies = [
  "solana_kit_core",
  "solana_kit_system",
@@ -2206,14 +2206,14 @@ dependencies = [
 
 [[package]]
 name = "solana_kit_subscriptions"
-version = "0.1.1"
+version = "0.1.2"
 dependencies = [
  "solana_kit_core",
 ]
 
 [[package]]
 name = "solana_kit_surfpool"
-version = "0.1.1"
+version = "0.2.0"
 dependencies = [
  "serde",
  "serde_json",
@@ -2240,14 +2240,14 @@ dependencies = [
 
 [[package]]
 name = "solana_kit_system"
-version = "0.1.1"
+version = "0.2.0"
 dependencies = [
  "solana_kit_core",
 ]
 
 [[package]]
 name = "solana_kit_test_support"
-version = "0.1.1"
+version = "0.1.2"
 dependencies = [
  "base64 0.22.1",
  "futures",
@@ -2259,7 +2259,7 @@ dependencies = [
 
 [[package]]
 name = "solana_kit_token"
-version = "0.1.1"
+version = "0.1.2"
 dependencies = [
  "solana_kit_associated_token_account",
  "solana_kit_core",
@@ -2268,7 +2268,7 @@ dependencies = [
 
 [[package]]
 name = "solana_kit_token_2022"
-version = "0.1.1"
+version = "0.1.2"
 dependencies = [
  "base64 0.22.1",
  "solana_kit_client",
@@ -2287,7 +2287,7 @@ dependencies = [
 
 [[package]]
 name = "solana_kit_wallet"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "aes",
  "aes-gcm",
@@ -2313,7 +2313,7 @@ dependencies = [
 
 [[package]]
 name = "solana_kit_wasi"
-version = "0.1.1"
+version = "0.2.0"
 dependencies = [
  "rustls",
  "solana_kit_client",

@@ -9,6 +9,119 @@
 Solana Kit supports off-chain application clients. On-chain programs should use
 Pina or official Solana program libraries.
 
+## [0.2.0](https://github.com/pina-rs/solana_kit/releases/tag/v0.2.0) (2026-11-08)
+
+Grouped release for `sdk`.
+
+### Breaking changes
+
+#### solana_kit_core: portable Solana types and wire formats
+
+_Packages:_ 🔴 _solana_kit_core_
+
+_Owner:_ [@ifiokjr](https://github.com/ifiokjr) · _Review:_ [PR #183](https://github.com/pina-rs/solana_kit/pull/183)
+
+The foundational off-chain crate: validated addresses, hashes, signatures,
+ordered instructions, account roles, bounded binary codecs, account snapshots,
+sysvar layouts, program errors, exact fixed points, immutable legacy/v0/v1
+transactions, and off-chain application messages.
+
+The default graph depends only on `bs58`. Optional features add SHA-256,
+validated program-derived addresses, deterministic Ed25519 signing and strict
+verification, original Keccak-256, arbitrary-width integer codecs, and text
+codecs. The crate is `no_std + alloc`, owns no executor or entropy source, and
+never claims on-chain support.
+
+#### solana_kit_client: executor-neutral typed RPC
+
+_Packages:_ 🔴 _solana_kit_client_
+
+_Owner:_ [@ifiokjr](https://github.com/ifiokjr) · _Review:_ [PR #183](https://github.com/pina-rs/solana_kit/pull/183)
+
+Typed balance, blockhash, account, token, node metadata, economics, history,
+submission, and simulation operations through one executor-neutral protocol
+owner. Native and local futures share the same client without a runtime,
+network, JavaScript, or ambient-randomness dependency.
+
+Optional features add version-aware resource estimation, caller-driven reactive
+stores, slot-tracking streams, and typed subscription families. Callers own the
+transport, deadlines, cancellation, and any spawned driver.
+
+#### solana_kit_native: Tokio HTTP, TLS, and WebSocket transports
+
+_Packages:_ 🔴 _solana_kit_native_
+
+_Owner:_ [@ifiokjr](https://github.com/ifiokjr) · _Review:_ [PR #183](https://github.com/pina-rs/solana_kit/pull/183)
+
+Native HTTP/1 and text WebSocket transports for off-chain Solana applications.
+`NativeHttp` implements the public client transport with caller-owned Tokio
+execution, explicit deadlines, cancellation, authentication, and verified TLS.
+
+Optional key support adds explicit exportable-key generation and intentional
+Solana-keygen JSON backup with atomic publication and typed cleanup failures.
+The optional Mobile Wallet Adapter transport keeps association, encryption, and
+cancellation caller-owned.
+
+#### solana_kit_signers: executor-neutral signing capabilities
+
+_Packages:_ 🔴 _solana_kit_signers_
+
+_Owner:_ [@ifiokjr](https://github.com/ifiokjr) · _Review:_ [PR #183](https://github.com/pina-rs/solana_kit/pull/183)
+
+Portable asynchronous signing contracts for message, transaction, modifying,
+partial, and sending signers. The crate is `no_std + alloc` and has no runtime,
+entropy, filesystem, or network dependency.
+
+Each logical resource gets a `SignerCapability`; `TransactionSigners`
+deduplicates repeated handles, rejects two handles claiming one address, and
+preserves local or native futures. Every call receives its own configuration,
+including `aborted` and `min_context_slot`, unchanged across composed pipelines.
+
+#### solana_kit_browser: Window HTTP and WebSocket transports
+
+_Packages:_ 🔴 _solana_kit_browser_
+
+_Owner:_ [@ifiokjr](https://github.com/ifiokjr) · _Review:_ [PR #183](https://github.com/pina-rs/solana_kit/pull/183)
+
+Explicit browser adapters for the executor-neutral client. `BrowserHttp`
+implements `Transport` with Window Fetch and local futures, bounded bodies,
+deadlines, cancellation, redirect rejection, and no ambient credentials.
+
+`BrowserSubscriptionSocket` adapts the maintained Window WebSocket to the shared
+subscription session, retaining event wakers and bounded timers between polls.
+Imports exist only for `wasm32-unknown-unknown`; importing the crate is the
+explicit opt-in to browser JavaScript.
+
+#### solana_kit_leptoskit: interpreted LeptosKit adapters
+
+_Packages:_ 🔴 _solana_kit_leptoskit_
+
+_Owner:_ [@ifiokjr](https://github.com/ifiokjr) · _Review:_ [PR #183](https://github.com/pina-rs/solana_kit/pull/183)
+
+Guest and host adapters for interpreted LeptosKit applications. `GuestHttp`
+connects the ordinary public client to named host services; `HttpDriver` and
+`HttpHost` install fixed destinations, TLS roots, grants, deadlines, and byte
+ceilings in the native host.
+
+Every guest entry point drains unrelated requests and cancellations, while
+completion delivery retains no interpreter borrow and wakes the real guest. The
+optional wallet adapter exposes the portable MWA protocol to installed hosts.
+
+#### solana_kit_wasi: WASI Preview 2 HTTP
+
+_Packages:_ 🔴 _solana_kit_wasi_
+
+_Owner:_ [@ifiokjr](https://github.com/ifiokjr) · _Review:_ [PR #183](https://github.com/pina-rs/solana_kit/pull/183)
+
+`WasiHttp` implements the public client transport with caller-driven local
+futures for `wasm32-wasip2`. A caller-owned `Reactor` registers pollables,
+selects readiness and deadlines, and wakes the guest without a global executor
+or detached task.
+
+The adapter follows the pinned `wasi:http/io/clocks@0.2.12` contract, preserves
+explicit deadlines and body budgets, and leaves DNS, TLS, proxy, credential, and
+destination policy to the embedding host.
+
 ## sdk [0.1.1](https://github.com/pina-rs/solana_kit/releases/tag/sdk/v0.1.1) (2026-11-05)
 
 Grouped release for `sdk`.

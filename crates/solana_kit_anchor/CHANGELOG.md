@@ -5,6 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## solana_kit_anchor [0.2.0](https://github.com/pina-rs/solana_kit/releases/tag/solana_kit_anchor/v0.2.0) (2026-11-08)
+
+### Breaking changes
+
+#### solana_kit_anchor: runtime Anchor IDL coding
+
+_Owner:_ [@ifiokjr](https://github.com/ifiokjr) · _Review:_ [PR #183](https://github.com/pina-rs/solana_kit/pull/183)
+
+Encode and decode Anchor IDL 0.30 instructions, accounts, and events at runtime.
+Exact-width dynamic values, explicit IDL discriminators, field-attributed encode
+failures, and standard or program-defined error resolution are supported.
+
+The only dependency graph is `no_std + alloc` and it starts no executor or
+network work. Every operation takes explicit byte, item, and depth budgets, and
+an unsupported generic field fails only when used rather than making the whole
+IDL unreadable.
+
 ## solana_kit_anchor [0.1.1](https://github.com/pina-rs/solana_kit/releases/tag/solana_kit_anchor/v0.1.1) (2026-11-05)
 
 ### Features
