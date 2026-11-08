@@ -5,66 +5,190 @@ on:
     inputs:
 
       package:
-        description: Workspace crate to publish (solana_kit or solana_kit_*)
+        description: "Workspace crate to publish, or `all` for a release tag"
         required: true
         type: string
 
+      tag:
+        description: "Release tag for an all-crate publish (for example v0.2.0)"
+        required: false
+        type: string
+
+      checkout_ref:
+        description: "Commit SHA to build for an all-crate publish"
+        required: false
+        type: string
+
       dry_run:
-        description: Verify the packaged crate without publishing
+        description: "Verify the packaged crates without publishing"
         type: boolean
         default: true
+
+  push:
+    tags:
+      - "v*"
 
 permissions:
   contents: read
 
 concurrency:
-  group: crates-io-publishing
+  group: crates-io-publishing-${{ inputs.tag || github.ref_name }}
   cancel-in-progress: false
 
-jobs:
-  publish:
-    if: github.ref == 'refs/heads/main'
-    runs-on: "ubuntu-24.04"
-    timeout-minutes: 45
+env:
+  PACKAGE: ${{ inputs.package || 'all' }}
+  TAG: ${{ inputs.tag || github.ref_name }}
+  DRY_RUN: ${{ inputs.dry_run == true }}
+  CARGO_HTTP_USER_AGENT: solana-kit-publishing
+  GIT_HTTP_USER_AGENT: solana-kit-publishing
 
+jobs:
+  validate:
+    name: validate packages
+    if: github.event_name == 'push' || github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
     permissions:
       contents: read
-      id-token: write
 
-    env:
-      PACKAGE: ${{ inputs.package }}
-      CARGO_HTTP_USER_AGENT: solana-kit-publishing
-      GIT_HTTP_USER_AGENT: solana-kit-publishing
-
+    outputs:
+      release_tags: ${{ steps.record.outputs.tags }}
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: checkout release ref
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          ref: ${{ inputs.checkout_ref || github.ref }}
+          fetch-depth: 0
+
           persist-credentials: false
 
-      - name: Validate crate selection
+      - name: validate crate selection
         shell: bash
-
         run: |
           set -euo pipefail
+          if [ "$PACKAGE" = all ]; then
+            case "$TAG" in
+              v*) ;;
+              *) echo 'An all-crate publish needs a v* release tag.' >&2; exit 1 ;;
+            esac
+
+            exit 0
+          fi
           case "$PACKAGE" in
             solana_kit|solana_kit_*) ;;
-            *) echo 'Select a Solana Kit workspace crate.' >&2; exit 1 ;;
+            *) echo 'Select a Solana Kit workspace crate or all.' >&2; exit 1 ;;
           esac
           test -f "crates/$PACKAGE/Cargo.toml"
 
-      - name: Install pinned compiler
+      - name: install pinned compiler
         run: rustup toolchain install 1.99.1 --profile minimal
 
-      - name: Verify packaged crate
-        run: cargo +1.99.1 publish --locked --dry-run --package "$PACKAGE"
+      - name: install monochange
+        shell: bash
+        run: |
+          set -euo pipefail
+          directory="$RUNNER_TEMP/monochange-0.21.0"
+          mkdir -p "$directory"
+          curl --fail --location --silent --show-error \
+            https://github.com/monochange/monochange/releases/download/v0.21.0/\
+          monochange-x86_64-unknown-linux-gnu-v0.21.0.tar.gz \
+            --output "$directory/monochange.tar.gz"
+          printf '%s  %s\n' 3d79ea6d683b48ad6760f5ed60101022b8383b48e15eba49bd400fb53fed4afb \
+            "$directory/monochange.tar.gz" | sha256sum --check --strict
+          tar -xzf "$directory/monochange.tar.gz" -C "$directory"
+          echo "$directory" >> "$GITHUB_PATH"
 
-      - name: Authenticate with crates.io
-        if: inputs.dry_run == false
+      - name: read release targets
+        id: record
+        shell: bash
+        run: |
+          set -euo pipefail
+          tags="$(monochange step release-record --from HEAD --format json \
+            | jq -c '[.record.release_targets[] | select(.release == true) | .tag_name]')"
+          echo "tags=$tags" >> "$GITHUB_OUTPUT"
+
+      - name: verify packaged crates
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ "$PACKAGE" != all ]; then
+            cargo +1.99.1 publish --locked --dry-run --package "$PACKAGE"
+            exit 0
+          fi
+
+          mapfile -t unpublished < <(
+            cargo metadata --no-deps --format-version 1 \
+              | jq -r '.packages[] | select(.publish == []) | .name'
+          )
+          excludes=()
+          for package in "${unpublished[@]}"; do
+            excludes+=("--exclude" "$package")
+          done
+          excludes+=("--exclude" solana_kit)
+          cargo +1.99.1 package --workspace --locked "${excludes[@]}"
+
+  publish:
+    name: publish packages
+    needs: validate
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    permissions:
+      contents: write
+      id-token: write
+
+    steps:
+      - name: checkout release ref
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ inputs.checkout_ref || github.ref }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: install pinned compiler
+        run: rustup toolchain install 1.99.1 --profile minimal
+
+      - name: authenticate with crates.io
+        if: env.DRY_RUN != 'true'
         id: auth
         uses: rust-lang/crates-io-auth-action@3268eb413133e2960fa4ae0e963ca76380c54cd9 # v1
 
-      - name: Publish verified crate
-        if: inputs.dry_run == false
+      - name: publish crates
+        if: env.DRY_RUN != 'true'
+        shell: bash
         env:
           CARGO_REGISTRY_TOKEN: ${{ steps.auth.outputs.token }}
-        run: cargo +1.99.1 publish --locked --package "$PACKAGE"
+        run: |
+          set -euo pipefail
+          if [ "$PACKAGE" != all ]; then
+
+            cargo +1.99.1 publish --locked --package "$PACKAGE"
+            exit 0
+          fi
+          mapfile -t unpublished < <(
+            cargo metadata --no-deps --format-version 1 \
+              | jq -r '.packages[] | select(.publish == []) | .name'
+          )
+          excludes=()
+          for package in "${unpublished[@]}"; do
+            excludes+=("--exclude" "$package")
+          done
+
+          excludes+=("--exclude" solana_kit)
+          cargo +1.99.1 publish --workspace --locked --no-verify "${excludes[@]}"
+
+      - name: publish draft releases
+        if: env.DRY_RUN != 'true' && env.PACKAGE == 'all'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_TAGS: ${{ needs.validate.outputs.release_tags }}
+        run: |
+          set -euo pipefail
+
+          while IFS= read -r tag; do
+            if [ "$tag" = "$TAG" ]; then
+              gh release edit "$tag" --draft=false --latest --repo "$GITHUB_REPOSITORY"
+            else
+              gh release edit "$tag" --draft=false --repo "$GITHUB_REPOSITORY"
+            fi
+          done < <(jq -r '.[]' <<< "$RELEASE_TAGS")

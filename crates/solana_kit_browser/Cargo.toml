@@ -20,7 +20,7 @@ js-sys = "=0.3.105"
 solana_kit_client.workspace = true
 solana_kit_core = { workspace = true, features = ["crypto"], optional = true }
 solana_kit_wallet = { workspace = true, optional = true }
-solana_kit_signers = { version = "0.1.0", path = "../solana_kit_signers", default-features = false, features = ["crypto"], optional = true }
+solana_kit_signers = { workspace = true, default-features = false, features = ["crypto"], optional = true }
 wasm-bindgen = "=0.2.128"
 wasm-bindgen-futures = "=0.4.78"
 web-sys = { version = "=0.3.105", features = ["CustomEvent", "CustomEventInit", "EventTarget", "BinaryType", "Blob", "CloseEvent", "Event", "MessageEvent", "WebSocket", "AbortController", "AbortSignal", "Headers", "ReadableStream", "ReadableStreamDefaultReader", "ReferrerPolicy", "Request", "RequestCredentials", "RequestInit", "RequestMode", "RequestRedirect", "Response", "ResponseType", "Url", "Window"] }
