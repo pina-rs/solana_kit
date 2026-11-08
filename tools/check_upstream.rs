@@ -329,9 +329,11 @@ fn validate_unreleased(rows: &[Parity]) -> CheckResult<()> {
     Ok(())
 }
 
+/// Rejects duplicate or out-of-order rows: each version must be strictly
+/// greater than the version after it.
 fn validate_order(rows: &[Parity]) -> CheckResult<()> {
     for pair in rows.windows(2) {
-        if version_key(&pair[0].version)? >= version_key(&pair[1].version)? {
+        if version_key(&pair[0].version)? <= version_key(&pair[1].version)? {
             return Err(format!(
                 "parity rows must be newest first: {} follows {}",
                 pair[1].version, pair[0].version
