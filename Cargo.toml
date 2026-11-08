@@ -75,7 +75,7 @@ solana_kit_core = { version = "0.2.0", path = "crates/solana_kit_core", default-
 solana_kit_dapp_publisher = { version = "0.1.2", path = "crates/solana_kit_dapp_publisher", default-features = false }
 solana_kit_mpl_token_metadata = { version = "0.1.2", path = "crates/solana_kit_mpl_token_metadata", default-features = false }
 solana_kit_native = { version = "0.2.0", path = "crates/solana_kit_native" }
-solana_kit_signers = { version = "0.2.0", path = "crates/solana_kit_signers" }
+solana_kit_signers = { version = "0.2.0", path = "crates/solana_kit_signers", default-features = false }
 solana_kit_stake = { version = "0.1.2", path = "crates/solana_kit_stake" }
 solana_kit_surfpool = { version = "0.2.0", path = "crates/solana_kit_surfpool" }
 solana_kit_system = { version = "0.2.0", path = "crates/solana_kit_system" }

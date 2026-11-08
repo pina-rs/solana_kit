@@ -83,7 +83,8 @@ by the [`publisher CLI`](.github/workflows/publisher-cli.yml) workflow on a
 `publisher-cli-v*` tag. See the
 [CLI README](crates/solana_kit_dapp_publisher_cli/README.md) for usage.
 
-The first implemented slice is `solana_kit_core` 0.1.0: portable addresses,
+The first public SDK release is the 0.2.0 crate set (`solana_kit_wallet` 0.3.0).
+The first implemented slice is `solana_kit_core` 0.2.0: portable addresses,
 hashes, signatures, ordered instructions, account roles, bounded binary codecs,
 immutable legacy/v0/v1 transactions, account snapshots, sysvar layouts, program
 errors, optional exact fixed points, and deterministic cryptography. The generated
@@ -115,9 +116,9 @@ portable policy, cancellation, awaited cleanup and exact submission guards.
 Observation adapters and their cleanup deadlines remain caller-owned.
 Their [portable protocol receipt](docs/verification/subscription-runtime.md)
 establishes memory-frame execution, without a WebSocket transport claim.
-The core component is unreleased; the published `solana_kit` 0.0.0 umbrella remains
-a dependency-free name reservation with no SDK APIs. This bounded codec slice
-leaves Phase 2 incomplete; see its [capability receipt](docs/verification/core-codecs.md).
+The published `solana_kit` 0.0.0 umbrella remains a dependency-free name
+reservation with no SDK APIs. This bounded codec slice leaves Phase 2
+incomplete; see its [capability receipt](docs/verification/core-codecs.md).
 The [transaction ledger](docs/parity/message-transactions.md) records 46 partial
 and 700 pending capabilities; Phase 3 remains incomplete.
 The [offchain message receipt](docs/parity/offchain-messages.md) records bounded

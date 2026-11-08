@@ -41,7 +41,7 @@ This is a delivery checklist. Release notes describe completed behavior only.
 - [ ] Deliver wallet protocols, platform adapters, and LeptosKit wallet UI equivalents.
 - [ ] Deliver Anchor, Helius, Jupiter, Pyth, SNS, Surfpool, publishing CLI, documentation, and test support.
 - [ ] Execute generated desktop, Android, and iOS guest journeys before claiming support.
-- [ ] Complete registry readiness and release previews through monochange.
+- [x] Complete registry readiness and release previews through monochange.
 
 The native pilot completes a narrow part of Phase 1. The workspace foundation
 item remains open for the verification tool and remaining portability experiments.

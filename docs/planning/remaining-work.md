@@ -496,8 +496,7 @@ wrapper.
 
 ### RW-07 Whole-workspace registry and package release rehearsal
 
-**Kind.** Executed local rehearsal, with external publication prerequisites
-still open.
+**Kind.** Executed local rehearsal and first publication.
 
 **Acceptance criterion.** Phase 1 requires repeatable release preparation.
 Phase 8 requires clean-consumer packaging and real release readiness; only
@@ -540,10 +539,10 @@ reservation, with the six publish batches.
 `cargo xtask rust-release-selection` guards that selection against the
 configured packages, actual Cargo metadata, the committed release record and
 the observed readiness JSON, and reports only `selection-exact` or
-`selection-mismatch`; it never stamps whole-channel readiness. Trust and
-ownership stay explicitly unverified there, and the corrected out-of-tree
-policy proposal keeps trusted publishing on the existing crates.io OIDC
-workflow without a bootstrap token.
+`selection-mismatch`; it never stamps whole-channel readiness. The audit
+retains its preparation-time trust and ownership limits, and the applied policy
+keeps trusted publishing on the existing crates.io OIDC workflow without a
+bootstrap token.
 
 The same local-registry installation exposed a hard-coded CLI version display.
 The executable now reports its own Cargo package version, while the retained
@@ -563,13 +562,19 @@ rehearsal from the committed tree produced 34 archives, 34 fresh reviews over
 and the same five expected publication blockers. The receipt is
 [Publisher CLI v0.1.1](../verification/publisher-release-candidate.md#committed-version-preparation-receipt).
 
-**Remaining limits.** LeptosKit's Git upstream is not a registry package. Twenty
-included crates retain `publish = false`; the others stop at an offline
-registry-API dry run. Actual registry versions, publication decisions and
-authorization are still required. The corrected archives still exclude their
-lockfiles, so installation resolves a fresh dependency graph instead of proving
-an immutable published lock. This remains local macOS package evidence, not
-Linux/Windows execution, publication or whole-SDK completion.
+**First publication (2026-11-08).** The reviewed fourteen-crate selection was
+published from `bebf4cb`. `solana_kit_core` and twelve companion crates landed
+at `0.2.0`; `solana_kit_wallet` landed at `0.3.0`. The `v0.2.0` primary tag and
+seven namespaced tags name the release, with matching GitHub releases.
+`.github/workflows/publish.yml` used crates.io trusted publishing for every
+crate and the `solana_kit` umbrella remains `0.0.0`.
+
+**Remaining limits.** The nineteen deferred crates and the private fixture
+retain `publish = false`; only the reviewed fourteen are published. The
+archives still exclude their lockfiles, so installation resolves a fresh
+dependency graph instead of proving an immutable published lock. This remains
+local macOS package evidence, not Linux/Windows execution or whole-SDK
+completion.
 
 **Owning code.** `monochange.toml`, the shared Wallet dependency,
 `xtask/src/package_review/archive.rs`, `xtask/src/package_rehearsal/`,
