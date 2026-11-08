@@ -186,9 +186,11 @@ jobs:
           set -euo pipefail
 
           while IFS= read -r tag; do
-            if [ "$tag" = "$TAG" ]; then
-              gh release edit "$tag" --draft=false --latest --repo "$GITHUB_REPOSITORY"
-            else
+            if gh release view "$tag" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
               gh release edit "$tag" --draft=false --repo "$GITHUB_REPOSITORY"
             fi
           done < <(jq -r '.[]' <<< "$RELEASE_TAGS")
+
+          # Publishing the namespaced releases above can make the newest one
+          # latest. The primary v* release is the SDK release users should see.
+          gh release edit "$TAG" --draft=false --latest --repo "$GITHUB_REPOSITORY"

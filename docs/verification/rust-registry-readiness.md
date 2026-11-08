@@ -4,9 +4,28 @@ This receipt separates the reviewed release-selection facts from what a local
 run can prove about artifacts and registry authorization.
 It records three things: the reviewed release selection now committed as data,
 the narrow selection guard that checks it, and the retained archive/registry
-audit with its exact provenance. It does not claim registry readiness, artifact
-qualification, trusted-publishing configuration, name ownership, or
-publication authorization for any channel. The whole SDK is not ready.
+audit with its exact provenance. The preparation audit below did not claim
+registry readiness, artifact qualification, trusted-publishing configuration,
+name ownership, or publication authorization for any channel. The whole SDK is
+not ready.
+
+## First publication completed
+
+The reviewed selection was published on 2026-11-08 from `bebf4cb`:
+
+- `solana_kit_core` and its twelve companion crates were accepted by crates.io
+  at `0.2.0`; `solana_kit_wallet` was accepted at `0.3.0`.
+- The `v0.2.0` primary tag and seven namespaced tags name the release, with
+  matching GitHub releases. `v0.2.0` is the latest release.
+- `.github/workflows/publish.yml` used crates.io trusted publishing for every
+  crate. The repository's existing trusted-publisher enrollments therefore
+  matched the workflow and owner permissions in practice.
+- `solana_kit` remains the `0.0.0` umbrella reservation. The nineteen deferred
+  crates and the private test fixture were not published.
+
+Read the "unverified" and "preparation-time" statements below as the state
+before this publication. The release workflow is the executable evidence that
+the fourteen trusted publishers and owner permissions work.
 
 ## Scope and provenance
 
@@ -41,7 +60,7 @@ reason. Its scope is the reviewed first-publish set, not whole-SDK acceptance:
 
 | Decision           | Count | Packages                                                                                                                                                    |
 | ------------------ | ----: | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `public`           |    14 | core, compute budget, memo, signers, system, wallet 0.2.0, associated token account, anchor, client, surfpool, browser, wasi, native, leptoskit (all 0.1.1) |
+| `public`           |    14 | core, compute budget, memo, signers, system, associated token account, anchor, client, surfpool, browser, wasi, native, leptoskit (all 0.2.0), wallet 0.3.0 |
 | `private-fixture`  |     1 | test support — deliberately private, must never publish                                                                                                     |
 | `private-deferred` |    19 | manifest `publish = false`; each needs a separate implementation release review                                                                             |
 | `reserved`         |     1 | `solana_kit` 0.0.0 umbrella reservation, not a release target                                                                                               |
@@ -76,20 +95,21 @@ The contract is deliberately narrow:
 - It reads no archive, registry or credential input, because none of those can
   prove selection, and it never writes to any input path.
 
-### Current real result: blocked, as it must be
+### Preparation-time result
 
-Against the real committed record and the real readiness output
+At the audit baseline, against the committed record and the readiness output
 (`/tmp/solana-kit-all-release-readiness.json`, resolved at `98f34604…`), the
-guard exits nonzero with `selection-mismatch` and 28 blockers: the readiness
-selection is empty (14 expected, 0 observed) and the release record has no
+guard exited nonzero with `selection-mismatch` and 28 blockers: the readiness
+selection was empty (14 expected, 0 observed) and the release record had no
 publication entries (14 expected). `monochange publish readiness` reporting
-`ready` with zero packages is correct upstream zero-selection semantics, not
+`ready` with zero packages was correct upstream zero-selection semantics, not
 project readiness — that distinction is exactly what this guard exists to
 keep visible. The full stdout and the machine report are retained at
 `/tmp/solana-kit-rust-release-selection/`. An independently staged simulated
 fixture with the 14 exact selections and publication entries exits 0 with
 `selection-exact`; that fixture lives only under the evidence root and is a
-unit control for the guard, not a readiness claim.
+unit control for the guard, not a readiness claim. The first publication
+recorded above supplies the real publication entries.
 
 ## Retained archive and registry audit at `98f34604…`
 
@@ -111,26 +131,28 @@ manifest, not re-run since:
   resolves a fresh dependency graph instead of proving an immutable published
   lock. This remains an immutability limit of the retained evidence.
 - Anonymous crates.io snapshots (38 files under `evidence/registry/`) were
-  fetched 2026-11-05. All 14 public crate names exist: the original thirteen
-  carry only the `0.0.0` placeholder version, and `leptoskit_bridge` 0.3.0 is
-  now published on crates.io.
+  fetched 2026-11-05. All 14 public crate names existed at that time: the
+  original thirteen carried only the `0.0.0` placeholder version, and
+  `leptoskit_bridge` 0.3.0 was published on crates.io. The first publication
+  later replaced those placeholders for the reviewed set.
   A version being absent does not mean the name is claimable: these snapshots
   do not identify owners and are not ownership evidence.
 
-## Trust and ownership are UNVERIFIED
+## Trust and ownership at preparation time
 
-Nothing here establishes trusted publishing or ownership state:
+Nothing in the preparation audit established trusted publishing or ownership
+state; the first publication later verified both for the fourteen public crates:
 
 - The snapshots show no `trustpub_data` for the placeholders. A null field in
   an anonymous snapshot is not proof that trusted publishing is unconfigured,
   and its presence would not prove that a workflow is authorized. Both are
   registry-side, first-party-account facts that require an authorized owner to
   query. The guard deliberately reports nothing about trust.
-- Owner and maintainer permissions for the 13 existing placeholder crates were
-  never queried. Placeholder existence is not name ownership, and this
-  repository has not demonstrated write access to any of them.
+- Owner and maintainer permissions for the fourteen existing placeholder crates
+  were not queried in this audit. Placeholder existence is not name ownership.
+  The first publication later exercised write access for all fourteen.
 - Per the official crates.io trusted-publishing documentation, a trusted
-  publisher is configured by crate owners on an existing crate. All 13 names
+  publisher is configured by crate owners on an existing crate. All 14 names
   already exist, so owners can configure trusted publishing before the first
   real version if the settings flow accepts a placeholder-only crate; the
   documentation does not address that case explicitly. If it is rejected, an
@@ -138,28 +160,24 @@ Nothing here establishes trusted publishing or ownership state:
   an explicit, separately authorized action that this preparation neither
   performs nor assumes.
 
-## Out-of-tree policy proposal
+## Applied publication policy
 
-`/tmp/solana-kit-rust-release-selection/policy-proposal.patch` (with its
-`README.md`, outside the repository, not applied to committed source) enables
-`monochange` publication for exactly the 14 reviewed public crates, keeps
-trusted publishing enabled through the repository's existing crates.io OIDC
-flow (`.github/workflows/publish.yml` exchanges an OIDC identity via
-`rust-lang/crates-io-auth-action`), and adds no maintainer-token bootstrap
-override. The other 22 Cargo packages, including the umbrella, and the npm
-ecosystem stay byte-identical. It was validated only in a disposable `git
-archive` copy with `git apply --check` and `monochange config`, confirming
-exactly 14 packages resolve `publish.enabled = true`. Applying it, configuring
-registry-side trusted publishers, and preparing any new release record with
-real publication entries are future authorized actions; the committed record
-must never gain hand-invented ready entries.
+`/tmp/solana-kit-rust-release-selection/policy-proposal.patch` was the
+preparation-time proposal. The committed configuration now enables
+`monochange` publication for exactly the fourteen reviewed public crates, keeps
+trusted publishing enabled through `.github/workflows/publish.yml` and
+`rust-lang/crates-io-auth-action`, and adds no maintainer-token bootstrap
+override. The other 21 Cargo packages, including the umbrella, and the npm
+ecosystem remain outside the publish set. The release record contains the real
+publication entries produced from the reviewed changesets.
 
 ## Limits
 
-Local macOS evidence only; no Linux/Windows execution. No publication,
-registry write, tag, workflow dispatch, or secret access occurred. The 13
-placeholder crates have unverified owner permissions in this audit. The archives
-exclude lockfiles. `solana_kit` 0.0.0, the fixture and the 19 deferred crates
-are outside this selection by review, and the LeptosKit dependency is now
-published on crates.io. Selection exactness — the only thing this unit can
-check — is currently not met, and that is the correct, expected state.
+The preparation audit used local macOS evidence only; Linux and Windows were
+not executed for that audit. It performed no publication, registry write, tag,
+workflow dispatch, or secret access. Those limits describe the audit baseline,
+not the release recorded above. The archives exclude lockfiles. `solana_kit`
+0.0.0, the fixture and the nineteen deferred crates remain outside this
+selection by review, and the LeptosKit dependencies are published on crates.io.
+Selection exactness was not met at the baseline; the first publication covered
+the reviewed fourteen-crate selection.
