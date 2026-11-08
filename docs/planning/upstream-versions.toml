@@ -1,0 +1,17 @@
+# Historical upstream parity for the workspace.
+#
+# Each [[parity]] row pairs a `solana_kit` workspace version with the upstream
+# `@solana/kit` marker it is based on. `reference` is the pinned Dart commit in
+# references.toml that carries that marker. Add a row when an upstream sync
+# ships, newest first, and replace `unreleased` with the release date once the
+# version ships.
+#
+# mdt renders this history into README.md and
+# docs/book/reference/upstream-compatibility.md through
+# .templates/upstream.t.md. Do not edit those tables by hand; run `mdt update`.
+
+[[parity]]
+version = "0.1.1"
+upstream_kit = "8.5.0"
+reference = "0138bb956d2d81ccc0c56edc602401c0df2f2b46"
+released = "2026-11-05"

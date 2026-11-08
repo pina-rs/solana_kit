@@ -1,24 +1,82 @@
+<!-- {=brandHeader|trim} -->
 <p align="center">
   <img src="https://raw.githubusercontent.com/pina-rs/solana_kit/main/assets/brand/solana-kit-mark.png" alt="Solana Kit" width="112" height="112">
 </p>
+<!-- {/brandHeader} -->
 
 # solana_kit
 
 An off-chain Rust Solana client SDK for native applications, browser WebAssembly,
 WASI, and embedded WebAssembly applications such as LeptosKit.
 
+<!-- {=offchainOnly:"Solana Kit"|trim} -->
+
 Solana Kit is only for off-chain application code. Do not use it in Solana
 on-chain programs; use Pina or official Solana program libraries instead.
 `no_std + alloc` enables portable clients and does not imply on-chain support.
+
+<!-- {/offchainOnly} -->
+
+## Upstream compatibility
+
+<!-- {=upstreamSummary|trim} -->
+
+- Upstream `@solana/kit` version in the pinned reference: `8.5.0`
+- Pinned Dart reference: [`openbudgetfun/solana_kit`](https://github.com/openbudgetfun/solana_kit) at [`0138bb956d2d`](https://github.com/openbudgetfun/solana_kit/tree/0138bb956d2d81ccc0c56edc602401c0df2f2b46)
+- This Rust SDK ports that reference; it does not compare itself to `@solana/kit` directly and makes no direct compatibility claim.
+
+<!-- {/upstreamSummary} -->
+
+See [Upstream compatibility](docs/book/reference/upstream-compatibility.md) for
+the full reference tables and how to reproduce the check.
+
+### `solana_kit` ↔ `@solana/kit` parity
+
+Each row pairs a `solana_kit` workspace version with the upstream `@solana/kit`
+version it is based on. The workspace version is the compatibility marker:
+component crates release independently, and the `solana_kit` umbrella crate
+remains a dependency-free `0.0.0` name reservation.
+
+<!-- {=upstreamParity|trim} -->
+
+| `solana_kit` workspace | `@solana/kit` | Pinned Dart commit | Released   |
+| ---------------------- | ------------- | ------------------ | ---------- |
+| `0.1.1`                | `8.5.0`       | `0138bb956d2d`     | 2026-11-05 |
+
+<!-- {/upstreamParity} -->
+
+### Upstream references
+
+The upstream repositories the workspace is built and verified against, pinned in
+[`docs/planning/references.toml`](docs/planning/references.toml). The tables are
+rendered by [`mdt`](https://github.com/ifiokjr/mdt) from
+[`.templates/upstream.t.md`](.templates/upstream.t.md); do not edit them by
+hand. Run `mdt update` after editing the pins, and `mdt check` before pushing.
+
+<!-- {=upstreamPins|trim} -->
+
+| Upstream repository                                                           | Pin                       | Used by                                                        |
+| ----------------------------------------------------------------------------- | ------------------------- | -------------------------------------------------------------- |
+| [`anza-xyz/kit`](https://github.com/anza-xyz/kit)                             | `v8.5.0`                  | all crates (upstream marker)                                   |
+| [`openbudgetfun/solana_kit`](https://github.com/openbudgetfun/solana_kit)     | `0138bb956d2d`            | all crates (comparison baseline)                               |
+| [`pina-rs/wasm_solana`](https://github.com/pina-rs/wasm_solana)               | `6f43f957a069`            | `solana_kit_browser`, `solana_kit_native` (transport research) |
+| [`leptoskit/leptoskit`](https://github.com/leptoskit/leptoskit)               | `2e575b1e7e81`            | `solana_kit_leptoskit` (runtime dependency)                    |
+| [`solana-foundation/surfpool`](https://github.com/solana-foundation/surfpool) | `v1.7.0` (`9be726da6456`) | `solana_kit_surfpool` (external CLI research target)           |
+
+<!-- {/upstreamPins} -->
 
 ## Publisher CLI
 
 `solana_kit_dapp_publisher_cli` installs the native `solana-kit-publisher`
 command:
 
+<!-- {=publisherInstall|trim|codeBlock:"sh"} -->
+
 ```sh
 cargo install --git https://github.com/pina-rs/solana_kit solana_kit_dapp_publisher_cli
 ```
+
+<!-- {/publisherInstall} -->
 
 Prebuilt macOS, Linux and Windows archives are uploaded to a draft GitHub release
 by the [`publisher CLI`](.github/workflows/publisher-cli.yml) workflow on a
@@ -117,3 +175,7 @@ required license and notices.
 Monostyle enforces readability and complexity scores of at least 90. Run
 `monostyle check . --fail-under 90` before sharing changes. Normal scoring rules
 apply to authored and generated code.
+
+Shared documentation lives in `.templates/*.t.md` and is synchronized by
+[mdt](https://github.com/ifiokjr/mdt). Run `mdt update` after editing a provider
+or its data, and `mdt check` before pushing; CI runs the same check.

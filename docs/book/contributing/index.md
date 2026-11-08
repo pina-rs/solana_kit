@@ -14,6 +14,8 @@ This page covers how the repository is laid out, which toolchain it pins, and th
 | `docs/parity/`, `docs/planning/`, `docs/verification/` | Ledgers, the plan and decisions, and execution receipts. See [Parity and status](../reference/parity.md).                |
 | `docs/architecture/`                                   | The design and API proposal                                                                                              |
 | `docs/book/`, `docs/site/`                             | This book and the site that builds it. See [These docs](docs.md).                                                        |
+| `.templates/`                                          | Shared documentation providers synchronized by mdt. See [These docs](docs.md).                                           |
+| `mdt.toml`                                             | mdt data sources, formatters, and scan configuration                                                                     |
 | `.changeset/`                                          | Pending release notes, consumed by monochange                                                                            |
 | `.github/workflows/`                                   | CI. See [Verification](verification.md).                                                                                 |
 
@@ -31,6 +33,8 @@ There is no devenv or Nix setup. Runtime journeys need a few external executable
 | Chrome and ChromeDriver | 155.0.8059.84 in CI          | `CHROME`, `CHROMEDRIVER`                                                                                    |
 | Wasmtime                | 50.0.0                       | `WASMTIME`                                                                                                  |
 | Monostyle               | 0.3.27 (pinned git revision) | `cargo xtask style`                                                                                         |
+| mdt                     | 0.9.8                        | Reusable documentation in `.templates/` (`mdt update`, `mdt check`)                                         |
+| dprint                  | 0.64.1                       | Markdown and TOML formatting, including mdt output                                                          |
 
 ## Build and test
 
@@ -82,7 +86,7 @@ Other commands take a path: `style-report`, `imports`, `dependency-fixture`, `pa
   ```
 
   The xtask also checks every individual file, not just the aggregate score. See [`docs/verification/style.md`](https://github.com/pina-rs/solana_kit/blob/main/docs/verification/style.md).
-- **Markdown and TOML:** `dprint.json` configures the dprint Markdown and TOML plugins, with `textWrap: maintain`.
+- **Markdown, TOML and reusable docs:** `dprint.json` configures the dprint Markdown and TOML plugins, with `textWrap: maintain`. Reusable content lives in `.templates/*.t.md` and is synchronized by mdt; see [These docs](docs.md).
 
 ## Changesets and releases
 

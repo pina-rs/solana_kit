@@ -161,18 +161,27 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
-      - name: Check ledger and Rust formatting
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "24"
+
+      - name: Check ledgers and Rust formatting
         shell: bash
 
         run: |
           rustup toolchain install 1.99.1 --profile minimal --component rustfmt
 
-          rustfmt +1.99.1 --edition "2024" --check tools/check_plan.rs
+          rustfmt +1.99.1 --edition "2024" --check tools/check_plan.rs tools/check_upstream.rs
 
           rustc +1.99.1 --edition="2024" -D warnings tools/check_plan.rs -o \
             "$RUNNER_TEMP/check-plan"
 
+          rustc +1.99.1 --edition="2024" -D warnings tools/check_upstream.rs -o \
+            "$RUNNER_TEMP/check-upstream"
+
           "$RUNNER_TEMP/check-plan"
+
+          "$RUNNER_TEMP/check-upstream"
 
           curl --fail --location \
             https://codeload.github.com/openbudgetfun/solana_kit/tar.gz/\
@@ -185,6 +194,14 @@ jobs:
             "$RUNNER_TEMP/dart-reference"
 
           "$RUNNER_TEMP/check-plan" "$RUNNER_TEMP/dart-reference"
+
+      - name: Check documentation templates
+        shell: bash
+
+        run: |
+          npm install --global @m-d-t/cli@0.9.8 dprint@0.64.1
+
+          mdt check --format github
 
       - name: "Enforce monostyle 90 in both categories"
         shell: bash

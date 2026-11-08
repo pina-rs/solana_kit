@@ -18,6 +18,7 @@ The crate has no optional features. For a REST adapter (`NativeRest`, `BrowserRe
 
 ## Prices and tokens
 
+<!-- {=jupiterSearchExample|trim|codeBlock:"rust"} -->
 ```rust
 use solana_kit_client::rest::{Budgets, Transport};
 use solana_kit_jupiter::{Client, Error, Service, TokenItem};
@@ -27,6 +28,7 @@ async fn search<T: Transport<Service>>(transport: T) -> Result<Vec<TokenItem>, E
     client.search_tokens("SOL", Some(10)).await
 }
 ```
+<!-- {/jupiterSearchExample} -->
 
 | Method                                       | Route                                  | Notes                                                             |
 | -------------------------------------------- | -------------------------------------- | ----------------------------------------------------------------- |
@@ -42,6 +44,7 @@ Prices stay exact `serde_json::Number` values and never pass through a float. If
 
 A swap has three steps: get an order, sign it yourself, then execute it.
 
+<!-- {=jupiterQuoteExample|trim|codeBlock:"rust"} -->
 ```rust
 use solana_kit_client::rest::{Budgets, Transport};
 use solana_kit_core::Address;
@@ -56,6 +59,7 @@ async fn quote<T: Transport<Service>>(
     Client::new(transport, Budgets::default()).get_order(&request).await
 }
 ```
+<!-- {/jupiterQuoteExample} -->
 
 <Steps>
 

@@ -9,6 +9,8 @@ Jupiter service root, adds an optional `x-api-key`, denies redirects, enforces
 receiving limits and deadlines, and cancels owned work when its future is dropped.
 The same methods accept local Wasm futures and native Send-capable adapters.
 
+<!-- {=jupiterSearchExample|trim|codeBlock:"rust"} -->
+
 ```rust
 use solana_kit_client::rest::{Budgets, Transport};
 use solana_kit_jupiter::{Client, Error, Service, TokenItem};
@@ -18,6 +20,8 @@ async fn search<T: Transport<Service>>(transport: T) -> Result<Vec<TokenItem>, E
     client.search_tokens("SOL", Some(10)).await
 }
 ```
+
+<!-- {/jupiterSearchExample} -->
 
 `get_prices` accepts at most fifty Kit addresses. `search_tokens`, `tagged_tokens`,
 `category_tokens` and `recent_tokens` preserve the pinned Dart routes and query
@@ -49,6 +53,8 @@ sends `lastValidBlockHeight` as a string when available. Execution responses kee
 status, code, signature and error independently; a signature can accompany failure.
 The application decides whether an execution succeeded and confirms landing.
 
+<!-- {=jupiterQuoteExample|trim|codeBlock:"rust"} -->
+
 ```rust
 use solana_kit_client::rest::{Budgets, Transport};
 use solana_kit_core::Address;
@@ -63,6 +69,8 @@ async fn quote<T: Transport<Service>>(
     Client::new(transport, Budgets::default()).get_order(&request).await
 }
 ```
+
+<!-- {/jupiterQuoteExample} -->
 
 `OrderRequest` preserves optional parameters and provider defaults. Extra query
 parameters override built-in values, matching Dart; arbitrary values remain

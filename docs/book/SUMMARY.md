@@ -53,6 +53,7 @@
 # Reference
 
 - [Crates](reference/crates.md)
+- [Upstream compatibility](reference/upstream-compatibility.md)
 - [Parity and status](reference/parity.md)
 
 # Contributing

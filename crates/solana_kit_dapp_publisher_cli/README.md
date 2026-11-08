@@ -7,15 +7,23 @@ Native publishing CLI for the Solana dApp Store, built on
 
 From the repository:
 
+<!-- {=publisherInstall|trim|codeBlock:"sh"} -->
+
 ```sh
 cargo install --git https://github.com/pina-rs/solana_kit solana_kit_dapp_publisher_cli
 ```
 
+<!-- {/publisherInstall} -->
+
 From a checkout:
+
+<!-- {=publisherInstallLocal|trim|codeBlock:"sh"} -->
 
 ```sh
 cargo install --path crates/solana_kit_dapp_publisher_cli
 ```
+
+<!-- {/publisherInstallLocal} -->
 
 Prebuilt archives are published on GitHub Releases for macOS (arm64/x86_64),
 Linux (arm64/x86_64, glibc and musl) and Windows (arm64/x86_64). `cargo-binstall`

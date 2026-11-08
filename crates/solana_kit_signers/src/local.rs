@@ -60,10 +60,12 @@ impl<Failure, P: TransactionSendingSigner<Failure>> SendOperation<Failure> for A
         Box::pin(self.0.signer.send_transaction(tx, config))
     }
 }
+/// <!-- {=signerRegistrationDocs|trim|linePrefix:"/// ":true} -->
 /// An explicit supported-interface declaration borrowing one logical capability.
 ///
 /// Only declared interfaces are eligible for role selection. Constructors require
 /// the corresponding backend traits; absent interfaces have no backend adapter.
+/// <!-- {/signerRegistrationDocs} -->
 pub struct Registration<'a, Failure = Error> {
     info: Descriptor,
     partial: Option<Box<dyn PartialOperation<Failure> + 'a>>,

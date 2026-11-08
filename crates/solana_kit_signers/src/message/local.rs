@@ -50,10 +50,12 @@ impl<P: MessageModifyingSigner> ModifyOperation for Adapter<'_, P> {
     }
 }
 
+/// <!-- {=messageRegistrationDocs|trim|linePrefix:"/// ":true} -->
 /// One explicit message interface borrowing a caller-owned logical capability.
 ///
 /// Register a composite backend in exactly one role. Distinct handles claiming an
 /// address conflict, including handles borrowing coincident zero-sized backends.
+/// <!-- {/messageRegistrationDocs} -->
 pub struct Registration<'a> {
     address: Address,
     identity: usize,
