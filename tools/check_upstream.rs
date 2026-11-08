@@ -226,12 +226,23 @@ fn check_equal(label: &str, recorded: &str, expected: &str) -> CheckResult<()> {
 /// be listed, every listed name must have a table, and `dart` must be present
 /// because it carries the upstream marker.
 fn validate_sources(references: &[Table]) -> CheckResult<()> {
+    let listed = source_names(references)?;
+
+    validate_listed(references, &listed)?;
+    validate_entries(references, &listed)?;
+    validate_dart(references, &listed)
+}
+
+fn source_names(references: &[Table]) -> CheckResult<Vec<String>> {
     let root = references
         .iter()
         .find(|table| !table.array && table.name.is_empty())
         .ok_or("missing root table")?;
-    let listed = array_field(root, "sources")?;
 
+    array_field(root, "sources")
+}
+
+fn validate_listed(references: &[Table], listed: &[String]) -> CheckResult<()> {
     for source in references
         .iter()
         .filter(|table| !table.array && !table.name.is_empty())
@@ -241,24 +252,40 @@ fn validate_sources(references: &[Table]) -> CheckResult<()> {
         }
     }
 
-    for name in &listed {
-        let source = table(references, name)?;
+    Ok(())
+}
 
-        required(source, "repository")?;
-        array_field(source, "crates")?;
-
-        if !has_value(source, "release")
-            && !has_value(source, "selected_commit")
-            && !has_value(source, "commit")
-        {
-            return Err(format!("[{name}] has no release or commit pin").into());
-        }
-
-        if has_value(source, "selected_commit") && !has_value(source, "commit") {
-            return Err(format!("[{name}] has selected_commit without commit").into());
-        }
+fn validate_entries(references: &[Table], listed: &[String]) -> CheckResult<()> {
+    for name in listed {
+        validate_source(table(references, name)?, name)?;
     }
 
+    Ok(())
+}
+
+fn validate_source(source: &Table, name: &str) -> CheckResult<()> {
+    required(source, "repository")?;
+    array_field(source, "crates")?;
+    validate_pin(source, name)
+}
+
+fn validate_pin(source: &Table, name: &str) -> CheckResult<()> {
+    let has_release = has_value(source, "release");
+    let has_selected = has_value(source, "selected_commit");
+    let has_commit = has_value(source, "commit");
+
+    if !has_release && !has_selected && !has_commit {
+        return Err(format!("[{name}] has no release or commit pin").into());
+    }
+
+    if has_selected && !has_commit {
+        return Err(format!("[{name}] has selected_commit without commit").into());
+    }
+
+    Ok(())
+}
+
+fn validate_dart(references: &[Table], listed: &[String]) -> CheckResult<()> {
     let dart = table(references, "dart")?;
     required(dart, "upstream_kit_repository")?;
     required(dart, "upstream_kit_reference")?;
