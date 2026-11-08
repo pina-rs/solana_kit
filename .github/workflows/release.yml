@@ -38,20 +38,22 @@ jobs:
         run: |
           set -euo pipefail
           is_release=false
+
           if [ "${{ github.event_name }}" = push ]; then
             while IFS= read -r path; do
-
               case "$path" in
                 .monochange/releases/*/release.json) is_release=true ;;
               esac
             done < <(git diff-tree --root --no-commit-id --name-only --diff-filter=A -r HEAD)
           fi
+
           echo "is_release=$is_release" >> "$GITHUB_OUTPUT"
 
   release-pr:
     name: prepare release pull request
     needs: classify
     if: github.event_name != 'pull_request' && needs.classify.outputs.is_release != 'true'
+
     runs-on: ubuntu-latest
     timeout-minutes: 30
     permissions:
@@ -79,8 +81,10 @@ jobs:
           curl --fail --location --silent --show-error \
             "${base}/${release}/${archive}" \
             --output "$directory/monochange.tar.gz"
+
           printf '%s  %s\n' 3d79ea6d683b48ad6760f5ed60101022b8383b48e15eba49bd400fb53fed4afb \
             "$directory/monochange.tar.gz" | sha256sum --check --strict
+
           tar -xzf "$directory/monochange.tar.gz" -C "$directory"
           echo "$directory" >> "$GITHUB_PATH"
 
@@ -106,6 +110,7 @@ jobs:
 
       - name: open or update the release pull request
         if: steps.pending.outputs.count != '0'
+
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -141,8 +146,10 @@ jobs:
           curl --fail --location --silent --show-error \
             "${base}/${release}/${archive}" \
             --output "$directory/monochange.tar.gz"
+
           printf '%s  %s\n' 3d79ea6d683b48ad6760f5ed60101022b8383b48e15eba49bd400fb53fed4afb \
             "$directory/monochange.tar.gz" | sha256sum --check --strict
+
           tar -xzf "$directory/monochange.tar.gz" -C "$directory"
           echo "$directory" >> "$GITHUB_PATH"
 
@@ -166,6 +173,7 @@ jobs:
           if [ -d .changeset ]; then
             count=$(find .changeset -name '*.md' -type f | wc -l | tr -d ' ')
           fi
+
           if [ "$count" -eq 0 ]; then
             echo 'No pending changesets; there is no release pull request to prepare.'
             exit 0
@@ -204,8 +212,10 @@ jobs:
           curl --fail --location --silent --show-error \
             "${base}/${release}/${archive}" \
             --output "$directory/monochange.tar.gz"
+
           printf '%s  %s\n' 3d79ea6d683b48ad6760f5ed60101022b8383b48e15eba49bd400fb53fed4afb \
             "$directory/monochange.tar.gz" | sha256sum --check --strict
+
           tar -xzf "$directory/monochange.tar.gz" -C "$directory"
           echo "$directory" >> "$GITHUB_PATH"
 
@@ -223,6 +233,7 @@ jobs:
 
       - name: create release tags
         env:
+
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: monochange step tag-release --from HEAD --push=true --format json
 
@@ -237,6 +248,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+
           tag="$(monochange step release-record --from HEAD --format json \
             | jq -r '[.record.release_targets[] | select(.tag == true) | .tag_name] | map(select(startswith("v"))) | first')"
 
@@ -244,20 +256,20 @@ jobs:
             echo 'No primary v* tag in this release record; skipping crates.io publish dispatch.'
             exit 0
           fi
-          gh workflow run publish.yml \
-            --repo "$GITHUB_REPOSITORY" \
-            --ref main \
-            -f package=all \
-            -f tag="$tag" \
-            -f checkout_ref="$(git rev-parse HEAD)" \
-            -f dry_run=false
+
+          checkout_ref="$(git rev-parse HEAD)"
+
+          gh workflow run publish.yml --repo "$GITHUB_REPOSITORY" --ref main \
+            -f package=all -f tag="$tag" -f checkout_ref="$checkout_ref" -f dry_run=false
 
       - name: dispatch Codama npm publishing
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
         shell: bash
         run: |
           set -euo pipefail
+
           mapfile -t tags < <(
             monochange step release-record --from HEAD --format json \
               | jq -r '
@@ -277,9 +289,6 @@ jobs:
           fi
 
           for tag in "${tags[@]}"; do
-            gh workflow run npm-publish.yml \
-              --repo "$GITHUB_REPOSITORY" \
-              --ref main \
-              -f tag="$tag" \
-              -f dry_run=false
+            gh workflow run npm-publish.yml --repo "$GITHUB_REPOSITORY" --ref main \
+              -f tag="$tag" -f dry_run=false
           done

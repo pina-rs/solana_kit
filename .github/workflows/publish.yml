@@ -46,7 +46,7 @@ jobs:
   validate:
     name: validate packages
     if: github.event_name == 'push' || github.ref == 'refs/heads/main'
-    runs-on: ubuntu-24.04
+    runs-on: "ubuntu-24.04"
     timeout-minutes: 90
     permissions:
       contents: read
@@ -66,6 +66,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+
           if [ "$PACKAGE" = all ]; then
             case "$TAG" in
               v*) ;;
@@ -74,10 +75,12 @@ jobs:
 
             exit 0
           fi
+
           case "$PACKAGE" in
             solana_kit|solana_kit_*) ;;
             *) echo 'Select a Solana Kit workspace crate or all.' >&2; exit 1 ;;
           esac
+
           test -f "crates/$PACKAGE/Cargo.toml"
 
       - name: install pinned compiler
@@ -89,12 +92,15 @@ jobs:
           set -euo pipefail
           directory="$RUNNER_TEMP/monochange-0.21.0"
           mkdir -p "$directory"
+
           curl --fail --location --silent --show-error \
             https://github.com/monochange/monochange/releases/download/v0.21.0/\
           monochange-x86_64-unknown-linux-gnu-v0.21.0.tar.gz \
             --output "$directory/monochange.tar.gz"
+
           printf '%s  %s\n' 3d79ea6d683b48ad6760f5ed60101022b8383b48e15eba49bd400fb53fed4afb \
             "$directory/monochange.tar.gz" | sha256sum --check --strict
+
           tar -xzf "$directory/monochange.tar.gz" -C "$directory"
           echo "$directory" >> "$GITHUB_PATH"
 
@@ -108,9 +114,11 @@ jobs:
           echo "tags=$tags" >> "$GITHUB_OUTPUT"
 
       - name: verify packaged crates
+
         shell: bash
         run: |
           set -euo pipefail
+
           if [ "$PACKAGE" != all ]; then
             cargo +1.99.1 publish --locked --dry-run --package "$PACKAGE"
             exit 0
@@ -120,17 +128,19 @@ jobs:
             cargo metadata --no-deps --format-version 1 \
               | jq -r '.packages[] | select(.publish == []) | .name'
           )
+
           excludes=()
           for package in "${unpublished[@]}"; do
             excludes+=("--exclude" "$package")
           done
+
           excludes+=("--exclude" solana_kit)
           cargo +1.99.1 package --workspace --locked "${excludes[@]}"
 
   publish:
     name: publish packages
     needs: validate
-    runs-on: ubuntu-24.04
+    runs-on: "ubuntu-24.04"
     timeout-minutes: 90
     permissions:
       contents: write
@@ -159,15 +169,17 @@ jobs:
           CARGO_REGISTRY_TOKEN: ${{ steps.auth.outputs.token }}
         run: |
           set -euo pipefail
-          if [ "$PACKAGE" != all ]; then
 
+          if [ "$PACKAGE" != all ]; then
             cargo +1.99.1 publish --locked --package "$PACKAGE"
             exit 0
           fi
+
           mapfile -t unpublished < <(
             cargo metadata --no-deps --format-version 1 \
               | jq -r '.packages[] | select(.publish == []) | .name'
           )
+
           excludes=()
           for package in "${unpublished[@]}"; do
             excludes+=("--exclude" "$package")
@@ -178,6 +190,7 @@ jobs:
 
       - name: publish draft releases
         if: env.DRY_RUN != 'true' && env.PACKAGE == 'all'
+
         shell: bash
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
