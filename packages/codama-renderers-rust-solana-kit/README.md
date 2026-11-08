@@ -111,6 +111,11 @@ records actual native Rust 1.99.1 and 1.89.0, Chrome wasm-bindgen, both Wasmtime
 50 WASI previews and pinned LeptosKit `WasmHost` executions of those preserved
 bytes, including the one-fuel negative. It also records the archive, consumer,
 malformed-IDL, native/NPM equality and source-score controls. Source-only work
-does not establish those results. Registry publication remains disabled; the
+does not establish those results.
+
+Registry publication is enabled through MonoChange release tags and
+`.github/workflows/npm-publish.yml`. The first upload still needs either a
+one-shot `NPM_TOKEN` on the `npm-release` environment or a pre-existing package
+with a trusted publisher for that workflow; later releases use OIDC. The
 [0.1.1 release note](../../docs/releases/codama-renderers-rust-solana-kit-v0.1.1.md)
-is a reviewable draft, not a published release.
+remains the qualified draft that preceded the first registry upload.

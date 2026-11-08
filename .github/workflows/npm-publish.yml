@@ -7,11 +7,11 @@ name: Codama NPM renderer release
 # main pushes or tag pushes.
 #
 # A real publish is an explicit dispatch on main with `dry_run` disabled and
-# the exact release tag. It still needs registry-side setup that this
-# repository cannot perform: the package must already exist, the maintainer
-# must own it, and a protected trusted publisher for this workflow must be
-# configured. The first publish can never use trusted publishing because npm
-# only configures trusted publishers for packages that already exist.
+# the exact release tag (also dispatched automatically from the release
+# workflow when a Codama tag lands). Registry-side setup remains required:
+# either a one-shot `NPM_TOKEN` secret on the `npm-release` environment for
+# the first upload, or an already-existing package with a trusted publisher
+# for this workflow. npm cannot create a brand-new package through OIDC alone.
 on:
   workflow_dispatch:
     inputs:
@@ -304,6 +304,9 @@ jobs:
         env:
           NPM_CONFIG_USERCONFIG: ${{ runner.temp }}/npmrc
           NPM_CONFIG_GLOBALCONFIG: /dev/null
+          # Optional one-shot bootstrap for the first upload. Prefer deleting
+          # this secret after the package exists and trusted publishing works.
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
           set -euo pipefail
 
@@ -311,12 +314,26 @@ jobs:
           test "$RELEASE_TAG" = "$expected_tag"
           test -n "$archive"
           printf '%s\n' 'user-agent=build' > "$NPM_CONFIG_USERCONFIG"
+
+          if [ -n "${NODE_AUTH_TOKEN:-}" ]; then
+            # First-publish bootstrap: npm refuses to create a new package via
+            # OIDC alone. Write the token only into the isolated user config.
+            printf '//registry.npmjs.org/:_authToken=%s\n' "$NODE_AUTH_TOKEN" >> "$NPM_CONFIG_USERCONFIG"
+            npm publish "$archive" --ignore-scripts --access public
+            exit 0
+          fi
+
+          # An empty token in the environment forces a failed token handshake
+          # and blocks OIDC trusted publishing.
+          unset NODE_AUTH_TOKEN NPM_TOKEN || true
+
           if grep -v '^user-agent=build$' "$NPM_CONFIG_USERCONFIG"; then
             echo "The publishing npm config must not contain a long-lived token." >&2
             exit 1
           fi
 
           # Trusted publishing exchanges the workflow OIDC identity. No token is
-          # read or written by this repository. The registry-side trusted
-          # publisher and package ownership remain maintainer prerequisites.
+          # read or written by this repository when NPM_TOKEN is unset. The
+          # package must already exist with a trusted publisher for this
+          # workflow, or NPM_TOKEN must be provided for the first upload.
           npm publish "$archive" --ignore-scripts --access public
