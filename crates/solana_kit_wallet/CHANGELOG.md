@@ -5,6 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## solana_kit_wallet [0.3.0](https://github.com/pina-rs/solana_kit/releases/tag/solana_kit_wallet/v0.3.0) (2026-11-08)
+
+### Breaking changes
+
+#### solana_kit_wallet: Wallet Standard and MWA
+
+_Owner:_ [@ifiokjr](https://github.com/ifiokjr) · _Review:_ [PR #183](https://github.com/pina-rs/solana_kit/pull/183)
+
+Portable Wallet Standard contracts for off-chain applications: typed feature
+registries, authorization and signing capabilities, account selection, and
+caller-owned cancellation without an executor.
+
+The optional `mwa` feature adds portable association URIs, P-256 association
+signing, ES256 JWS, HELLO negotiation, HKDF-SHA256 session keys, AES-128-GCM
+frames, ordered sessions, JSON-RPC contracts, and SIWS messages. Returned
+signatures remain raw bytes; verification stays the caller's responsibility.
+
 ## solana_kit_wallet [0.2.0](https://github.com/pina-rs/solana_kit/releases/tag/solana_kit_wallet/v0.2.0) (2026-11-05)
 
 ### Breaking changes

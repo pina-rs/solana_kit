@@ -876,21 +876,21 @@ dependencies = [
 
 [[package]]
 name = "solana_kit_address_lookup_table"
-version = "0.1.1"
+version = "0.1.2"
 dependencies = [
  "solana_kit_core",
 ]
 
 [[package]]
 name = "solana_kit_config"
-version = "0.1.1"
+version = "0.1.2"
 dependencies = [
  "solana_kit_core",
 ]
 
 [[package]]
 name = "solana_kit_core"
-version = "0.1.1"
+version = "0.2.0"
 dependencies = [
  "bs58",
  "curve25519-dalek",
@@ -902,14 +902,14 @@ dependencies = [
 
 [[package]]
 name = "solana_kit_loader"
-version = "0.1.1"
+version = "0.1.2"
 dependencies = [
  "solana_kit_core",
 ]
 
 [[package]]
 name = "solana_kit_stake"
-version = "0.1.1"
+version = "0.1.2"
 dependencies = [
  "solana_kit_core",
  "solana_kit_system",
@@ -956,7 +956,7 @@ dependencies = [
 
 [[package]]
 name = "solana_kit_system"
-version = "0.1.1"
+version = "0.2.0"
 dependencies = [
  "solana_kit_core",
 ]

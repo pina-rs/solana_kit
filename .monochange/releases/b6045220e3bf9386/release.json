@@ -1,0 +1,2815 @@
+{
+  "schema_version": "0.10",
+  "kind": "monochange.releaseRecord",
+  "created_at": "2026-11-08T03:03:11Z",
+  "command": "release",
+  "version": null,
+  "versions": {
+    "sdk": "0.2.0",
+    "solana_kit_account_compression": "0.1.2",
+    "solana_kit_address_lookup_table": "0.1.2",
+    "solana_kit_anchor": "0.2.0",
+    "solana_kit_associated_token_account": "0.2.0",
+    "solana_kit_attestation_service": "0.1.2",
+    "solana_kit_compute_budget": "0.2.0",
+    "solana_kit_config": "0.1.2",
+    "solana_kit_dapp_publisher": "0.1.2",
+    "solana_kit_dapp_publisher_cli": "0.1.2",
+    "solana_kit_helius": "0.1.2",
+    "solana_kit_jupiter": "0.1.2",
+    "solana_kit_loader": "0.1.2",
+    "solana_kit_memo": "0.2.0",
+    "solana_kit_mpl_bubblegum": "0.1.2",
+    "solana_kit_mpl_core": "0.1.2",
+    "solana_kit_mpl_token_metadata": "0.1.2",
+    "solana_kit_pyth": "0.1.2",
+    "solana_kit_sns": "0.1.2",
+    "solana_kit_squads": "0.1.2",
+    "solana_kit_stake": "0.1.2",
+    "solana_kit_subscriptions": "0.1.2",
+    "solana_kit_surfpool": "0.2.0",
+    "solana_kit_system": "0.2.0",
+    "solana_kit_test_support": "0.1.2",
+    "solana_kit_token": "0.1.2",
+    "solana_kit_token_2022": "0.1.2",
+    "solana_kit_wallet": "0.3.0"
+  },
+  "release_targets": [
+    {
+      "id": "sdk",
+      "kind": "group",
+      "version": "0.2.0",
+      "version_format": "primary",
+      "tag": true,
+      "release": true,
+      "tag_name": "v0.2.0",
+      "rendered_title": "v0.2.0 (2026-11-08)",
+      "rendered_changelog_title": "[0.2.0](https://github.com/pina-rs/solana_kit/releases/tag/v0.2.0) (2026-11-08)",
+      "members": [
+        "solana_kit_core",
+        "solana_kit_client",
+        "solana_kit_native",
+        "solana_kit_signers",
+        "solana_kit_browser",
+        "solana_kit_leptoskit",
+        "solana_kit_wasi"
+      ]
+    },
+    {
+      "id": "solana_kit_account_compression",
+      "kind": "package",
+      "version": "0.1.2",
+      "version_format": "namespaced",
+      "tag": false,
+      "release": false,
+      "tag_name": "solana_kit_account_compression/v0.1.2",
+      "rendered_title": "solana_kit_account_compression v0.1.2 (2026-11-08)",
+      "rendered_changelog_title": "solana_kit_account_compression [0.1.2](https://github.com/pina-rs/solana_kit/releases/tag/solana_kit_account_compression/v0.1.2) (2026-11-08)",
+      "members": [
+        "solana_kit_account_compression"
+      ]
+    },
+    {
+      "id": "solana_kit_address_lookup_table",
+      "kind": "package",
+      "version": "0.1.2",
+      "version_format": "namespaced",
+      "tag": false,
+      "release": false,
+      "tag_name": "solana_kit_address_lookup_table/v0.1.2",
+      "rendered_title": "solana_kit_address_lookup_table v0.1.2 (2026-11-08)",
+      "rendered_changelog_title": "solana_kit_address_lookup_table [0.1.2](https://github.com/pina-rs/solana_kit/releases/tag/solana_kit_address_lookup_table/v0.1.2) (2026-11-08)",
+      "members": [
+        "solana_kit_address_lookup_table"
+      ]
+    },
+    {
+      "id": "solana_kit_anchor",
+      "kind": "package",
+      "version": "0.2.0",
+      "version_format": "namespaced",
+      "tag": true,
+      "release": true,
+      "tag_name": "solana_kit_anchor/v0.2.0",
+      "rendered_title": "solana_kit_anchor v0.2.0 (2026-11-08)",
+      "rendered_changelog_title": "solana_kit_anchor [0.2.0](https://github.com/pina-rs/solana_kit/releases/tag/solana_kit_anchor/v0.2.0) (2026-11-08)",
+      "members": [
+        "solana_kit_anchor"
+      ]
+    },
+    {
+      "id": "solana_kit_associated_token_account",
+      "kind": "package",
+      "version": "0.2.0",
+      "version_format": "namespaced",
+      "tag": true,
+      "release": true,
+      "tag_name": "solana_kit_associated_token_account/v0.2.0",
+      "rendered_title": "solana_kit_associated_token_account v0.2.0 (2026-11-08)",
+      "rendered_changelog_title": "solana_kit_associated_token_account [0.2.0](https://github.com/pina-rs/solana_kit/releases/tag/solana_kit_associated_token_account/v0.2.0) (2026-11-08)",
+      "members": [
+        "solana_kit_associated_token_account"
+      ]
+    },
+    {
+      "id": "solana_kit_attestation_service",
+      "kind": "package",
+      "version": "0.1.2",
+      "version_format": "namespaced",
+      "tag": false,
+      "release": false,
+      "tag_name": "solana_kit_attestation_service/v0.1.2",
+      "rendered_title": "solana_kit_attestation_service v0.1.2 (2026-11-08)",
+      "rendered_changelog_title": "solana_kit_attestation_service [0.1.2](https://github.com/pina-rs/solana_kit/releases/tag/solana_kit_attestation_service/v0.1.2) (2026-11-08)",
+      "members": [
+        "solana_kit_attestation_service"
+      ]
+    },
+    {
+      "id": "solana_kit_compute_budget",
+      "kind": "package",
+      "version": "0.2.0",
+      "version_format": "namespaced",
+      "tag": true,
+      "release": true,
+      "tag_name": "solana_kit_compute_budget/v0.2.0",
+      "rendered_title": "solana_kit_compute_budget v0.2.0 (2026-11-08)",
+      "rendered_changelog_title": "solana_kit_compute_budget [0.2.0](https://github.com/pina-rs/solana_kit/releases/tag/solana_kit_compute_budget/v0.2.0) (2026-11-08)",
+      "members": [
+        "solana_kit_compute_budget"
+      ]
+    },
+    {
+      "id": "solana_kit_config",
+      "kind": "package",
+      "version": "0.1.2",
+      "version_format": "namespaced",
+      "tag": false,
+      "release": false,
+      "tag_name": "solana_kit_config/v0.1.2",
+      "rendered_title": "solana_kit_config v0.1.2 (2026-11-08)",
+      "rendered_changelog_title": "solana_kit_config [0.1.2](https://github.com/pina-rs/solana_kit/releases/tag/solana_kit_config/v0.1.2) (2026-11-08)",
+      "members": [
+        "solana_kit_config"
+      ]
+    },
+    {
+      "id": "solana_kit_dapp_publisher",
+      "kind": "package",
+      "version": "0.1.2",
+      "version_format": "namespaced",
+      "tag": false,
+      "release": false,
+      "tag_name": "solana_kit_dapp_publisher/v0.1.2",
+      "rendered_title": "solana_kit_dapp_publisher v0.1.2 (2026-11-08)",
+      "rendered_changelog_title": "solana_kit_dapp_publisher [0.1.2](https://github.com/pina-rs/solana_kit/releases/tag/solana_kit_dapp_publisher/v0.1.2) (2026-11-08)",
+      "members": [
+        "solana_kit_dapp_publisher"
+      ]
+    },
+    {
+      "id": "solana_kit_dapp_publisher_cli",
+      "kind": "package",
+      "version": "0.1.2",
+      "version_format": "namespaced",
+      "tag": false,
+      "release": false,
+      "tag_name": "solana_kit_dapp_publisher_cli/v0.1.2",
+      "rendered_title": "solana_kit_dapp_publisher_cli v0.1.2 (2026-11-08)",
+      "rendered_changelog_title": "solana_kit_dapp_publisher_cli [0.1.2](https://github.com/pina-rs/solana_kit/releases/tag/solana_kit_dapp_publisher_cli/v0.1.2) (2026-11-08)",
+      "members": [
+        "solana_kit_dapp_publisher_cli"
+      ]
+    },
+    {
+      "id": "solana_kit_helius",
+      "kind": "package",
+      "version": "0.1.2",
+      "version_format": "namespaced",
+      "tag": false,
+      "release": false,
+      "tag_name": "solana_kit_helius/v0.1.2",
+      "rendered_title": "solana_kit_helius v0.1.2 (2026-11-08)",
+      "rendered_changelog_title": "solana_kit_helius [0.1.2](https://github.com/pina-rs/solana_kit/releases/tag/solana_kit_helius/v0.1.2) (2026-11-08)",
+      "members": [
+        "solana_kit_helius"
+      ]
+    },
+    {
+      "id": "solana_kit_jupiter",
+      "kind": "package",
+      "version": "0.1.2",
+      "version_format": "namespaced",
+      "tag": false,
+      "release": false,
+      "tag_name": "solana_kit_jupiter/v0.1.2",
+      "rendered_title": "solana_kit_jupiter v0.1.2 (2026-11-08)",
+      "rendered_changelog_title": "solana_kit_jupiter [0.1.2](https://github.com/pina-rs/solana_kit/releases/tag/solana_kit_jupiter/v0.1.2) (2026-11-08)",
+      "members": [
+        "solana_kit_jupiter"
+      ]
+    },
+    {
+      "id": "solana_kit_loader",
+      "kind": "package",
+      "version": "0.1.2",
+      "version_format": "namespaced",
+      "tag": false,
+      "release": false,
+      "tag_name": "solana_kit_loader/v0.1.2",
+      "rendered_title": "solana_kit_loader v0.1.2 (2026-11-08)",
+      "rendered_changelog_title": "solana_kit_loader [0.1.2](https://github.com/pina-rs/solana_kit/releases/tag/solana_kit_loader/v0.1.2) (2026-11-08)",
+      "members": [
+        "solana_kit_loader"
+      ]
+    },
+    {
+      "id": "solana_kit_memo",
+      "kind": "package",
+      "version": "0.2.0",
+      "version_format": "namespaced",
+      "tag": true,
+      "release": true,
+      "tag_name": "solana_kit_memo/v0.2.0",
+      "rendered_title": "solana_kit_memo v0.2.0 (2026-11-08)",
+      "rendered_changelog_title": "solana_kit_memo [0.2.0](https://github.com/pina-rs/solana_kit/releases/tag/solana_kit_memo/v0.2.0) (2026-11-08)",
+      "members": [
+        "solana_kit_memo"
+      ]
+    },
+    {
+      "id": "solana_kit_mpl_bubblegum",
+      "kind": "package",
+      "version": "0.1.2",
+      "version_format": "namespaced",
+      "tag": false,
+      "release": false,
+      "tag_name": "solana_kit_mpl_bubblegum/v0.1.2",
+      "rendered_title": "solana_kit_mpl_bubblegum v0.1.2 (2026-11-08)",
+      "rendered_changelog_title": "solana_kit_mpl_bubblegum [0.1.2](https://github.com/pina-rs/solana_kit/releases/tag/solana_kit_mpl_bubblegum/v0.1.2) (2026-11-08)",
+      "members": [
+        "solana_kit_mpl_bubblegum"
+      ]
+    },
+    {
+      "id": "solana_kit_mpl_core",
+      "kind": "package",
+      "version": "0.1.2",
+      "version_format": "namespaced",
+      "tag": false,
+      "release": false,
+      "tag_name": "solana_kit_mpl_core/v0.1.2",
+      "rendered_title": "solana_kit_mpl_core v0.1.2 (2026-11-08)",
+      "rendered_changelog_title": "solana_kit_mpl_core [0.1.2](https://github.com/pina-rs/solana_kit/releases/tag/solana_kit_mpl_core/v0.1.2) (2026-11-08)",
+      "members": [
+        "solana_kit_mpl_core"
+      ]
+    },
+    {
+      "id": "solana_kit_mpl_token_metadata",
+      "kind": "package",
+      "version": "0.1.2",
+      "version_format": "namespaced",
+      "tag": false,
+      "release": false,
+      "tag_name": "solana_kit_mpl_token_metadata/v0.1.2",
+      "rendered_title": "solana_kit_mpl_token_metadata v0.1.2 (2026-11-08)",
+      "rendered_changelog_title": "solana_kit_mpl_token_metadata [0.1.2](https://github.com/pina-rs/solana_kit/releases/tag/solana_kit_mpl_token_metadata/v0.1.2) (2026-11-08)",
+      "members": [
+        "solana_kit_mpl_token_metadata"
+      ]
+    },
+    {
+      "id": "solana_kit_pyth",
+      "kind": "package",
+      "version": "0.1.2",
+      "version_format": "namespaced",
+      "tag": false,
+      "release": false,
+      "tag_name": "solana_kit_pyth/v0.1.2",
+      "rendered_title": "solana_kit_pyth v0.1.2 (2026-11-08)",
+      "rendered_changelog_title": "solana_kit_pyth [0.1.2](https://github.com/pina-rs/solana_kit/releases/tag/solana_kit_pyth/v0.1.2) (2026-11-08)",
+      "members": [
+        "solana_kit_pyth"
+      ]
+    },
+    {
+      "id": "solana_kit_sns",
+      "kind": "package",
+      "version": "0.1.2",
+      "version_format": "namespaced",
+      "tag": false,
+      "release": false,
+      "tag_name": "solana_kit_sns/v0.1.2",
+      "rendered_title": "solana_kit_sns v0.1.2 (2026-11-08)",
+      "rendered_changelog_title": "solana_kit_sns [0.1.2](https://github.com/pina-rs/solana_kit/releases/tag/solana_kit_sns/v0.1.2) (2026-11-08)",
+      "members": [
+        "solana_kit_sns"
+      ]
+    },
+    {
+      "id": "solana_kit_squads",
+      "kind": "package",
+      "version": "0.1.2",
+      "version_format": "namespaced",
+      "tag": false,
+      "release": false,
+      "tag_name": "solana_kit_squads/v0.1.2",
+      "rendered_title": "solana_kit_squads v0.1.2 (2026-11-08)",
+      "rendered_changelog_title": "solana_kit_squads [0.1.2](https://github.com/pina-rs/solana_kit/releases/tag/solana_kit_squads/v0.1.2) (2026-11-08)",
+      "members": [
+        "solana_kit_squads"
+      ]
+    },
+    {
+      "id": "solana_kit_stake",
+      "kind": "package",
+      "version": "0.1.2",
+      "version_format": "namespaced",
+      "tag": false,
+      "release": false,
+      "tag_name": "solana_kit_stake/v0.1.2",
+      "rendered_title": "solana_kit_stake v0.1.2 (2026-11-08)",
+      "rendered_changelog_title": "solana_kit_stake [0.1.2](https://github.com/pina-rs/solana_kit/releases/tag/solana_kit_stake/v0.1.2) (2026-11-08)",
+      "members": [
+        "solana_kit_stake"
+      ]
+    },
+    {
+      "id": "solana_kit_subscriptions",
+      "kind": "package",
+      "version": "0.1.2",
+      "version_format": "namespaced",
+      "tag": false,
+      "release": false,
+      "tag_name": "solana_kit_subscriptions/v0.1.2",
+      "rendered_title": "solana_kit_subscriptions v0.1.2 (2026-11-08)",
+      "rendered_changelog_title": "solana_kit_subscriptions [0.1.2](https://github.com/pina-rs/solana_kit/releases/tag/solana_kit_subscriptions/v0.1.2) (2026-11-08)",
+      "members": [
+        "solana_kit_subscriptions"
+      ]
+    },
+    {
+      "id": "solana_kit_surfpool",
+      "kind": "package",
+      "version": "0.2.0",
+      "version_format": "namespaced",
+      "tag": true,
+      "release": true,
+      "tag_name": "solana_kit_surfpool/v0.2.0",
+      "rendered_title": "solana_kit_surfpool v0.2.0 (2026-11-08)",
+      "rendered_changelog_title": "solana_kit_surfpool [0.2.0](https://github.com/pina-rs/solana_kit/releases/tag/solana_kit_surfpool/v0.2.0) (2026-11-08)",
+      "members": [
+        "solana_kit_surfpool"
+      ]
+    },
+    {
+      "id": "solana_kit_system",
+      "kind": "package",
+      "version": "0.2.0",
+      "version_format": "namespaced",
+      "tag": true,
+      "release": true,
+      "tag_name": "solana_kit_system/v0.2.0",
+      "rendered_title": "solana_kit_system v0.2.0 (2026-11-08)",
+      "rendered_changelog_title": "solana_kit_system [0.2.0](https://github.com/pina-rs/solana_kit/releases/tag/solana_kit_system/v0.2.0) (2026-11-08)",
+      "members": [
+        "solana_kit_system"
+      ]
+    },
+    {
+      "id": "solana_kit_test_support",
+      "kind": "package",
+      "version": "0.1.2",
+      "version_format": "namespaced",
+      "tag": false,
+      "release": false,
+      "tag_name": "solana_kit_test_support/v0.1.2",
+      "rendered_title": "solana_kit_test_support v0.1.2 (2026-11-08)",
+      "rendered_changelog_title": "solana_kit_test_support [0.1.2](https://github.com/pina-rs/solana_kit/releases/tag/solana_kit_test_support/v0.1.2) (2026-11-08)",
+      "members": [
+        "solana_kit_test_support"
+      ]
+    },
+    {
+      "id": "solana_kit_token",
+      "kind": "package",
+      "version": "0.1.2",
+      "version_format": "namespaced",
+      "tag": false,
+      "release": false,
+      "tag_name": "solana_kit_token/v0.1.2",
+      "rendered_title": "solana_kit_token v0.1.2 (2026-11-08)",
+      "rendered_changelog_title": "solana_kit_token [0.1.2](https://github.com/pina-rs/solana_kit/releases/tag/solana_kit_token/v0.1.2) (2026-11-08)",
+      "members": [
+        "solana_kit_token"
+      ]
+    },
+    {
+      "id": "solana_kit_token_2022",
+      "kind": "package",
+      "version": "0.1.2",
+      "version_format": "namespaced",
+      "tag": false,
+      "release": false,
+      "tag_name": "solana_kit_token_2022/v0.1.2",
+      "rendered_title": "solana_kit_token_2022 v0.1.2 (2026-11-08)",
+      "rendered_changelog_title": "solana_kit_token_2022 [0.1.2](https://github.com/pina-rs/solana_kit/releases/tag/solana_kit_token_2022/v0.1.2) (2026-11-08)",
+      "members": [
+        "solana_kit_token_2022"
+      ]
+    },
+    {
+      "id": "solana_kit_wallet",
+      "kind": "package",
+      "version": "0.3.0",
+      "version_format": "namespaced",
+      "tag": true,
+      "release": true,
+      "tag_name": "solana_kit_wallet/v0.3.0",
+      "rendered_title": "solana_kit_wallet v0.3.0 (2026-11-08)",
+      "rendered_changelog_title": "solana_kit_wallet [0.3.0](https://github.com/pina-rs/solana_kit/releases/tag/solana_kit_wallet/v0.3.0) (2026-11-08)",
+      "members": [
+        "solana_kit_wallet"
+      ]
+    }
+  ],
+  "released_packages": [
+    "solana_kit_account_compression",
+    "solana_kit_address_lookup_table",
+    "solana_kit_anchor",
+    "solana_kit_associated_token_account",
+    "solana_kit_attestation_service",
+    "solana_kit_browser",
+    "solana_kit_client",
+    "solana_kit_compute_budget",
+    "solana_kit_config",
+    "solana_kit_core",
+    "solana_kit_dapp_publisher",
+    "solana_kit_dapp_publisher_cli",
+    "solana_kit_helius",
+    "solana_kit_jupiter",
+    "solana_kit_leptoskit",
+    "solana_kit_loader",
+    "solana_kit_memo",
+    "solana_kit_mpl_bubblegum",
+    "solana_kit_mpl_core",
+    "solana_kit_mpl_token_metadata",
+    "solana_kit_native",
+    "solana_kit_pyth",
+    "solana_kit_signers",
+    "solana_kit_sns",
+    "solana_kit_squads",
+    "solana_kit_stake",
+    "solana_kit_subscriptions",
+    "solana_kit_surfpool",
+    "solana_kit_system",
+    "solana_kit_test_support",
+    "solana_kit_token",
+    "solana_kit_token_2022",
+    "solana_kit_wallet",
+    "solana_kit_wasi"
+  ],
+  "changed_files": [
+    "Cargo.lock",
+    "Cargo.toml",
+    "crates/solana_kit_account_compression/CHANGELOG.md",
+    "crates/solana_kit_account_compression/Cargo.toml",
+    "crates/solana_kit_address_lookup_table/CHANGELOG.md",
+    "crates/solana_kit_address_lookup_table/Cargo.toml",
+    "crates/solana_kit_anchor/CHANGELOG.md",
+    "crates/solana_kit_anchor/Cargo.toml",
+    "crates/solana_kit_associated_token_account/CHANGELOG.md",
+    "crates/solana_kit_associated_token_account/Cargo.toml",
+    "crates/solana_kit_attestation_service/CHANGELOG.md",
+    "crates/solana_kit_attestation_service/Cargo.toml",
+    "crates/solana_kit_browser/Cargo.toml",
+    "crates/solana_kit_client/Cargo.toml",
+    "crates/solana_kit_compute_budget/CHANGELOG.md",
+    "crates/solana_kit_compute_budget/Cargo.toml",
+    "crates/solana_kit_config/CHANGELOG.md",
+    "crates/solana_kit_config/Cargo.toml",
+    "crates/solana_kit_core/CHANGELOG.md",
+    "crates/solana_kit_core/Cargo.toml",
+    "crates/solana_kit_dapp_publisher/CHANGELOG.md",
+    "crates/solana_kit_dapp_publisher/Cargo.toml",
+    "crates/solana_kit_dapp_publisher_cli/Cargo.toml",
+    "crates/solana_kit_helius/CHANGELOG.md",
+    "crates/solana_kit_helius/Cargo.toml",
+    "crates/solana_kit_jupiter/Cargo.toml",
+    "crates/solana_kit_leptoskit/Cargo.toml",
+    "crates/solana_kit_loader/CHANGELOG.md",
+    "crates/solana_kit_loader/Cargo.toml",
+    "crates/solana_kit_memo/CHANGELOG.md",
+    "crates/solana_kit_memo/Cargo.toml",
+    "crates/solana_kit_mpl_bubblegum/CHANGELOG.md",
+    "crates/solana_kit_mpl_bubblegum/Cargo.toml",
+    "crates/solana_kit_mpl_core/CHANGELOG.md",
+    "crates/solana_kit_mpl_core/Cargo.toml",
+    "crates/solana_kit_mpl_token_metadata/CHANGELOG.md",
+    "crates/solana_kit_mpl_token_metadata/Cargo.toml",
+    "crates/solana_kit_native/Cargo.toml",
+    "crates/solana_kit_pyth/CHANGELOG.md",
+    "crates/solana_kit_pyth/Cargo.toml",
+    "crates/solana_kit_signers/Cargo.toml",
+    "crates/solana_kit_sns/CHANGELOG.md",
+    "crates/solana_kit_sns/Cargo.toml",
+    "crates/solana_kit_squads/CHANGELOG.md",
+    "crates/solana_kit_squads/Cargo.toml",
+    "crates/solana_kit_stake/CHANGELOG.md",
+    "crates/solana_kit_stake/Cargo.toml",
+    "crates/solana_kit_subscriptions/CHANGELOG.md",
+    "crates/solana_kit_subscriptions/Cargo.toml",
+    "crates/solana_kit_surfpool/CHANGELOG.md",
+    "crates/solana_kit_surfpool/Cargo.toml",
+    "crates/solana_kit_system/CHANGELOG.md",
+    "crates/solana_kit_system/Cargo.toml",
+    "crates/solana_kit_test_support/Cargo.toml",
+    "crates/solana_kit_token/CHANGELOG.md",
+    "crates/solana_kit_token/Cargo.toml",
+    "crates/solana_kit_token_2022/CHANGELOG.md",
+    "crates/solana_kit_token_2022/Cargo.toml",
+    "crates/solana_kit_wallet/CHANGELOG.md",
+    "crates/solana_kit_wallet/Cargo.toml",
+    "crates/solana_kit_wasi/Cargo.toml"
+  ],
+  "package_publications": [
+    {
+      "package": "solana_kit_anchor",
+      "ecosystem": "cargo",
+      "registry": "crates_io",
+      "version": "0.2.0",
+      "mode": "builtin",
+      "trusted_publishing": {
+        "enabled": true,
+        "mode": "preferred",
+        "repository": "pina-rs/solana_kit",
+        "workflow": "publish.yml",
+        "environment": null
+      }
+    },
+    {
+      "package": "solana_kit_associated_token_account",
+      "ecosystem": "cargo",
+      "registry": "crates_io",
+      "version": "0.2.0",
+      "mode": "builtin",
+      "trusted_publishing": {
+        "enabled": true,
+        "mode": "preferred",
+        "repository": "pina-rs/solana_kit",
+        "workflow": "publish.yml",
+        "environment": null
+      }
+    },
+    {
+      "package": "solana_kit_browser",
+      "ecosystem": "cargo",
+      "registry": "crates_io",
+      "version": "0.2.0",
+      "mode": "builtin",
+      "trusted_publishing": {
+        "enabled": true,
+        "mode": "preferred",
+        "repository": "pina-rs/solana_kit",
+        "workflow": "publish.yml",
+        "environment": null
+      }
+    },
+    {
+      "package": "solana_kit_client",
+      "ecosystem": "cargo",
+      "registry": "crates_io",
+      "version": "0.2.0",
+      "mode": "builtin",
+      "trusted_publishing": {
+        "enabled": true,
+        "mode": "preferred",
+        "repository": "pina-rs/solana_kit",
+        "workflow": "publish.yml",
+        "environment": null
+      }
+    },
+    {
+      "package": "solana_kit_compute_budget",
+      "ecosystem": "cargo",
+      "registry": "crates_io",
+      "version": "0.2.0",
+      "mode": "builtin",
+      "trusted_publishing": {
+        "enabled": true,
+        "mode": "preferred",
+        "repository": "pina-rs/solana_kit",
+        "workflow": "publish.yml",
+        "environment": null
+      }
+    },
+    {
+      "package": "solana_kit_core",
+      "ecosystem": "cargo",
+      "registry": "crates_io",
+      "version": "0.2.0",
+      "mode": "builtin",
+      "trusted_publishing": {
+        "enabled": true,
+        "mode": "preferred",
+        "repository": "pina-rs/solana_kit",
+        "workflow": "publish.yml",
+        "environment": null
+      }
+    },
+    {
+      "package": "solana_kit_leptoskit",
+      "ecosystem": "cargo",
+      "registry": "crates_io",
+      "version": "0.2.0",
+      "mode": "builtin",
+      "trusted_publishing": {
+        "enabled": true,
+        "mode": "preferred",
+        "repository": "pina-rs/solana_kit",
+        "workflow": "publish.yml",
+        "environment": null
+      }
+    },
+    {
+      "package": "solana_kit_memo",
+      "ecosystem": "cargo",
+      "registry": "crates_io",
+      "version": "0.2.0",
+      "mode": "builtin",
+      "trusted_publishing": {
+        "enabled": true,
+        "mode": "preferred",
+        "repository": "pina-rs/solana_kit",
+        "workflow": "publish.yml",
+        "environment": null
+      }
+    },
+    {
+      "package": "solana_kit_native",
+      "ecosystem": "cargo",
+      "registry": "crates_io",
+      "version": "0.2.0",
+      "mode": "builtin",
+      "trusted_publishing": {
+        "enabled": true,
+        "mode": "preferred",
+        "repository": "pina-rs/solana_kit",
+        "workflow": "publish.yml",
+        "environment": null
+      }
+    },
+    {
+      "package": "solana_kit_signers",
+      "ecosystem": "cargo",
+      "registry": "crates_io",
+      "version": "0.2.0",
+      "mode": "builtin",
+      "trusted_publishing": {
+        "enabled": true,
+        "mode": "preferred",
+        "repository": "pina-rs/solana_kit",
+        "workflow": "publish.yml",
+        "environment": null
+      }
+    },
+    {
+      "package": "solana_kit_surfpool",
+      "ecosystem": "cargo",
+      "registry": "crates_io",
+      "version": "0.2.0",
+      "mode": "builtin",
+      "trusted_publishing": {
+        "enabled": true,
+        "mode": "preferred",
+        "repository": "pina-rs/solana_kit",
+        "workflow": "publish.yml",
+        "environment": null
+      }
+    },
+    {
+      "package": "solana_kit_system",
+      "ecosystem": "cargo",
+      "registry": "crates_io",
+      "version": "0.2.0",
+      "mode": "builtin",
+      "trusted_publishing": {
+        "enabled": true,
+        "mode": "preferred",
+        "repository": "pina-rs/solana_kit",
+        "workflow": "publish.yml",
+        "environment": null
+      }
+    },
+    {
+      "package": "solana_kit_wallet",
+      "ecosystem": "cargo",
+      "registry": "crates_io",
+      "version": "0.3.0",
+      "mode": "builtin",
+      "trusted_publishing": {
+        "enabled": true,
+        "mode": "preferred",
+        "repository": "pina-rs/solana_kit",
+        "workflow": "publish.yml",
+        "environment": null
+      }
+    },
+    {
+      "package": "solana_kit_wasi",
+      "ecosystem": "cargo",
+      "registry": "crates_io",
+      "version": "0.2.0",
+      "mode": "builtin",
+      "trusted_publishing": {
+        "enabled": true,
+        "mode": "preferred",
+        "repository": "pina-rs/solana_kit",
+        "workflow": "publish.yml",
+        "environment": null
+      }
+    }
+  ],
+  "updated_changelogs": [
+    "crates/solana_kit_account_compression/CHANGELOG.md",
+    "crates/solana_kit_address_lookup_table/CHANGELOG.md",
+    "crates/solana_kit_anchor/CHANGELOG.md",
+    "crates/solana_kit_associated_token_account/CHANGELOG.md",
+    "crates/solana_kit_attestation_service/CHANGELOG.md",
+    "crates/solana_kit_compute_budget/CHANGELOG.md",
+    "crates/solana_kit_config/CHANGELOG.md",
+    "crates/solana_kit_core/CHANGELOG.md",
+    "crates/solana_kit_dapp_publisher/CHANGELOG.md",
+    "crates/solana_kit_helius/CHANGELOG.md",
+    "crates/solana_kit_loader/CHANGELOG.md",
+    "crates/solana_kit_memo/CHANGELOG.md",
+    "crates/solana_kit_mpl_bubblegum/CHANGELOG.md",
+    "crates/solana_kit_mpl_core/CHANGELOG.md",
+    "crates/solana_kit_mpl_token_metadata/CHANGELOG.md",
+    "crates/solana_kit_pyth/CHANGELOG.md",
+    "crates/solana_kit_sns/CHANGELOG.md",
+    "crates/solana_kit_squads/CHANGELOG.md",
+    "crates/solana_kit_stake/CHANGELOG.md",
+    "crates/solana_kit_subscriptions/CHANGELOG.md",
+    "crates/solana_kit_surfpool/CHANGELOG.md",
+    "crates/solana_kit_system/CHANGELOG.md",
+    "crates/solana_kit_token/CHANGELOG.md",
+    "crates/solana_kit_token_2022/CHANGELOG.md",
+    "crates/solana_kit_wallet/CHANGELOG.md"
+  ],
+  "deleted_changesets": [
+    ".changeset/introduce-solana_kit_anchor.md",
+    ".changeset/introduce-solana_kit_associated_token_account.md",
+    ".changeset/introduce-solana_kit_browser.md",
+    ".changeset/introduce-solana_kit_client.md",
+    ".changeset/introduce-solana_kit_compute_budget.md",
+    ".changeset/introduce-solana_kit_core.md",
+    ".changeset/introduce-solana_kit_leptoskit.md",
+    ".changeset/introduce-solana_kit_memo.md",
+    ".changeset/introduce-solana_kit_native.md",
+    ".changeset/introduce-solana_kit_signers.md",
+    ".changeset/introduce-solana_kit_surfpool.md",
+    ".changeset/introduce-solana_kit_system.md",
+    ".changeset/introduce-solana_kit_wallet.md",
+    ".changeset/introduce-solana_kit_wasi.md"
+  ],
+  "changesets": [
+    {
+      "path": ".changeset/introduce-solana_kit_anchor.md",
+      "summary": "solana_kit_anchor: runtime Anchor IDL coding",
+      "details": "Encode and decode Anchor IDL 0.30 instructions, accounts, and events at runtime.\nExact-width dynamic values, explicit IDL discriminators, field-attributed encode\nfailures, and standard or program-defined error resolution are supported.\n\nThe only dependency graph is `no_std + alloc` and it starts no executor or\nnetwork work. Every operation takes explicit byte, item, and depth budgets, and\nan unsupported generic field fails only when used rather than making the whole\nIDL unreadable.",
+      "targets": [
+        {
+          "id": "solana_kit_anchor",
+          "kind": "package",
+          "bump": "major",
+          "origin": "direct-change",
+          "evidence_refs": [],
+          "change_type": "major"
+        }
+      ],
+      "context": {
+        "provider": "github",
+        "host": "github.com",
+        "capabilities": {
+          "commit_web_urls": true,
+          "actor_profiles": true,
+          "review_request_lookup": true,
+          "related_issues": true,
+          "issue_comments": true
+        },
+        "introduced": {
+          "actor": {
+            "provider": "github",
+            "host": "github.com",
+            "id": null,
+            "login": "ifiokjr",
+            "display_name": "ifiokjr",
+            "url": "https://github.com/ifiokjr",
+            "source": "review_request_author"
+          },
+          "commit": {
+            "provider": "github",
+            "host": "github.com",
+            "sha": "3151b00331628093ad52a77277052ae0f727826b",
+            "short_sha": "3151b00",
+            "url": "https://github.com/pina-rs/solana_kit/commit/3151b00331628093ad52a77277052ae0f727826b",
+            "authored_at": "2026-11-08T03:01:04Z",
+            "committed_at": "2026-11-08T03:01:04Z",
+            "author_name": "Ifiok Jr.",
+            "author_email": "1160934+ifiokjr@users.noreply.github.com"
+          },
+          "review_request": {
+            "provider": "github",
+            "host": "github.com",
+            "kind": "pull_request",
+            "id": "#183",
+            "title": "chore(release): configure monochange releases",
+            "url": "https://github.com/pina-rs/solana_kit/pull/183",
+            "author": {
+              "provider": "github",
+              "host": "github.com",
+              "id": null,
+              "login": "ifiokjr",
+              "display_name": "ifiokjr",
+              "url": "https://github.com/ifiokjr",
+              "source": "review_request_author"
+            }
+          }
+        },
+        "last_updated": {
+          "actor": {
+            "provider": "github",
+            "host": "github.com",
+            "id": null,
+            "login": "ifiokjr",
+            "display_name": "ifiokjr",
+            "url": "https://github.com/ifiokjr",
+            "source": "review_request_author"
+          },
+          "commit": {
+            "provider": "github",
+            "host": "github.com",
+            "sha": "3151b00331628093ad52a77277052ae0f727826b",
+            "short_sha": "3151b00",
+            "url": "https://github.com/pina-rs/solana_kit/commit/3151b00331628093ad52a77277052ae0f727826b",
+            "authored_at": "2026-11-08T03:01:04Z",
+            "committed_at": "2026-11-08T03:01:04Z",
+            "author_name": "Ifiok Jr.",
+            "author_email": "1160934+ifiokjr@users.noreply.github.com"
+          },
+          "review_request": {
+            "provider": "github",
+            "host": "github.com",
+            "kind": "pull_request",
+            "id": "#183",
+            "title": "chore(release): configure monochange releases",
+            "url": "https://github.com/pina-rs/solana_kit/pull/183",
+            "author": {
+              "provider": "github",
+              "host": "github.com",
+              "id": null,
+              "login": "ifiokjr",
+              "display_name": "ifiokjr",
+              "url": "https://github.com/ifiokjr",
+              "source": "review_request_author"
+            }
+          }
+        },
+        "related_issues": []
+      }
+    },
+    {
+      "path": ".changeset/introduce-solana_kit_associated_token_account.md",
+      "summary": "solana_kit_associated_token_account: ATA constructors",
+      "details": "A handwritten `no_std + alloc` client for create, idempotent create, and nested\nrecovery instructions. Builders preserve every account position and duplicate;\ncanonical parsing checks the ATA identity, exact length, tags, account count, and\nroles.\n\nThe optional `crypto` feature derives associated addresses through the Kit core\nPDA implementation. System and token account identities remain caller-owned; the\ncrate does not perform account-existence checks, signing, or validator work.",
+      "targets": [
+        {
+          "id": "solana_kit_associated_token_account",
+          "kind": "package",
+          "bump": "major",
+          "origin": "direct-change",
+          "evidence_refs": [],
+          "change_type": "major"
+        }
+      ],
+      "context": {
+        "provider": "github",
+        "host": "github.com",
+        "capabilities": {
+          "commit_web_urls": true,
+          "actor_profiles": true,
+          "review_request_lookup": true,
+          "related_issues": true,
+          "issue_comments": true
+        },
+        "introduced": {
+          "actor": {
+            "provider": "github",
+            "host": "github.com",
+            "id": null,
+            "login": "ifiokjr",
+            "display_name": "ifiokjr",
+            "url": "https://github.com/ifiokjr",
+            "source": "review_request_author"
+          },
+          "commit": {
+            "provider": "github",
+            "host": "github.com",
+            "sha": "3151b00331628093ad52a77277052ae0f727826b",
+            "short_sha": "3151b00",
+            "url": "https://github.com/pina-rs/solana_kit/commit/3151b00331628093ad52a77277052ae0f727826b",
+            "authored_at": "2026-11-08T03:01:04Z",
+            "committed_at": "2026-11-08T03:01:04Z",
+            "author_name": "Ifiok Jr.",
+            "author_email": "1160934+ifiokjr@users.noreply.github.com"
+          },
+          "review_request": {
+            "provider": "github",
+            "host": "github.com",
+            "kind": "pull_request",
+            "id": "#183",
+            "title": "chore(release): configure monochange releases",
+            "url": "https://github.com/pina-rs/solana_kit/pull/183",
+            "author": {
+              "provider": "github",
+              "host": "github.com",
+              "id": null,
+              "login": "ifiokjr",
+              "display_name": "ifiokjr",
+              "url": "https://github.com/ifiokjr",
+              "source": "review_request_author"
+            }
+          }
+        },
+        "last_updated": {
+          "actor": {
+            "provider": "github",
+            "host": "github.com",
+            "id": null,
+            "login": "ifiokjr",
+            "display_name": "ifiokjr",
+            "url": "https://github.com/ifiokjr",
+            "source": "review_request_author"
+          },
+          "commit": {
+            "provider": "github",
+            "host": "github.com",
+            "sha": "3151b00331628093ad52a77277052ae0f727826b",
+            "short_sha": "3151b00",
+            "url": "https://github.com/pina-rs/solana_kit/commit/3151b00331628093ad52a77277052ae0f727826b",
+            "authored_at": "2026-11-08T03:01:04Z",
+            "committed_at": "2026-11-08T03:01:04Z",
+            "author_name": "Ifiok Jr.",
+            "author_email": "1160934+ifiokjr@users.noreply.github.com"
+          },
+          "review_request": {
+            "provider": "github",
+            "host": "github.com",
+            "kind": "pull_request",
+            "id": "#183",
+            "title": "chore(release): configure monochange releases",
+            "url": "https://github.com/pina-rs/solana_kit/pull/183",
+            "author": {
+              "provider": "github",
+              "host": "github.com",
+              "id": null,
+              "login": "ifiokjr",
+              "display_name": "ifiokjr",
+              "url": "https://github.com/ifiokjr",
+              "source": "review_request_author"
+            }
+          }
+        },
+        "related_issues": []
+      }
+    },
+    {
+      "path": ".changeset/introduce-solana_kit_browser.md",
+      "summary": "solana_kit_browser: Window HTTP and WebSocket transports",
+      "details": "Explicit browser adapters for the executor-neutral client. `BrowserHttp`\nimplements `Transport` with Window Fetch and local futures, bounded bodies,\ndeadlines, cancellation, redirect rejection, and no ambient credentials.\n\n`BrowserSubscriptionSocket` adapts the maintained Window WebSocket to the shared\nsubscription session, retaining event wakers and bounded timers between polls.\nImports exist only for `wasm32-unknown-unknown`; importing the crate is the\nexplicit opt-in to browser JavaScript.",
+      "targets": [
+        {
+          "id": "solana_kit_browser",
+          "kind": "package",
+          "bump": "major",
+          "origin": "direct-change",
+          "evidence_refs": [],
+          "change_type": "major"
+        }
+      ],
+      "context": {
+        "provider": "github",
+        "host": "github.com",
+        "capabilities": {
+          "commit_web_urls": true,
+          "actor_profiles": true,
+          "review_request_lookup": true,
+          "related_issues": true,
+          "issue_comments": true
+        },
+        "introduced": {
+          "actor": {
+            "provider": "github",
+            "host": "github.com",
+            "id": null,
+            "login": "ifiokjr",
+            "display_name": "ifiokjr",
+            "url": "https://github.com/ifiokjr",
+            "source": "review_request_author"
+          },
+          "commit": {
+            "provider": "github",
+            "host": "github.com",
+            "sha": "3151b00331628093ad52a77277052ae0f727826b",
+            "short_sha": "3151b00",
+            "url": "https://github.com/pina-rs/solana_kit/commit/3151b00331628093ad52a77277052ae0f727826b",
+            "authored_at": "2026-11-08T03:01:04Z",
+            "committed_at": "2026-11-08T03:01:04Z",
+            "author_name": "Ifiok Jr.",
+            "author_email": "1160934+ifiokjr@users.noreply.github.com"
+          },
+          "review_request": {
+            "provider": "github",
+            "host": "github.com",
+            "kind": "pull_request",
+            "id": "#183",
+            "title": "chore(release): configure monochange releases",
+            "url": "https://github.com/pina-rs/solana_kit/pull/183",
+            "author": {
+              "provider": "github",
+              "host": "github.com",
+              "id": null,
+              "login": "ifiokjr",
+              "display_name": "ifiokjr",
+              "url": "https://github.com/ifiokjr",
+              "source": "review_request_author"
+            }
+          }
+        },
+        "last_updated": {
+          "actor": {
+            "provider": "github",
+            "host": "github.com",
+            "id": null,
+            "login": "ifiokjr",
+            "display_name": "ifiokjr",
+            "url": "https://github.com/ifiokjr",
+            "source": "review_request_author"
+          },
+          "commit": {
+            "provider": "github",
+            "host": "github.com",
+            "sha": "3151b00331628093ad52a77277052ae0f727826b",
+            "short_sha": "3151b00",
+            "url": "https://github.com/pina-rs/solana_kit/commit/3151b00331628093ad52a77277052ae0f727826b",
+            "authored_at": "2026-11-08T03:01:04Z",
+            "committed_at": "2026-11-08T03:01:04Z",
+            "author_name": "Ifiok Jr.",
+            "author_email": "1160934+ifiokjr@users.noreply.github.com"
+          },
+          "review_request": {
+            "provider": "github",
+            "host": "github.com",
+            "kind": "pull_request",
+            "id": "#183",
+            "title": "chore(release): configure monochange releases",
+            "url": "https://github.com/pina-rs/solana_kit/pull/183",
+            "author": {
+              "provider": "github",
+              "host": "github.com",
+              "id": null,
+              "login": "ifiokjr",
+              "display_name": "ifiokjr",
+              "url": "https://github.com/ifiokjr",
+              "source": "review_request_author"
+            }
+          }
+        },
+        "related_issues": []
+      }
+    },
+    {
+      "path": ".changeset/introduce-solana_kit_client.md",
+      "summary": "solana_kit_client: executor-neutral typed RPC",
+      "details": "Typed balance, blockhash, account, token, node metadata, economics, history,\nsubmission, and simulation operations through one executor-neutral protocol\nowner. Native and local futures share the same client without a runtime,\nnetwork, JavaScript, or ambient-randomness dependency.\n\nOptional features add version-aware resource estimation, caller-driven reactive\nstores, slot-tracking streams, and typed subscription families. Callers own the\ntransport, deadlines, cancellation, and any spawned driver.",
+      "targets": [
+        {
+          "id": "solana_kit_client",
+          "kind": "package",
+          "bump": "major",
+          "origin": "direct-change",
+          "evidence_refs": [],
+          "change_type": "major"
+        }
+      ],
+      "context": {
+        "provider": "github",
+        "host": "github.com",
+        "capabilities": {
+          "commit_web_urls": true,
+          "actor_profiles": true,
+          "review_request_lookup": true,
+          "related_issues": true,
+          "issue_comments": true
+        },
+        "introduced": {
+          "actor": {
+            "provider": "github",
+            "host": "github.com",
+            "id": null,
+            "login": "ifiokjr",
+            "display_name": "ifiokjr",
+            "url": "https://github.com/ifiokjr",
+            "source": "review_request_author"
+          },
+          "commit": {
+            "provider": "github",
+            "host": "github.com",
+            "sha": "3151b00331628093ad52a77277052ae0f727826b",
+            "short_sha": "3151b00",
+            "url": "https://github.com/pina-rs/solana_kit/commit/3151b00331628093ad52a77277052ae0f727826b",
+            "authored_at": "2026-11-08T03:01:04Z",
+            "committed_at": "2026-11-08T03:01:04Z",
+            "author_name": "Ifiok Jr.",
+            "author_email": "1160934+ifiokjr@users.noreply.github.com"
+          },
+          "review_request": {
+            "provider": "github",
+            "host": "github.com",
+            "kind": "pull_request",
+            "id": "#183",
+            "title": "chore(release): configure monochange releases",
+            "url": "https://github.com/pina-rs/solana_kit/pull/183",
+            "author": {
+              "provider": "github",
+              "host": "github.com",
+              "id": null,
+              "login": "ifiokjr",
+              "display_name": "ifiokjr",
+              "url": "https://github.com/ifiokjr",
+              "source": "review_request_author"
+            }
+          }
+        },
+        "last_updated": {
+          "actor": {
+            "provider": "github",
+            "host": "github.com",
+            "id": null,
+            "login": "ifiokjr",
+            "display_name": "ifiokjr",
+            "url": "https://github.com/ifiokjr",
+            "source": "review_request_author"
+          },
+          "commit": {
+            "provider": "github",
+            "host": "github.com",
+            "sha": "3151b00331628093ad52a77277052ae0f727826b",
+            "short_sha": "3151b00",
+            "url": "https://github.com/pina-rs/solana_kit/commit/3151b00331628093ad52a77277052ae0f727826b",
+            "authored_at": "2026-11-08T03:01:04Z",
+            "committed_at": "2026-11-08T03:01:04Z",
+            "author_name": "Ifiok Jr.",
+            "author_email": "1160934+ifiokjr@users.noreply.github.com"
+          },
+          "review_request": {
+            "provider": "github",
+            "host": "github.com",
+            "kind": "pull_request",
+            "id": "#183",
+            "title": "chore(release): configure monochange releases",
+            "url": "https://github.com/pina-rs/solana_kit/pull/183",
+            "author": {
+              "provider": "github",
+              "host": "github.com",
+              "id": null,
+              "login": "ifiokjr",
+              "display_name": "ifiokjr",
+              "url": "https://github.com/ifiokjr",
+              "source": "review_request_author"
+            }
+          }
+        },
+        "related_issues": []
+      }
+    },
+    {
+      "path": ".changeset/introduce-solana_kit_compute_budget.md",
+      "summary": "solana_kit_compute_budget: typed compute-budget instructions",
+      "details": "Strict bounded codecs, owned Kit instruction builders, parsers, and instruction\nlist helpers for all five pinned Compute Budget layouts. Every builder returns a\nnormal `solana_kit_core::Instruction` and every parser enforces the exact wire\nshape.\n\n`RequestUnits` remains available as the deprecated historical layout, but\nbuilding its bytes does not imply validator acceptance. Heap alignment and\nnetwork limits remain validator policy.",
+      "targets": [
+        {
+          "id": "solana_kit_compute_budget",
+          "kind": "package",
+          "bump": "major",
+          "origin": "direct-change",
+          "evidence_refs": [],
+          "change_type": "major"
+        }
+      ],
+      "context": {
+        "provider": "github",
+        "host": "github.com",
+        "capabilities": {
+          "commit_web_urls": true,
+          "actor_profiles": true,
+          "review_request_lookup": true,
+          "related_issues": true,
+          "issue_comments": true
+        },
+        "introduced": {
+          "actor": {
+            "provider": "github",
+            "host": "github.com",
+            "id": null,
+            "login": "ifiokjr",
+            "display_name": "ifiokjr",
+            "url": "https://github.com/ifiokjr",
+            "source": "review_request_author"
+          },
+          "commit": {
+            "provider": "github",
+            "host": "github.com",
+            "sha": "3151b00331628093ad52a77277052ae0f727826b",
+            "short_sha": "3151b00",
+            "url": "https://github.com/pina-rs/solana_kit/commit/3151b00331628093ad52a77277052ae0f727826b",
+            "authored_at": "2026-11-08T03:01:04Z",
+            "committed_at": "2026-11-08T03:01:04Z",
+            "author_name": "Ifiok Jr.",
+            "author_email": "1160934+ifiokjr@users.noreply.github.com"
+          },
+          "review_request": {
+            "provider": "github",
+            "host": "github.com",
+            "kind": "pull_request",
+            "id": "#183",
+            "title": "chore(release): configure monochange releases",
+            "url": "https://github.com/pina-rs/solana_kit/pull/183",
+            "author": {
+              "provider": "github",
+              "host": "github.com",
+              "id": null,
+              "login": "ifiokjr",
+              "display_name": "ifiokjr",
+              "url": "https://github.com/ifiokjr",
+              "source": "review_request_author"
+            }
+          }
+        },
+        "last_updated": {
+          "actor": {
+            "provider": "github",
+            "host": "github.com",
+            "id": null,
+            "login": "ifiokjr",
+            "display_name": "ifiokjr",
+            "url": "https://github.com/ifiokjr",
+            "source": "review_request_author"
+          },
+          "commit": {
+            "provider": "github",
+            "host": "github.com",
+            "sha": "3151b00331628093ad52a77277052ae0f727826b",
+            "short_sha": "3151b00",
+            "url": "https://github.com/pina-rs/solana_kit/commit/3151b00331628093ad52a77277052ae0f727826b",
+            "authored_at": "2026-11-08T03:01:04Z",
+            "committed_at": "2026-11-08T03:01:04Z",
+            "author_name": "Ifiok Jr.",
+            "author_email": "1160934+ifiokjr@users.noreply.github.com"
+          },
+          "review_request": {
+            "provider": "github",
+            "host": "github.com",
+            "kind": "pull_request",
+            "id": "#183",
+            "title": "chore(release): configure monochange releases",
+            "url": "https://github.com/pina-rs/solana_kit/pull/183",
+            "author": {
+              "provider": "github",
+              "host": "github.com",
+              "id": null,
+              "login": "ifiokjr",
+              "display_name": "ifiokjr",
+              "url": "https://github.com/ifiokjr",
+              "source": "review_request_author"
+            }
+          }
+        },
+        "related_issues": []
+      }
+    },
+    {
+      "path": ".changeset/introduce-solana_kit_core.md",
+      "summary": "solana_kit_core: portable Solana types and wire formats",
+      "details": "The foundational off-chain crate: validated addresses, hashes, signatures,\nordered instructions, account roles, bounded binary codecs, account snapshots,\nsysvar layouts, program errors, exact fixed points, immutable legacy/v0/v1\ntransactions, and off-chain application messages.\n\nThe default graph depends only on `bs58`. Optional features add SHA-256,\nvalidated program-derived addresses, deterministic Ed25519 signing and strict\nverification, original Keccak-256, arbitrary-width integer codecs, and text\ncodecs. The crate is `no_std + alloc`, owns no executor or entropy source, and\nnever claims on-chain support.",
+      "targets": [
+        {
+          "id": "solana_kit_core",
+          "kind": "package",
+          "bump": "major",
+          "origin": "direct-change",
+          "evidence_refs": [],
+          "change_type": "major"
+        }
+      ],
+      "context": {
+        "provider": "github",
+        "host": "github.com",
+        "capabilities": {
+          "commit_web_urls": true,
+          "actor_profiles": true,
+          "review_request_lookup": true,
+          "related_issues": true,
+          "issue_comments": true
+        },
+        "introduced": {
+          "actor": {
+            "provider": "github",
+            "host": "github.com",
+            "id": null,
+            "login": "ifiokjr",
+            "display_name": "ifiokjr",
+            "url": "https://github.com/ifiokjr",
+            "source": "review_request_author"
+          },
+          "commit": {
+            "provider": "github",
+            "host": "github.com",
+            "sha": "3151b00331628093ad52a77277052ae0f727826b",
+            "short_sha": "3151b00",
+            "url": "https://github.com/pina-rs/solana_kit/commit/3151b00331628093ad52a77277052ae0f727826b",
+            "authored_at": "2026-11-08T03:01:04Z",
+            "committed_at": "2026-11-08T03:01:04Z",
+            "author_name": "Ifiok Jr.",
+            "author_email": "1160934+ifiokjr@users.noreply.github.com"
+          },
+          "review_request": {
+            "provider": "github",
+            "host": "github.com",
+            "kind": "pull_request",
+            "id": "#183",
+            "title": "chore(release): configure monochange releases",
+            "url": "https://github.com/pina-rs/solana_kit/pull/183",
+            "author": {
+              "provider": "github",
+              "host": "github.com",
+              "id": null,
+              "login": "ifiokjr",
+              "display_name": "ifiokjr",
+              "url": "https://github.com/ifiokjr",
+              "source": "review_request_author"
+            }
+          }
+        },
+        "last_updated": {
+          "actor": {
+            "provider": "github",
+            "host": "github.com",
+            "id": null,
+            "login": "ifiokjr",
+            "display_name": "ifiokjr",
+            "url": "https://github.com/ifiokjr",
+            "source": "review_request_author"
+          },
+          "commit": {
+            "provider": "github",
+            "host": "github.com",
+            "sha": "3151b00331628093ad52a77277052ae0f727826b",
+            "short_sha": "3151b00",
+            "url": "https://github.com/pina-rs/solana_kit/commit/3151b00331628093ad52a77277052ae0f727826b",
+            "authored_at": "2026-11-08T03:01:04Z",
+            "committed_at": "2026-11-08T03:01:04Z",
+            "author_name": "Ifiok Jr.",
+            "author_email": "1160934+ifiokjr@users.noreply.github.com"
+          },
+          "review_request": {
+            "provider": "github",
+            "host": "github.com",
+            "kind": "pull_request",
+            "id": "#183",
+            "title": "chore(release): configure monochange releases",
+            "url": "https://github.com/pina-rs/solana_kit/pull/183",
+            "author": {
+              "provider": "github",
+              "host": "github.com",
+              "id": null,
+              "login": "ifiokjr",
+              "display_name": "ifiokjr",
+              "url": "https://github.com/ifiokjr",
+              "source": "review_request_author"
+            }
+          }
+        },
+        "related_issues": []
+      }
+    },
+    {
+      "path": ".changeset/introduce-solana_kit_leptoskit.md",
+      "summary": "solana_kit_leptoskit: interpreted LeptosKit adapters",
+      "details": "Guest and host adapters for interpreted LeptosKit applications. `GuestHttp`\nconnects the ordinary public client to named host services; `HttpDriver` and\n`HttpHost` install fixed destinations, TLS roots, grants, deadlines, and byte\nceilings in the native host.\n\nEvery guest entry point drains unrelated requests and cancellations, while\ncompletion delivery retains no interpreter borrow and wakes the real guest. The\noptional wallet adapter exposes the portable MWA protocol to installed hosts.",
+      "targets": [
+        {
+          "id": "solana_kit_leptoskit",
+          "kind": "package",
+          "bump": "major",
+          "origin": "direct-change",
+          "evidence_refs": [],
+          "change_type": "major"
+        }
+      ],
+      "context": {
+        "provider": "github",
+        "host": "github.com",
+        "capabilities": {
+          "commit_web_urls": true,
+          "actor_profiles": true,
+          "review_request_lookup": true,
+          "related_issues": true,
+          "issue_comments": true
+        },
+        "introduced": {
+          "actor": {
+            "provider": "github",
+            "host": "github.com",
+            "id": null,
+            "login": "ifiokjr",
+            "display_name": "ifiokjr",
+            "url": "https://github.com/ifiokjr",
+            "source": "review_request_author"
+          },
+          "commit": {
+            "provider": "github",
+            "host": "github.com",
+            "sha": "3151b00331628093ad52a77277052ae0f727826b",
+            "short_sha": "3151b00",
+            "url": "https://github.com/pina-rs/solana_kit/commit/3151b00331628093ad52a77277052ae0f727826b",
+            "authored_at": "2026-11-08T03:01:04Z",
+            "committed_at": "2026-11-08T03:01:04Z",
+            "author_name": "Ifiok Jr.",
+            "author_email": "1160934+ifiokjr@users.noreply.github.com"
+          },
+          "review_request": {
+            "provider": "github",
+            "host": "github.com",
+            "kind": "pull_request",
+            "id": "#183",
+            "title": "chore(release): configure monochange releases",
+            "url": "https://github.com/pina-rs/solana_kit/pull/183",
+            "author": {
+              "provider": "github",
+              "host": "github.com",
+              "id": null,
+              "login": "ifiokjr",
+              "display_name": "ifiokjr",
+              "url": "https://github.com/ifiokjr",
+              "source": "review_request_author"
+            }
+          }
+        },
+        "last_updated": {
+          "actor": {
+            "provider": "github",
+            "host": "github.com",
+            "id": null,
+            "login": "ifiokjr",
+            "display_name": "ifiokjr",
+            "url": "https://github.com/ifiokjr",
+            "source": "review_request_author"
+          },
+          "commit": {
+            "provider": "github",
+            "host": "github.com",
+            "sha": "3151b00331628093ad52a77277052ae0f727826b",
+            "short_sha": "3151b00",
+            "url": "https://github.com/pina-rs/solana_kit/commit/3151b00331628093ad52a77277052ae0f727826b",
+            "authored_at": "2026-11-08T03:01:04Z",
+            "committed_at": "2026-11-08T03:01:04Z",
+            "author_name": "Ifiok Jr.",
+            "author_email": "1160934+ifiokjr@users.noreply.github.com"
+          },
+          "review_request": {
+            "provider": "github",
+            "host": "github.com",
+            "kind": "pull_request",
+            "id": "#183",
+            "title": "chore(release): configure monochange releases",
+            "url": "https://github.com/pina-rs/solana_kit/pull/183",
+            "author": {
+              "provider": "github",
+              "host": "github.com",
+              "id": null,
+              "login": "ifiokjr",
+              "display_name": "ifiokjr",
+              "url": "https://github.com/ifiokjr",
+              "source": "review_request_author"
+            }
+          }
+        },
+        "related_issues": []
+      }
+    },
+    {
+      "path": ".changeset/introduce-solana_kit_memo.md",
+      "summary": "solana_kit_memo: build and parse Memo instructions",
+      "details": "A handwritten `no_std + alloc` client for the Memo program. Build raw UTF-8\ninvocations with ordered signers, parse complete invocations, and extract memos\nacross the v1, v3, and v4 identities.\n\nUTF-8 is strict, nulls stay present, and decoding removes a leading BOM exactly\nas the reference codec does. `Limits` bounds input bytes, decoded text, signer\npositions, and extracted payloads without inventing validator or transaction\nlimits.",
+      "targets": [
+        {
+          "id": "solana_kit_memo",
+          "kind": "package",
+          "bump": "major",
+          "origin": "direct-change",
+          "evidence_refs": [],
+          "change_type": "major"
+        }
+      ],
+      "context": {
+        "provider": "github",
+        "host": "github.com",
+        "capabilities": {
+          "commit_web_urls": true,
+          "actor_profiles": true,
+          "review_request_lookup": true,
+          "related_issues": true,
+          "issue_comments": true
+        },
+        "introduced": {
+          "actor": {
+            "provider": "github",
+            "host": "github.com",
+            "id": null,
+            "login": "ifiokjr",
+            "display_name": "ifiokjr",
+            "url": "https://github.com/ifiokjr",
+            "source": "review_request_author"
+          },
+          "commit": {
+            "provider": "github",
+            "host": "github.com",
+            "sha": "3151b00331628093ad52a77277052ae0f727826b",
+            "short_sha": "3151b00",
+            "url": "https://github.com/pina-rs/solana_kit/commit/3151b00331628093ad52a77277052ae0f727826b",
+            "authored_at": "2026-11-08T03:01:04Z",
+            "committed_at": "2026-11-08T03:01:04Z",
+            "author_name": "Ifiok Jr.",
+            "author_email": "1160934+ifiokjr@users.noreply.github.com"
+          },
+          "review_request": {
+            "provider": "github",
+            "host": "github.com",
+            "kind": "pull_request",
+            "id": "#183",
+            "title": "chore(release): configure monochange releases",
+            "url": "https://github.com/pina-rs/solana_kit/pull/183",
+            "author": {
+              "provider": "github",
+              "host": "github.com",
+              "id": null,
+              "login": "ifiokjr",
+              "display_name": "ifiokjr",
+              "url": "https://github.com/ifiokjr",
+              "source": "review_request_author"
+            }
+          }
+        },
+        "last_updated": {
+          "actor": {
+            "provider": "github",
+            "host": "github.com",
+            "id": null,
+            "login": "ifiokjr",
+            "display_name": "ifiokjr",
+            "url": "https://github.com/ifiokjr",
+            "source": "review_request_author"
+          },
+          "commit": {
+            "provider": "github",
+            "host": "github.com",
+            "sha": "3151b00331628093ad52a77277052ae0f727826b",
+            "short_sha": "3151b00",
+            "url": "https://github.com/pina-rs/solana_kit/commit/3151b00331628093ad52a77277052ae0f727826b",
+            "authored_at": "2026-11-08T03:01:04Z",
+            "committed_at": "2026-11-08T03:01:04Z",
+            "author_name": "Ifiok Jr.",
+            "author_email": "1160934+ifiokjr@users.noreply.github.com"
+          },
+          "review_request": {
+            "provider": "github",
+            "host": "github.com",
+            "kind": "pull_request",
+            "id": "#183",
+            "title": "chore(release): configure monochange releases",
+            "url": "https://github.com/pina-rs/solana_kit/pull/183",
+            "author": {
+              "provider": "github",
+              "host": "github.com",
+              "id": null,
+              "login": "ifiokjr",
+              "display_name": "ifiokjr",
+              "url": "https://github.com/ifiokjr",
+              "source": "review_request_author"
+            }
+          }
+        },
+        "related_issues": []
+      }
+    },
+    {
+      "path": ".changeset/introduce-solana_kit_native.md",
+      "summary": "solana_kit_native: Tokio HTTP, TLS, and WebSocket transports",
+      "details": "Native HTTP/1 and text WebSocket transports for off-chain Solana applications.\n`NativeHttp` implements the public client transport with caller-owned Tokio\nexecution, explicit deadlines, cancellation, authentication, and verified TLS.\n\nOptional key support adds explicit exportable-key generation and intentional\nSolana-keygen JSON backup with atomic publication and typed cleanup failures.\nThe optional Mobile Wallet Adapter transport keeps association, encryption, and\ncancellation caller-owned.",
+      "targets": [
+        {
+          "id": "solana_kit_native",
+          "kind": "package",
+          "bump": "major",
+          "origin": "direct-change",
+          "evidence_refs": [],
+          "change_type": "major"
+        }
+      ],
+      "context": {
+        "provider": "github",
+        "host": "github.com",
+        "capabilities": {
+          "commit_web_urls": true,
+          "actor_profiles": true,
+          "review_request_lookup": true,
+          "related_issues": true,
+          "issue_comments": true
+        },
+        "introduced": {
+          "actor": {
+            "provider": "github",
+            "host": "github.com",
+            "id": null,
+            "login": "ifiokjr",
+            "display_name": "ifiokjr",
+            "url": "https://github.com/ifiokjr",
+            "source": "review_request_author"
+          },
+          "commit": {
+            "provider": "github",
+            "host": "github.com",
+            "sha": "3151b00331628093ad52a77277052ae0f727826b",
+            "short_sha": "3151b00",
+            "url": "https://github.com/pina-rs/solana_kit/commit/3151b00331628093ad52a77277052ae0f727826b",
+            "authored_at": "2026-11-08T03:01:04Z",
+            "committed_at": "2026-11-08T03:01:04Z",
+            "author_name": "Ifiok Jr.",
+            "author_email": "1160934+ifiokjr@users.noreply.github.com"
+          },
+          "review_request": {
+            "provider": "github",
+            "host": "github.com",
+            "kind": "pull_request",
+            "id": "#183",
+            "title": "chore(release): configure monochange releases",
+            "url": "https://github.com/pina-rs/solana_kit/pull/183",
+            "author": {
+              "provider": "github",
+              "host": "github.com",
+              "id": null,
+              "login": "ifiokjr",
+              "display_name": "ifiokjr",
+              "url": "https://github.com/ifiokjr",
+              "source": "review_request_author"
+            }
+          }
+        },
+        "last_updated": {
+          "actor": {
+            "provider": "github",
+            "host": "github.com",
+            "id": null,
+            "login": "ifiokjr",
+            "display_name": "ifiokjr",
+            "url": "https://github.com/ifiokjr",
+            "source": "review_request_author"
+          },
+          "commit": {
+            "provider": "github",
+            "host": "github.com",
+            "sha": "3151b00331628093ad52a77277052ae0f727826b",
+            "short_sha": "3151b00",
+            "url": "https://github.com/pina-rs/solana_kit/commit/3151b00331628093ad52a77277052ae0f727826b",
+            "authored_at": "2026-11-08T03:01:04Z",
+            "committed_at": "2026-11-08T03:01:04Z",
+            "author_name": "Ifiok Jr.",
+            "author_email": "1160934+ifiokjr@users.noreply.github.com"
+          },
+          "review_request": {
+            "provider": "github",
+            "host": "github.com",
+            "kind": "pull_request",
+            "id": "#183",
+            "title": "chore(release): configure monochange releases",
+            "url": "https://github.com/pina-rs/solana_kit/pull/183",
+            "author": {
+              "provider": "github",
+              "host": "github.com",
+              "id": null,
+              "login": "ifiokjr",
+              "display_name": "ifiokjr",
+              "url": "https://github.com/ifiokjr",
+              "source": "review_request_author"
+            }
+          }
+        },
+        "related_issues": []
+      }
+    },
+    {
+      "path": ".changeset/introduce-solana_kit_signers.md",
+      "summary": "solana_kit_signers: executor-neutral signing capabilities",
+      "details": "Portable asynchronous signing contracts for message, transaction, modifying,\npartial, and sending signers. The crate is `no_std + alloc` and has no runtime,\nentropy, filesystem, or network dependency.\n\nEach logical resource gets a `SignerCapability`; `TransactionSigners`\ndeduplicates repeated handles, rejects two handles claiming one address, and\npreserves local or native futures. Every call receives its own configuration,\nincluding `aborted` and `min_context_slot`, unchanged across composed pipelines.",
+      "targets": [
+        {
+          "id": "solana_kit_signers",
+          "kind": "package",
+          "bump": "major",
+          "origin": "direct-change",
+          "evidence_refs": [],
+          "change_type": "major"
+        }
+      ],
+      "context": {
+        "provider": "github",
+        "host": "github.com",
+        "capabilities": {
+          "commit_web_urls": true,
+          "actor_profiles": true,
+          "review_request_lookup": true,
+          "related_issues": true,
+          "issue_comments": true
+        },
+        "introduced": {
+          "actor": {
+            "provider": "github",
+            "host": "github.com",
+            "id": null,
+            "login": "ifiokjr",
+            "display_name": "ifiokjr",
+            "url": "https://github.com/ifiokjr",
+            "source": "review_request_author"
+          },
+          "commit": {
+            "provider": "github",
+            "host": "github.com",
+            "sha": "3151b00331628093ad52a77277052ae0f727826b",
+            "short_sha": "3151b00",
+            "url": "https://github.com/pina-rs/solana_kit/commit/3151b00331628093ad52a77277052ae0f727826b",
+            "authored_at": "2026-11-08T03:01:04Z",
+            "committed_at": "2026-11-08T03:01:04Z",
+            "author_name": "Ifiok Jr.",
+            "author_email": "1160934+ifiokjr@users.noreply.github.com"
+          },
+          "review_request": {
+            "provider": "github",
+            "host": "github.com",
+            "kind": "pull_request",
+            "id": "#183",
+            "title": "chore(release): configure monochange releases",
+            "url": "https://github.com/pina-rs/solana_kit/pull/183",
+            "author": {
+              "provider": "github",
+              "host": "github.com",
+              "id": null,
+              "login": "ifiokjr",
+              "display_name": "ifiokjr",
+              "url": "https://github.com/ifiokjr",
+              "source": "review_request_author"
+            }
+          }
+        },
+        "last_updated": {
+          "actor": {
+            "provider": "github",
+            "host": "github.com",
+            "id": null,
+            "login": "ifiokjr",
+            "display_name": "ifiokjr",
+            "url": "https://github.com/ifiokjr",
+            "source": "review_request_author"
+          },
+          "commit": {
+            "provider": "github",
+            "host": "github.com",
+            "sha": "3151b00331628093ad52a77277052ae0f727826b",
+            "short_sha": "3151b00",
+            "url": "https://github.com/pina-rs/solana_kit/commit/3151b00331628093ad52a77277052ae0f727826b",
+            "authored_at": "2026-11-08T03:01:04Z",
+            "committed_at": "2026-11-08T03:01:04Z",
+            "author_name": "Ifiok Jr.",
+            "author_email": "1160934+ifiokjr@users.noreply.github.com"
+          },
+          "review_request": {
+            "provider": "github",
+            "host": "github.com",
+            "kind": "pull_request",
+            "id": "#183",
+            "title": "chore(release): configure monochange releases",
+            "url": "https://github.com/pina-rs/solana_kit/pull/183",
+            "author": {
+              "provider": "github",
+              "host": "github.com",
+              "id": null,
+              "login": "ifiokjr",
+              "display_name": "ifiokjr",
+              "url": "https://github.com/ifiokjr",
+              "source": "review_request_author"
+            }
+          }
+        },
+        "related_issues": []
+      }
+    },
+    {
+      "path": ".changeset/introduce-solana_kit_surfpool.md",
+      "summary": "solana_kit_surfpool: typed Surfpool cheatcodes",
+      "details": "All 28 methods from the pinned Surfpool package are represented by public request\ntypes and run through `solana_kit_client::Client`. Prepare local account state,\ncontrol the test clock, query confidential balances, profile transactions, and\nupload caller-provided program bytes.\n\nThe client uses the transport, correlation IDs, admission limits, and byte and\ndepth budgets of the chosen host. It starts no executor, adds no retry loop, and\nremains independent of the Surfpool server version.",
+      "targets": [
+        {
+          "id": "solana_kit_surfpool",
+          "kind": "package",
+          "bump": "major",
+          "origin": "direct-change",
+          "evidence_refs": [],
+          "change_type": "major"
+        }
+      ],
+      "context": {
+        "provider": "github",
+        "host": "github.com",
+        "capabilities": {
+          "commit_web_urls": true,
+          "actor_profiles": true,
+          "review_request_lookup": true,
+          "related_issues": true,
+          "issue_comments": true
+        },
+        "introduced": {
+          "actor": {
+            "provider": "github",
+            "host": "github.com",
+            "id": null,
+            "login": "ifiokjr",
+            "display_name": "ifiokjr",
+            "url": "https://github.com/ifiokjr",
+            "source": "review_request_author"
+          },
+          "commit": {
+            "provider": "github",
+            "host": "github.com",
+            "sha": "3151b00331628093ad52a77277052ae0f727826b",
+            "short_sha": "3151b00",
+            "url": "https://github.com/pina-rs/solana_kit/commit/3151b00331628093ad52a77277052ae0f727826b",
+            "authored_at": "2026-11-08T03:01:04Z",
+            "committed_at": "2026-11-08T03:01:04Z",
+            "author_name": "Ifiok Jr.",
+            "author_email": "1160934+ifiokjr@users.noreply.github.com"
+          },
+          "review_request": {
+            "provider": "github",
+            "host": "github.com",
+            "kind": "pull_request",
+            "id": "#183",
+            "title": "chore(release): configure monochange releases",
+            "url": "https://github.com/pina-rs/solana_kit/pull/183",
+            "author": {
+              "provider": "github",
+              "host": "github.com",
+              "id": null,
+              "login": "ifiokjr",
+              "display_name": "ifiokjr",
+              "url": "https://github.com/ifiokjr",
+              "source": "review_request_author"
+            }
+          }
+        },
+        "last_updated": {
+          "actor": {
+            "provider": "github",
+            "host": "github.com",
+            "id": null,
+            "login": "ifiokjr",
+            "display_name": "ifiokjr",
+            "url": "https://github.com/ifiokjr",
+            "source": "review_request_author"
+          },
+          "commit": {
+            "provider": "github",
+            "host": "github.com",
+            "sha": "3151b00331628093ad52a77277052ae0f727826b",
+            "short_sha": "3151b00",
+            "url": "https://github.com/pina-rs/solana_kit/commit/3151b00331628093ad52a77277052ae0f727826b",
+            "authored_at": "2026-11-08T03:01:04Z",
+            "committed_at": "2026-11-08T03:01:04Z",
+            "author_name": "Ifiok Jr.",
+            "author_email": "1160934+ifiokjr@users.noreply.github.com"
+          },
+          "review_request": {
+            "provider": "github",
+            "host": "github.com",
+            "kind": "pull_request",
+            "id": "#183",
+            "title": "chore(release): configure monochange releases",
+            "url": "https://github.com/pina-rs/solana_kit/pull/183",
+            "author": {
+              "provider": "github",
+              "host": "github.com",
+              "id": null,
+              "login": "ifiokjr",
+              "display_name": "ifiokjr",
+              "url": "https://github.com/ifiokjr",
+              "source": "review_request_author"
+            }
+          }
+        },
+        "related_issues": []
+      }
+    },
+    {
+      "path": ".changeset/introduce-solana_kit_system.md",
+      "summary": "solana_kit_system: all fourteen System instructions",
+      "details": "Bounded data codecs, typed account builders, strict parsers, custom numeric\nerrors, and nonce account snapshots for the pinned System Program.\n\nEvery data type's `instruction` method constructs a fixed System invocation,\nsupplies Rent and RecentBlockhashes automatically, preserves ordered duplicate\naccounts, and makes optional payer and signing-base accounts explicit. Seeded\nbuilders validate UTF-8 byte length and base signatures while leaving PDA\nderivation to the caller.",
+      "targets": [
+        {
+          "id": "solana_kit_system",
+          "kind": "package",
+          "bump": "major",
+          "origin": "direct-change",
+          "evidence_refs": [],
+          "change_type": "major"
+        }
+      ],
+      "context": {
+        "provider": "github",
+        "host": "github.com",
+        "capabilities": {
+          "commit_web_urls": true,
+          "actor_profiles": true,
+          "review_request_lookup": true,
+          "related_issues": true,
+          "issue_comments": true
+        },
+        "introduced": {
+          "actor": {
+            "provider": "github",
+            "host": "github.com",
+            "id": null,
+            "login": "ifiokjr",
+            "display_name": "ifiokjr",
+            "url": "https://github.com/ifiokjr",
+            "source": "review_request_author"
+          },
+          "commit": {
+            "provider": "github",
+            "host": "github.com",
+            "sha": "3151b00331628093ad52a77277052ae0f727826b",
+            "short_sha": "3151b00",
+            "url": "https://github.com/pina-rs/solana_kit/commit/3151b00331628093ad52a77277052ae0f727826b",
+            "authored_at": "2026-11-08T03:01:04Z",
+            "committed_at": "2026-11-08T03:01:04Z",
+            "author_name": "Ifiok Jr.",
+            "author_email": "1160934+ifiokjr@users.noreply.github.com"
+          },
+          "review_request": {
+            "provider": "github",
+            "host": "github.com",
+            "kind": "pull_request",
+            "id": "#183",
+            "title": "chore(release): configure monochange releases",
+            "url": "https://github.com/pina-rs/solana_kit/pull/183",
+            "author": {
+              "provider": "github",
+              "host": "github.com",
+              "id": null,
+              "login": "ifiokjr",
+              "display_name": "ifiokjr",
+              "url": "https://github.com/ifiokjr",
+              "source": "review_request_author"
+            }
+          }
+        },
+        "last_updated": {
+          "actor": {
+            "provider": "github",
+            "host": "github.com",
+            "id": null,
+            "login": "ifiokjr",
+            "display_name": "ifiokjr",
+            "url": "https://github.com/ifiokjr",
+            "source": "review_request_author"
+          },
+          "commit": {
+            "provider": "github",
+            "host": "github.com",
+            "sha": "3151b00331628093ad52a77277052ae0f727826b",
+            "short_sha": "3151b00",
+            "url": "https://github.com/pina-rs/solana_kit/commit/3151b00331628093ad52a77277052ae0f727826b",
+            "authored_at": "2026-11-08T03:01:04Z",
+            "committed_at": "2026-11-08T03:01:04Z",
+            "author_name": "Ifiok Jr.",
+            "author_email": "1160934+ifiokjr@users.noreply.github.com"
+          },
+          "review_request": {
+            "provider": "github",
+            "host": "github.com",
+            "kind": "pull_request",
+            "id": "#183",
+            "title": "chore(release): configure monochange releases",
+            "url": "https://github.com/pina-rs/solana_kit/pull/183",
+            "author": {
+              "provider": "github",
+              "host": "github.com",
+              "id": null,
+              "login": "ifiokjr",
+              "display_name": "ifiokjr",
+              "url": "https://github.com/ifiokjr",
+              "source": "review_request_author"
+            }
+          }
+        },
+        "related_issues": []
+      }
+    },
+    {
+      "path": ".changeset/introduce-solana_kit_wallet.md",
+      "summary": "solana_kit_wallet: Wallet Standard and MWA",
+      "details": "Portable Wallet Standard contracts for off-chain applications: typed feature\nregistries, authorization and signing capabilities, account selection, and\ncaller-owned cancellation without an executor.\n\nThe optional `mwa` feature adds portable association URIs, P-256 association\nsigning, ES256 JWS, HELLO negotiation, HKDF-SHA256 session keys, AES-128-GCM\nframes, ordered sessions, JSON-RPC contracts, and SIWS messages. Returned\nsignatures remain raw bytes; verification stays the caller's responsibility.",
+      "targets": [
+        {
+          "id": "solana_kit_wallet",
+          "kind": "package",
+          "bump": "major",
+          "origin": "direct-change",
+          "evidence_refs": [],
+          "change_type": "major"
+        }
+      ],
+      "context": {
+        "provider": "github",
+        "host": "github.com",
+        "capabilities": {
+          "commit_web_urls": true,
+          "actor_profiles": true,
+          "review_request_lookup": true,
+          "related_issues": true,
+          "issue_comments": true
+        },
+        "introduced": {
+          "actor": {
+            "provider": "github",
+            "host": "github.com",
+            "id": null,
+            "login": "ifiokjr",
+            "display_name": "ifiokjr",
+            "url": "https://github.com/ifiokjr",
+            "source": "review_request_author"
+          },
+          "commit": {
+            "provider": "github",
+            "host": "github.com",
+            "sha": "3151b00331628093ad52a77277052ae0f727826b",
+            "short_sha": "3151b00",
+            "url": "https://github.com/pina-rs/solana_kit/commit/3151b00331628093ad52a77277052ae0f727826b",
+            "authored_at": "2026-11-08T03:01:04Z",
+            "committed_at": "2026-11-08T03:01:04Z",
+            "author_name": "Ifiok Jr.",
+            "author_email": "1160934+ifiokjr@users.noreply.github.com"
+          },
+          "review_request": {
+            "provider": "github",
+            "host": "github.com",
+            "kind": "pull_request",
+            "id": "#183",
+            "title": "chore(release): configure monochange releases",
+            "url": "https://github.com/pina-rs/solana_kit/pull/183",
+            "author": {
+              "provider": "github",
+              "host": "github.com",
+              "id": null,
+              "login": "ifiokjr",
+              "display_name": "ifiokjr",
+              "url": "https://github.com/ifiokjr",
+              "source": "review_request_author"
+            }
+          }
+        },
+        "last_updated": {
+          "actor": {
+            "provider": "github",
+            "host": "github.com",
+            "id": null,
+            "login": "ifiokjr",
+            "display_name": "ifiokjr",
+            "url": "https://github.com/ifiokjr",
+            "source": "review_request_author"
+          },
+          "commit": {
+            "provider": "github",
+            "host": "github.com",
+            "sha": "3151b00331628093ad52a77277052ae0f727826b",
+            "short_sha": "3151b00",
+            "url": "https://github.com/pina-rs/solana_kit/commit/3151b00331628093ad52a77277052ae0f727826b",
+            "authored_at": "2026-11-08T03:01:04Z",
+            "committed_at": "2026-11-08T03:01:04Z",
+            "author_name": "Ifiok Jr.",
+            "author_email": "1160934+ifiokjr@users.noreply.github.com"
+          },
+          "review_request": {
+            "provider": "github",
+            "host": "github.com",
+            "kind": "pull_request",
+            "id": "#183",
+            "title": "chore(release): configure monochange releases",
+            "url": "https://github.com/pina-rs/solana_kit/pull/183",
+            "author": {
+              "provider": "github",
+              "host": "github.com",
+              "id": null,
+              "login": "ifiokjr",
+              "display_name": "ifiokjr",
+              "url": "https://github.com/ifiokjr",
+              "source": "review_request_author"
+            }
+          }
+        },
+        "related_issues": []
+      }
+    },
+    {
+      "path": ".changeset/introduce-solana_kit_wasi.md",
+      "summary": "solana_kit_wasi: WASI Preview 2 HTTP",
+      "details": "`WasiHttp` implements the public client transport with caller-driven local\nfutures for `wasm32-wasip2`. A caller-owned `Reactor` registers pollables,\nselects readiness and deadlines, and wakes the guest without a global executor\nor detached task.\n\nThe adapter follows the pinned `wasi:http/io/clocks@0.2.12` contract, preserves\nexplicit deadlines and body budgets, and leaves DNS, TLS, proxy, credential, and\ndestination policy to the embedding host.",
+      "targets": [
+        {
+          "id": "solana_kit_wasi",
+          "kind": "package",
+          "bump": "major",
+          "origin": "direct-change",
+          "evidence_refs": [],
+          "change_type": "major"
+        }
+      ],
+      "context": {
+        "provider": "github",
+        "host": "github.com",
+        "capabilities": {
+          "commit_web_urls": true,
+          "actor_profiles": true,
+          "review_request_lookup": true,
+          "related_issues": true,
+          "issue_comments": true
+        },
+        "introduced": {
+          "actor": {
+            "provider": "github",
+            "host": "github.com",
+            "id": null,
+            "login": "ifiokjr",
+            "display_name": "ifiokjr",
+            "url": "https://github.com/ifiokjr",
+            "source": "review_request_author"
+          },
+          "commit": {
+            "provider": "github",
+            "host": "github.com",
+            "sha": "3151b00331628093ad52a77277052ae0f727826b",
+            "short_sha": "3151b00",
+            "url": "https://github.com/pina-rs/solana_kit/commit/3151b00331628093ad52a77277052ae0f727826b",
+            "authored_at": "2026-11-08T03:01:04Z",
+            "committed_at": "2026-11-08T03:01:04Z",
+            "author_name": "Ifiok Jr.",
+            "author_email": "1160934+ifiokjr@users.noreply.github.com"
+          },
+          "review_request": {
+            "provider": "github",
+            "host": "github.com",
+            "kind": "pull_request",
+            "id": "#183",
+            "title": "chore(release): configure monochange releases",
+            "url": "https://github.com/pina-rs/solana_kit/pull/183",
+            "author": {
+              "provider": "github",
+              "host": "github.com",
+              "id": null,
+              "login": "ifiokjr",
+              "display_name": "ifiokjr",
+              "url": "https://github.com/ifiokjr",
+              "source": "review_request_author"
+            }
+          }
+        },
+        "last_updated": {
+          "actor": {
+            "provider": "github",
+            "host": "github.com",
+            "id": null,
+            "login": "ifiokjr",
+            "display_name": "ifiokjr",
+            "url": "https://github.com/ifiokjr",
+            "source": "review_request_author"
+          },
+          "commit": {
+            "provider": "github",
+            "host": "github.com",
+            "sha": "3151b00331628093ad52a77277052ae0f727826b",
+            "short_sha": "3151b00",
+            "url": "https://github.com/pina-rs/solana_kit/commit/3151b00331628093ad52a77277052ae0f727826b",
+            "authored_at": "2026-11-08T03:01:04Z",
+            "committed_at": "2026-11-08T03:01:04Z",
+            "author_name": "Ifiok Jr.",
+            "author_email": "1160934+ifiokjr@users.noreply.github.com"
+          },
+          "review_request": {
+            "provider": "github",
+            "host": "github.com",
+            "kind": "pull_request",
+            "id": "#183",
+            "title": "chore(release): configure monochange releases",
+            "url": "https://github.com/pina-rs/solana_kit/pull/183",
+            "author": {
+              "provider": "github",
+              "host": "github.com",
+              "id": null,
+              "login": "ifiokjr",
+              "display_name": "ifiokjr",
+              "url": "https://github.com/ifiokjr",
+              "source": "review_request_author"
+            }
+          }
+        },
+        "related_issues": []
+      }
+    }
+  ],
+  "changelogs": [
+    {
+      "owner_id": "solana_kit_account_compression",
+      "owner_kind": "package",
+      "output": "default",
+      "stream": "default",
+      "path": "crates/solana_kit_account_compression/CHANGELOG.md",
+      "format": "keep_a_changelog",
+      "notes": {
+        "title": "solana_kit_account_compression [0.1.2](https://github.com/pina-rs/solana_kit/releases/tag/solana_kit_account_compression/v0.1.2) (2026-11-08)",
+        "summary": [],
+        "sections": [
+          {
+            "title": "Changed",
+            "collapsed": false,
+            "entries": [
+              "- **No package-specific changes were recorded; `solana_kit_account_compression` was updated to 0.1.2.**"
+            ]
+          }
+        ]
+      },
+      "rendered": "## solana_kit_account_compression [0.1.2](https://github.com/pina-rs/solana_kit/releases/tag/solana_kit_account_compression/v0.1.2) (2026-11-08)\n\n### Changed\n\n- **No package-specific changes were recorded; `solana_kit_account_compression` was updated to 0.1.2.**"
+    },
+    {
+      "owner_id": "solana_kit_address_lookup_table",
+      "owner_kind": "package",
+      "output": "default",
+      "stream": "default",
+      "path": "crates/solana_kit_address_lookup_table/CHANGELOG.md",
+      "format": "keep_a_changelog",
+      "notes": {
+        "title": "solana_kit_address_lookup_table [0.1.2](https://github.com/pina-rs/solana_kit/releases/tag/solana_kit_address_lookup_table/v0.1.2) (2026-11-08)",
+        "summary": [],
+        "sections": [
+          {
+            "title": "Changed",
+            "collapsed": false,
+            "entries": [
+              "- **No package-specific changes were recorded; `solana_kit_address_lookup_table` was updated to 0.1.2.**"
+            ]
+          }
+        ]
+      },
+      "rendered": "## solana_kit_address_lookup_table [0.1.2](https://github.com/pina-rs/solana_kit/releases/tag/solana_kit_address_lookup_table/v0.1.2) (2026-11-08)\n\n### Changed\n\n- **No package-specific changes were recorded; `solana_kit_address_lookup_table` was updated to 0.1.2.**"
+    },
+    {
+      "owner_id": "solana_kit_anchor",
+      "owner_kind": "package",
+      "output": "default",
+      "stream": "default",
+      "path": "crates/solana_kit_anchor/CHANGELOG.md",
+      "format": "keep_a_changelog",
+      "notes": {
+        "title": "solana_kit_anchor [0.2.0](https://github.com/pina-rs/solana_kit/releases/tag/solana_kit_anchor/v0.2.0) (2026-11-08)",
+        "summary": [],
+        "sections": [
+          {
+            "title": "Breaking changes",
+            "collapsed": false,
+            "entries": [
+              "#### solana_kit_anchor: runtime Anchor IDL coding\n\n_Owner:_ [@ifiokjr](https://github.com/ifiokjr) · _Review:_ [PR #183](https://github.com/pina-rs/solana_kit/pull/183)\n\nEncode and decode Anchor IDL 0.30 instructions, accounts, and events at runtime.\nExact-width dynamic values, explicit IDL discriminators, field-attributed encode\nfailures, and standard or program-defined error resolution are supported.\n\nThe only dependency graph is `no_std + alloc` and it starts no executor or\nnetwork work. Every operation takes explicit byte, item, and depth budgets, and\nan unsupported generic field fails only when used rather than making the whole\nIDL unreadable."
+            ]
+          }
+        ]
+      },
+      "rendered": "## solana_kit_anchor [0.2.0](https://github.com/pina-rs/solana_kit/releases/tag/solana_kit_anchor/v0.2.0) (2026-11-08)\n\n### Breaking changes\n\n#### solana_kit_anchor: runtime Anchor IDL coding\n\n_Owner:_ [@ifiokjr](https://github.com/ifiokjr) · _Review:_ [PR #183](https://github.com/pina-rs/solana_kit/pull/183)\n\nEncode and decode Anchor IDL 0.30 instructions, accounts, and events at runtime.\nExact-width dynamic values, explicit IDL discriminators, field-attributed encode\nfailures, and standard or program-defined error resolution are supported.\n\nThe only dependency graph is `no_std + alloc` and it starts no executor or\nnetwork work. Every operation takes explicit byte, item, and depth budgets, and\nan unsupported generic field fails only when used rather than making the whole\nIDL unreadable."
+    },
+    {
+      "owner_id": "solana_kit_associated_token_account",
+      "owner_kind": "package",
+      "output": "default",
+      "stream": "default",
+      "path": "crates/solana_kit_associated_token_account/CHANGELOG.md",
+      "format": "keep_a_changelog",
+      "notes": {
+        "title": "solana_kit_associated_token_account [0.2.0](https://github.com/pina-rs/solana_kit/releases/tag/solana_kit_associated_token_account/v0.2.0) (2026-11-08)",
+        "summary": [],
+        "sections": [
+          {
+            "title": "Breaking changes",
+            "collapsed": false,
+            "entries": [
+              "#### solana_kit_associated_token_account: ATA constructors\n\n_Owner:_ [@ifiokjr](https://github.com/ifiokjr) · _Review:_ [PR #183](https://github.com/pina-rs/solana_kit/pull/183)\n\nA handwritten `no_std + alloc` client for create, idempotent create, and nested\nrecovery instructions. Builders preserve every account position and duplicate;\ncanonical parsing checks the ATA identity, exact length, tags, account count, and\nroles.\n\nThe optional `crypto` feature derives associated addresses through the Kit core\nPDA implementation. System and token account identities remain caller-owned; the\ncrate does not perform account-existence checks, signing, or validator work."
+            ]
+          }
+        ]
+      },
+      "rendered": "## solana_kit_associated_token_account [0.2.0](https://github.com/pina-rs/solana_kit/releases/tag/solana_kit_associated_token_account/v0.2.0) (2026-11-08)\n\n### Breaking changes\n\n#### solana_kit_associated_token_account: ATA constructors\n\n_Owner:_ [@ifiokjr](https://github.com/ifiokjr) · _Review:_ [PR #183](https://github.com/pina-rs/solana_kit/pull/183)\n\nA handwritten `no_std + alloc` client for create, idempotent create, and nested\nrecovery instructions. Builders preserve every account position and duplicate;\ncanonical parsing checks the ATA identity, exact length, tags, account count, and\nroles.\n\nThe optional `crypto` feature derives associated addresses through the Kit core\nPDA implementation. System and token account identities remain caller-owned; the\ncrate does not perform account-existence checks, signing, or validator work."
+    },
+    {
+      "owner_id": "solana_kit_attestation_service",
+      "owner_kind": "package",
+      "output": "default",
+      "stream": "default",
+      "path": "crates/solana_kit_attestation_service/CHANGELOG.md",
+      "format": "keep_a_changelog",
+      "notes": {
+        "title": "solana_kit_attestation_service [0.1.2](https://github.com/pina-rs/solana_kit/releases/tag/solana_kit_attestation_service/v0.1.2) (2026-11-08)",
+        "summary": [],
+        "sections": [
+          {
+            "title": "Changed",
+            "collapsed": false,
+            "entries": [
+              "- **No package-specific changes were recorded; `solana_kit_attestation_service` was updated to 0.1.2.**"
+            ]
+          }
+        ]
+      },
+      "rendered": "## solana_kit_attestation_service [0.1.2](https://github.com/pina-rs/solana_kit/releases/tag/solana_kit_attestation_service/v0.1.2) (2026-11-08)\n\n### Changed\n\n- **No package-specific changes were recorded; `solana_kit_attestation_service` was updated to 0.1.2.**"
+    },
+    {
+      "owner_id": "solana_kit_compute_budget",
+      "owner_kind": "package",
+      "output": "default",
+      "stream": "default",
+      "path": "crates/solana_kit_compute_budget/CHANGELOG.md",
+      "format": "keep_a_changelog",
+      "notes": {
+        "title": "solana_kit_compute_budget [0.2.0](https://github.com/pina-rs/solana_kit/releases/tag/solana_kit_compute_budget/v0.2.0) (2026-11-08)",
+        "summary": [],
+        "sections": [
+          {
+            "title": "Breaking changes",
+            "collapsed": false,
+            "entries": [
+              "#### solana_kit_compute_budget: typed compute-budget instructions\n\n_Owner:_ [@ifiokjr](https://github.com/ifiokjr) · _Review:_ [PR #183](https://github.com/pina-rs/solana_kit/pull/183)\n\nStrict bounded codecs, owned Kit instruction builders, parsers, and instruction\nlist helpers for all five pinned Compute Budget layouts. Every builder returns a\nnormal `solana_kit_core::Instruction` and every parser enforces the exact wire\nshape.\n\n`RequestUnits` remains available as the deprecated historical layout, but\nbuilding its bytes does not imply validator acceptance. Heap alignment and\nnetwork limits remain validator policy."
+            ]
+          }
+        ]
+      },
+      "rendered": "## solana_kit_compute_budget [0.2.0](https://github.com/pina-rs/solana_kit/releases/tag/solana_kit_compute_budget/v0.2.0) (2026-11-08)\n\n### Breaking changes\n\n#### solana_kit_compute_budget: typed compute-budget instructions\n\n_Owner:_ [@ifiokjr](https://github.com/ifiokjr) · _Review:_ [PR #183](https://github.com/pina-rs/solana_kit/pull/183)\n\nStrict bounded codecs, owned Kit instruction builders, parsers, and instruction\nlist helpers for all five pinned Compute Budget layouts. Every builder returns a\nnormal `solana_kit_core::Instruction` and every parser enforces the exact wire\nshape.\n\n`RequestUnits` remains available as the deprecated historical layout, but\nbuilding its bytes does not imply validator acceptance. Heap alignment and\nnetwork limits remain validator policy."
+    },
+    {
+      "owner_id": "solana_kit_config",
+      "owner_kind": "package",
+      "output": "default",
+      "stream": "default",
+      "path": "crates/solana_kit_config/CHANGELOG.md",
+      "format": "keep_a_changelog",
+      "notes": {
+        "title": "solana_kit_config [0.1.2](https://github.com/pina-rs/solana_kit/releases/tag/solana_kit_config/v0.1.2) (2026-11-08)",
+        "summary": [],
+        "sections": [
+          {
+            "title": "Changed",
+            "collapsed": false,
+            "entries": [
+              "- **No package-specific changes were recorded; `solana_kit_config` was updated to 0.1.2.**"
+            ]
+          }
+        ]
+      },
+      "rendered": "## solana_kit_config [0.1.2](https://github.com/pina-rs/solana_kit/releases/tag/solana_kit_config/v0.1.2) (2026-11-08)\n\n### Changed\n\n- **No package-specific changes were recorded; `solana_kit_config` was updated to 0.1.2.**"
+    },
+    {
+      "owner_id": "sdk",
+      "owner_kind": "group",
+      "output": "default",
+      "stream": "default",
+      "path": "crates/solana_kit_core/CHANGELOG.md",
+      "format": "keep_a_changelog",
+      "notes": {
+        "title": "[0.2.0](https://github.com/pina-rs/solana_kit/releases/tag/v0.2.0) (2026-11-08)",
+        "summary": [
+          "Grouped release for `sdk`."
+        ],
+        "sections": [
+          {
+            "title": "Breaking changes",
+            "collapsed": false,
+            "entries": [
+              "#### solana_kit_core: portable Solana types and wire formats\n\n_Packages:_ 🔴 _solana_kit_core_\n\n_Owner:_ [@ifiokjr](https://github.com/ifiokjr) · _Review:_ [PR #183](https://github.com/pina-rs/solana_kit/pull/183)\n\nThe foundational off-chain crate: validated addresses, hashes, signatures,\nordered instructions, account roles, bounded binary codecs, account snapshots,\nsysvar layouts, program errors, exact fixed points, immutable legacy/v0/v1\ntransactions, and off-chain application messages.\n\nThe default graph depends only on `bs58`. Optional features add SHA-256,\nvalidated program-derived addresses, deterministic Ed25519 signing and strict\nverification, original Keccak-256, arbitrary-width integer codecs, and text\ncodecs. The crate is `no_std + alloc`, owns no executor or entropy source, and\nnever claims on-chain support.",
+              "#### solana_kit_client: executor-neutral typed RPC\n\n_Packages:_ 🔴 _solana_kit_client_\n\n_Owner:_ [@ifiokjr](https://github.com/ifiokjr) · _Review:_ [PR #183](https://github.com/pina-rs/solana_kit/pull/183)\n\nTyped balance, blockhash, account, token, node metadata, economics, history,\nsubmission, and simulation operations through one executor-neutral protocol\nowner. Native and local futures share the same client without a runtime,\nnetwork, JavaScript, or ambient-randomness dependency.\n\nOptional features add version-aware resource estimation, caller-driven reactive\nstores, slot-tracking streams, and typed subscription families. Callers own the\ntransport, deadlines, cancellation, and any spawned driver.",
+              "#### solana_kit_native: Tokio HTTP, TLS, and WebSocket transports\n\n_Packages:_ 🔴 _solana_kit_native_\n\n_Owner:_ [@ifiokjr](https://github.com/ifiokjr) · _Review:_ [PR #183](https://github.com/pina-rs/solana_kit/pull/183)\n\nNative HTTP/1 and text WebSocket transports for off-chain Solana applications.\n`NativeHttp` implements the public client transport with caller-owned Tokio\nexecution, explicit deadlines, cancellation, authentication, and verified TLS.\n\nOptional key support adds explicit exportable-key generation and intentional\nSolana-keygen JSON backup with atomic publication and typed cleanup failures.\nThe optional Mobile Wallet Adapter transport keeps association, encryption, and\ncancellation caller-owned.",
+              "#### solana_kit_signers: executor-neutral signing capabilities\n\n_Packages:_ 🔴 _solana_kit_signers_\n\n_Owner:_ [@ifiokjr](https://github.com/ifiokjr) · _Review:_ [PR #183](https://github.com/pina-rs/solana_kit/pull/183)\n\nPortable asynchronous signing contracts for message, transaction, modifying,\npartial, and sending signers. The crate is `no_std + alloc` and has no runtime,\nentropy, filesystem, or network dependency.\n\nEach logical resource gets a `SignerCapability`; `TransactionSigners`\ndeduplicates repeated handles, rejects two handles claiming one address, and\npreserves local or native futures. Every call receives its own configuration,\nincluding `aborted` and `min_context_slot`, unchanged across composed pipelines.",
+              "#### solana_kit_browser: Window HTTP and WebSocket transports\n\n_Packages:_ 🔴 _solana_kit_browser_\n\n_Owner:_ [@ifiokjr](https://github.com/ifiokjr) · _Review:_ [PR #183](https://github.com/pina-rs/solana_kit/pull/183)\n\nExplicit browser adapters for the executor-neutral client. `BrowserHttp`\nimplements `Transport` with Window Fetch and local futures, bounded bodies,\ndeadlines, cancellation, redirect rejection, and no ambient credentials.\n\n`BrowserSubscriptionSocket` adapts the maintained Window WebSocket to the shared\nsubscription session, retaining event wakers and bounded timers between polls.\nImports exist only for `wasm32-unknown-unknown`; importing the crate is the\nexplicit opt-in to browser JavaScript.",
+              "#### solana_kit_leptoskit: interpreted LeptosKit adapters\n\n_Packages:_ 🔴 _solana_kit_leptoskit_\n\n_Owner:_ [@ifiokjr](https://github.com/ifiokjr) · _Review:_ [PR #183](https://github.com/pina-rs/solana_kit/pull/183)\n\nGuest and host adapters for interpreted LeptosKit applications. `GuestHttp`\nconnects the ordinary public client to named host services; `HttpDriver` and\n`HttpHost` install fixed destinations, TLS roots, grants, deadlines, and byte\nceilings in the native host.\n\nEvery guest entry point drains unrelated requests and cancellations, while\ncompletion delivery retains no interpreter borrow and wakes the real guest. The\noptional wallet adapter exposes the portable MWA protocol to installed hosts.",
+              "#### solana_kit_wasi: WASI Preview 2 HTTP\n\n_Packages:_ 🔴 _solana_kit_wasi_\n\n_Owner:_ [@ifiokjr](https://github.com/ifiokjr) · _Review:_ [PR #183](https://github.com/pina-rs/solana_kit/pull/183)\n\n`WasiHttp` implements the public client transport with caller-driven local\nfutures for `wasm32-wasip2`. A caller-owned `Reactor` registers pollables,\nselects readiness and deadlines, and wakes the guest without a global executor\nor detached task.\n\nThe adapter follows the pinned `wasi:http/io/clocks@0.2.12` contract, preserves\nexplicit deadlines and body budgets, and leaves DNS, TLS, proxy, credential, and\ndestination policy to the embedding host."
+            ]
+          }
+        ]
+      },
+      "rendered": "## [0.2.0](https://github.com/pina-rs/solana_kit/releases/tag/v0.2.0) (2026-11-08)\n\nGrouped release for `sdk`.\n\n### Breaking changes\n\n#### solana_kit_core: portable Solana types and wire formats\n\n_Packages:_ 🔴 _solana_kit_core_\n\n_Owner:_ [@ifiokjr](https://github.com/ifiokjr) · _Review:_ [PR #183](https://github.com/pina-rs/solana_kit/pull/183)\n\nThe foundational off-chain crate: validated addresses, hashes, signatures,\nordered instructions, account roles, bounded binary codecs, account snapshots,\nsysvar layouts, program errors, exact fixed points, immutable legacy/v0/v1\ntransactions, and off-chain application messages.\n\nThe default graph depends only on `bs58`. Optional features add SHA-256,\nvalidated program-derived addresses, deterministic Ed25519 signing and strict\nverification, original Keccak-256, arbitrary-width integer codecs, and text\ncodecs. The crate is `no_std + alloc`, owns no executor or entropy source, and\nnever claims on-chain support.\n\n#### solana_kit_client: executor-neutral typed RPC\n\n_Packages:_ 🔴 _solana_kit_client_\n\n_Owner:_ [@ifiokjr](https://github.com/ifiokjr) · _Review:_ [PR #183](https://github.com/pina-rs/solana_kit/pull/183)\n\nTyped balance, blockhash, account, token, node metadata, economics, history,\nsubmission, and simulation operations through one executor-neutral protocol\nowner. Native and local futures share the same client without a runtime,\nnetwork, JavaScript, or ambient-randomness dependency.\n\nOptional features add version-aware resource estimation, caller-driven reactive\nstores, slot-tracking streams, and typed subscription families. Callers own the\ntransport, deadlines, cancellation, and any spawned driver.\n\n#### solana_kit_native: Tokio HTTP, TLS, and WebSocket transports\n\n_Packages:_ 🔴 _solana_kit_native_\n\n_Owner:_ [@ifiokjr](https://github.com/ifiokjr) · _Review:_ [PR #183](https://github.com/pina-rs/solana_kit/pull/183)\n\nNative HTTP/1 and text WebSocket transports for off-chain Solana applications.\n`NativeHttp` implements the public client transport with caller-owned Tokio\nexecution, explicit deadlines, cancellation, authentication, and verified TLS.\n\nOptional key support adds explicit exportable-key generation and intentional\nSolana-keygen JSON backup with atomic publication and typed cleanup failures.\nThe optional Mobile Wallet Adapter transport keeps association, encryption, and\ncancellation caller-owned.\n\n#### solana_kit_signers: executor-neutral signing capabilities\n\n_Packages:_ 🔴 _solana_kit_signers_\n\n_Owner:_ [@ifiokjr](https://github.com/ifiokjr) · _Review:_ [PR #183](https://github.com/pina-rs/solana_kit/pull/183)\n\nPortable asynchronous signing contracts for message, transaction, modifying,\npartial, and sending signers. The crate is `no_std + alloc` and has no runtime,\nentropy, filesystem, or network dependency.\n\nEach logical resource gets a `SignerCapability`; `TransactionSigners`\ndeduplicates repeated handles, rejects two handles claiming one address, and\npreserves local or native futures. Every call receives its own configuration,\nincluding `aborted` and `min_context_slot`, unchanged across composed pipelines.\n\n#### solana_kit_browser: Window HTTP and WebSocket transports\n\n_Packages:_ 🔴 _solana_kit_browser_\n\n_Owner:_ [@ifiokjr](https://github.com/ifiokjr) · _Review:_ [PR #183](https://github.com/pina-rs/solana_kit/pull/183)\n\nExplicit browser adapters for the executor-neutral client. `BrowserHttp`\nimplements `Transport` with Window Fetch and local futures, bounded bodies,\ndeadlines, cancellation, redirect rejection, and no ambient credentials.\n\n`BrowserSubscriptionSocket` adapts the maintained Window WebSocket to the shared\nsubscription session, retaining event wakers and bounded timers between polls.\nImports exist only for `wasm32-unknown-unknown`; importing the crate is the\nexplicit opt-in to browser JavaScript.\n\n#### solana_kit_leptoskit: interpreted LeptosKit adapters\n\n_Packages:_ 🔴 _solana_kit_leptoskit_\n\n_Owner:_ [@ifiokjr](https://github.com/ifiokjr) · _Review:_ [PR #183](https://github.com/pina-rs/solana_kit/pull/183)\n\nGuest and host adapters for interpreted LeptosKit applications. `GuestHttp`\nconnects the ordinary public client to named host services; `HttpDriver` and\n`HttpHost` install fixed destinations, TLS roots, grants, deadlines, and byte\nceilings in the native host.\n\nEvery guest entry point drains unrelated requests and cancellations, while\ncompletion delivery retains no interpreter borrow and wakes the real guest. The\noptional wallet adapter exposes the portable MWA protocol to installed hosts.\n\n#### solana_kit_wasi: WASI Preview 2 HTTP\n\n_Packages:_ 🔴 _solana_kit_wasi_\n\n_Owner:_ [@ifiokjr](https://github.com/ifiokjr) · _Review:_ [PR #183](https://github.com/pina-rs/solana_kit/pull/183)\n\n`WasiHttp` implements the public client transport with caller-driven local\nfutures for `wasm32-wasip2`. A caller-owned `Reactor` registers pollables,\nselects readiness and deadlines, and wakes the guest without a global executor\nor detached task.\n\nThe adapter follows the pinned `wasi:http/io/clocks@0.2.12` contract, preserves\nexplicit deadlines and body budgets, and leaves DNS, TLS, proxy, credential, and\ndestination policy to the embedding host."
+    },
+    {
+      "owner_id": "solana_kit_dapp_publisher",
+      "owner_kind": "package",
+      "output": "default",
+      "stream": "default",
+      "path": "crates/solana_kit_dapp_publisher/CHANGELOG.md",
+      "format": "keep_a_changelog",
+      "notes": {
+        "title": "solana_kit_dapp_publisher [0.1.2](https://github.com/pina-rs/solana_kit/releases/tag/solana_kit_dapp_publisher/v0.1.2) (2026-11-08)",
+        "summary": [],
+        "sections": [
+          {
+            "title": "Changed",
+            "collapsed": false,
+            "entries": [
+              "- **No package-specific changes were recorded; `solana_kit_dapp_publisher` was updated to 0.1.2.**"
+            ]
+          }
+        ]
+      },
+      "rendered": "## solana_kit_dapp_publisher [0.1.2](https://github.com/pina-rs/solana_kit/releases/tag/solana_kit_dapp_publisher/v0.1.2) (2026-11-08)\n\n### Changed\n\n- **No package-specific changes were recorded; `solana_kit_dapp_publisher` was updated to 0.1.2.**"
+    },
+    {
+      "owner_id": "solana_kit_helius",
+      "owner_kind": "package",
+      "output": "default",
+      "stream": "default",
+      "path": "crates/solana_kit_helius/CHANGELOG.md",
+      "format": "keep_a_changelog",
+      "notes": {
+        "title": "solana_kit_helius [0.1.2](https://github.com/pina-rs/solana_kit/releases/tag/solana_kit_helius/v0.1.2) (2026-11-08)",
+        "summary": [],
+        "sections": [
+          {
+            "title": "Changed",
+            "collapsed": false,
+            "entries": [
+              "- **No package-specific changes were recorded; `solana_kit_helius` was updated to 0.1.2.**"
+            ]
+          }
+        ]
+      },
+      "rendered": "## solana_kit_helius [0.1.2](https://github.com/pina-rs/solana_kit/releases/tag/solana_kit_helius/v0.1.2) (2026-11-08)\n\n### Changed\n\n- **No package-specific changes were recorded; `solana_kit_helius` was updated to 0.1.2.**"
+    },
+    {
+      "owner_id": "solana_kit_loader",
+      "owner_kind": "package",
+      "output": "default",
+      "stream": "default",
+      "path": "crates/solana_kit_loader/CHANGELOG.md",
+      "format": "keep_a_changelog",
+      "notes": {
+        "title": "solana_kit_loader [0.1.2](https://github.com/pina-rs/solana_kit/releases/tag/solana_kit_loader/v0.1.2) (2026-11-08)",
+        "summary": [],
+        "sections": [
+          {
+            "title": "Changed",
+            "collapsed": false,
+            "entries": [
+              "- **No package-specific changes were recorded; `solana_kit_loader` was updated to 0.1.2.**"
+            ]
+          }
+        ]
+      },
+      "rendered": "## solana_kit_loader [0.1.2](https://github.com/pina-rs/solana_kit/releases/tag/solana_kit_loader/v0.1.2) (2026-11-08)\n\n### Changed\n\n- **No package-specific changes were recorded; `solana_kit_loader` was updated to 0.1.2.**"
+    },
+    {
+      "owner_id": "solana_kit_memo",
+      "owner_kind": "package",
+      "output": "default",
+      "stream": "default",
+      "path": "crates/solana_kit_memo/CHANGELOG.md",
+      "format": "keep_a_changelog",
+      "notes": {
+        "title": "solana_kit_memo [0.2.0](https://github.com/pina-rs/solana_kit/releases/tag/solana_kit_memo/v0.2.0) (2026-11-08)",
+        "summary": [],
+        "sections": [
+          {
+            "title": "Breaking changes",
+            "collapsed": false,
+            "entries": [
+              "#### solana_kit_memo: build and parse Memo instructions\n\n_Owner:_ [@ifiokjr](https://github.com/ifiokjr) · _Review:_ [PR #183](https://github.com/pina-rs/solana_kit/pull/183)\n\nA handwritten `no_std + alloc` client for the Memo program. Build raw UTF-8\ninvocations with ordered signers, parse complete invocations, and extract memos\nacross the v1, v3, and v4 identities.\n\nUTF-8 is strict, nulls stay present, and decoding removes a leading BOM exactly\nas the reference codec does. `Limits` bounds input bytes, decoded text, signer\npositions, and extracted payloads without inventing validator or transaction\nlimits."
+            ]
+          }
+        ]
+      },
+      "rendered": "## solana_kit_memo [0.2.0](https://github.com/pina-rs/solana_kit/releases/tag/solana_kit_memo/v0.2.0) (2026-11-08)\n\n### Breaking changes\n\n#### solana_kit_memo: build and parse Memo instructions\n\n_Owner:_ [@ifiokjr](https://github.com/ifiokjr) · _Review:_ [PR #183](https://github.com/pina-rs/solana_kit/pull/183)\n\nA handwritten `no_std + alloc` client for the Memo program. Build raw UTF-8\ninvocations with ordered signers, parse complete invocations, and extract memos\nacross the v1, v3, and v4 identities.\n\nUTF-8 is strict, nulls stay present, and decoding removes a leading BOM exactly\nas the reference codec does. `Limits` bounds input bytes, decoded text, signer\npositions, and extracted payloads without inventing validator or transaction\nlimits."
+    },
+    {
+      "owner_id": "solana_kit_mpl_bubblegum",
+      "owner_kind": "package",
+      "output": "default",
+      "stream": "default",
+      "path": "crates/solana_kit_mpl_bubblegum/CHANGELOG.md",
+      "format": "keep_a_changelog",
+      "notes": {
+        "title": "solana_kit_mpl_bubblegum [0.1.2](https://github.com/pina-rs/solana_kit/releases/tag/solana_kit_mpl_bubblegum/v0.1.2) (2026-11-08)",
+        "summary": [],
+        "sections": [
+          {
+            "title": "Changed",
+            "collapsed": false,
+            "entries": [
+              "- **No package-specific changes were recorded; `solana_kit_mpl_bubblegum` was updated to 0.1.2.**"
+            ]
+          }
+        ]
+      },
+      "rendered": "## solana_kit_mpl_bubblegum [0.1.2](https://github.com/pina-rs/solana_kit/releases/tag/solana_kit_mpl_bubblegum/v0.1.2) (2026-11-08)\n\n### Changed\n\n- **No package-specific changes were recorded; `solana_kit_mpl_bubblegum` was updated to 0.1.2.**"
+    },
+    {
+      "owner_id": "solana_kit_mpl_core",
+      "owner_kind": "package",
+      "output": "default",
+      "stream": "default",
+      "path": "crates/solana_kit_mpl_core/CHANGELOG.md",
+      "format": "keep_a_changelog",
+      "notes": {
+        "title": "solana_kit_mpl_core [0.1.2](https://github.com/pina-rs/solana_kit/releases/tag/solana_kit_mpl_core/v0.1.2) (2026-11-08)",
+        "summary": [],
+        "sections": [
+          {
+            "title": "Changed",
+            "collapsed": false,
+            "entries": [
+              "- **No package-specific changes were recorded; `solana_kit_mpl_core` was updated to 0.1.2.**"
+            ]
+          }
+        ]
+      },
+      "rendered": "## solana_kit_mpl_core [0.1.2](https://github.com/pina-rs/solana_kit/releases/tag/solana_kit_mpl_core/v0.1.2) (2026-11-08)\n\n### Changed\n\n- **No package-specific changes were recorded; `solana_kit_mpl_core` was updated to 0.1.2.**"
+    },
+    {
+      "owner_id": "solana_kit_mpl_token_metadata",
+      "owner_kind": "package",
+      "output": "default",
+      "stream": "default",
+      "path": "crates/solana_kit_mpl_token_metadata/CHANGELOG.md",
+      "format": "keep_a_changelog",
+      "notes": {
+        "title": "solana_kit_mpl_token_metadata [0.1.2](https://github.com/pina-rs/solana_kit/releases/tag/solana_kit_mpl_token_metadata/v0.1.2) (2026-11-08)",
+        "summary": [],
+        "sections": [
+          {
+            "title": "Changed",
+            "collapsed": false,
+            "entries": [
+              "- **No package-specific changes were recorded; `solana_kit_mpl_token_metadata` was updated to 0.1.2.**"
+            ]
+          }
+        ]
+      },
+      "rendered": "## solana_kit_mpl_token_metadata [0.1.2](https://github.com/pina-rs/solana_kit/releases/tag/solana_kit_mpl_token_metadata/v0.1.2) (2026-11-08)\n\n### Changed\n\n- **No package-specific changes were recorded; `solana_kit_mpl_token_metadata` was updated to 0.1.2.**"
+    },
+    {
+      "owner_id": "solana_kit_pyth",
+      "owner_kind": "package",
+      "output": "default",
+      "stream": "default",
+      "path": "crates/solana_kit_pyth/CHANGELOG.md",
+      "format": "keep_a_changelog",
+      "notes": {
+        "title": "solana_kit_pyth [0.1.2](https://github.com/pina-rs/solana_kit/releases/tag/solana_kit_pyth/v0.1.2) (2026-11-08)",
+        "summary": [],
+        "sections": [
+          {
+            "title": "Changed",
+            "collapsed": false,
+            "entries": [
+              "- **No package-specific changes were recorded; `solana_kit_pyth` was updated to 0.1.2.**"
+            ]
+          }
+        ]
+      },
+      "rendered": "## solana_kit_pyth [0.1.2](https://github.com/pina-rs/solana_kit/releases/tag/solana_kit_pyth/v0.1.2) (2026-11-08)\n\n### Changed\n\n- **No package-specific changes were recorded; `solana_kit_pyth` was updated to 0.1.2.**"
+    },
+    {
+      "owner_id": "solana_kit_sns",
+      "owner_kind": "package",
+      "output": "default",
+      "stream": "default",
+      "path": "crates/solana_kit_sns/CHANGELOG.md",
+      "format": "keep_a_changelog",
+      "notes": {
+        "title": "solana_kit_sns [0.1.2](https://github.com/pina-rs/solana_kit/releases/tag/solana_kit_sns/v0.1.2) (2026-11-08)",
+        "summary": [],
+        "sections": [
+          {
+            "title": "Changed",
+            "collapsed": false,
+            "entries": [
+              "- **No package-specific changes were recorded; `solana_kit_sns` was updated to 0.1.2.**"
+            ]
+          }
+        ]
+      },
+      "rendered": "## solana_kit_sns [0.1.2](https://github.com/pina-rs/solana_kit/releases/tag/solana_kit_sns/v0.1.2) (2026-11-08)\n\n### Changed\n\n- **No package-specific changes were recorded; `solana_kit_sns` was updated to 0.1.2.**"
+    },
+    {
+      "owner_id": "solana_kit_squads",
+      "owner_kind": "package",
+      "output": "default",
+      "stream": "default",
+      "path": "crates/solana_kit_squads/CHANGELOG.md",
+      "format": "keep_a_changelog",
+      "notes": {
+        "title": "solana_kit_squads [0.1.2](https://github.com/pina-rs/solana_kit/releases/tag/solana_kit_squads/v0.1.2) (2026-11-08)",
+        "summary": [],
+        "sections": [
+          {
+            "title": "Changed",
+            "collapsed": false,
+            "entries": [
+              "- **No package-specific changes were recorded; `solana_kit_squads` was updated to 0.1.2.**"
+            ]
+          }
+        ]
+      },
+      "rendered": "## solana_kit_squads [0.1.2](https://github.com/pina-rs/solana_kit/releases/tag/solana_kit_squads/v0.1.2) (2026-11-08)\n\n### Changed\n\n- **No package-specific changes were recorded; `solana_kit_squads` was updated to 0.1.2.**"
+    },
+    {
+      "owner_id": "solana_kit_stake",
+      "owner_kind": "package",
+      "output": "default",
+      "stream": "default",
+      "path": "crates/solana_kit_stake/CHANGELOG.md",
+      "format": "keep_a_changelog",
+      "notes": {
+        "title": "solana_kit_stake [0.1.2](https://github.com/pina-rs/solana_kit/releases/tag/solana_kit_stake/v0.1.2) (2026-11-08)",
+        "summary": [],
+        "sections": [
+          {
+            "title": "Changed",
+            "collapsed": false,
+            "entries": [
+              "- **No package-specific changes were recorded; `solana_kit_stake` was updated to 0.1.2.**"
+            ]
+          }
+        ]
+      },
+      "rendered": "## solana_kit_stake [0.1.2](https://github.com/pina-rs/solana_kit/releases/tag/solana_kit_stake/v0.1.2) (2026-11-08)\n\n### Changed\n\n- **No package-specific changes were recorded; `solana_kit_stake` was updated to 0.1.2.**"
+    },
+    {
+      "owner_id": "solana_kit_subscriptions",
+      "owner_kind": "package",
+      "output": "default",
+      "stream": "default",
+      "path": "crates/solana_kit_subscriptions/CHANGELOG.md",
+      "format": "keep_a_changelog",
+      "notes": {
+        "title": "solana_kit_subscriptions [0.1.2](https://github.com/pina-rs/solana_kit/releases/tag/solana_kit_subscriptions/v0.1.2) (2026-11-08)",
+        "summary": [],
+        "sections": [
+          {
+            "title": "Changed",
+            "collapsed": false,
+            "entries": [
+              "- **No package-specific changes were recorded; `solana_kit_subscriptions` was updated to 0.1.2.**"
+            ]
+          }
+        ]
+      },
+      "rendered": "## solana_kit_subscriptions [0.1.2](https://github.com/pina-rs/solana_kit/releases/tag/solana_kit_subscriptions/v0.1.2) (2026-11-08)\n\n### Changed\n\n- **No package-specific changes were recorded; `solana_kit_subscriptions` was updated to 0.1.2.**"
+    },
+    {
+      "owner_id": "solana_kit_surfpool",
+      "owner_kind": "package",
+      "output": "default",
+      "stream": "default",
+      "path": "crates/solana_kit_surfpool/CHANGELOG.md",
+      "format": "keep_a_changelog",
+      "notes": {
+        "title": "solana_kit_surfpool [0.2.0](https://github.com/pina-rs/solana_kit/releases/tag/solana_kit_surfpool/v0.2.0) (2026-11-08)",
+        "summary": [],
+        "sections": [
+          {
+            "title": "Breaking changes",
+            "collapsed": false,
+            "entries": [
+              "#### solana_kit_surfpool: typed Surfpool cheatcodes\n\n_Owner:_ [@ifiokjr](https://github.com/ifiokjr) · _Review:_ [PR #183](https://github.com/pina-rs/solana_kit/pull/183)\n\nAll 28 methods from the pinned Surfpool package are represented by public request\ntypes and run through `solana_kit_client::Client`. Prepare local account state,\ncontrol the test clock, query confidential balances, profile transactions, and\nupload caller-provided program bytes.\n\nThe client uses the transport, correlation IDs, admission limits, and byte and\ndepth budgets of the chosen host. It starts no executor, adds no retry loop, and\nremains independent of the Surfpool server version."
+            ]
+          }
+        ]
+      },
+      "rendered": "## solana_kit_surfpool [0.2.0](https://github.com/pina-rs/solana_kit/releases/tag/solana_kit_surfpool/v0.2.0) (2026-11-08)\n\n### Breaking changes\n\n#### solana_kit_surfpool: typed Surfpool cheatcodes\n\n_Owner:_ [@ifiokjr](https://github.com/ifiokjr) · _Review:_ [PR #183](https://github.com/pina-rs/solana_kit/pull/183)\n\nAll 28 methods from the pinned Surfpool package are represented by public request\ntypes and run through `solana_kit_client::Client`. Prepare local account state,\ncontrol the test clock, query confidential balances, profile transactions, and\nupload caller-provided program bytes.\n\nThe client uses the transport, correlation IDs, admission limits, and byte and\ndepth budgets of the chosen host. It starts no executor, adds no retry loop, and\nremains independent of the Surfpool server version."
+    },
+    {
+      "owner_id": "solana_kit_system",
+      "owner_kind": "package",
+      "output": "default",
+      "stream": "default",
+      "path": "crates/solana_kit_system/CHANGELOG.md",
+      "format": "keep_a_changelog",
+      "notes": {
+        "title": "solana_kit_system [0.2.0](https://github.com/pina-rs/solana_kit/releases/tag/solana_kit_system/v0.2.0) (2026-11-08)",
+        "summary": [],
+        "sections": [
+          {
+            "title": "Breaking changes",
+            "collapsed": false,
+            "entries": [
+              "#### solana_kit_system: all fourteen System instructions\n\n_Owner:_ [@ifiokjr](https://github.com/ifiokjr) · _Review:_ [PR #183](https://github.com/pina-rs/solana_kit/pull/183)\n\nBounded data codecs, typed account builders, strict parsers, custom numeric\nerrors, and nonce account snapshots for the pinned System Program.\n\nEvery data type's `instruction` method constructs a fixed System invocation,\nsupplies Rent and RecentBlockhashes automatically, preserves ordered duplicate\naccounts, and makes optional payer and signing-base accounts explicit. Seeded\nbuilders validate UTF-8 byte length and base signatures while leaving PDA\nderivation to the caller."
+            ]
+          }
+        ]
+      },
+      "rendered": "## solana_kit_system [0.2.0](https://github.com/pina-rs/solana_kit/releases/tag/solana_kit_system/v0.2.0) (2026-11-08)\n\n### Breaking changes\n\n#### solana_kit_system: all fourteen System instructions\n\n_Owner:_ [@ifiokjr](https://github.com/ifiokjr) · _Review:_ [PR #183](https://github.com/pina-rs/solana_kit/pull/183)\n\nBounded data codecs, typed account builders, strict parsers, custom numeric\nerrors, and nonce account snapshots for the pinned System Program.\n\nEvery data type's `instruction` method constructs a fixed System invocation,\nsupplies Rent and RecentBlockhashes automatically, preserves ordered duplicate\naccounts, and makes optional payer and signing-base accounts explicit. Seeded\nbuilders validate UTF-8 byte length and base signatures while leaving PDA\nderivation to the caller."
+    },
+    {
+      "owner_id": "solana_kit_token",
+      "owner_kind": "package",
+      "output": "default",
+      "stream": "default",
+      "path": "crates/solana_kit_token/CHANGELOG.md",
+      "format": "keep_a_changelog",
+      "notes": {
+        "title": "solana_kit_token [0.1.2](https://github.com/pina-rs/solana_kit/releases/tag/solana_kit_token/v0.1.2) (2026-11-08)",
+        "summary": [],
+        "sections": [
+          {
+            "title": "Changed",
+            "collapsed": false,
+            "entries": [
+              "- **No package-specific changes were recorded; `solana_kit_token` was updated to 0.1.2.**"
+            ]
+          }
+        ]
+      },
+      "rendered": "## solana_kit_token [0.1.2](https://github.com/pina-rs/solana_kit/releases/tag/solana_kit_token/v0.1.2) (2026-11-08)\n\n### Changed\n\n- **No package-specific changes were recorded; `solana_kit_token` was updated to 0.1.2.**"
+    },
+    {
+      "owner_id": "solana_kit_token_2022",
+      "owner_kind": "package",
+      "output": "default",
+      "stream": "default",
+      "path": "crates/solana_kit_token_2022/CHANGELOG.md",
+      "format": "keep_a_changelog",
+      "notes": {
+        "title": "solana_kit_token_2022 [0.1.2](https://github.com/pina-rs/solana_kit/releases/tag/solana_kit_token_2022/v0.1.2) (2026-11-08)",
+        "summary": [],
+        "sections": [
+          {
+            "title": "Changed",
+            "collapsed": false,
+            "entries": [
+              "- **No package-specific changes were recorded; `solana_kit_token_2022` was updated to 0.1.2.**"
+            ]
+          }
+        ]
+      },
+      "rendered": "## solana_kit_token_2022 [0.1.2](https://github.com/pina-rs/solana_kit/releases/tag/solana_kit_token_2022/v0.1.2) (2026-11-08)\n\n### Changed\n\n- **No package-specific changes were recorded; `solana_kit_token_2022` was updated to 0.1.2.**"
+    },
+    {
+      "owner_id": "solana_kit_wallet",
+      "owner_kind": "package",
+      "output": "default",
+      "stream": "default",
+      "path": "crates/solana_kit_wallet/CHANGELOG.md",
+      "format": "keep_a_changelog",
+      "notes": {
+        "title": "solana_kit_wallet [0.3.0](https://github.com/pina-rs/solana_kit/releases/tag/solana_kit_wallet/v0.3.0) (2026-11-08)",
+        "summary": [],
+        "sections": [
+          {
+            "title": "Breaking changes",
+            "collapsed": false,
+            "entries": [
+              "#### solana_kit_wallet: Wallet Standard and MWA\n\n_Owner:_ [@ifiokjr](https://github.com/ifiokjr) · _Review:_ [PR #183](https://github.com/pina-rs/solana_kit/pull/183)\n\nPortable Wallet Standard contracts for off-chain applications: typed feature\nregistries, authorization and signing capabilities, account selection, and\ncaller-owned cancellation without an executor.\n\nThe optional `mwa` feature adds portable association URIs, P-256 association\nsigning, ES256 JWS, HELLO negotiation, HKDF-SHA256 session keys, AES-128-GCM\nframes, ordered sessions, JSON-RPC contracts, and SIWS messages. Returned\nsignatures remain raw bytes; verification stays the caller's responsibility."
+            ]
+          }
+        ]
+      },
+      "rendered": "## solana_kit_wallet [0.3.0](https://github.com/pina-rs/solana_kit/releases/tag/solana_kit_wallet/v0.3.0) (2026-11-08)\n\n### Breaking changes\n\n#### solana_kit_wallet: Wallet Standard and MWA\n\n_Owner:_ [@ifiokjr](https://github.com/ifiokjr) · _Review:_ [PR #183](https://github.com/pina-rs/solana_kit/pull/183)\n\nPortable Wallet Standard contracts for off-chain applications: typed feature\nregistries, authorization and signing capabilities, account selection, and\ncaller-owned cancellation without an executor.\n\nThe optional `mwa` feature adds portable association URIs, P-256 association\nsigning, ES256 JWS, HELLO negotiation, HKDF-SHA256 session keys, AES-128-GCM\nframes, ordered sessions, JSON-RPC contracts, and SIWS messages. Returned\nsignatures remain raw bytes; verification stays the caller's responsibility."
+    }
+  ],
+  "provider": {
+    "kind": "github",
+    "owner": "pina-rs",
+    "repo": "solana_kit",
+    "host": null
+  }
+}

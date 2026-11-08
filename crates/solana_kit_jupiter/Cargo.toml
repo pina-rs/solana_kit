@@ -1,6 +1,6 @@
 [package]
 name = "solana_kit_jupiter"
-version = "0.1.1"
+version = "0.1.2"
 edition.workspace = true
 include = ["src/**", "tests/**", "README.md", "LICENSE", "MIT-DART.txt", "THIRD_PARTY_NOTICES.md"]
 license = "Unlicense AND MIT"
