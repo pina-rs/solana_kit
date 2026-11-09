@@ -188,6 +188,9 @@ jobs:
     concurrency:
       group: release-pr-refresh
       cancel-in-progress: false
+      # Keep an older pending refresh from replacing the newest one when both
+      # queue; the tip checks below make any stale job skip.
+      queue: max
     permissions:
       contents: write
       pull-requests: read
