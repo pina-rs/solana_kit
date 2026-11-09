@@ -185,7 +185,21 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
+      - name: check main tip
+        id: tip
+        shell: bash
+        run: |
+          set -euo pipefail
+          tip="$(git ls-remote origin refs/heads/main | cut -f1)"
+          if [ "$(git rev-parse HEAD)" = "$tip" ]; then
+            echo "current=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "current=false" >> "$GITHUB_OUTPUT"
+            echo "A newer main commit exists; skipping this stale release PR refresh."
+          fi
+
       - name: install monochange
+        if: steps.tip.outputs.current == 'true'
         shell: bash
         run: |
           set -euo pipefail
@@ -206,9 +220,11 @@ jobs:
           echo "$directory" >> "$GITHUB_PATH"
 
       - name: install formatter
+        if: steps.tip.outputs.current == 'true'
         run: npm install --global dprint@0.64.1
 
       - name: open or update the release pull request
+        if: steps.tip.outputs.current == 'true'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
