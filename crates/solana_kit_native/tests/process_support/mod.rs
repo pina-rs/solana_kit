@@ -9,6 +9,7 @@ use solana_kit_native::{
 use solana_kit_surfpool::config::{Ports, SurfnetConfig};
 use std::{
     ffi::OsString,
+    net::TcpListener,
     num::NonZeroU16,
     path::{Path, PathBuf},
     process::Command,
@@ -122,14 +123,42 @@ fn process_options(directory: &Path, mode: &str) -> ProcessOptions {
 }
 
 fn ports() -> Ports {
-    let base = NEXT_PORT.fetch_add(3, Ordering::Relaxed);
+    for _ in 0..64 {
+        let base = NEXT_PORT.fetch_add(3, Ordering::Relaxed);
+        let Some(ports) = port_group(base) else {
+            continue;
+        };
+
+        if ports_are_free(ports) {
+            return ports;
+        }
+    }
+
+    panic!("no free Surfpool fixture ports");
+}
+
+fn port_group(base: u16) -> Option<Ports> {
+    if base > 60_000 {
+        return None;
+    }
 
     Ports::new(
-        NonZeroU16::new(base).unwrap(),
-        NonZeroU16::new(base + 1).unwrap(),
-        NonZeroU16::new(base + 2).unwrap(),
+        NonZeroU16::new(base)?,
+        NonZeroU16::new(base.saturating_add(1))?,
+        NonZeroU16::new(base.saturating_add(2))?,
     )
-    .unwrap()
+    .ok()
+}
+
+/// Probe-binds the trio so a port already taken on this machine is skipped.
+/// The listeners are dropped together before the child binds the same ports.
+fn ports_are_free(ports: Ports) -> bool {
+    let listeners: Vec<_> = [ports.rpc.get(), ports.websocket.get(), ports.studio.get()]
+        .into_iter()
+        .map(|port| TcpListener::bind(("127.0.0.1", port)))
+        .collect();
+
+    listeners.iter().all(|listener| listener.is_ok())
 }
 
 fn genesis() -> Hash {
