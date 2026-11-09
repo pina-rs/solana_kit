@@ -67,12 +67,26 @@ jobs:
       tag: ${{ steps.record.outputs.tag }}
       sha: ${{ steps.record.outputs.sha }}
       pending: ${{ steps.pending.outputs.count }}
+      is_current: ${{ steps.current.outputs.is_current }}
     steps:
       - name: checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
           persist-credentials: false
+
+      - name: check main tip
+        id: current
+        shell: bash
+        run: |
+          set -euo pipefail
+          tip="$(git ls-remote origin refs/heads/main | cut -f1)"
+          if [ "$(git rev-parse HEAD)" = "$tip" ]; then
+            echo "is_current=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "is_current=false" >> "$GITHUB_OUTPUT"
+            echo "A newer main commit exists; this run will not refresh the release PR."
+          fi
 
       - name: install monochange
         shell: bash
@@ -166,6 +180,7 @@ jobs:
     needs: prepare
     if: >-
       needs.prepare.result == 'success' &&
+      needs.prepare.outputs.is_current == 'true' &&
       needs.prepare.outputs.is_release != 'true' &&
       needs.prepare.outputs.pending != '0'
     runs-on: ubuntu-latest
