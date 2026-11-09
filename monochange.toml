@@ -86,6 +86,7 @@ packages = [
   "solana_kit_browser",
   "solana_kit_leptoskit",
   "solana_kit_wasi",
+  "codama_renderers_rust_solana_kit",
 ]
 changelog = { path = "crates/solana_kit_core/CHANGELOG.md", format = "keep_a_changelog" }
 release = true
@@ -329,9 +330,8 @@ publish = { enabled = false }
 [package.codama_renderers_rust_solana_kit]
 path = "packages/codama-renderers-rust-solana-kit"
 type = "npm"
-release = true
-tag = true
-# Qualification and upload run in `.github/workflows/npm-publish.yml`.
+changelog = false
+# Qualification and upload run in `.github/workflows/publish.yml`.
 publish = { enabled = true, mode = "external" }
 
 [ecosystems.npm]
@@ -346,7 +346,7 @@ registry = "npm"
 enabled = true
 mode = "preferred"
 repository = "pina-rs/solana_kit"
-workflow = "npm-publish.yml"
+workflow = "publish.yml"
 environment = "npm-release"
 
 [ecosystems.npm.auto_discover]

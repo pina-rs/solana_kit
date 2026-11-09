@@ -2,10 +2,8 @@
 codama_renderers_rust_solana_kit: patch
 ---
 
-# Enable npm registry publication for the Codama renderer.
+# Publish the Codama renderer with the SDK group.
 
-Turn on MonoChange release tags for `codama_renderers_rust_solana_kit`, keep
-qualification and upload in `.github/workflows/npm-publish.yml` (external
-publish mode), and dispatch that workflow from the release job. The first
-registry upload still needs a one-shot `NPM_TOKEN` or an existing trusted
-publisher; later uploads use OIDC.
+Add `codama_renderers_rust_solana_kit` to the `sdk` MonoChange group so it
+shares the primary `v*` version and release tag. Qualify and upload the package
+from `.github/workflows/publish.yml` beside the crates.io publish path.

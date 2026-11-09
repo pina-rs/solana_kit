@@ -113,9 +113,10 @@ bytes, including the one-fuel negative. It also records the archive, consumer,
 malformed-IDL, native/NPM equality and source-score controls. Source-only work
 does not establish those results.
 
-Registry publication is enabled through MonoChange release tags and
-`.github/workflows/npm-publish.yml`. The first upload still needs either a
-one-shot `NPM_TOKEN` on the `npm-release` environment or a pre-existing package
-with a trusted publisher for that workflow; later releases use OIDC. The
+Registry publication rides the main SDK MonoChange group and the shared
+primary `v*` tag. Qualification and upload live in `.github/workflows/publish.yml`
+beside crates.io publishing. The first upload still needs either a one-shot
+`NPM_TOKEN` on the `npm-release` environment or a pre-existing package with a
+trusted publisher for that workflow; later releases use OIDC. The
 [0.1.1 release note](../../docs/releases/codama-renderers-rust-solana-kit-v0.1.1.md)
 remains the qualified draft that preceded the first registry upload.
