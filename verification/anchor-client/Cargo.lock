@@ -170,7 +170,7 @@ dependencies = [
 
 [[package]]
 name = "solana_kit_anchor"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "base64",
  "serde_json",
@@ -180,7 +180,7 @@ dependencies = [
 
 [[package]]
 name = "solana_kit_core"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "bs58",
 ]

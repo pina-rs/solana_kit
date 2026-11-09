@@ -22,6 +22,7 @@ Each row pairs a `solana_kit` workspace version with the upstream `@solana/kit` 
 
 | `solana_kit` workspace | `@solana/kit` | Pinned Dart commit | Released   |
 | ---------------------- | ------------- | ------------------ | ---------- |
+| `0.2.1`                | `8.5.0`       | `0138bb956d2d`     | 2026-11-09 |
 | `0.2.0`                | `8.5.0`       | `0138bb956d2d`     | 2026-11-08 |
 | `0.1.1`                | `8.5.0`       | `0138bb956d2d`     | 2026-11-05 |
 

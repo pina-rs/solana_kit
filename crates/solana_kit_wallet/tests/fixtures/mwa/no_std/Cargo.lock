@@ -509,7 +509,7 @@ dependencies = [
 
 [[package]]
 name = "solana_kit_core"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "bs58",
  "curve25519-dalek",
@@ -521,7 +521,7 @@ dependencies = [
 
 [[package]]
 name = "solana_kit_wallet"
-version = "0.3.0"
+version = "0.3.1"
 dependencies = [
  "aes",
  "aes-gcm",

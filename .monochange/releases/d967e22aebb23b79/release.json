@@ -1,0 +1,1449 @@
+{
+  "schema_version": "0.10",
+  "kind": "monochange.releaseRecord",
+  "created_at": "2026-11-09T01:28:04Z",
+  "command": "release",
+  "version": null,
+  "versions": {
+    "sdk": "0.2.1",
+    "solana_kit_account_compression": "0.1.3",
+    "solana_kit_address_lookup_table": "0.1.3",
+    "solana_kit_anchor": "0.2.1",
+    "solana_kit_associated_token_account": "0.2.1",
+    "solana_kit_attestation_service": "0.1.3",
+    "solana_kit_compute_budget": "0.2.1",
+    "solana_kit_config": "0.1.3",
+    "solana_kit_dapp_publisher": "0.1.3",
+    "solana_kit_dapp_publisher_cli": "0.1.3",
+    "solana_kit_helius": "0.1.3",
+    "solana_kit_jupiter": "0.1.3",
+    "solana_kit_loader": "0.1.3",
+    "solana_kit_memo": "0.2.1",
+    "solana_kit_mpl_bubblegum": "0.1.3",
+    "solana_kit_mpl_core": "0.1.3",
+    "solana_kit_mpl_token_metadata": "0.1.3",
+    "solana_kit_pyth": "0.1.3",
+    "solana_kit_sns": "0.1.3",
+    "solana_kit_squads": "0.1.3",
+    "solana_kit_stake": "0.1.3",
+    "solana_kit_subscriptions": "0.1.3",
+    "solana_kit_surfpool": "0.2.1",
+    "solana_kit_system": "0.2.1",
+    "solana_kit_test_support": "0.1.3",
+    "solana_kit_token": "0.1.3",
+    "solana_kit_token_2022": "0.1.3",
+    "solana_kit_wallet": "0.3.1"
+  },
+  "release_targets": [
+    {
+      "id": "sdk",
+      "kind": "group",
+      "version": "0.2.1",
+      "version_format": "primary",
+      "tag": true,
+      "release": true,
+      "tag_name": "v0.2.1",
+      "rendered_title": "v0.2.1 (2026-11-09)",
+      "rendered_changelog_title": "[0.2.1](https://github.com/pina-rs/solana_kit/releases/tag/v0.2.1) (2026-11-09)",
+      "members": [
+        "solana_kit_core",
+        "solana_kit_client",
+        "solana_kit_native",
+        "solana_kit_signers",
+        "solana_kit_browser",
+        "solana_kit_leptoskit",
+        "solana_kit_wasi",
+        "codama_renderers_rust_solana_kit"
+      ]
+    },
+    {
+      "id": "solana_kit_account_compression",
+      "kind": "package",
+      "version": "0.1.3",
+      "version_format": "namespaced",
+      "tag": false,
+      "release": false,
+      "tag_name": "solana_kit_account_compression/v0.1.3",
+      "rendered_title": "solana_kit_account_compression v0.1.3 (2026-11-09)",
+      "rendered_changelog_title": "solana_kit_account_compression [0.1.3](https://github.com/pina-rs/solana_kit/releases/tag/solana_kit_account_compression/v0.1.3) (2026-11-09)",
+      "members": [
+        "solana_kit_account_compression"
+      ]
+    },
+    {
+      "id": "solana_kit_address_lookup_table",
+      "kind": "package",
+      "version": "0.1.3",
+      "version_format": "namespaced",
+      "tag": false,
+      "release": false,
+      "tag_name": "solana_kit_address_lookup_table/v0.1.3",
+      "rendered_title": "solana_kit_address_lookup_table v0.1.3 (2026-11-09)",
+      "rendered_changelog_title": "solana_kit_address_lookup_table [0.1.3](https://github.com/pina-rs/solana_kit/releases/tag/solana_kit_address_lookup_table/v0.1.3) (2026-11-09)",
+      "members": [
+        "solana_kit_address_lookup_table"
+      ]
+    },
+    {
+      "id": "solana_kit_anchor",
+      "kind": "package",
+      "version": "0.2.1",
+      "version_format": "namespaced",
+      "tag": true,
+      "release": true,
+      "tag_name": "solana_kit_anchor/v0.2.1",
+      "rendered_title": "solana_kit_anchor v0.2.1 (2026-11-09)",
+      "rendered_changelog_title": "solana_kit_anchor [0.2.1](https://github.com/pina-rs/solana_kit/releases/tag/solana_kit_anchor/v0.2.1) (2026-11-09)",
+      "members": [
+        "solana_kit_anchor"
+      ]
+    },
+    {
+      "id": "solana_kit_associated_token_account",
+      "kind": "package",
+      "version": "0.2.1",
+      "version_format": "namespaced",
+      "tag": true,
+      "release": true,
+      "tag_name": "solana_kit_associated_token_account/v0.2.1",
+      "rendered_title": "solana_kit_associated_token_account v0.2.1 (2026-11-09)",
+      "rendered_changelog_title": "solana_kit_associated_token_account [0.2.1](https://github.com/pina-rs/solana_kit/releases/tag/solana_kit_associated_token_account/v0.2.1) (2026-11-09)",
+      "members": [
+        "solana_kit_associated_token_account"
+      ]
+    },
+    {
+      "id": "solana_kit_attestation_service",
+      "kind": "package",
+      "version": "0.1.3",
+      "version_format": "namespaced",
+      "tag": false,
+      "release": false,
+      "tag_name": "solana_kit_attestation_service/v0.1.3",
+      "rendered_title": "solana_kit_attestation_service v0.1.3 (2026-11-09)",
+      "rendered_changelog_title": "solana_kit_attestation_service [0.1.3](https://github.com/pina-rs/solana_kit/releases/tag/solana_kit_attestation_service/v0.1.3) (2026-11-09)",
+      "members": [
+        "solana_kit_attestation_service"
+      ]
+    },
+    {
+      "id": "solana_kit_compute_budget",
+      "kind": "package",
+      "version": "0.2.1",
+      "version_format": "namespaced",
+      "tag": true,
+      "release": true,
+      "tag_name": "solana_kit_compute_budget/v0.2.1",
+      "rendered_title": "solana_kit_compute_budget v0.2.1 (2026-11-09)",
+      "rendered_changelog_title": "solana_kit_compute_budget [0.2.1](https://github.com/pina-rs/solana_kit/releases/tag/solana_kit_compute_budget/v0.2.1) (2026-11-09)",
+      "members": [
+        "solana_kit_compute_budget"
+      ]
+    },
+    {
+      "id": "solana_kit_config",
+      "kind": "package",
+      "version": "0.1.3",
+      "version_format": "namespaced",
+      "tag": false,
+      "release": false,
+      "tag_name": "solana_kit_config/v0.1.3",
+      "rendered_title": "solana_kit_config v0.1.3 (2026-11-09)",
+      "rendered_changelog_title": "solana_kit_config [0.1.3](https://github.com/pina-rs/solana_kit/releases/tag/solana_kit_config/v0.1.3) (2026-11-09)",
+      "members": [
+        "solana_kit_config"
+      ]
+    },
+    {
+      "id": "solana_kit_dapp_publisher",
+      "kind": "package",
+      "version": "0.1.3",
+      "version_format": "namespaced",
+      "tag": false,
+      "release": false,
+      "tag_name": "solana_kit_dapp_publisher/v0.1.3",
+      "rendered_title": "solana_kit_dapp_publisher v0.1.3 (2026-11-09)",
+      "rendered_changelog_title": "solana_kit_dapp_publisher [0.1.3](https://github.com/pina-rs/solana_kit/releases/tag/solana_kit_dapp_publisher/v0.1.3) (2026-11-09)",
+      "members": [
+        "solana_kit_dapp_publisher"
+      ]
+    },
+    {
+      "id": "solana_kit_dapp_publisher_cli",
+      "kind": "package",
+      "version": "0.1.3",
+      "version_format": "namespaced",
+      "tag": false,
+      "release": false,
+      "tag_name": "solana_kit_dapp_publisher_cli/v0.1.3",
+      "rendered_title": "solana_kit_dapp_publisher_cli v0.1.3 (2026-11-09)",
+      "rendered_changelog_title": "solana_kit_dapp_publisher_cli [0.1.3](https://github.com/pina-rs/solana_kit/releases/tag/solana_kit_dapp_publisher_cli/v0.1.3) (2026-11-09)",
+      "members": [
+        "solana_kit_dapp_publisher_cli"
+      ]
+    },
+    {
+      "id": "solana_kit_helius",
+      "kind": "package",
+      "version": "0.1.3",
+      "version_format": "namespaced",
+      "tag": false,
+      "release": false,
+      "tag_name": "solana_kit_helius/v0.1.3",
+      "rendered_title": "solana_kit_helius v0.1.3 (2026-11-09)",
+      "rendered_changelog_title": "solana_kit_helius [0.1.3](https://github.com/pina-rs/solana_kit/releases/tag/solana_kit_helius/v0.1.3) (2026-11-09)",
+      "members": [
+        "solana_kit_helius"
+      ]
+    },
+    {
+      "id": "solana_kit_jupiter",
+      "kind": "package",
+      "version": "0.1.3",
+      "version_format": "namespaced",
+      "tag": false,
+      "release": false,
+      "tag_name": "solana_kit_jupiter/v0.1.3",
+      "rendered_title": "solana_kit_jupiter v0.1.3 (2026-11-09)",
+      "rendered_changelog_title": "solana_kit_jupiter [0.1.3](https://github.com/pina-rs/solana_kit/releases/tag/solana_kit_jupiter/v0.1.3) (2026-11-09)",
+      "members": [
+        "solana_kit_jupiter"
+      ]
+    },
+    {
+      "id": "solana_kit_loader",
+      "kind": "package",
+      "version": "0.1.3",
+      "version_format": "namespaced",
+      "tag": false,
+      "release": false,
+      "tag_name": "solana_kit_loader/v0.1.3",
+      "rendered_title": "solana_kit_loader v0.1.3 (2026-11-09)",
+      "rendered_changelog_title": "solana_kit_loader [0.1.3](https://github.com/pina-rs/solana_kit/releases/tag/solana_kit_loader/v0.1.3) (2026-11-09)",
+      "members": [
+        "solana_kit_loader"
+      ]
+    },
+    {
+      "id": "solana_kit_memo",
+      "kind": "package",
+      "version": "0.2.1",
+      "version_format": "namespaced",
+      "tag": true,
+      "release": true,
+      "tag_name": "solana_kit_memo/v0.2.1",
+      "rendered_title": "solana_kit_memo v0.2.1 (2026-11-09)",
+      "rendered_changelog_title": "solana_kit_memo [0.2.1](https://github.com/pina-rs/solana_kit/releases/tag/solana_kit_memo/v0.2.1) (2026-11-09)",
+      "members": [
+        "solana_kit_memo"
+      ]
+    },
+    {
+      "id": "solana_kit_mpl_bubblegum",
+      "kind": "package",
+      "version": "0.1.3",
+      "version_format": "namespaced",
+      "tag": false,
+      "release": false,
+      "tag_name": "solana_kit_mpl_bubblegum/v0.1.3",
+      "rendered_title": "solana_kit_mpl_bubblegum v0.1.3 (2026-11-09)",
+      "rendered_changelog_title": "solana_kit_mpl_bubblegum [0.1.3](https://github.com/pina-rs/solana_kit/releases/tag/solana_kit_mpl_bubblegum/v0.1.3) (2026-11-09)",
+      "members": [
+        "solana_kit_mpl_bubblegum"
+      ]
+    },
+    {
+      "id": "solana_kit_mpl_core",
+      "kind": "package",
+      "version": "0.1.3",
+      "version_format": "namespaced",
+      "tag": false,
+      "release": false,
+      "tag_name": "solana_kit_mpl_core/v0.1.3",
+      "rendered_title": "solana_kit_mpl_core v0.1.3 (2026-11-09)",
+      "rendered_changelog_title": "solana_kit_mpl_core [0.1.3](https://github.com/pina-rs/solana_kit/releases/tag/solana_kit_mpl_core/v0.1.3) (2026-11-09)",
+      "members": [
+        "solana_kit_mpl_core"
+      ]
+    },
+    {
+      "id": "solana_kit_mpl_token_metadata",
+      "kind": "package",
+      "version": "0.1.3",
+      "version_format": "namespaced",
+      "tag": false,
+      "release": false,
+      "tag_name": "solana_kit_mpl_token_metadata/v0.1.3",
+      "rendered_title": "solana_kit_mpl_token_metadata v0.1.3 (2026-11-09)",
+      "rendered_changelog_title": "solana_kit_mpl_token_metadata [0.1.3](https://github.com/pina-rs/solana_kit/releases/tag/solana_kit_mpl_token_metadata/v0.1.3) (2026-11-09)",
+      "members": [
+        "solana_kit_mpl_token_metadata"
+      ]
+    },
+    {
+      "id": "solana_kit_pyth",
+      "kind": "package",
+      "version": "0.1.3",
+      "version_format": "namespaced",
+      "tag": false,
+      "release": false,
+      "tag_name": "solana_kit_pyth/v0.1.3",
+      "rendered_title": "solana_kit_pyth v0.1.3 (2026-11-09)",
+      "rendered_changelog_title": "solana_kit_pyth [0.1.3](https://github.com/pina-rs/solana_kit/releases/tag/solana_kit_pyth/v0.1.3) (2026-11-09)",
+      "members": [
+        "solana_kit_pyth"
+      ]
+    },
+    {
+      "id": "solana_kit_sns",
+      "kind": "package",
+      "version": "0.1.3",
+      "version_format": "namespaced",
+      "tag": false,
+      "release": false,
+      "tag_name": "solana_kit_sns/v0.1.3",
+      "rendered_title": "solana_kit_sns v0.1.3 (2026-11-09)",
+      "rendered_changelog_title": "solana_kit_sns [0.1.3](https://github.com/pina-rs/solana_kit/releases/tag/solana_kit_sns/v0.1.3) (2026-11-09)",
+      "members": [
+        "solana_kit_sns"
+      ]
+    },
+    {
+      "id": "solana_kit_squads",
+      "kind": "package",
+      "version": "0.1.3",
+      "version_format": "namespaced",
+      "tag": false,
+      "release": false,
+      "tag_name": "solana_kit_squads/v0.1.3",
+      "rendered_title": "solana_kit_squads v0.1.3 (2026-11-09)",
+      "rendered_changelog_title": "solana_kit_squads [0.1.3](https://github.com/pina-rs/solana_kit/releases/tag/solana_kit_squads/v0.1.3) (2026-11-09)",
+      "members": [
+        "solana_kit_squads"
+      ]
+    },
+    {
+      "id": "solana_kit_stake",
+      "kind": "package",
+      "version": "0.1.3",
+      "version_format": "namespaced",
+      "tag": false,
+      "release": false,
+      "tag_name": "solana_kit_stake/v0.1.3",
+      "rendered_title": "solana_kit_stake v0.1.3 (2026-11-09)",
+      "rendered_changelog_title": "solana_kit_stake [0.1.3](https://github.com/pina-rs/solana_kit/releases/tag/solana_kit_stake/v0.1.3) (2026-11-09)",
+      "members": [
+        "solana_kit_stake"
+      ]
+    },
+    {
+      "id": "solana_kit_subscriptions",
+      "kind": "package",
+      "version": "0.1.3",
+      "version_format": "namespaced",
+      "tag": false,
+      "release": false,
+      "tag_name": "solana_kit_subscriptions/v0.1.3",
+      "rendered_title": "solana_kit_subscriptions v0.1.3 (2026-11-09)",
+      "rendered_changelog_title": "solana_kit_subscriptions [0.1.3](https://github.com/pina-rs/solana_kit/releases/tag/solana_kit_subscriptions/v0.1.3) (2026-11-09)",
+      "members": [
+        "solana_kit_subscriptions"
+      ]
+    },
+    {
+      "id": "solana_kit_surfpool",
+      "kind": "package",
+      "version": "0.2.1",
+      "version_format": "namespaced",
+      "tag": true,
+      "release": true,
+      "tag_name": "solana_kit_surfpool/v0.2.1",
+      "rendered_title": "solana_kit_surfpool v0.2.1 (2026-11-09)",
+      "rendered_changelog_title": "solana_kit_surfpool [0.2.1](https://github.com/pina-rs/solana_kit/releases/tag/solana_kit_surfpool/v0.2.1) (2026-11-09)",
+      "members": [
+        "solana_kit_surfpool"
+      ]
+    },
+    {
+      "id": "solana_kit_system",
+      "kind": "package",
+      "version": "0.2.1",
+      "version_format": "namespaced",
+      "tag": true,
+      "release": true,
+      "tag_name": "solana_kit_system/v0.2.1",
+      "rendered_title": "solana_kit_system v0.2.1 (2026-11-09)",
+      "rendered_changelog_title": "solana_kit_system [0.2.1](https://github.com/pina-rs/solana_kit/releases/tag/solana_kit_system/v0.2.1) (2026-11-09)",
+      "members": [
+        "solana_kit_system"
+      ]
+    },
+    {
+      "id": "solana_kit_test_support",
+      "kind": "package",
+      "version": "0.1.3",
+      "version_format": "namespaced",
+      "tag": false,
+      "release": false,
+      "tag_name": "solana_kit_test_support/v0.1.3",
+      "rendered_title": "solana_kit_test_support v0.1.3 (2026-11-09)",
+      "rendered_changelog_title": "solana_kit_test_support [0.1.3](https://github.com/pina-rs/solana_kit/releases/tag/solana_kit_test_support/v0.1.3) (2026-11-09)",
+      "members": [
+        "solana_kit_test_support"
+      ]
+    },
+    {
+      "id": "solana_kit_token",
+      "kind": "package",
+      "version": "0.1.3",
+      "version_format": "namespaced",
+      "tag": false,
+      "release": false,
+      "tag_name": "solana_kit_token/v0.1.3",
+      "rendered_title": "solana_kit_token v0.1.3 (2026-11-09)",
+      "rendered_changelog_title": "solana_kit_token [0.1.3](https://github.com/pina-rs/solana_kit/releases/tag/solana_kit_token/v0.1.3) (2026-11-09)",
+      "members": [
+        "solana_kit_token"
+      ]
+    },
+    {
+      "id": "solana_kit_token_2022",
+      "kind": "package",
+      "version": "0.1.3",
+      "version_format": "namespaced",
+      "tag": false,
+      "release": false,
+      "tag_name": "solana_kit_token_2022/v0.1.3",
+      "rendered_title": "solana_kit_token_2022 v0.1.3 (2026-11-09)",
+      "rendered_changelog_title": "solana_kit_token_2022 [0.1.3](https://github.com/pina-rs/solana_kit/releases/tag/solana_kit_token_2022/v0.1.3) (2026-11-09)",
+      "members": [
+        "solana_kit_token_2022"
+      ]
+    },
+    {
+      "id": "solana_kit_wallet",
+      "kind": "package",
+      "version": "0.3.1",
+      "version_format": "namespaced",
+      "tag": true,
+      "release": true,
+      "tag_name": "solana_kit_wallet/v0.3.1",
+      "rendered_title": "solana_kit_wallet v0.3.1 (2026-11-09)",
+      "rendered_changelog_title": "solana_kit_wallet [0.3.1](https://github.com/pina-rs/solana_kit/releases/tag/solana_kit_wallet/v0.3.1) (2026-11-09)",
+      "members": [
+        "solana_kit_wallet"
+      ]
+    }
+  ],
+  "released_packages": [
+    "codama-renderers-rust-solana-kit",
+    "solana_kit_account_compression",
+    "solana_kit_address_lookup_table",
+    "solana_kit_anchor",
+    "solana_kit_associated_token_account",
+    "solana_kit_attestation_service",
+    "solana_kit_browser",
+    "solana_kit_client",
+    "solana_kit_compute_budget",
+    "solana_kit_config",
+    "solana_kit_core",
+    "solana_kit_dapp_publisher",
+    "solana_kit_dapp_publisher_cli",
+    "solana_kit_helius",
+    "solana_kit_jupiter",
+    "solana_kit_leptoskit",
+    "solana_kit_loader",
+    "solana_kit_memo",
+    "solana_kit_mpl_bubblegum",
+    "solana_kit_mpl_core",
+    "solana_kit_mpl_token_metadata",
+    "solana_kit_native",
+    "solana_kit_pyth",
+    "solana_kit_signers",
+    "solana_kit_sns",
+    "solana_kit_squads",
+    "solana_kit_stake",
+    "solana_kit_subscriptions",
+    "solana_kit_surfpool",
+    "solana_kit_system",
+    "solana_kit_test_support",
+    "solana_kit_token",
+    "solana_kit_token_2022",
+    "solana_kit_wallet",
+    "solana_kit_wasi"
+  ],
+  "changed_files": [
+    "Cargo.lock",
+    "Cargo.toml",
+    "crates/solana_kit_account_compression/CHANGELOG.md",
+    "crates/solana_kit_account_compression/Cargo.toml",
+    "crates/solana_kit_address_lookup_table/CHANGELOG.md",
+    "crates/solana_kit_address_lookup_table/Cargo.toml",
+    "crates/solana_kit_anchor/CHANGELOG.md",
+    "crates/solana_kit_anchor/Cargo.toml",
+    "crates/solana_kit_associated_token_account/CHANGELOG.md",
+    "crates/solana_kit_associated_token_account/Cargo.toml",
+    "crates/solana_kit_attestation_service/CHANGELOG.md",
+    "crates/solana_kit_attestation_service/Cargo.toml",
+    "crates/solana_kit_browser/Cargo.toml",
+    "crates/solana_kit_client/Cargo.toml",
+    "crates/solana_kit_compute_budget/CHANGELOG.md",
+    "crates/solana_kit_compute_budget/Cargo.toml",
+    "crates/solana_kit_config/CHANGELOG.md",
+    "crates/solana_kit_config/Cargo.toml",
+    "crates/solana_kit_core/CHANGELOG.md",
+    "crates/solana_kit_core/Cargo.toml",
+    "crates/solana_kit_dapp_publisher/CHANGELOG.md",
+    "crates/solana_kit_dapp_publisher/Cargo.toml",
+    "crates/solana_kit_dapp_publisher_cli/Cargo.toml",
+    "crates/solana_kit_helius/CHANGELOG.md",
+    "crates/solana_kit_helius/Cargo.toml",
+    "crates/solana_kit_jupiter/Cargo.toml",
+    "crates/solana_kit_leptoskit/Cargo.toml",
+    "crates/solana_kit_loader/CHANGELOG.md",
+    "crates/solana_kit_loader/Cargo.toml",
+    "crates/solana_kit_memo/CHANGELOG.md",
+    "crates/solana_kit_memo/Cargo.toml",
+    "crates/solana_kit_mpl_bubblegum/CHANGELOG.md",
+    "crates/solana_kit_mpl_bubblegum/Cargo.toml",
+    "crates/solana_kit_mpl_core/CHANGELOG.md",
+    "crates/solana_kit_mpl_core/Cargo.toml",
+    "crates/solana_kit_mpl_token_metadata/CHANGELOG.md",
+    "crates/solana_kit_mpl_token_metadata/Cargo.toml",
+    "crates/solana_kit_native/Cargo.toml",
+    "crates/solana_kit_pyth/CHANGELOG.md",
+    "crates/solana_kit_pyth/Cargo.toml",
+    "crates/solana_kit_signers/Cargo.toml",
+    "crates/solana_kit_sns/CHANGELOG.md",
+    "crates/solana_kit_sns/Cargo.toml",
+    "crates/solana_kit_squads/CHANGELOG.md",
+    "crates/solana_kit_squads/Cargo.toml",
+    "crates/solana_kit_stake/CHANGELOG.md",
+    "crates/solana_kit_stake/Cargo.toml",
+    "crates/solana_kit_subscriptions/CHANGELOG.md",
+    "crates/solana_kit_subscriptions/Cargo.toml",
+    "crates/solana_kit_surfpool/CHANGELOG.md",
+    "crates/solana_kit_surfpool/Cargo.toml",
+    "crates/solana_kit_system/CHANGELOG.md",
+    "crates/solana_kit_system/Cargo.toml",
+    "crates/solana_kit_test_support/Cargo.toml",
+    "crates/solana_kit_token/CHANGELOG.md",
+    "crates/solana_kit_token/Cargo.toml",
+    "crates/solana_kit_token_2022/CHANGELOG.md",
+    "crates/solana_kit_token_2022/Cargo.toml",
+    "crates/solana_kit_wallet/CHANGELOG.md",
+    "crates/solana_kit_wallet/Cargo.toml",
+    "crates/solana_kit_wasi/Cargo.toml",
+    "packages/codama-renderers-rust-solana-kit/package-lock.json",
+    "packages/codama-renderers-rust-solana-kit/package.json"
+  ],
+  "package_publications": [
+    {
+      "package": "codama_renderers_rust_solana_kit",
+      "ecosystem": "npm",
+      "registry": "npm",
+      "version": "0.2.1",
+      "mode": "external",
+      "trusted_publishing": {
+        "enabled": true,
+        "mode": "preferred",
+        "repository": "pina-rs/solana_kit",
+        "workflow": "publish.yml",
+        "environment": "npm-release"
+      }
+    },
+    {
+      "package": "solana_kit_anchor",
+      "ecosystem": "cargo",
+      "registry": "crates_io",
+      "version": "0.2.1",
+      "mode": "builtin",
+      "trusted_publishing": {
+        "enabled": true,
+        "mode": "preferred",
+        "repository": "pina-rs/solana_kit",
+        "workflow": "publish.yml",
+        "environment": null
+      }
+    },
+    {
+      "package": "solana_kit_associated_token_account",
+      "ecosystem": "cargo",
+      "registry": "crates_io",
+      "version": "0.2.1",
+      "mode": "builtin",
+      "trusted_publishing": {
+        "enabled": true,
+        "mode": "preferred",
+        "repository": "pina-rs/solana_kit",
+        "workflow": "publish.yml",
+        "environment": null
+      }
+    },
+    {
+      "package": "solana_kit_browser",
+      "ecosystem": "cargo",
+      "registry": "crates_io",
+      "version": "0.2.1",
+      "mode": "builtin",
+      "trusted_publishing": {
+        "enabled": true,
+        "mode": "preferred",
+        "repository": "pina-rs/solana_kit",
+        "workflow": "publish.yml",
+        "environment": null
+      }
+    },
+    {
+      "package": "solana_kit_client",
+      "ecosystem": "cargo",
+      "registry": "crates_io",
+      "version": "0.2.1",
+      "mode": "builtin",
+      "trusted_publishing": {
+        "enabled": true,
+        "mode": "preferred",
+        "repository": "pina-rs/solana_kit",
+        "workflow": "publish.yml",
+        "environment": null
+      }
+    },
+    {
+      "package": "solana_kit_compute_budget",
+      "ecosystem": "cargo",
+      "registry": "crates_io",
+      "version": "0.2.1",
+      "mode": "builtin",
+      "trusted_publishing": {
+        "enabled": true,
+        "mode": "preferred",
+        "repository": "pina-rs/solana_kit",
+        "workflow": "publish.yml",
+        "environment": null
+      }
+    },
+    {
+      "package": "solana_kit_core",
+      "ecosystem": "cargo",
+      "registry": "crates_io",
+      "version": "0.2.1",
+      "mode": "builtin",
+      "trusted_publishing": {
+        "enabled": true,
+        "mode": "preferred",
+        "repository": "pina-rs/solana_kit",
+        "workflow": "publish.yml",
+        "environment": null
+      }
+    },
+    {
+      "package": "solana_kit_leptoskit",
+      "ecosystem": "cargo",
+      "registry": "crates_io",
+      "version": "0.2.1",
+      "mode": "builtin",
+      "trusted_publishing": {
+        "enabled": true,
+        "mode": "preferred",
+        "repository": "pina-rs/solana_kit",
+        "workflow": "publish.yml",
+        "environment": null
+      }
+    },
+    {
+      "package": "solana_kit_memo",
+      "ecosystem": "cargo",
+      "registry": "crates_io",
+      "version": "0.2.1",
+      "mode": "builtin",
+      "trusted_publishing": {
+        "enabled": true,
+        "mode": "preferred",
+        "repository": "pina-rs/solana_kit",
+        "workflow": "publish.yml",
+        "environment": null
+      }
+    },
+    {
+      "package": "solana_kit_native",
+      "ecosystem": "cargo",
+      "registry": "crates_io",
+      "version": "0.2.1",
+      "mode": "builtin",
+      "trusted_publishing": {
+        "enabled": true,
+        "mode": "preferred",
+        "repository": "pina-rs/solana_kit",
+        "workflow": "publish.yml",
+        "environment": null
+      }
+    },
+    {
+      "package": "solana_kit_signers",
+      "ecosystem": "cargo",
+      "registry": "crates_io",
+      "version": "0.2.1",
+      "mode": "builtin",
+      "trusted_publishing": {
+        "enabled": true,
+        "mode": "preferred",
+        "repository": "pina-rs/solana_kit",
+        "workflow": "publish.yml",
+        "environment": null
+      }
+    },
+    {
+      "package": "solana_kit_surfpool",
+      "ecosystem": "cargo",
+      "registry": "crates_io",
+      "version": "0.2.1",
+      "mode": "builtin",
+      "trusted_publishing": {
+        "enabled": true,
+        "mode": "preferred",
+        "repository": "pina-rs/solana_kit",
+        "workflow": "publish.yml",
+        "environment": null
+      }
+    },
+    {
+      "package": "solana_kit_system",
+      "ecosystem": "cargo",
+      "registry": "crates_io",
+      "version": "0.2.1",
+      "mode": "builtin",
+      "trusted_publishing": {
+        "enabled": true,
+        "mode": "preferred",
+        "repository": "pina-rs/solana_kit",
+        "workflow": "publish.yml",
+        "environment": null
+      }
+    },
+    {
+      "package": "solana_kit_wallet",
+      "ecosystem": "cargo",
+      "registry": "crates_io",
+      "version": "0.3.1",
+      "mode": "builtin",
+      "trusted_publishing": {
+        "enabled": true,
+        "mode": "preferred",
+        "repository": "pina-rs/solana_kit",
+        "workflow": "publish.yml",
+        "environment": null
+      }
+    },
+    {
+      "package": "solana_kit_wasi",
+      "ecosystem": "cargo",
+      "registry": "crates_io",
+      "version": "0.2.1",
+      "mode": "builtin",
+      "trusted_publishing": {
+        "enabled": true,
+        "mode": "preferred",
+        "repository": "pina-rs/solana_kit",
+        "workflow": "publish.yml",
+        "environment": null
+      }
+    }
+  ],
+  "updated_changelogs": [
+    "crates/solana_kit_account_compression/CHANGELOG.md",
+    "crates/solana_kit_address_lookup_table/CHANGELOG.md",
+    "crates/solana_kit_anchor/CHANGELOG.md",
+    "crates/solana_kit_associated_token_account/CHANGELOG.md",
+    "crates/solana_kit_attestation_service/CHANGELOG.md",
+    "crates/solana_kit_compute_budget/CHANGELOG.md",
+    "crates/solana_kit_config/CHANGELOG.md",
+    "crates/solana_kit_core/CHANGELOG.md",
+    "crates/solana_kit_dapp_publisher/CHANGELOG.md",
+    "crates/solana_kit_helius/CHANGELOG.md",
+    "crates/solana_kit_loader/CHANGELOG.md",
+    "crates/solana_kit_memo/CHANGELOG.md",
+    "crates/solana_kit_mpl_bubblegum/CHANGELOG.md",
+    "crates/solana_kit_mpl_core/CHANGELOG.md",
+    "crates/solana_kit_mpl_token_metadata/CHANGELOG.md",
+    "crates/solana_kit_pyth/CHANGELOG.md",
+    "crates/solana_kit_sns/CHANGELOG.md",
+    "crates/solana_kit_squads/CHANGELOG.md",
+    "crates/solana_kit_stake/CHANGELOG.md",
+    "crates/solana_kit_subscriptions/CHANGELOG.md",
+    "crates/solana_kit_surfpool/CHANGELOG.md",
+    "crates/solana_kit_system/CHANGELOG.md",
+    "crates/solana_kit_token/CHANGELOG.md",
+    "crates/solana_kit_token_2022/CHANGELOG.md",
+    "crates/solana_kit_wallet/CHANGELOG.md"
+  ],
+  "deleted_changesets": [
+    ".changeset/1794161655-codama-renderers-rust-solana-kit.md"
+  ],
+  "changesets": [
+    {
+      "path": ".changeset/1794161655-codama-renderers-rust-solana-kit.md",
+      "summary": "Publish the Codama renderer with the SDK group.",
+      "details": "Add `codama_renderers_rust_solana_kit` to the `sdk` MonoChange group so it\nshares the primary `v*` version and release tag. Qualify and upload the package\nfrom `.github/workflows/publish.yml` beside the crates.io publish path.",
+      "targets": [
+        {
+          "id": "codama_renderers_rust_solana_kit",
+          "kind": "package",
+          "bump": "patch",
+          "origin": "direct-change",
+          "evidence_refs": [],
+          "change_type": "patch"
+        }
+      ],
+      "context": {
+        "provider": "github",
+        "host": "github.com",
+        "capabilities": {
+          "commit_web_urls": true,
+          "actor_profiles": true,
+          "review_request_lookup": true,
+          "related_issues": true,
+          "issue_comments": true
+        },
+        "introduced": {
+          "actor": {
+            "provider": "github",
+            "host": "github.com",
+            "id": null,
+            "login": "ifiokjr",
+            "display_name": "ifiokjr",
+            "url": "https://github.com/ifiokjr",
+            "source": "review_request_author"
+          },
+          "commit": {
+            "provider": "github",
+            "host": "github.com",
+            "sha": "5c9cdbe34743455bbb228282b20d07f46f4cff90",
+            "short_sha": "5c9cdbe",
+            "url": "https://github.com/pina-rs/solana_kit/commit/5c9cdbe34743455bbb228282b20d07f46f4cff90",
+            "authored_at": "2026-11-09T01:26:52Z",
+            "committed_at": "2026-11-09T01:26:52Z",
+            "author_name": "Ifiok Jr.",
+            "author_email": "1160934+ifiokjr@users.noreply.github.com"
+          },
+          "review_request": {
+            "provider": "github",
+            "host": "github.com",
+            "kind": "pull_request",
+            "id": "#186",
+            "title": "feat(release): enable Codama npm package publication",
+            "url": "https://github.com/pina-rs/solana_kit/pull/186",
+            "author": {
+              "provider": "github",
+              "host": "github.com",
+              "id": null,
+              "login": "ifiokjr",
+              "display_name": "ifiokjr",
+              "url": "https://github.com/ifiokjr",
+              "source": "review_request_author"
+            }
+          }
+        },
+        "last_updated": {
+          "actor": {
+            "provider": "github",
+            "host": "github.com",
+            "id": null,
+            "login": "ifiokjr",
+            "display_name": "ifiokjr",
+            "url": "https://github.com/ifiokjr",
+            "source": "review_request_author"
+          },
+          "commit": {
+            "provider": "github",
+            "host": "github.com",
+            "sha": "5c9cdbe34743455bbb228282b20d07f46f4cff90",
+            "short_sha": "5c9cdbe",
+            "url": "https://github.com/pina-rs/solana_kit/commit/5c9cdbe34743455bbb228282b20d07f46f4cff90",
+            "authored_at": "2026-11-09T01:26:52Z",
+            "committed_at": "2026-11-09T01:26:52Z",
+            "author_name": "Ifiok Jr.",
+            "author_email": "1160934+ifiokjr@users.noreply.github.com"
+          },
+          "review_request": {
+            "provider": "github",
+            "host": "github.com",
+            "kind": "pull_request",
+            "id": "#186",
+            "title": "feat(release): enable Codama npm package publication",
+            "url": "https://github.com/pina-rs/solana_kit/pull/186",
+            "author": {
+              "provider": "github",
+              "host": "github.com",
+              "id": null,
+              "login": "ifiokjr",
+              "display_name": "ifiokjr",
+              "url": "https://github.com/ifiokjr",
+              "source": "review_request_author"
+            }
+          }
+        },
+        "related_issues": []
+      }
+    }
+  ],
+  "changelogs": [
+    {
+      "owner_id": "solana_kit_account_compression",
+      "owner_kind": "package",
+      "output": "default",
+      "stream": "default",
+      "path": "crates/solana_kit_account_compression/CHANGELOG.md",
+      "format": "keep_a_changelog",
+      "notes": {
+        "title": "solana_kit_account_compression [0.1.3](https://github.com/pina-rs/solana_kit/releases/tag/solana_kit_account_compression/v0.1.3) (2026-11-09)",
+        "summary": [],
+        "sections": [
+          {
+            "title": "Changed",
+            "collapsed": false,
+            "entries": [
+              "- **No package-specific changes were recorded; `solana_kit_account_compression` was updated to 0.1.3.**"
+            ]
+          }
+        ]
+      },
+      "rendered": "## solana_kit_account_compression [0.1.3](https://github.com/pina-rs/solana_kit/releases/tag/solana_kit_account_compression/v0.1.3) (2026-11-09)\n\n### Changed\n\n- **No package-specific changes were recorded; `solana_kit_account_compression` was updated to 0.1.3.**"
+    },
+    {
+      "owner_id": "solana_kit_address_lookup_table",
+      "owner_kind": "package",
+      "output": "default",
+      "stream": "default",
+      "path": "crates/solana_kit_address_lookup_table/CHANGELOG.md",
+      "format": "keep_a_changelog",
+      "notes": {
+        "title": "solana_kit_address_lookup_table [0.1.3](https://github.com/pina-rs/solana_kit/releases/tag/solana_kit_address_lookup_table/v0.1.3) (2026-11-09)",
+        "summary": [],
+        "sections": [
+          {
+            "title": "Changed",
+            "collapsed": false,
+            "entries": [
+              "- **No package-specific changes were recorded; `solana_kit_address_lookup_table` was updated to 0.1.3.**"
+            ]
+          }
+        ]
+      },
+      "rendered": "## solana_kit_address_lookup_table [0.1.3](https://github.com/pina-rs/solana_kit/releases/tag/solana_kit_address_lookup_table/v0.1.3) (2026-11-09)\n\n### Changed\n\n- **No package-specific changes were recorded; `solana_kit_address_lookup_table` was updated to 0.1.3.**"
+    },
+    {
+      "owner_id": "solana_kit_anchor",
+      "owner_kind": "package",
+      "output": "default",
+      "stream": "default",
+      "path": "crates/solana_kit_anchor/CHANGELOG.md",
+      "format": "keep_a_changelog",
+      "notes": {
+        "title": "solana_kit_anchor [0.2.1](https://github.com/pina-rs/solana_kit/releases/tag/solana_kit_anchor/v0.2.1) (2026-11-09)",
+        "summary": [],
+        "sections": [
+          {
+            "title": "Changed",
+            "collapsed": false,
+            "entries": [
+              "- **No package-specific changes were recorded; `solana_kit_anchor` was updated to 0.2.1.**"
+            ]
+          }
+        ]
+      },
+      "rendered": "## solana_kit_anchor [0.2.1](https://github.com/pina-rs/solana_kit/releases/tag/solana_kit_anchor/v0.2.1) (2026-11-09)\n\n### Changed\n\n- **No package-specific changes were recorded; `solana_kit_anchor` was updated to 0.2.1.**"
+    },
+    {
+      "owner_id": "solana_kit_associated_token_account",
+      "owner_kind": "package",
+      "output": "default",
+      "stream": "default",
+      "path": "crates/solana_kit_associated_token_account/CHANGELOG.md",
+      "format": "keep_a_changelog",
+      "notes": {
+        "title": "solana_kit_associated_token_account [0.2.1](https://github.com/pina-rs/solana_kit/releases/tag/solana_kit_associated_token_account/v0.2.1) (2026-11-09)",
+        "summary": [],
+        "sections": [
+          {
+            "title": "Changed",
+            "collapsed": false,
+            "entries": [
+              "- **No package-specific changes were recorded; `solana_kit_associated_token_account` was updated to 0.2.1.**"
+            ]
+          }
+        ]
+      },
+      "rendered": "## solana_kit_associated_token_account [0.2.1](https://github.com/pina-rs/solana_kit/releases/tag/solana_kit_associated_token_account/v0.2.1) (2026-11-09)\n\n### Changed\n\n- **No package-specific changes were recorded; `solana_kit_associated_token_account` was updated to 0.2.1.**"
+    },
+    {
+      "owner_id": "solana_kit_attestation_service",
+      "owner_kind": "package",
+      "output": "default",
+      "stream": "default",
+      "path": "crates/solana_kit_attestation_service/CHANGELOG.md",
+      "format": "keep_a_changelog",
+      "notes": {
+        "title": "solana_kit_attestation_service [0.1.3](https://github.com/pina-rs/solana_kit/releases/tag/solana_kit_attestation_service/v0.1.3) (2026-11-09)",
+        "summary": [],
+        "sections": [
+          {
+            "title": "Changed",
+            "collapsed": false,
+            "entries": [
+              "- **No package-specific changes were recorded; `solana_kit_attestation_service` was updated to 0.1.3.**"
+            ]
+          }
+        ]
+      },
+      "rendered": "## solana_kit_attestation_service [0.1.3](https://github.com/pina-rs/solana_kit/releases/tag/solana_kit_attestation_service/v0.1.3) (2026-11-09)\n\n### Changed\n\n- **No package-specific changes were recorded; `solana_kit_attestation_service` was updated to 0.1.3.**"
+    },
+    {
+      "owner_id": "solana_kit_compute_budget",
+      "owner_kind": "package",
+      "output": "default",
+      "stream": "default",
+      "path": "crates/solana_kit_compute_budget/CHANGELOG.md",
+      "format": "keep_a_changelog",
+      "notes": {
+        "title": "solana_kit_compute_budget [0.2.1](https://github.com/pina-rs/solana_kit/releases/tag/solana_kit_compute_budget/v0.2.1) (2026-11-09)",
+        "summary": [],
+        "sections": [
+          {
+            "title": "Changed",
+            "collapsed": false,
+            "entries": [
+              "- **No package-specific changes were recorded; `solana_kit_compute_budget` was updated to 0.2.1.**"
+            ]
+          }
+        ]
+      },
+      "rendered": "## solana_kit_compute_budget [0.2.1](https://github.com/pina-rs/solana_kit/releases/tag/solana_kit_compute_budget/v0.2.1) (2026-11-09)\n\n### Changed\n\n- **No package-specific changes were recorded; `solana_kit_compute_budget` was updated to 0.2.1.**"
+    },
+    {
+      "owner_id": "solana_kit_config",
+      "owner_kind": "package",
+      "output": "default",
+      "stream": "default",
+      "path": "crates/solana_kit_config/CHANGELOG.md",
+      "format": "keep_a_changelog",
+      "notes": {
+        "title": "solana_kit_config [0.1.3](https://github.com/pina-rs/solana_kit/releases/tag/solana_kit_config/v0.1.3) (2026-11-09)",
+        "summary": [],
+        "sections": [
+          {
+            "title": "Changed",
+            "collapsed": false,
+            "entries": [
+              "- **No package-specific changes were recorded; `solana_kit_config` was updated to 0.1.3.**"
+            ]
+          }
+        ]
+      },
+      "rendered": "## solana_kit_config [0.1.3](https://github.com/pina-rs/solana_kit/releases/tag/solana_kit_config/v0.1.3) (2026-11-09)\n\n### Changed\n\n- **No package-specific changes were recorded; `solana_kit_config` was updated to 0.1.3.**"
+    },
+    {
+      "owner_id": "sdk",
+      "owner_kind": "group",
+      "output": "default",
+      "stream": "default",
+      "path": "crates/solana_kit_core/CHANGELOG.md",
+      "format": "keep_a_changelog",
+      "notes": {
+        "title": "[0.2.1](https://github.com/pina-rs/solana_kit/releases/tag/v0.2.1) (2026-11-09)",
+        "summary": [
+          "Grouped release for `sdk`."
+        ],
+        "sections": [
+          {
+            "title": "Fixes",
+            "collapsed": false,
+            "entries": [
+              "#### Publish the Codama renderer with the SDK group.\n\n_Packages:_ 🟢 _codama_renderers_rust_solana_kit_\n\n_Owner:_ [@ifiokjr](https://github.com/ifiokjr) · _Review:_ [PR #186](https://github.com/pina-rs/solana_kit/pull/186)\n\nAdd `codama_renderers_rust_solana_kit` to the `sdk` MonoChange group so it\nshares the primary `v*` version and release tag. Qualify and upload the package\nfrom `.github/workflows/publish.yml` beside the crates.io publish path."
+            ]
+          }
+        ]
+      },
+      "rendered": "## [0.2.1](https://github.com/pina-rs/solana_kit/releases/tag/v0.2.1) (2026-11-09)\n\nGrouped release for `sdk`.\n\n### Fixes\n\n#### Publish the Codama renderer with the SDK group.\n\n_Packages:_ 🟢 _codama_renderers_rust_solana_kit_\n\n_Owner:_ [@ifiokjr](https://github.com/ifiokjr) · _Review:_ [PR #186](https://github.com/pina-rs/solana_kit/pull/186)\n\nAdd `codama_renderers_rust_solana_kit` to the `sdk` MonoChange group so it\nshares the primary `v*` version and release tag. Qualify and upload the package\nfrom `.github/workflows/publish.yml` beside the crates.io publish path."
+    },
+    {
+      "owner_id": "solana_kit_dapp_publisher",
+      "owner_kind": "package",
+      "output": "default",
+      "stream": "default",
+      "path": "crates/solana_kit_dapp_publisher/CHANGELOG.md",
+      "format": "keep_a_changelog",
+      "notes": {
+        "title": "solana_kit_dapp_publisher [0.1.3](https://github.com/pina-rs/solana_kit/releases/tag/solana_kit_dapp_publisher/v0.1.3) (2026-11-09)",
+        "summary": [],
+        "sections": [
+          {
+            "title": "Changed",
+            "collapsed": false,
+            "entries": [
+              "- **No package-specific changes were recorded; `solana_kit_dapp_publisher` was updated to 0.1.3.**"
+            ]
+          }
+        ]
+      },
+      "rendered": "## solana_kit_dapp_publisher [0.1.3](https://github.com/pina-rs/solana_kit/releases/tag/solana_kit_dapp_publisher/v0.1.3) (2026-11-09)\n\n### Changed\n\n- **No package-specific changes were recorded; `solana_kit_dapp_publisher` was updated to 0.1.3.**"
+    },
+    {
+      "owner_id": "solana_kit_helius",
+      "owner_kind": "package",
+      "output": "default",
+      "stream": "default",
+      "path": "crates/solana_kit_helius/CHANGELOG.md",
+      "format": "keep_a_changelog",
+      "notes": {
+        "title": "solana_kit_helius [0.1.3](https://github.com/pina-rs/solana_kit/releases/tag/solana_kit_helius/v0.1.3) (2026-11-09)",
+        "summary": [],
+        "sections": [
+          {
+            "title": "Changed",
+            "collapsed": false,
+            "entries": [
+              "- **No package-specific changes were recorded; `solana_kit_helius` was updated to 0.1.3.**"
+            ]
+          }
+        ]
+      },
+      "rendered": "## solana_kit_helius [0.1.3](https://github.com/pina-rs/solana_kit/releases/tag/solana_kit_helius/v0.1.3) (2026-11-09)\n\n### Changed\n\n- **No package-specific changes were recorded; `solana_kit_helius` was updated to 0.1.3.**"
+    },
+    {
+      "owner_id": "solana_kit_loader",
+      "owner_kind": "package",
+      "output": "default",
+      "stream": "default",
+      "path": "crates/solana_kit_loader/CHANGELOG.md",
+      "format": "keep_a_changelog",
+      "notes": {
+        "title": "solana_kit_loader [0.1.3](https://github.com/pina-rs/solana_kit/releases/tag/solana_kit_loader/v0.1.3) (2026-11-09)",
+        "summary": [],
+        "sections": [
+          {
+            "title": "Changed",
+            "collapsed": false,
+            "entries": [
+              "- **No package-specific changes were recorded; `solana_kit_loader` was updated to 0.1.3.**"
+            ]
+          }
+        ]
+      },
+      "rendered": "## solana_kit_loader [0.1.3](https://github.com/pina-rs/solana_kit/releases/tag/solana_kit_loader/v0.1.3) (2026-11-09)\n\n### Changed\n\n- **No package-specific changes were recorded; `solana_kit_loader` was updated to 0.1.3.**"
+    },
+    {
+      "owner_id": "solana_kit_memo",
+      "owner_kind": "package",
+      "output": "default",
+      "stream": "default",
+      "path": "crates/solana_kit_memo/CHANGELOG.md",
+      "format": "keep_a_changelog",
+      "notes": {
+        "title": "solana_kit_memo [0.2.1](https://github.com/pina-rs/solana_kit/releases/tag/solana_kit_memo/v0.2.1) (2026-11-09)",
+        "summary": [],
+        "sections": [
+          {
+            "title": "Changed",
+            "collapsed": false,
+            "entries": [
+              "- **No package-specific changes were recorded; `solana_kit_memo` was updated to 0.2.1.**"
+            ]
+          }
+        ]
+      },
+      "rendered": "## solana_kit_memo [0.2.1](https://github.com/pina-rs/solana_kit/releases/tag/solana_kit_memo/v0.2.1) (2026-11-09)\n\n### Changed\n\n- **No package-specific changes were recorded; `solana_kit_memo` was updated to 0.2.1.**"
+    },
+    {
+      "owner_id": "solana_kit_mpl_bubblegum",
+      "owner_kind": "package",
+      "output": "default",
+      "stream": "default",
+      "path": "crates/solana_kit_mpl_bubblegum/CHANGELOG.md",
+      "format": "keep_a_changelog",
+      "notes": {
+        "title": "solana_kit_mpl_bubblegum [0.1.3](https://github.com/pina-rs/solana_kit/releases/tag/solana_kit_mpl_bubblegum/v0.1.3) (2026-11-09)",
+        "summary": [],
+        "sections": [
+          {
+            "title": "Changed",
+            "collapsed": false,
+            "entries": [
+              "- **No package-specific changes were recorded; `solana_kit_mpl_bubblegum` was updated to 0.1.3.**"
+            ]
+          }
+        ]
+      },
+      "rendered": "## solana_kit_mpl_bubblegum [0.1.3](https://github.com/pina-rs/solana_kit/releases/tag/solana_kit_mpl_bubblegum/v0.1.3) (2026-11-09)\n\n### Changed\n\n- **No package-specific changes were recorded; `solana_kit_mpl_bubblegum` was updated to 0.1.3.**"
+    },
+    {
+      "owner_id": "solana_kit_mpl_core",
+      "owner_kind": "package",
+      "output": "default",
+      "stream": "default",
+      "path": "crates/solana_kit_mpl_core/CHANGELOG.md",
+      "format": "keep_a_changelog",
+      "notes": {
+        "title": "solana_kit_mpl_core [0.1.3](https://github.com/pina-rs/solana_kit/releases/tag/solana_kit_mpl_core/v0.1.3) (2026-11-09)",
+        "summary": [],
+        "sections": [
+          {
+            "title": "Changed",
+            "collapsed": false,
+            "entries": [
+              "- **No package-specific changes were recorded; `solana_kit_mpl_core` was updated to 0.1.3.**"
+            ]
+          }
+        ]
+      },
+      "rendered": "## solana_kit_mpl_core [0.1.3](https://github.com/pina-rs/solana_kit/releases/tag/solana_kit_mpl_core/v0.1.3) (2026-11-09)\n\n### Changed\n\n- **No package-specific changes were recorded; `solana_kit_mpl_core` was updated to 0.1.3.**"
+    },
+    {
+      "owner_id": "solana_kit_mpl_token_metadata",
+      "owner_kind": "package",
+      "output": "default",
+      "stream": "default",
+      "path": "crates/solana_kit_mpl_token_metadata/CHANGELOG.md",
+      "format": "keep_a_changelog",
+      "notes": {
+        "title": "solana_kit_mpl_token_metadata [0.1.3](https://github.com/pina-rs/solana_kit/releases/tag/solana_kit_mpl_token_metadata/v0.1.3) (2026-11-09)",
+        "summary": [],
+        "sections": [
+          {
+            "title": "Changed",
+            "collapsed": false,
+            "entries": [
+              "- **No package-specific changes were recorded; `solana_kit_mpl_token_metadata` was updated to 0.1.3.**"
+            ]
+          }
+        ]
+      },
+      "rendered": "## solana_kit_mpl_token_metadata [0.1.3](https://github.com/pina-rs/solana_kit/releases/tag/solana_kit_mpl_token_metadata/v0.1.3) (2026-11-09)\n\n### Changed\n\n- **No package-specific changes were recorded; `solana_kit_mpl_token_metadata` was updated to 0.1.3.**"
+    },
+    {
+      "owner_id": "solana_kit_pyth",
+      "owner_kind": "package",
+      "output": "default",
+      "stream": "default",
+      "path": "crates/solana_kit_pyth/CHANGELOG.md",
+      "format": "keep_a_changelog",
+      "notes": {
+        "title": "solana_kit_pyth [0.1.3](https://github.com/pina-rs/solana_kit/releases/tag/solana_kit_pyth/v0.1.3) (2026-11-09)",
+        "summary": [],
+        "sections": [
+          {
+            "title": "Changed",
+            "collapsed": false,
+            "entries": [
+              "- **No package-specific changes were recorded; `solana_kit_pyth` was updated to 0.1.3.**"
+            ]
+          }
+        ]
+      },
+      "rendered": "## solana_kit_pyth [0.1.3](https://github.com/pina-rs/solana_kit/releases/tag/solana_kit_pyth/v0.1.3) (2026-11-09)\n\n### Changed\n\n- **No package-specific changes were recorded; `solana_kit_pyth` was updated to 0.1.3.**"
+    },
+    {
+      "owner_id": "solana_kit_sns",
+      "owner_kind": "package",
+      "output": "default",
+      "stream": "default",
+      "path": "crates/solana_kit_sns/CHANGELOG.md",
+      "format": "keep_a_changelog",
+      "notes": {
+        "title": "solana_kit_sns [0.1.3](https://github.com/pina-rs/solana_kit/releases/tag/solana_kit_sns/v0.1.3) (2026-11-09)",
+        "summary": [],
+        "sections": [
+          {
+            "title": "Changed",
+            "collapsed": false,
+            "entries": [
+              "- **No package-specific changes were recorded; `solana_kit_sns` was updated to 0.1.3.**"
+            ]
+          }
+        ]
+      },
+      "rendered": "## solana_kit_sns [0.1.3](https://github.com/pina-rs/solana_kit/releases/tag/solana_kit_sns/v0.1.3) (2026-11-09)\n\n### Changed\n\n- **No package-specific changes were recorded; `solana_kit_sns` was updated to 0.1.3.**"
+    },
+    {
+      "owner_id": "solana_kit_squads",
+      "owner_kind": "package",
+      "output": "default",
+      "stream": "default",
+      "path": "crates/solana_kit_squads/CHANGELOG.md",
+      "format": "keep_a_changelog",
+      "notes": {
+        "title": "solana_kit_squads [0.1.3](https://github.com/pina-rs/solana_kit/releases/tag/solana_kit_squads/v0.1.3) (2026-11-09)",
+        "summary": [],
+        "sections": [
+          {
+            "title": "Changed",
+            "collapsed": false,
+            "entries": [
+              "- **No package-specific changes were recorded; `solana_kit_squads` was updated to 0.1.3.**"
+            ]
+          }
+        ]
+      },
+      "rendered": "## solana_kit_squads [0.1.3](https://github.com/pina-rs/solana_kit/releases/tag/solana_kit_squads/v0.1.3) (2026-11-09)\n\n### Changed\n\n- **No package-specific changes were recorded; `solana_kit_squads` was updated to 0.1.3.**"
+    },
+    {
+      "owner_id": "solana_kit_stake",
+      "owner_kind": "package",
+      "output": "default",
+      "stream": "default",
+      "path": "crates/solana_kit_stake/CHANGELOG.md",
+      "format": "keep_a_changelog",
+      "notes": {
+        "title": "solana_kit_stake [0.1.3](https://github.com/pina-rs/solana_kit/releases/tag/solana_kit_stake/v0.1.3) (2026-11-09)",
+        "summary": [],
+        "sections": [
+          {
+            "title": "Changed",
+            "collapsed": false,
+            "entries": [
+              "- **No package-specific changes were recorded; `solana_kit_stake` was updated to 0.1.3.**"
+            ]
+          }
+        ]
+      },
+      "rendered": "## solana_kit_stake [0.1.3](https://github.com/pina-rs/solana_kit/releases/tag/solana_kit_stake/v0.1.3) (2026-11-09)\n\n### Changed\n\n- **No package-specific changes were recorded; `solana_kit_stake` was updated to 0.1.3.**"
+    },
+    {
+      "owner_id": "solana_kit_subscriptions",
+      "owner_kind": "package",
+      "output": "default",
+      "stream": "default",
+      "path": "crates/solana_kit_subscriptions/CHANGELOG.md",
+      "format": "keep_a_changelog",
+      "notes": {
+        "title": "solana_kit_subscriptions [0.1.3](https://github.com/pina-rs/solana_kit/releases/tag/solana_kit_subscriptions/v0.1.3) (2026-11-09)",
+        "summary": [],
+        "sections": [
+          {
+            "title": "Changed",
+            "collapsed": false,
+            "entries": [
+              "- **No package-specific changes were recorded; `solana_kit_subscriptions` was updated to 0.1.3.**"
+            ]
+          }
+        ]
+      },
+      "rendered": "## solana_kit_subscriptions [0.1.3](https://github.com/pina-rs/solana_kit/releases/tag/solana_kit_subscriptions/v0.1.3) (2026-11-09)\n\n### Changed\n\n- **No package-specific changes were recorded; `solana_kit_subscriptions` was updated to 0.1.3.**"
+    },
+    {
+      "owner_id": "solana_kit_surfpool",
+      "owner_kind": "package",
+      "output": "default",
+      "stream": "default",
+      "path": "crates/solana_kit_surfpool/CHANGELOG.md",
+      "format": "keep_a_changelog",
+      "notes": {
+        "title": "solana_kit_surfpool [0.2.1](https://github.com/pina-rs/solana_kit/releases/tag/solana_kit_surfpool/v0.2.1) (2026-11-09)",
+        "summary": [],
+        "sections": [
+          {
+            "title": "Changed",
+            "collapsed": false,
+            "entries": [
+              "- **No package-specific changes were recorded; `solana_kit_surfpool` was updated to 0.2.1.**"
+            ]
+          }
+        ]
+      },
+      "rendered": "## solana_kit_surfpool [0.2.1](https://github.com/pina-rs/solana_kit/releases/tag/solana_kit_surfpool/v0.2.1) (2026-11-09)\n\n### Changed\n\n- **No package-specific changes were recorded; `solana_kit_surfpool` was updated to 0.2.1.**"
+    },
+    {
+      "owner_id": "solana_kit_system",
+      "owner_kind": "package",
+      "output": "default",
+      "stream": "default",
+      "path": "crates/solana_kit_system/CHANGELOG.md",
+      "format": "keep_a_changelog",
+      "notes": {
+        "title": "solana_kit_system [0.2.1](https://github.com/pina-rs/solana_kit/releases/tag/solana_kit_system/v0.2.1) (2026-11-09)",
+        "summary": [],
+        "sections": [
+          {
+            "title": "Changed",
+            "collapsed": false,
+            "entries": [
+              "- **No package-specific changes were recorded; `solana_kit_system` was updated to 0.2.1.**"
+            ]
+          }
+        ]
+      },
+      "rendered": "## solana_kit_system [0.2.1](https://github.com/pina-rs/solana_kit/releases/tag/solana_kit_system/v0.2.1) (2026-11-09)\n\n### Changed\n\n- **No package-specific changes were recorded; `solana_kit_system` was updated to 0.2.1.**"
+    },
+    {
+      "owner_id": "solana_kit_token",
+      "owner_kind": "package",
+      "output": "default",
+      "stream": "default",
+      "path": "crates/solana_kit_token/CHANGELOG.md",
+      "format": "keep_a_changelog",
+      "notes": {
+        "title": "solana_kit_token [0.1.3](https://github.com/pina-rs/solana_kit/releases/tag/solana_kit_token/v0.1.3) (2026-11-09)",
+        "summary": [],
+        "sections": [
+          {
+            "title": "Changed",
+            "collapsed": false,
+            "entries": [
+              "- **No package-specific changes were recorded; `solana_kit_token` was updated to 0.1.3.**"
+            ]
+          }
+        ]
+      },
+      "rendered": "## solana_kit_token [0.1.3](https://github.com/pina-rs/solana_kit/releases/tag/solana_kit_token/v0.1.3) (2026-11-09)\n\n### Changed\n\n- **No package-specific changes were recorded; `solana_kit_token` was updated to 0.1.3.**"
+    },
+    {
+      "owner_id": "solana_kit_token_2022",
+      "owner_kind": "package",
+      "output": "default",
+      "stream": "default",
+      "path": "crates/solana_kit_token_2022/CHANGELOG.md",
+      "format": "keep_a_changelog",
+      "notes": {
+        "title": "solana_kit_token_2022 [0.1.3](https://github.com/pina-rs/solana_kit/releases/tag/solana_kit_token_2022/v0.1.3) (2026-11-09)",
+        "summary": [],
+        "sections": [
+          {
+            "title": "Changed",
+            "collapsed": false,
+            "entries": [
+              "- **No package-specific changes were recorded; `solana_kit_token_2022` was updated to 0.1.3.**"
+            ]
+          }
+        ]
+      },
+      "rendered": "## solana_kit_token_2022 [0.1.3](https://github.com/pina-rs/solana_kit/releases/tag/solana_kit_token_2022/v0.1.3) (2026-11-09)\n\n### Changed\n\n- **No package-specific changes were recorded; `solana_kit_token_2022` was updated to 0.1.3.**"
+    },
+    {
+      "owner_id": "solana_kit_wallet",
+      "owner_kind": "package",
+      "output": "default",
+      "stream": "default",
+      "path": "crates/solana_kit_wallet/CHANGELOG.md",
+      "format": "keep_a_changelog",
+      "notes": {
+        "title": "solana_kit_wallet [0.3.1](https://github.com/pina-rs/solana_kit/releases/tag/solana_kit_wallet/v0.3.1) (2026-11-09)",
+        "summary": [],
+        "sections": [
+          {
+            "title": "Changed",
+            "collapsed": false,
+            "entries": [
+              "- **No package-specific changes were recorded; `solana_kit_wallet` was updated to 0.3.1.**"
+            ]
+          }
+        ]
+      },
+      "rendered": "## solana_kit_wallet [0.3.1](https://github.com/pina-rs/solana_kit/releases/tag/solana_kit_wallet/v0.3.1) (2026-11-09)\n\n### Changed\n\n- **No package-specific changes were recorded; `solana_kit_wallet` was updated to 0.3.1.**"
+    }
+  ],
+  "provider": {
+    "kind": "github",
+    "owner": "pina-rs",
+    "repo": "solana_kit",
+    "host": null
+  }
+}
