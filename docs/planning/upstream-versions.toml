@@ -11,6 +11,12 @@
 # .templates/upstream.t.md. Do not edit those tables by hand; run `mdt update`.
 
 [[parity]]
+version = "0.2.0"
+upstream_kit = "8.5.0"
+reference = "0138bb956d2d81ccc0c56edc602401c0df2f2b46"
+released = "2026-11-08"
+
+[[parity]]
 version = "0.1.1"
 upstream_kit = "8.5.0"
 reference = "0138bb956d2d81ccc0c56edc602401c0df2f2b46"
