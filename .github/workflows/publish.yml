@@ -1,13 +1,18 @@
 name: Publish packages
 
+# One workflow owns the release: it refreshes the release pull request, tags a
+# merged release commit, and then validates and publishes the resulting crates
+# and npm package in the same run. A tag pushed with GITHUB_TOKEN cannot
+# trigger another workflow, so publishing is wired here directly rather than
+# dispatched to a second workflow.
 on:
   workflow_dispatch:
     inputs:
-
       package:
         description: "Workspace crate to publish, or `all` for a release tag"
-        required: true
+        required: false
         type: string
+        default: "all"
 
       tag:
         description: "Release tag for an all-crate publish (for example v0.2.0)"
@@ -21,46 +26,413 @@ on:
 
       dry_run:
         description: "Verify the packaged crates without publishing"
+        required: false
         type: boolean
         default: true
 
   push:
+    branches:
+      - main
     tags:
       - "v*"
+
+  pull_request:
 
 permissions:
   contents: read
 
 concurrency:
-  group: publishing-${{ inputs.tag || github.ref_name }}
-  cancel-in-progress: false
+  group: publishing-${{ inputs.tag || (github.ref == 'refs/heads/main' && github.sha) || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 env:
-  PACKAGE: ${{ inputs.package || 'all' }}
-  TAG: ${{ inputs.tag || github.ref_name }}
-  DRY_RUN: ${{ inputs.dry_run == true }}
+  MONOCHANGE_VERSION: "0.21.0"
   CARGO_HTTP_USER_AGENT: solana-kit-publishing
   GIT_HTTP_USER_AGENT: solana-kit-publishing
 
 jobs:
+  # A push to main either refreshes the release pull request or, when the
+  # merged commit carries a release record, hands the release to the tag job.
+  prepare:
+    name: prepare release
+    if: >-
+      (github.event_name == 'push' && github.ref == 'refs/heads/main') ||
+      (github.event_name == 'workflow_dispatch' && inputs.tag == '')
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    outputs:
+      is_release: ${{ steps.record.outputs.is_release }}
+      tag: ${{ steps.record.outputs.tag }}
+      sha: ${{ steps.record.outputs.sha }}
+      pending: ${{ steps.pending.outputs.count }}
+      is_current: ${{ steps.current.outputs.is_current }}
+    steps:
+      - name: checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: check main tip
+        id: current
+        shell: bash
+        run: |
+          set -euo pipefail
+          tip="$(git ls-remote origin refs/heads/main | cut -f1)"
+          if [ "$(git rev-parse HEAD)" = "$tip" ]; then
+            echo "is_current=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "is_current=false" >> "$GITHUB_OUTPUT"
+            echo "A newer main commit exists; this run will not refresh the release PR."
+          fi
+
+      - name: install monochange
+        shell: bash
+        run: |
+          set -euo pipefail
+          directory="$RUNNER_TEMP/monochange-$MONOCHANGE_VERSION"
+          base="https://github.com/monochange/monochange/releases/download"
+          release="v${MONOCHANGE_VERSION}"
+          archive="monochange-x86_64-unknown-linux-gnu-${release}.tar.gz"
+          mkdir -p "$directory"
+
+          curl --fail --location --silent --show-error \
+            "${base}/${release}/${archive}" \
+            --output "$directory/monochange.tar.gz"
+
+          printf '%s  %s\n' 3d79ea6d683b48ad6760f5ed60101022b8383b48e15eba49bd400fb53fed4afb \
+            "$directory/monochange.tar.gz" | sha256sum --check --strict
+
+          tar -xzf "$directory/monochange.tar.gz" -C "$directory"
+          echo "$directory" >> "$GITHUB_PATH"
+
+      - name: install formatter
+        run: npm install --global dprint@0.64.1
+
+      - name: validate release configuration
+        run: |
+          monochange step validate
+          monochange check
+
+      # `release-record` resolves the record commit for HEAD, so a release
+      # merged with a merge commit is detected just like a squashed release.
+      # The old diff-tree check only saw added paths in the merge diff and
+      # silently skipped releases merged with --no-ff.
+      - name: detect current release commit
+        id: record
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          sha="$(git rev-parse HEAD)"
+          echo "sha=$sha" >> "$GITHUB_OUTPUT"
+
+          release_record_error="$(mktemp)"
+          status=0
+          is_release="$(monochange step release-record --from HEAD --format json \
+            --jq '.resolved_commit == .record_commit' 2>"$release_record_error")" || status=$?
+
+          if [ "$status" -eq 0 ] && [ "$is_release" = true ]; then
+            tag="$(monochange step release-record --from HEAD --format json \
+              | jq -r '[.record.release_targets[] | select(.tag == true)] | sort_by(.tag_name | startswith("v") | not) | first | .tag_name // empty')"
+            if [ -z "$tag" ]; then
+              echo 'The release record does not contain a publishable tag.' >&2
+              exit 1
+            fi
+
+            echo "is_release=true" >> "$GITHUB_OUTPUT"
+            echo "tag=$tag" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          # Fail loudly instead of silently skipping release automation when a
+          # commit looks like a release but its record cannot be read.
+          subject="$(git log -1 --pretty=%s)"
+          body="$(git log -1 --pretty=%B)"
+          if [[ "$subject" == chore\(release\):\ prepare\ release* ]] ||
+            grep -q '<!-- monochange:release-record:start -->' <<<"$body"; then
+            echo '::error::Release-looking commit could not be read as a release record; failing instead of silently skipping release automation.'
+            cat "$release_record_error" >&2
+            exit 1
+          fi
+
+          echo "is_release=false" >> "$GITHUB_OUTPUT"
+          echo "tag=" >> "$GITHUB_OUTPUT"
+
+      - name: count pending changesets
+        id: pending
+        shell: bash
+        run: |
+          set -euo pipefail
+          count=0
+          if [ -d .changeset ]; then
+            count=$(find .changeset -name '*.md' -type f | wc -l | tr -d ' ')
+          fi
+          echo "count=$count" >> "$GITHUB_OUTPUT"
+
+  # Keep release-PR refreshes serialized independently of the release run. The
+  # release commit's prepare job never enters this job, and per-SHA workflow
+  # groups mean a later main push can no longer cancel a pending release run.
+  refresh-release-pr:
+    name: refresh release pull request
+    needs: prepare
+    if: >-
+      needs.prepare.result == 'success' &&
+      needs.prepare.outputs.is_current == 'true' &&
+      needs.prepare.outputs.is_release != 'true' &&
+      needs.prepare.outputs.pending != '0'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    concurrency:
+      group: release-pr-refresh
+      cancel-in-progress: false
+      # Keep an older pending refresh from replacing the newest one when both
+      # queue; the tip checks below make any stale job skip.
+      queue: max
+    permissions:
+      contents: write
+      pull-requests: read
+      id-token: write
+    steps:
+      - name: checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ needs.prepare.outputs.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: check main tip
+        id: tip
+        shell: bash
+        run: |
+          set -euo pipefail
+          tip="$(git ls-remote origin refs/heads/main | cut -f1)"
+          if [ "$(git rev-parse HEAD)" = "$tip" ]; then
+            echo "current=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "current=false" >> "$GITHUB_OUTPUT"
+            echo "A newer main commit exists; skipping this stale release PR refresh."
+          fi
+
+      - name: install monochange
+        if: steps.tip.outputs.current == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          directory="$RUNNER_TEMP/monochange-$MONOCHANGE_VERSION"
+          base="https://github.com/monochange/monochange/releases/download"
+          release="v${MONOCHANGE_VERSION}"
+          archive="monochange-x86_64-unknown-linux-gnu-${release}.tar.gz"
+          mkdir -p "$directory"
+
+          curl --fail --location --silent --show-error \
+            "${base}/${release}/${archive}" \
+            --output "$directory/monochange.tar.gz"
+
+          printf '%s  %s\n' 3d79ea6d683b48ad6760f5ed60101022b8383b48e15eba49bd400fb53fed4afb \
+            "$directory/monochange.tar.gz" | sha256sum --check --strict
+
+          tar -xzf "$directory/monochange.tar.gz" -C "$directory"
+          echo "$directory" >> "$GITHUB_PATH"
+
+      - name: install formatter
+        if: steps.tip.outputs.current == 'true'
+        run: npm install --global dprint@0.64.1
+
+      - name: open or update the release pull request
+        if: steps.tip.outputs.current == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          MONOCHANGE_RELEASE_BACKEND: hosted
+        run: monochange run release --commit --create-pr
+
+  release-pr-simulated:
+    name: rehearse release pull request
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      pull-requests: read
+
+    steps:
+      - name: checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: install monochange
+        shell: bash
+        run: |
+          set -euo pipefail
+          directory="$RUNNER_TEMP/monochange-$MONOCHANGE_VERSION"
+          base="https://github.com/monochange/monochange/releases/download"
+          release="v${MONOCHANGE_VERSION}"
+          archive="monochange-x86_64-unknown-linux-gnu-${release}.tar.gz"
+          mkdir -p "$directory"
+
+          curl --fail --location --silent --show-error \
+            "${base}/${release}/${archive}" \
+            --output "$directory/monochange.tar.gz"
+
+          printf '%s  %s\n' 3d79ea6d683b48ad6760f5ed60101022b8383b48e15eba49bd400fb53fed4afb \
+            "$directory/monochange.tar.gz" | sha256sum --check --strict
+
+          tar -xzf "$directory/monochange.tar.gz" -C "$directory"
+          echo "$directory" >> "$GITHUB_PATH"
+
+      - name: install formatter
+        run: npm install --global dprint@0.64.1
+
+      - name: validate release configuration
+        run: |
+          monochange step validate
+          monochange check
+
+      - name: simulate the release pull request
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GITHUB_TOKEN: ${{ github.token }}
+          MONOCHANGE_RELEASE_BACKEND: local
+        run: |
+          monochange run release --dry-run --commit --create-pr
+
+          count=0
+          if [ -d .changeset ]; then
+            count=$(find .changeset -name '*.md' -type f | wc -l | tr -d ' ')
+          fi
+
+          if [ "$count" -eq 0 ]; then
+            echo 'No pending changesets; there is no release pull request to prepare.'
+            exit 0
+          fi
+
+          monochange run release --commit=false --create-pr=false
+          git diff --check
+          dprint check --dirty
+
+  # Only a release commit merged to main reaches this job. Manual dispatches
+  # and tag pushes never create tags: they publish an existing tag instead.
+  tag:
+    name: tag and create draft releases
+    needs: prepare
+    if: >-
+      github.event_name == 'push' &&
+      github.ref == 'refs/heads/main' &&
+      needs.prepare.outputs.is_release == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: write
+    steps:
+      # Keep the checkout token so tag-release can push tags with it.
+      - name: checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ needs.prepare.outputs.sha }}
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: install monochange
+        shell: bash
+        run: |
+          set -euo pipefail
+          directory="$RUNNER_TEMP/monochange-$MONOCHANGE_VERSION"
+          base="https://github.com/monochange/monochange/releases/download"
+          release="v${MONOCHANGE_VERSION}"
+          archive="monochange-x86_64-unknown-linux-gnu-${release}.tar.gz"
+          mkdir -p "$directory"
+
+          curl --fail --location --silent --show-error \
+            "${base}/${release}/${archive}" \
+            --output "$directory/monochange.tar.gz"
+
+          printf '%s  %s\n' 3d79ea6d683b48ad6760f5ed60101022b8383b48e15eba49bd400fb53fed4afb \
+            "$directory/monochange.tar.gz" | sha256sum --check --strict
+
+          tar -xzf "$directory/monochange.tar.gz" -C "$directory"
+          echo "$directory" >> "$GITHUB_PATH"
+
+      - name: confirm the release record
+        shell: bash
+        run: |
+          set -euo pipefail
+          is_release="$(monochange step release-record --from HEAD --format json \
+            --jq '.resolved_commit == .record_commit')"
+          if [ "$is_release" != true ]; then
+            echo 'HEAD looks like a release commit but carries no release record.' >&2
+            exit 1
+          fi
+
+      - name: create release tags
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: monochange step tag-release --from HEAD --push=true --format json
+
+      - name: create draft releases
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: monochange step publish-release --from-ref=HEAD --draft --format json
+
+  # Runs for a release commit on main, a v* tag push, or a manual dispatch with
+  # a tag. The selected tag and commit are resolved here once and passed to the
+  # publish jobs through job outputs.
   validate:
     name: validate packages
-    if: github.event_name == 'push' || github.ref == 'refs/heads/main'
+    needs:
+      - prepare
+      - tag
+    if: >-
+      always() &&
+      needs.tag.result != 'failure' &&
+      needs.tag.result != 'cancelled' &&
+      (
+        (github.event_name == 'push' && github.ref_type == 'tag') ||
+        (github.event_name == 'workflow_dispatch' && inputs.tag != '') ||
+        (
+          github.event_name == 'push' &&
+          github.ref == 'refs/heads/main' &&
+          needs.prepare.result == 'success' &&
+          needs.prepare.outputs.is_release == 'true'
+        )
+      )
     runs-on: "ubuntu-24.04"
     timeout-minutes: 90
     permissions:
       contents: read
-
+    env:
+      PACKAGE: ${{ inputs.package || 'all' }}
+      TAG: ${{ inputs.tag || needs.prepare.outputs.tag || github.ref_name }}
+      DRY_RUN: ${{ inputs.dry_run == true }}
     outputs:
+      tag: ${{ steps.resolve.outputs.tag }}
+      sha: ${{ steps.resolve.outputs.sha }}
+      package: ${{ steps.resolve.outputs.package }}
+      dry_run: ${{ steps.resolve.outputs.dry_run }}
       release_tags: ${{ steps.record.outputs.tags }}
     steps:
       - name: checkout release ref
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: ${{ inputs.checkout_ref || github.ref }}
+          ref: ${{ inputs.checkout_ref || inputs.tag || needs.prepare.outputs.sha || github.sha }}
           fetch-depth: 0
-
           persist-credentials: false
+
+      - name: resolve release identity
+        id: resolve
+        shell: bash
+        run: |
+          set -euo pipefail
+          {
+            echo "tag=$TAG"
+            echo "sha=$(git rev-parse HEAD)"
+            echo "package=$PACKAGE"
+            echo "dry_run=$DRY_RUN"
+          } >> "$GITHUB_OUTPUT"
 
       - name: validate crate selection
         shell: bash
@@ -140,17 +512,23 @@ jobs:
   publish:
     name: publish packages
     needs: validate
+    if: needs.validate.result == 'success' && needs.validate.outputs.tag != ''
     runs-on: "ubuntu-24.04"
     timeout-minutes: 90
     permissions:
       contents: write
       id-token: write
+    env:
+      TAG: ${{ needs.validate.outputs.tag }}
+      SHA: ${{ needs.validate.outputs.sha }}
+      PACKAGE: ${{ needs.validate.outputs.package }}
+      DRY_RUN: ${{ needs.validate.outputs.dry_run }}
 
     steps:
       - name: checkout release ref
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: ${{ inputs.checkout_ref || github.ref }}
+          ref: ${{ needs.validate.outputs.sha }}
           fetch-depth: 0
           persist-credentials: false
 
@@ -211,9 +589,7 @@ jobs:
   publish-npm:
     name: publish Codama npm package
     needs: validate
-    if: >-
-      (github.event_name == 'push' || github.ref == 'refs/heads/main') &&
-      (inputs.package || 'all') == 'all'
+    if: needs.validate.result == 'success' && needs.validate.outputs.package == 'all'
     runs-on: "ubuntu-24.04"
     timeout-minutes: 60
     environment: npm-release
@@ -222,6 +598,10 @@ jobs:
       id-token: write
 
     env:
+      TAG: ${{ needs.validate.outputs.tag }}
+      SHA: ${{ needs.validate.outputs.sha }}
+      PACKAGE: ${{ needs.validate.outputs.package }}
+      DRY_RUN: ${{ needs.validate.outputs.dry_run }}
       PACKAGE_DIRECTORY: packages/codama-renderers-rust-solana-kit
       PACKAGE_NAME: codama-renderers-rust-solana-kit
       CARGO_HTTP_USER_AGENT: solana-kit-verification
@@ -232,7 +612,7 @@ jobs:
       - name: checkout release ref
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: ${{ inputs.checkout_ref || github.ref }}
+          ref: ${{ needs.validate.outputs.sha }}
           fetch-depth: 0
           persist-credentials: false
 
