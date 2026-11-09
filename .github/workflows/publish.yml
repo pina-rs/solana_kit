@@ -61,13 +61,12 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     permissions:
-      contents: write
-      pull-requests: read
-      id-token: write
+      contents: read
     outputs:
       is_release: ${{ steps.record.outputs.is_release }}
       tag: ${{ steps.record.outputs.tag }}
       sha: ${{ steps.record.outputs.sha }}
+      pending: ${{ steps.pending.outputs.count }}
     steps:
       - name: checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -159,8 +158,57 @@ jobs:
           fi
           echo "count=$count" >> "$GITHUB_OUTPUT"
 
+  # Keep release-PR refreshes serialized independently of the release run. The
+  # release commit's prepare job never enters this job, and per-SHA workflow
+  # groups mean a later main push can no longer cancel a pending release run.
+  refresh-release-pr:
+    name: refresh release pull request
+    needs: prepare
+    if: >-
+      needs.prepare.result == 'success' &&
+      needs.prepare.outputs.is_release != 'true' &&
+      needs.prepare.outputs.pending != '0'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    concurrency:
+      group: release-pr-refresh
+      cancel-in-progress: false
+    permissions:
+      contents: write
+      pull-requests: read
+      id-token: write
+    steps:
+      - name: checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ needs.prepare.outputs.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: install monochange
+        shell: bash
+        run: |
+          set -euo pipefail
+          directory="$RUNNER_TEMP/monochange-$MONOCHANGE_VERSION"
+          base="https://github.com/monochange/monochange/releases/download"
+          release="v${MONOCHANGE_VERSION}"
+          archive="monochange-x86_64-unknown-linux-gnu-${release}.tar.gz"
+          mkdir -p "$directory"
+
+          curl --fail --location --silent --show-error \
+            "${base}/${release}/${archive}" \
+            --output "$directory/monochange.tar.gz"
+
+          printf '%s  %s\n' 3d79ea6d683b48ad6760f5ed60101022b8383b48e15eba49bd400fb53fed4afb \
+            "$directory/monochange.tar.gz" | sha256sum --check --strict
+
+          tar -xzf "$directory/monochange.tar.gz" -C "$directory"
+          echo "$directory" >> "$GITHUB_PATH"
+
+      - name: install formatter
+        run: npm install --global dprint@0.64.1
+
       - name: open or update the release pull request
-        if: steps.record.outputs.is_release != 'true' && steps.pending.outputs.count != '0'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
