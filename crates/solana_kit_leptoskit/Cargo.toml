@@ -1,6 +1,6 @@
 [package]
 name = "solana_kit_leptoskit"
-version = "0.2.0"
+version = "0.2.1"
 authors.workspace = true
 edition.workspace = true
 include = ["src/**", "android/**", "README.md", "LICENSE"]

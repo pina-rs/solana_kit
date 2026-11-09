@@ -178,7 +178,7 @@ checksum = "77549399552de45a898a580c1b41d445bf730df867cc44e6c0233bbc4b8329de"
 
 [[package]]
 name = "solana_kit_core"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "bs58",
  "curve25519-dalek",

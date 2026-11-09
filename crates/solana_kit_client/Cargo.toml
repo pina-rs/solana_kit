@@ -1,6 +1,6 @@
 [package]
 name = "solana_kit_client"
-version = "0.2.0"
+version = "0.2.1"
 authors.workspace = true
 edition.workspace = true
 include = ["src/**", "tests/**", "README.md", "LICENSE", "THIRD_PARTY_NOTICES.md"]

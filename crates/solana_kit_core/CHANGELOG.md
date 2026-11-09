@@ -9,6 +9,22 @@
 Solana Kit supports off-chain application clients. On-chain programs should use
 Pina or official Solana program libraries.
 
+## [0.2.1](https://github.com/pina-rs/solana_kit/releases/tag/v0.2.1) (2026-11-09)
+
+Grouped release for `sdk`.
+
+### Fixes
+
+#### Publish the Codama renderer with the SDK group.
+
+_Packages:_ 🟢 _codama_renderers_rust_solana_kit_
+
+_Owner:_ [@ifiokjr](https://github.com/ifiokjr) · _Review:_ [PR #186](https://github.com/pina-rs/solana_kit/pull/186)
+
+Add `codama_renderers_rust_solana_kit` to the `sdk` MonoChange group so it
+shares the primary `v*` version and release tag. Qualify and upload the package
+from `.github/workflows/publish.yml` beside the crates.io publish path.
+
 ## [0.2.0](https://github.com/pina-rs/solana_kit/releases/tag/v0.2.0) (2026-11-08)
 
 Grouped release for `sdk`.
