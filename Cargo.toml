@@ -22,6 +22,7 @@ members = [
   "crates/solana_kit_mpl_core",
   "crates/solana_kit_mpl_token_metadata",
   "crates/solana_kit_native",
+  "crates/solana_kit_privacy_rings",
   "crates/solana_kit_pyth",
   "crates/solana_kit_signers",
   "crates/solana_kit_sns",
@@ -60,6 +61,7 @@ exclude = [
 resolver = "3"
 
 [workspace.package]
+version = "0.1.0"
 authors = ["Ifiok Jr. <ifiokotung@gmail.com>"]
 edition = "2024"
 license = "Unlicense"

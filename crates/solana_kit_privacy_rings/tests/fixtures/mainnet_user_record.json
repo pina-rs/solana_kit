@@ -1,0 +1,11 @@
+{
+  "context": { "blockTime": 1794164634, "slot": 467025625 },
+  "records": [
+    {
+      "owner": "5Vt1Mnq2b9ynV1EMXS564i5ZDuNudxm8ZG7yCXfH55M",
+      "nullifierPubkey": "3VqtxuS415jkwn6BFso44JsG2CVuXBr2V3rtieLLJrNy",
+      "viewingPubkey": "BIs8UXWNMRXj0LYmli1ENBZyF5MaxY28XHJEj0+5z8Y2",
+      "mergeEncryption": 0
+    }
+  ]
+}
