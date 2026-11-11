@@ -40,8 +40,10 @@ SOL or SPL withdrawal leg. Both spends are the shielded-pool `transact`
 instruction (tag 16).
 
 Indexer calls take a URL from `Cluster::indexer_url` or `local_indexer_url`.
-The path ends in the method name. Append the API key in the transport, not in
-these strings.
+The path ends in the method name. `PrivacyProverClient` posts a witness to
+`Cluster::prover_url` or `local_prover_url`. The transport adds the API key as
+a header. These strings never contain one. A remote prover must be `https` and
+the caller must set `allow_unauthenticated_remote_prover`; loopback does not.
 
 ```rust
 use solana_kit_client::methods::Method;

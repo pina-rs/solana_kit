@@ -2175,6 +2175,7 @@ dependencies = [
  "sha2 0.10.9",
  "solana_kit_client",
  "solana_kit_core",
+ "ureq",
  "zeroize",
 ]
 

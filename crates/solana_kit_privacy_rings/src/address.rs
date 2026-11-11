@@ -135,6 +135,15 @@ impl Cluster {
         }
         Ok(format!("{}/v1/spr/{method}", self.rpc_origin()))
     }
+
+    /// Prover base URL. Proof calls append `/prove/{circuit}`.
+    ///
+    /// The string has no query and no API key. A Helius RPC root lends the
+    /// prover its `/v1/spr` path, matching `resolveClientEndpoints`.
+    #[must_use]
+    pub fn prover_url(self) -> String {
+        format!("{}/v1/spr", self.rpc_origin())
+    }
 }
 
 /// Local Photon indexer path used by the Helius local stack.
@@ -146,6 +155,16 @@ pub fn local_indexer_url(method: &str) -> Result<String, Error> {
         return Err(Error::Limit("privacy RPC method name"));
     }
     Ok(format!("http://127.0.0.1:8784/{method}"))
+}
+
+/// Local prover used by the Helius local stack.
+///
+/// The published prover binary listens here when started with
+/// `--prover-address 127.0.0.1:3001`. Loopback does not need
+/// `allow_unauthenticated_remote_prover`.
+#[must_use]
+pub fn local_prover_url() -> &'static str {
+    "http://127.0.0.1:3001"
 }
 
 /// SHA-256 deposit blinding with the leading byte cleared.

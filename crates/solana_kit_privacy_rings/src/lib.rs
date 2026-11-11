@@ -2,8 +2,9 @@
 //!
 //! Deposit, confidential transfer, and withdraw build shielded-pool instructions
 //! with [`solana_kit_core::Instruction`]. Indexer methods implement
-//! [`solana_kit_client::methods::Method`] and run through `Client::call`. The
-//! owner signs every spend; this crate has no signer and no HTTP stack.
+//! [`solana_kit_client::methods::Method`] and run through `Client::call`.
+//! [`PrivacyProverClient`] posts a witness through the caller's REST transport.
+//! The owner signs every spend. This crate has no signer and no HTTP stack.
 //!
 //! The wire format follows Helius `zolana` tag `v0.8.0` and the Privacy Rings
 //! API reference (OpenAPI 0.51.2). It does not wrap the `zolana-client` crate,
@@ -19,6 +20,7 @@ mod encode;
 mod error;
 #[cfg(feature = "crypto")]
 mod pda;
+mod prover;
 mod rpc;
 mod transact;
 #[cfg(feature = "crypto")]
@@ -31,9 +33,13 @@ pub use encode::{
     Input, Message, OutputSlot as ShieldedOutput, OwnerTag, Proof, TransactBody, TreeContext,
     read_confidential, write_confidential,
 };
-pub use error::Error;
+pub use error::{Error, ProverFailure};
 #[cfg(feature = "crypto")]
 pub use pda::{nullifier_account, sol_interface, spl_interface, state_tree, user_record};
+pub use prover::{
+    Delivery, PrivacyProverClient, ProverDestination, ProverEndpoint, parse_prover_proof,
+    proving_key_sha256,
+};
 pub use rpc::*;
 pub use transact::{
     CacheWriter, ConfidentialTransfer, Settlement, SplDepositAccounts, SplWithdrawalAccounts,

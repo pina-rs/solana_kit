@@ -24,6 +24,44 @@ pub enum Error {
     /// PDA derivation failed for the supplied seeds.
     #[cfg(feature = "crypto")]
     Pda(solana_kit_core::crypto::PdaError),
+    /// The remote prover refused the call or returned a proof this client will not use.
+    Prover(ProverFailure),
+}
+
+/// A prover request that did not produce a usable proof.
+///
+/// Variants carry no URL, witness, or API key. An HTTP status is the only
+/// remote detail retained.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum ProverFailure {
+    /// The circuit name is empty or is not one path segment.
+    Circuit,
+    /// The endpoint URL is not usable, or a remote URL is not `https`.
+    Config,
+    /// A non-loopback prover was asked to take a cleartext witness.
+    Cleartext,
+    /// The prover returned a status this client does not retry.
+    Http(u16),
+    /// The job id was not a safe token.
+    Job,
+    /// Status polling exceeded the wait bound.
+    Timeout,
+    /// The body was not the documented JSON object.
+    Response,
+    /// The prover reported a failed job or a null proof.
+    Server,
+    /// The transport failed. The underlying message is discarded.
+    Transport,
+    /// No proving-key pin is known for this circuit.
+    UnknownCircuit,
+    /// The response omitted `provingKeySha256`.
+    ProvingKeyMissing,
+    /// The reported pin does not match the pinned key.
+    ProvingKeyMismatch,
+    /// A G1 point is not on the curve.
+    ProofPoint,
+    /// A proof field had the wrong shape.
+    ProofParse,
 }
 
 impl fmt::Display for Error {
