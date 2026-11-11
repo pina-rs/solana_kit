@@ -131,6 +131,15 @@ impl Settlement {
     }
 }
 
+/// Writable cache account and the signer that authorizes the write.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct CacheWriter {
+    /// Cache account. The instruction marks it writable.
+    pub cache: Address,
+    /// Cache writer. This account must sign.
+    pub writer: Address,
+}
+
 /// A `transact` instruction. Confidential transfer and withdraw are constructors.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Transact {
@@ -146,6 +155,10 @@ pub struct Transact {
     pub nullifier_accounts: Vec<Address>,
     /// Public legs. Empty for a confidential transfer.
     pub settlements: Vec<Settlement>,
+    /// Read-only cache. Required when the circuit reads a cache slot.
+    pub read_cache: Option<Address>,
+    /// Write cache and its signer. Required when the circuit writes a cache slot.
+    pub write_cache: Option<CacheWriter>,
     /// Proof, ciphertexts, and private fields.
     pub body: TransactBody,
 }
@@ -207,6 +220,8 @@ impl ConfidentialTransfer {
             owner_signers: owners,
             nullifier_accounts: self.nullifier_accounts.clone(),
             settlements: Vec::new(),
+            read_cache: None,
+            write_cache: None,
             body: self.body.clone(),
         }
         .instruction()
@@ -217,8 +232,15 @@ impl Withdraw {
     /// Builds a `transact` whose only public leg is the withdrawal.
     ///
     /// # Errors
-    /// Rejects a zero amount or a body that does not line up with the accounts.
+    /// Rejects a deposit leg, a zero amount, or a body that does not line up
+    /// with the accounts.
     pub fn instruction(&self) -> Result<Instruction, Error> {
+        match self.settlement {
+            Settlement::SolWithdrawal { .. } | Settlement::SplWithdrawal { .. } => {}
+            Settlement::SolDeposit { .. } | Settlement::SplDeposit { .. } => {
+                return Err(Error::SettlementMismatch);
+            }
+        }
         Transact {
             payer: self.payer,
             input_trees: self.input_trees.clone(),
@@ -226,6 +248,8 @@ impl Withdraw {
             owner_signers: vec![self.owner],
             nullifier_accounts: self.nullifier_accounts.clone(),
             settlements: vec![self.settlement],
+            read_cache: None,
+            write_cache: None,
             body: self.body.clone(),
         }
         .instruction()
@@ -236,9 +260,22 @@ impl Transact {
     /// Builds the instruction. The caller signs `payer` and every owner signer.
     ///
     /// # Errors
-    /// Rejects mismatched input, tree, output, or settlement counts, a zero
-    /// public amount, or a ciphertext longer than `u16`.
+    /// Rejects a ring selector, a cache selector whose accounts are missing,
+    /// mismatched input, tree, output, or settlement counts, a zero public
+    /// amount, or a ciphertext longer than `u16`.
     pub fn instruction(&self) -> Result<Instruction, Error> {
+        if !self.body.circuit.fits_transact() {
+            return Err(Error::Limit("transact circuit"));
+        }
+        let cache = self.body.circuit.cache();
+        let reads = cache.is_some_and(crate::encode::CacheAccess::reads);
+        let writes = cache.is_some_and(crate::encode::CacheAccess::writes_cache);
+        if cache.is_some() && !reads && !writes {
+            return Err(Error::Limit("transact cache"));
+        }
+        if reads != self.read_cache.is_some() || writes != self.write_cache.is_some() {
+            return Err(Error::SettlementMismatch);
+        }
         if self.input_trees.is_empty() || self.input_trees.len() > MAX_INPUT_TREES {
             return Err(Error::Limit("transact input trees"));
         }
@@ -299,6 +336,13 @@ impl Transact {
         );
         for settlement in &self.settlements {
             settlement.accounts(&mut accounts);
+        }
+        if let Some(cache) = self.read_cache {
+            accounts.push(meta(cache, AccountRole::Readonly));
+        }
+        if let Some(cache) = self.write_cache {
+            accounts.push(meta(cache.cache, AccountRole::Writable));
+            accounts.push(meta(cache.writer, AccountRole::ReadonlySigner));
         }
 
         Ok(Instruction {

@@ -40,4 +40,8 @@ Pass any of these to `Client::call`. The method name is the last path segment.
 
 ## Balances
 
-`ViewingKey::open_output` decrypts a confidential or ring-confidential payload and reads a proofless deposit. The slot index is the output's position in that event. `private_balances` adds amounts for notes whose `(tree_id, leaf_index)` the caller has not listed as spent. Confidential asset ids and proofless mints stay separate. Nullifier derivation needs Poseidon and is left to the caller.
+`ViewingKey::open_output` decrypts a confidential or ring-confidential payload and reads a proofless deposit. The slot index is the output's position in that event's full `outputSlots` list. `GetEncryptedUtxosByTags` can return only the matching outputs, so that result's order is not the slot index. Look the output's `tx_signature` up with `GetShieldedTransactionsBySignature`, find the matching `output_slot`, and use its position in that event's `output_slots`.
+
+Confidential payloads use unauthenticated AES-CTR. `open_output` does not verify their Poseidon commitment. Check each decrypted note against a commitment you trust before passing it to `private_balances`. A proofless deposit is cleartext, and opening it does not check `ProoflessNote::owner`. Exclude deposits owned by someone else before aggregating.
+
+`private_balances` adds amounts for notes whose `(tree_id, leaf_index)` the caller has not listed as spent. The same leaf counts once, and two different notes for one leaf are rejected. Confidential asset ids and proofless mints stay separate. Nullifier derivation needs Poseidon and is left to the caller.

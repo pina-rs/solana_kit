@@ -68,8 +68,12 @@ fn utxo_query() -> Result<String, solana_kit_privacy_rings::Error> {
 ```
 
 With `crypto`, `ViewingKey` opens confidential and proofless indexer payloads.
-`private_balances` sums notes the caller has not marked spent. It does not
-derive nullifiers, so it does not decide spendability by itself.
+The decryption slot is the output's position in the full event. A tag query
+can omit outputs, so resolve that position through
+`GetShieldedTransactionsBySignature`. Confidential ciphertext is unauthenticated
+AES-CTR, and opening a proofless deposit does not check its owner.
+`private_balances` sums distinct unspent leaves. It does not verify commitments
+or owners, and it does not derive nullifiers.
 
 Program addresses match the v0.8.0 constants and the
 [addresses guide](https://www.helius.dev/docs/privacy/addresses). RPC fields

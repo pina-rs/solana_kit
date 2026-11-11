@@ -36,7 +36,8 @@ pub use error::Error;
 pub use pda::{nullifier_account, sol_interface, spl_interface, state_tree, user_record};
 pub use rpc::*;
 pub use transact::{
-    ConfidentialTransfer, Settlement, SplDepositAccounts, SplWithdrawalAccounts, Transact, Withdraw,
+    CacheWriter, ConfidentialTransfer, Settlement, SplDepositAccounts, SplWithdrawalAccounts,
+    Transact, Withdraw,
 };
 #[cfg(feature = "crypto")]
 pub use viewing::{

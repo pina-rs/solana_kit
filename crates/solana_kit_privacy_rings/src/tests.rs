@@ -10,13 +10,14 @@ use solana_kit_core::{AccountRole, Address};
 
 use crate::encode::{TransferLeg, write_confidential, write_transact};
 use crate::{
-    AssetDeposit, CPI_AUTHORITY, Circuit, ConfidentialPlaintext, ConfidentialTransfer, DEPOSIT_TAG,
-    Deposit, DepositAsset, Error, GetEncryptedUtxosByTags, GetMerkleProofs, GetNonInclusionProofs,
+    AssetDeposit, CPI_AUTHORITY, CacheAccess, CacheWrite, CacheWriter, Circuit,
+    ConfidentialPlaintext, ConfidentialTransfer, DEPOSIT_TAG, Deposit, DepositAsset, Error,
+    GetEncryptedUtxosByTags, GetMerkleProofs, GetNonInclusionProofs,
     GetShieldedTransactionsByNullifiers, GetShieldedTransactionsBySignature,
-    GetShieldedTransactionsByTags, GetUserRecords, HistoryFilters, Input, OwnerTag, Proof,
-    SHIELDED_POOL_PROGRAM, SOL_INTERFACE, STATE_TREE, Settlement, ShieldedOutput, SlotBounds,
-    SplDeposit, SplWithdrawalAccounts, TRANSACT_TAG, TransactBody, TreeContext,
-    USER_REGISTRY_PROGRAM, Withdraw,
+    GetShieldedTransactionsByTags, GetUserRecords, HistoryFilters, Input, MAX_CACHE_WRITES,
+    OwnerTag, Proof, SHIELDED_POOL_PROGRAM, SOL_INTERFACE, STATE_TREE, Settlement, ShieldedOutput,
+    SlotBounds, SplDeposit, SplWithdrawalAccounts, TRANSACT_TAG, Transact, TransactBody,
+    TreeContext, USER_REGISTRY_PROGRAM, Withdraw,
 };
 
 const DEPOSIT_GOLDEN: &str = "01000100070707070707070707070707070707070707070707070707070707070707070709090909090909090909090909090909090909090909090909090909090909092a000000000000000102006869";
@@ -389,6 +390,91 @@ fn transact_rejects_a_third_tree_and_a_zero_leg() {
         body: sample_body(),
     };
     assert!(matches!(zero.instruction(), Err(Error::ZeroAmount)));
+    let deposit_leg = Withdraw {
+        settlement: Settlement::SolDeposit {
+            recipient: address(7),
+            amount: 1,
+        },
+        ..zero
+    };
+    assert!(matches!(
+        deposit_leg.instruction(),
+        Err(Error::SettlementMismatch)
+    ));
+}
+
+fn transact_for(body: TransactBody) -> Transact {
+    Transact {
+        payer: address(2),
+        input_trees: vec![STATE_TREE],
+        output_tree: STATE_TREE,
+        owner_signers: vec![address(3)],
+        nullifier_accounts: vec![address(13)],
+        settlements: vec![Settlement::SolWithdrawal {
+            recipient: address(12),
+            amount: 7,
+        }],
+        read_cache: None,
+        write_cache: None,
+        body,
+    }
+}
+
+#[test]
+fn transact_rejects_ring_selectors_and_appends_cache_accounts() {
+    let mut ring = sample_body();
+    ring.circuit = Circuit::ConfidentialRingEddsa(1, 2, 3);
+    assert!(matches!(
+        transact_for(ring).instruction(),
+        Err(Error::Limit("transact circuit"))
+    ));
+
+    let mut cached = sample_body();
+    cached.circuit = Circuit::ConfidentialSignerCached(
+        1,
+        2,
+        3,
+        CacheAccess {
+            read_bitmap: 1 << 5,
+            write_slots: [CacheWrite::NONE; MAX_CACHE_WRITES],
+        },
+    );
+    assert!(matches!(
+        transact_for(cached.clone()).instruction(),
+        Err(Error::SettlementMismatch)
+    ));
+    let mut with_read = transact_for(cached);
+    with_read.read_cache = Some(address(20));
+    let instruction = with_read.instruction().expect("read cache");
+    let tail = instruction.accounts.last().expect("cache account");
+    assert_eq!(tail.address, address(20));
+    assert_eq!(tail.role, AccountRole::Readonly);
+
+    let mut writing = sample_body();
+    let mut slots = [CacheWrite::NONE; MAX_CACHE_WRITES];
+    slots[0] = CacheWrite { output: 0, slot: 1 };
+    writing.circuit = Circuit::ConfidentialSignerCached(
+        1,
+        2,
+        3,
+        CacheAccess {
+            read_bitmap: 0,
+            write_slots: slots,
+        },
+    );
+    let mut with_write = transact_for(writing);
+    with_write.write_cache = Some(CacheWriter {
+        cache: address(21),
+        writer: address(22),
+    });
+    let instruction = with_write.instruction().expect("write cache");
+    let accounts = &instruction.accounts;
+    let write = &accounts[accounts.len() - 2];
+    let writer = accounts.last().expect("writer");
+    assert_eq!(write.address, address(21));
+    assert_eq!(write.role, AccountRole::Writable);
+    assert_eq!(writer.address, address(22));
+    assert_eq!(writer.role, AccountRole::ReadonlySigner);
 }
 
 #[test]

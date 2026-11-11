@@ -62,13 +62,26 @@ impl ViewingKey {
 
     /// Opens one indexer payload with this viewing key.
     ///
-    /// `slot_index` is the output's position in that event's `outputSlots`.
+    /// `slot_index` is this output's position in the event's full `outputSlots`
+    /// list. `GetEncryptedUtxosByTags` returns matching outputs, which can be a
+    /// subset, so that list's order is not the slot index. Look the signature
+    /// up with `GetShieldedTransactionsBySignature` and use the matching
+    /// output's position in that event.
+    ///
+    /// Confidential ciphertext is AES-CTR and has no authentication tag. This
+    /// function does not check the Poseidon commitment. Compare a decrypted
+    /// note with a commitment you trust before summing it.
+    ///
+    /// A proofless deposit is cleartext. This function does not check
+    /// [`ProoflessNote::owner`]. Leave out notes owned by someone else before
+    /// summing.
+    ///
     /// `tx_viewing_pk` and `salt` are the transaction fields, already decoded
     /// from base64. `payload` is the decoded `outputSlot.payload`.
     ///
     /// # Errors
-    /// Rejects a foreign viewing key, a short payload, or a plaintext the
-    /// documented layout does not accept.
+    /// Rejects a foreign viewing key, a short or over-long payload, or a
+    /// plaintext the documented layout does not accept.
     pub fn open_output(
         &self,
         tx_viewing_pk: &[u8; 33],
@@ -153,19 +166,35 @@ pub struct AssetBalance {
 
 /// Sums notes whose `(tree_id, leaf_index)` is not in `spent`.
 ///
-/// Confidential and proofless keys stay separate: a confidential asset id is
-/// not assumed to be a mint. Nullifier derivation is not performed here.
+/// The same leaf is counted once. Two different notes for one leaf are
+/// rejected. Confidential and proofless keys stay separate: a confidential
+/// asset id is not assumed to be a mint. This function does not check a
+/// proofless owner or a confidential commitment, and it does not derive
+/// nullifiers.
 ///
 /// # Errors
-/// Rejects a total that overflows `u64`.
+/// Rejects a leaf that appears twice with different contents, or a total that
+/// overflows `u64`.
 pub fn private_balances(
     notes: &[TrackedNote],
     spent: &std::collections::BTreeSet<(u16, u64)>,
 ) -> Result<Vec<AssetBalance>, Error> {
+    let mut seen: BTreeMap<(u16, u64), &OpenedNote> = BTreeMap::new();
     let mut totals: BTreeMap<(u8, [u8; 8], [u8; 32]), u64> = BTreeMap::new();
     for note in notes {
         if spent.contains(&(note.tree_id, note.leaf_index)) {
             continue;
+        }
+        match seen.entry((note.tree_id, note.leaf_index)) {
+            std::collections::btree_map::Entry::Occupied(existing) => {
+                if existing.get() != &&note.note {
+                    return Err(Error::Limit("conflicting leaf"));
+                }
+                continue;
+            }
+            std::collections::btree_map::Entry::Vacant(slot) => {
+                slot.insert(&note.note);
+            }
         }
         let (kind, id, mint, amount) = match &note.note {
             OpenedNote::Confidential(plain) => {
@@ -292,8 +321,9 @@ fn encoding_body(payload: &[u8]) -> Result<&[u8], Error> {
         return Err(Error::Plaintext);
     }
     let len = u32::from_le_bytes(payload[1..5].try_into().map_err(|_| Error::Plaintext)?) as usize;
-    let body = payload.get(5..5 + len).ok_or(Error::Plaintext)?;
-    if payload.len() != 5 + len {
+    let end = 5usize.checked_add(len).ok_or(Error::Plaintext)?;
+    let body = payload.get(5..end).ok_or(Error::Plaintext)?;
+    if payload.len() != end {
         return Err(Error::Plaintext);
     }
     match payload[0] {
@@ -472,6 +502,26 @@ mod tests {
         assert_eq!(totals[0].amount, 40);
         assert_eq!(totals[0].mint, Some([0; 32]));
         assert_eq!(totals[0].asset_id, None);
+        let repeated = [notes[0].clone(), notes[0].clone()];
+        let once = private_balances(&repeated, &BTreeSet::new()).expect("dedup");
+        assert_eq!(once[0].amount, 40);
+        let mut conflict = notes[0].clone();
+        if let OpenedNote::Proofless(plain) = &mut conflict.note {
+            plain.amount = 1;
+        }
+        assert!(matches!(
+            private_balances(&[notes[0].clone(), conflict], &BTreeSet::new()),
+            Err(crate::Error::Limit("conflicting leaf"))
+        ));
+    }
+
+    #[test]
+    fn oversized_payload_length_is_rejected() {
+        let viewing = ViewingKey::from_bytes([1; 32]);
+        let error = viewing
+            .open_output(&[4; 33], &[0; 16], 0, &[1, 255, 255, 255, 255])
+            .expect_err("length");
+        assert!(matches!(error, crate::Error::Plaintext));
     }
 
     #[test]

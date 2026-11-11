@@ -240,13 +240,25 @@ impl CacheWrite {
 /// Cache reads and writes bound into a cached circuit selector.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct CacheAccess {
-    /// Bit `i` is set when input `i` is read from the cache.
+    /// Bit `i` is set when cache slot `i` is read. The bit is the slot in the
+    /// cache account, not the input's position. Reading slot 5 sets bit 5.
     pub read_bitmap: u64,
     /// Write destinations. Unused entries are [`CacheWrite::NONE`].
     pub write_slots: [CacheWrite; MAX_CACHE_WRITES],
 }
 
 impl CacheAccess {
+    pub(crate) fn reads(self) -> bool {
+        self.read_bitmap != 0
+    }
+
+    /// Upstream treats writes as a prefix ended by [`CacheWrite::NONE`].
+    pub(crate) fn writes_cache(self) -> bool {
+        self.write_slots
+            .first()
+            .is_some_and(|entry| *entry != CacheWrite::NONE)
+    }
+
     fn write(self, writer: &mut Writer) {
         writer.u64(self.read_bitmap);
         for slot in self.write_slots {
@@ -307,6 +319,27 @@ pub enum Circuit {
 }
 
 impl Circuit {
+    /// Tag 16 accepts these selectors. Ring selectors use a different instruction.
+    pub(crate) fn fits_transact(self) -> bool {
+        matches!(
+            self,
+            Self::ConfidentialSigner(..)
+                | Self::ConfidentialSignerCached(..)
+                | Self::ConfidentialEddsa(..)
+                | Self::ConfidentialEddsaCached(..)
+        )
+    }
+
+    pub(crate) fn cache(self) -> Option<CacheAccess> {
+        match self {
+            Self::ConfidentialSignerCached(.., cache)
+            | Self::ConfidentialRingEddsaCached(.., cache)
+            | Self::ConfidentialEddsaCached(.., cache)
+            | Self::AnonymousRingEddsaCached(.., cache) => Some(cache),
+            _ => None,
+        }
+    }
+
     fn write(self, writer: &mut Writer) {
         let tag: u16 = match self {
             Self::ConfidentialSigner(..) => 0,
