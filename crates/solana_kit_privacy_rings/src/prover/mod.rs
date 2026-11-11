@@ -15,14 +15,17 @@
 //!
 //! A prover that is not on a loopback host refuses the call unless
 //! [`PrivacyProverClient::allow_unauthenticated_remote_prover`] is set. The
-//! TypeScript client requires an attested TEE session for every remote prover
-//! and encrypts the witness. That session is not implemented here. The flag
-//! sends the witness as ordinary JSON, which a local prover accepts and a
-//! TEE-only gateway rejects. A remote URL must be `https`.
+//! flag sends the witness as ordinary JSON, which a local prover accepts and a
+//! TEE-only gateway rejects. [`tee`] binds the quote's `report_data` and the
+//! HPKE additional data. It does not verify an Intel or Nitro quote and it
+//! does not seal the body. [`PrivacyProverClient::prove_indexed`] posts to
+//! `/prove/{circuit}/indexed`. A remote URL must be `https`.
 
 mod endpoint;
+mod indexed;
 mod keys;
 mod proof;
+mod tee;
 
 use std::time::{Duration, Instant};
 
@@ -32,13 +35,19 @@ use solana_kit_client::rest::{self, Body, Method};
 use crate::encode::{Proof, TransactBody};
 use crate::error::{Error, ProverFailure};
 pub use endpoint::ProverEndpoint;
+pub use indexed::IndexedCircuit;
 pub use keys::proving_key_sha256;
 pub use proof::parse_prover_proof;
+pub use tee::{
+    HEADER_CIPHERTEXT, HEADER_ENC, HEADER_VERSION, TEE_VERSION, gpu_nonce, hex_encode, report_data,
+    request_aad,
+};
 
 const MAX_REPLY_BYTES: usize = 1024 * 1024;
 const INITIAL_POLL_MS: u64 = 25;
 const MAX_WAIT_SECS: u64 = 20 * 60;
 const HTTP_TOO_MANY: u16 = 429;
+const HTTP_NOT_FOUND: u16 = 404;
 const HTTP_SERVER_ERROR: u16 = 500;
 const JOB_ID_LIMIT: usize = 256;
 
@@ -158,11 +167,68 @@ where
     /// Rejects a remote cleartext call, a bad circuit name, a proving-key
     /// mismatch, a prover HTTP error, or a poll that exceeds the wait bound.
     pub async fn prove(&self, circuit: &str, witness: &Value) -> Result<Proof, Error> {
+        self.prove_route(circuit, witness, ProofRoute::Complete)
+            .await
+    }
+
+    /// Posts the same witness to `/prove/{circuit}/indexed`.
+    ///
+    /// A `404` whose body has no `code` means this prover was not started with
+    /// an indexer. A coded `404` is reported as [`ProverFailure::Http`].
+    ///
+    /// # Errors
+    /// Rejects a remote cleartext call, a bad circuit name, a proving-key
+    /// mismatch, a prover HTTP error, or a poll that exceeds the wait bound.
+    pub async fn prove_indexed(&self, circuit: &str, witness: &Value) -> Result<Proof, Error> {
+        self.prove_route(circuit, witness, ProofRoute::Indexed)
+            .await
+    }
+
+    /// `GET /attestation?nonce=` for the 32-byte client nonce.
+    ///
+    /// The body is the prover's attestation document. This method does not
+    /// verify the quote. Compare [`report_data`] with the quote's report data
+    /// before trusting `hpke_public_key`.
+    ///
+    /// # Errors
+    /// Rejects a remote cleartext call, a non-success status, or a body that
+    /// is not JSON.
+    pub async fn fetch_attestation(&self, nonce: &[u8; 32]) -> Result<Value, Error> {
+        self.require_transport()?;
+        let reply = self
+            .transport
+            .exchange(rest::Request {
+                service: ProverDestination {
+                    endpoint: self.endpoint.clone(),
+                    delivery: Delivery::Status,
+                },
+                method: Method::Get,
+                path_segments: vec!["attestation".to_owned()],
+                query: vec![("nonce".to_owned(), hex_encode(nonce))],
+                body: Body::Absent,
+                max_reply_bytes: MAX_REPLY_BYTES,
+            })
+            .await
+            .map_err(|_| ProverFailure::Transport)?;
+
+        if !(200..300).contains(&reply.status) {
+            return Err(ProverFailure::Http(reply.status).into());
+        }
+
+        serde_json::from_slice(&reply.body).map_err(|_| ProverFailure::Response.into())
+    }
+
+    async fn prove_route(
+        &self,
+        circuit: &str,
+        witness: &Value,
+        route: ProofRoute,
+    ) -> Result<Proof, Error> {
         self.require_transport()?;
         let name = circuit_name(circuit)?;
         require_known_circuit(name)?;
         let body = serde_json::to_vec(witness).map_err(|_| ProverFailure::ProofParse)?;
-        self.prove_known(name, body).await
+        self.prove_known(name, body, route).await
     }
 
     fn require_transport(&self) -> Result<(), Error> {
@@ -185,7 +251,12 @@ where
     ///
     /// The hosted prover answers 429 under load. The second post asks for a job
     /// id instead of holding the connection open.
-    async fn prove_known(&self, name: &str, body: Vec<u8>) -> Result<Proof, Error> {
+    async fn prove_known(
+        &self,
+        name: &str,
+        body: Vec<u8>,
+        route: ProofRoute,
+    ) -> Result<Proof, Error> {
         let mut queued = false;
 
         for _ in 0..2 {
@@ -196,10 +267,14 @@ where
                     name,
                     None,
                     Body::Json(body.clone()),
+                    route,
                 )
                 .await?;
 
-            if let Some(proof) = self.interpret_post(name, &reply, &mut queued).await? {
+            if let Some(proof) = self
+                .interpret_post(name, &reply, &mut queued, route)
+                .await?
+            {
                 return Ok(proof);
             }
         }
@@ -212,10 +287,18 @@ where
         name: &str,
         reply: &solana_kit_client::Reply,
         queued: &mut bool,
+        route: ProofRoute,
     ) -> Result<Option<Proof>, Error> {
-        if reply.status == HTTP_TOO_MANY && !*queued {
+        if reply.status == HTTP_TOO_MANY {
             *queued = true;
             return Ok(None);
+        }
+
+        if route == ProofRoute::Indexed
+            && reply.status == HTTP_NOT_FOUND
+            && !has_error_code(&reply.body)
+        {
+            return Err(ProverFailure::Indexer.into());
         }
 
         if !(200..300).contains(&reply.status) {
@@ -226,7 +309,7 @@ where
             serde_json::from_slice::<Value>(&reply.body).map_err(|_| ProverFailure::Response)?;
 
         if let Some(job) = queued_job(&value) {
-            return Ok(Some(self.poll(name, job).await?));
+            return Ok(Some(self.poll(name, job, route).await?));
         }
 
         Ok(Some(parse_prover_proof(&value, name)?))
@@ -236,7 +319,7 @@ where
     ///
     /// Client errors are final. Server errors wait and retry, because the
     /// prover returns them while a job is still queued.
-    async fn poll(&self, circuit: &str, job_id: &str) -> Result<Proof, Error> {
+    async fn poll(&self, circuit: &str, job_id: &str, route: ProofRoute) -> Result<Proof, Error> {
         if !is_job_id(job_id) {
             return Err(ProverFailure::Job.into());
         }
@@ -256,6 +339,7 @@ where
                     circuit,
                     Some(job_id),
                     Body::Absent,
+                    route,
                 )
                 .await?;
 
@@ -285,8 +369,13 @@ where
         circuit: &str,
         job_id: Option<&str>,
         body: Body,
+        route: ProofRoute,
     ) -> Result<solana_kit_client::Reply, Error> {
         let mut segments = vec!["prove".to_owned(), circuit.to_owned()];
+
+        if route == ProofRoute::Indexed {
+            segments.push("indexed".to_owned());
+        }
 
         if delivery == Delivery::Status {
             segments.push("status".to_owned());
@@ -361,6 +450,19 @@ fn is_job_id(job_id: &str) -> bool {
         && job_id
             .bytes()
             .all(|byte| byte.is_ascii_alphanumeric() || byte == b'_' || byte == b'-')
+}
+
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum ProofRoute {
+    Complete,
+    Indexed,
+}
+
+fn has_error_code(body: &[u8]) -> bool {
+    serde_json::from_slice::<Value>(body)
+        .ok()
+        .and_then(|value| value.as_object().map(|object| object.contains_key("code")))
+        .unwrap_or(false)
 }
 
 fn require_known_circuit(name: &str) -> Result<(), Error> {

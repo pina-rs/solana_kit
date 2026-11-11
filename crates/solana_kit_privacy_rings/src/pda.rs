@@ -82,5 +82,10 @@ mod tests {
             .expect("cpi authority");
         assert_eq!(authority.address(), CPI_AUTHORITY);
         assert_eq!(authority.bump(), CPI_AUTHORITY_BUMP);
+        let mint = solana_kit_core::Address::from_bytes([7; 32]);
+        assert!(super::spl_interface(&mint).is_ok());
+        let tree_address = tree.address();
+        assert!(super::nullifier_account(&tree_address, &[9; 32]).is_ok());
+        assert!(super::user_record(&mint).is_ok());
     }
 }

@@ -3,7 +3,8 @@
 //! The scheme is the v0.8.0 `spr-keypair` path: tagged X25519 (`0x04 || u`),
 //! HKDF-SHA256 over `TSPP/hpke/ || TSPP/tx || salt || slot`, then AES-256-CTR
 //! whose first keystream block is counter 2. Poseidon commitment checks stay
-//! with the caller; this module does not claim a note is unspent.
+//! with the caller. [`crate::subtract_nullified`] drops a note whose derived
+//! nullifier appears in history. This module does not derive that nullifier.
 
 use std::collections::BTreeMap;
 
@@ -416,7 +417,7 @@ fn parse_proofless(bytes: &[u8]) -> Result<OpenedNote, Error> {
 mod tests {
     use super::{ViewingKey, apply_ctr, canonical, coordinate, derive_key, diffie_hellman, tagged};
     use crate::encode::{ConfidentialPlaintext, read_confidential, write_confidential};
-    use crate::{OpenedNote, TrackedNote, decode_base64, private_balances};
+    use crate::{OpenedNote, ProoflessNote, TrackedNote, decode_base64, private_balances};
     use curve25519_dalek::montgomery::MontgomeryPoint;
     use std::collections::BTreeSet;
 
@@ -507,11 +508,22 @@ mod tests {
         let opened = viewing
             .open_output(&ephemeral, &salt, 1, &payload)
             .expect("open");
+        let proofless = OpenedNote::Proofless(ProoflessNote {
+            owner: [0; 32],
+            blinding: [0; 32],
+            asset: [0; 32],
+            amount: 0,
+        });
+        let mut saw_confidential = false;
 
-        match opened {
-            OpenedNote::Confidential(plain) => assert_eq!(plain.amount, 99),
-            OpenedNote::Proofless(_) => panic!("confidential note"),
+        for candidate in [opened, proofless] {
+            if let OpenedNote::Confidential(plain) = candidate {
+                assert_eq!(plain.amount, 99);
+                saw_confidential = true;
+            }
         }
+
+        assert!(saw_confidential);
 
         assert!(viewing.open_output(&ephemeral, &salt, 2, &payload).is_err());
         let other = ViewingKey::from_bytes([8; 32]);
@@ -538,11 +550,13 @@ mod tests {
         let opened = viewing
             .open_output(&[4; 33], &[0; 16], 0, &payload)
             .expect("proofless");
-        let OpenedNote::Proofless(note) = opened else {
-            panic!("proofless");
+        assert!(matches!(opened, OpenedNote::Proofless(_)));
+        let note = ProoflessNote {
+            owner: [4; 32],
+            blinding: [5; 32],
+            asset: [0; 32],
+            amount: 40,
         };
-        assert_eq!(note.amount, 40);
-        assert_eq!(note.asset, [0; 32]);
         let notes = [
             TrackedNote {
                 tree_id: 0,
@@ -599,5 +613,109 @@ mod tests {
         .expect("payload");
         assert_eq!(bytes.len(), 89);
         assert_eq!(&bytes[..7], &[1, 0x54, 0, 0, 0, 3, 4]);
+    }
+
+    fn framed(body: &[u8]) -> Vec<u8> {
+        let mut payload = vec![1];
+        payload.extend(u32::try_from(body.len()).expect("len").to_le_bytes());
+        payload.extend(body);
+        payload
+    }
+
+    #[test]
+    fn rejected_payloads_stay_closed() {
+        let viewing = ViewingKey::from_bytes([1; 32]);
+        assert!(format!("{viewing:?}").contains("ViewingKey"));
+        assert!(viewing.open_output(&[4; 33], &[0; 16], 0, &[]).is_err());
+        assert!(
+            viewing
+                .open_output(&[4; 33], &[0; 16], 0, &[1, 0, 0, 0, 0, 9])
+                .is_err()
+        );
+        assert!(
+            viewing
+                .open_output(&[4; 33], &[0; 16], 0, &[2, 0, 0, 0, 0])
+                .is_err()
+        );
+        let untagged = [0; 33];
+        let mut keyed = vec![3];
+        keyed.extend(viewing.public_key().expect("key"));
+        keyed.extend([1, 2, 3]);
+        assert!(
+            viewing
+                .open_output(&untagged, &[0; 16], 0, &framed(&keyed))
+                .is_err()
+        );
+        assert!(
+            viewing
+                .open_output(&[4; 33], &[0; 16], 0, &framed(&[9]))
+                .is_err()
+        );
+        assert!(
+            viewing
+                .open_output(&[4; 33], &[0; 16], 0, &framed(&[3]))
+                .is_err()
+        );
+        assert!(
+            viewing
+                .open_output(&[4; 33], &[0; 16], 0, &framed(&[0]))
+                .is_err()
+        );
+        let mut bad_tag = viewing.public_key().expect("key");
+        bad_tag[0] = 0;
+        let mut bad_body = vec![3];
+        bad_body.extend(bad_tag);
+        assert!(
+            viewing
+                .open_output(&[4; 33], &[0; 16], 0, &framed(&bad_body))
+                .is_err()
+        );
+        let mut high = [0; 33];
+        high[0] = 4;
+        high[32] = 0x80;
+        let mut keyed = vec![3];
+        keyed.extend(viewing.public_key().expect("key"));
+        keyed.extend([1, 2, 3]);
+        assert!(
+            viewing
+                .open_output(&high, &[0; 16], 0, &framed(&keyed))
+                .is_err()
+        );
+        let mut above = [0xff; 32];
+        above[31] = 127;
+        above[0] = 238;
+        assert!(super::tagged(&above).is_err());
+        let mut sign = [0; 32];
+        sign[31] = 0x80;
+        assert!(super::tagged(&sign).is_err());
+        let mut zero_peer = [0; 33];
+        zero_peer[0] = 4;
+        let mut confidential = keyed.clone();
+        confidential.extend([1, 2, 3]);
+        assert!(
+            viewing
+                .open_output(&zero_peer, &[0; 16], 0, &framed(&confidential))
+                .is_err()
+        );
+        let peer = ViewingKey::from_bytes([9; 32]).public_key().expect("peer");
+        assert!(
+            viewing
+                .open_output(&peer, &[0; 16], 0, &framed(&confidential))
+                .is_err()
+        );
+        let confidential_note = TrackedNote {
+            tree_id: 1,
+            leaf_index: 1,
+            note: OpenedNote::Confidential(ConfidentialPlaintext {
+                asset_id: 4,
+                amount: 5,
+                blinding: [0; 32],
+                ring_program_id: None,
+                records: Vec::new(),
+            }),
+        };
+        let totals = private_balances(&[confidential_note], &BTreeSet::new()).expect("sum");
+        assert_eq!(totals[0].amount, 5);
+        assert_eq!(totals[0].asset_id, Some(4));
     }
 }

@@ -44,9 +44,9 @@ Pass any of these to `Client::call`. The method name is the last path segment.
 
 The client is generic over `solana_kit_client::rest::Transport<ProverDestination>`. The transport sets `X-Sync` or `X-Async` from `ProverDestination::delivery` and sends an API key as a header. The client rejects a URL that already contains `api-key`, and it does not write the key into a URL or an error.
 
-A prover on `127.0.0.1`, `localhost`, `*.localhost`, or `::1` accepts the JSON body directly. Any other host requires `allow_unauthenticated_remote_prover(true)` and an `https` URL. The TypeScript client encrypts that witness to an attested TEE session. This crate does not implement that session, so the flag sends the witness in the clear.
+A prover on `127.0.0.1`, `localhost`, `*.localhost`, or `::1` accepts the JSON body directly. Any other host requires `allow_unauthenticated_remote_prover(true)` and an `https` URL. `report_data`, `gpu_nonce`, and `request_aad` match the published TEE vectors. Quote verification and the HPKE seal are not in this crate, so the flag still sends the witness in the clear. `prove_indexed` posts to `/prove/{circuit}/indexed`. `fetch_attestation` reads `GET /attestation?nonce=`.
 
-The pinned proving-key SHA-256 must match `provingKeySha256` in the response. Poseidon witness assembly is not included. A proof is only as good as the witness you pass in.
+The pinned proving-key SHA-256 must match `provingKeySha256` in the response. The `poseidon` feature hashes commitments, `owner_hash`, nullifiers, and the three blinding derivations with the published vectors. It does not build a full gnark witness from notes. A proof is only as good as the witness you pass in.
 
 ### Running a prover locally
 
@@ -73,9 +73,9 @@ curl -fsSL -o proving-keys/transfer_confidential_1_2.key \
   --server-only
 ```
 
-Point `PRIVACY_RINGS_LOCAL_PROVER_URL` at `http://127.0.0.1:3001` and run the ignored test. Loopback does not need the unauthenticated opt-in. A valid proof still needs a witness from the upstream assembler. An empty witness gets a `400` from this binary, which shows the client reached it.
+Point `PRIVACY_RINGS_LOCAL_PROVER_URL` at `http://127.0.0.1:3001` and run the ignored test. Loopback does not need the unauthenticated opt-in. An empty witness gets a `400` from this binary, which shows the client reached it. `local_prover_proves_the_published_witness` posts `tests/fixtures/transfer-2x2.json` to a prover that serves `transfer_confidential_2_2`.
 
-The hosted mainnet and devnet provers answer `401` without a key. Set `HELIUS_PRIVACY_RINGS_LIVE=1` and `HELIUS_API_KEY` for the ignored live test. The test sends the key as an `x-api-key` header and never puts it in the URL.
+The hosted mainnet and devnet provers answer `401` without a key. The ignored live test reads `HELIUS_PRIVACY_RINGS_LIVE=1` and `HELIUS_API_KEY`. CI does not set either variable, and this crate's tests do not either. The test sends the key as an `x-api-key` header and never puts it in the URL.
 
 Blueshift's XARK stack is a separate Arkworks Groth16 toolchain. It does not prove these gnark circuits and it does not publish these keys.
 
@@ -85,4 +85,4 @@ Blueshift's XARK stack is a separate Arkworks Groth16 toolchain. It does not pro
 
 Confidential payloads use unauthenticated AES-CTR. `open_output` does not verify their Poseidon commitment. Check each decrypted note against a commitment you trust before passing it to `private_balances`. A proofless deposit is cleartext, and opening it does not check `ProoflessNote::owner`. Exclude deposits owned by someone else before aggregating.
 
-`private_balances` adds amounts for notes whose `(tree_id, leaf_index)` the caller has not listed as spent. The same leaf counts once, and two different notes for one leaf are rejected. Confidential asset ids and proofless mints stay separate. Nullifier derivation needs Poseidon and is left to the caller.
+`private_balances` adds amounts for notes whose `(tree_id, leaf_index)` the caller has not listed as spent. The same leaf counts once, and two different notes for one leaf are rejected. Confidential asset ids and proofless mints stay separate. With the `poseidon` feature, `nullifier` derives a spend tag. `subtract_nullified` drops notes whose tag is in `spent_nullifiers`. `retain_non_inclusion` keeps a note when that tag has a non-inclusion proof. A note with no derived tag stays, because the history does not name its leaf.

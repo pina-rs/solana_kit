@@ -299,6 +299,29 @@ fn local_prover_accepts_a_loopback_witness() {
 }
 
 #[test]
+#[ignore = "set PRIVACY_RINGS_LOCAL_PROVER_URL; does not use a Helius key"]
+fn local_prover_proves_the_published_witness() {
+    let Ok(url) = std::env::var("PRIVACY_RINGS_LOCAL_PROVER_URL") else {
+        return;
+    };
+    let witness: Value =
+        serde_json::from_str(include_str!("../../tests/fixtures/transfer-2x2.json"))
+            .expect("witness");
+    let client = PrivacyProverClient::new(&url, HttpAdapter::with_limit(None, 180))
+        .expect("endpoint")
+        .with_poll(
+            Duration::from_millis(MEDIUM_POLL_MS),
+            Duration::from_secs(1),
+            Duration::from_secs(180),
+        );
+    let proof = futures::executor::block_on(client.prove("transfer_confidential_2_2", &witness))
+        .expect("proof");
+    assert_eq!(proof.a.len(), 32);
+    assert_eq!(proof.b.len(), 128);
+    assert_eq!(proof.c.len(), 32);
+}
+
+#[test]
 #[ignore = "set HELIUS_PRIVACY_RINGS_LIVE=1 and HELIUS_API_KEY"]
 fn live_prover_reaches_helius() {
     if std::env::var("HELIUS_PRIVACY_RINGS_LIVE").ok().as_deref() != Some("1") {
@@ -622,8 +645,12 @@ struct HttpAdapter {
 
 impl HttpAdapter {
     fn new(api_key: Option<String>) -> Self {
+        Self::with_limit(api_key, REQUEST_TIMEOUT_SECS)
+    }
+
+    fn with_limit(api_key: Option<String>, seconds: u64) -> Self {
         let agent = ureq::Agent::config_builder()
-            .timeout_global(Some(Duration::from_secs(REQUEST_TIMEOUT_SECS)))
+            .timeout_global(Some(Duration::from_secs(seconds)))
             .http_status_as_error(false)
             .max_redirects(0)
             .build()
@@ -717,6 +744,300 @@ impl HttpAdapter {
 
         call.send(bytes)
     }
+}
+
+type RecordedQuery = Vec<(String, String)>;
+
+struct Scripted {
+    replies: Mutex<VecDeque<(u16, &'static str)>>,
+    paths: Arc<Mutex<Vec<Vec<String>>>>,
+    queries: Arc<Mutex<Vec<RecordedQuery>>>,
+}
+
+impl rest::Transport<ProverDestination> for Scripted {
+    type Exchange<'a>
+        = Ready<Result<Reply, TransportError>>
+    where
+        Self: 'a;
+
+    fn exchange(&self, request: rest::Request<ProverDestination>) -> Self::Exchange<'_> {
+        self.paths
+            .lock()
+            .expect("paths")
+            .push(request.path_segments);
+        self.queries.lock().expect("queries").push(request.query);
+        let (status, body) = self
+            .replies
+            .lock()
+            .expect("replies")
+            .pop_front()
+            .expect("reply");
+
+        if status == 0 {
+            return std::future::ready(Err(TransportError::new(TransportFailureKind::Denied)));
+        }
+
+        std::future::ready(Ok(Reply {
+            status,
+            body: body.as_bytes().to_vec(),
+        }))
+    }
+}
+
+#[test]
+fn indexed_route_and_attestation_use_their_paths() {
+    let paths = Arc::new(Mutex::new(Vec::new()));
+    let queries = Arc::new(Mutex::new(Vec::new()));
+    let scripted = Scripted {
+        replies: Mutex::new(VecDeque::from([
+            (404, "{}"),
+            (404, "not-json"),
+            (404, "{\"code\":\"missing\"}"),
+            (500, "{}"),
+            (200, "not-json"),
+            (200, "{\"platform\":\"dstack-tdx\"}"),
+        ])),
+        paths: Arc::clone(&paths),
+        queries: Arc::clone(&queries),
+    };
+    let client = PrivacyProverClient::new("http://127.0.0.1:9", scripted).expect("endpoint");
+    let witness = json!({});
+    let missing = futures::executor::block_on(client.prove_indexed(CIRCUIT, &witness));
+    assert!(matches!(
+        missing,
+        Err(Error::Prover(ProverFailure::Indexer))
+    ));
+    let garbled = futures::executor::block_on(client.prove_indexed(CIRCUIT, &witness));
+    assert!(matches!(
+        garbled,
+        Err(Error::Prover(ProverFailure::Indexer))
+    ));
+    let coded = futures::executor::block_on(client.prove_indexed(CIRCUIT, &witness));
+    assert!(matches!(
+        coded,
+        Err(Error::Prover(ProverFailure::Http(404)))
+    ));
+    let nonce = [0x11; FIELD_BYTES];
+    let unavailable = futures::executor::block_on(client.fetch_attestation(&nonce));
+    assert!(matches!(
+        unavailable,
+        Err(Error::Prover(ProverFailure::Http(500)))
+    ));
+    let garbled_document = futures::executor::block_on(client.fetch_attestation(&nonce));
+    assert!(matches!(
+        garbled_document,
+        Err(Error::Prover(ProverFailure::Response))
+    ));
+    let document = futures::executor::block_on(client.fetch_attestation(&nonce)).expect("document");
+    assert_eq!(document["platform"], "dstack-tdx");
+    let seen = paths.lock().expect("paths").clone();
+    assert_eq!(seen[0], ["prove", CIRCUIT, "indexed"]);
+    assert_eq!(seen[5], ["attestation"]);
+    let seen_queries = queries.lock().expect("queries").clone();
+    assert_eq!(seen_queries[5][0].0, "nonce");
+    assert_eq!(seen_queries[5][0].1, "11".repeat(FIELD_BYTES));
+}
+
+fn script(replies: Vec<(u16, &'static str)>) -> Scripted {
+    Scripted {
+        replies: Mutex::new(VecDeque::from(replies)),
+        paths: Arc::new(Mutex::new(Vec::new())),
+        queries: Arc::new(Mutex::new(Vec::new())),
+    }
+}
+
+#[test]
+fn prover_client_covers_rejected_routes_and_queued_retry() {
+    let witness = json!({});
+    let remote = PrivacyProverClient::new("http://example.com", script(Vec::new()))
+        .expect("endpoint")
+        .allow_unauthenticated_remote_prover(true);
+    assert!(format!("{remote:?}").contains("example.com"));
+    let blocked = futures::executor::block_on(remote.prove(CIRCUIT, &witness));
+    assert!(matches!(blocked, Err(Error::Prover(ProverFailure::Config))));
+    let local = PrivacyProverClient::new("http://127.0.0.1:9", script(Vec::new())).expect("local");
+    assert!(matches!(
+        futures::executor::block_on(local.prove("a/b", &witness)),
+        Err(Error::Prover(ProverFailure::Circuit))
+    ));
+    assert!(matches!(
+        futures::executor::block_on(local.prove("not-a-key", &witness)),
+        Err(Error::Prover(ProverFailure::UnknownCircuit))
+    ));
+    assert!(
+        local
+            .wait(Duration::from_secs(1), std::time::Instant::now())
+            .is_err()
+    );
+    let busy = PrivacyProverClient::new(
+        "http://127.0.0.1:9",
+        script(vec![(HTTP_TOO_MANY, "{}"), (HTTP_TOO_MANY, "{}")]),
+    )
+    .expect("busy");
+    assert!(matches!(
+        futures::executor::block_on(busy.prove(CIRCUIT, &witness)),
+        Err(Error::Prover(ProverFailure::Http(HTTP_TOO_MANY)))
+    ));
+    let completed = format!(
+        r#"{{"status":"completed","result":{}}}"#,
+        serde_json::to_string(&proof_value(["0x1", "0x2"])).expect("json")
+    );
+    let leaked: &'static str = Box::leak(completed.into_boxed_str());
+    let queued = PrivacyProverClient::new(
+        "http://127.0.0.1:9",
+        script(vec![
+            (HTTP_OK, r#"{"jobId":"job-1"}"#),
+            (HTTP_ERROR, "{}"),
+            (HTTP_OK, leaked),
+        ]),
+    )
+    .expect("queued")
+    .with_poll(
+        Duration::from_millis(1),
+        Duration::from_millis(1),
+        Duration::from_secs(2),
+    );
+    let proof = futures::executor::block_on(queued.prove(CIRCUIT, &witness)).expect("queued proof");
+    assert_eq!(proof.a.len(), 32);
+    let mut wrapped = proof_value(["0x1", "0x2"]);
+    let inner = wrapped.clone();
+    wrapped = json!({ "proof": inner });
+    assert!(parse_prover_proof(&wrapped, CIRCUIT).is_ok());
+    let mut upper = proof_value(["0x1", "0x2"]);
+    upper["provingKeySha256"] = json!("AB".repeat(32));
+    assert!(matches!(
+        parse_prover_proof(&upper, CIRCUIT),
+        Err(ProverFailure::Response)
+    ));
+    let mut number = proof_value(["0x1", "0x2"]);
+    number["provingKeySha256"] = json!(1);
+    assert!(matches!(
+        parse_prover_proof(&number, CIRCUIT),
+        Err(ProverFailure::Response)
+    ));
+    let mut empty_commitment = proof_value(["0x1", "0x2"]);
+    empty_commitment["proofCommitment"] = json!([]);
+    assert!(parse_prover_proof(&empty_commitment, CIRCUIT).is_ok());
+    let mut bad_point = proof_value(["0x1", "0x2"]);
+    bad_point["ar"] = json!(["zz", "0x1"]);
+    assert!(parse_prover_proof(&bad_point, CIRCUIT).is_err());
+    let mut commitment = proof_value(["0x1", "0x2"]);
+    commitment["proofCommitment"] = json!(["0x0", "0x0"]);
+    commitment["proofCommitmentPok"] = json!(["0x0", "0x0"]);
+    assert!(parse_prover_proof(&commitment, CIRCUIT).is_ok());
+    let mut short_g1 = proof_value(["0x1", "0x2"]);
+    short_g1["ar"] = json!(["0x1"]);
+    assert!(parse_prover_proof(&short_g1, CIRCUIT).is_err());
+    let mut short_g2 = proof_value(["0x1", "0x2"]);
+    short_g2["bs"] = json!([["0x0", "0x0"]]);
+    assert!(parse_prover_proof(&short_g2, CIRCUIT).is_err());
+    let mut row = proof_value(["0x1", "0x2"]);
+    row["bs"] = json!([["0x0"], ["0x0", "0x0"]]);
+    assert!(parse_prover_proof(&row, CIRCUIT).is_err());
+    let mut wide = proof_value(["0x1", "0x2"]);
+    wide["ar"] = json!([format!("0x{}", "f".repeat(65)), "0x1"]);
+    assert!(parse_prover_proof(&wide, CIRCUIT).is_err());
+    let mut upper_digit = proof_value(["0x1", "0x2"]);
+    upper_digit["bs"] = json!([["0xA", "0x0"], ["0x0", "0x0"]]);
+    assert!(parse_prover_proof(&upper_digit, CIRCUIT).is_ok());
+    let mut modulus = proof_value(["0x1", "0x2"]);
+    modulus["ar"] = json!([
+        "0x30644e72e131a029b85045b68181585d97816a916871ca8d3c208c16d87cfd47",
+        "0x1"
+    ]);
+    assert!(parse_prover_proof(&modulus, CIRCUIT).is_err());
+    let mut text = proof_value(["0x1", "0x2"]);
+    text["ar"] = json!("no");
+    assert!(parse_prover_proof(&text, CIRCUIT).is_err());
+    let gnark = proof_value(["0x1", "0x2"]);
+    let both = json!({"jobId": "job-9", "proof": gnark});
+    let both_text: &'static str = Box::leak(both.to_string().into_boxed_str());
+    let mixed = PrivacyProverClient::new("http://127.0.0.1:9", script(vec![(HTTP_OK, both_text)]))
+        .expect("mixed");
+    assert!(futures::executor::block_on(mixed.prove(CIRCUIT, &witness)).is_ok());
+    let secure =
+        PrivacyProverClient::new("https://example.com", script(vec![(HTTP_OK, both_text)]))
+            .expect("https")
+            .allow_unauthenticated_remote_prover(true);
+    assert!(futures::executor::block_on(secure.prove(CIRCUIT, &witness)).is_ok());
+    let huge = "x".repeat(super::MAX_REPLY_BYTES + 1);
+    let huge_text: &'static str = Box::leak(huge.into_boxed_str());
+    let oversized =
+        PrivacyProverClient::new("http://127.0.0.1:9", script(vec![(HTTP_OK, huge_text)]))
+            .expect("oversized");
+    assert!(matches!(
+        futures::executor::block_on(oversized.prove(CIRCUIT, &witness)),
+        Err(Error::Prover(ProverFailure::Response))
+    ));
+    let rejected = PrivacyProverClient::new(
+        "http://127.0.0.1:9",
+        script(vec![(HTTP_OK, r#"{"jobId":"job-4"}"#), (400, "{}")]),
+    )
+    .expect("status");
+    assert!(matches!(
+        futures::executor::block_on(rejected.prove(CIRCUIT, &witness)),
+        Err(Error::Prover(ProverFailure::Http(400)))
+    ));
+    let shaped = PrivacyProverClient::new(
+        "http://127.0.0.1:9",
+        script(vec![(HTTP_OK, r#"{"jobId":"job-5"}"#), (HTTP_OK, "[]")]),
+    )
+    .expect("array");
+    assert!(matches!(
+        futures::executor::block_on(shaped.prove(CIRCUIT, &witness)),
+        Err(Error::Prover(ProverFailure::Response))
+    ));
+    let pending = PrivacyProverClient::new(
+        "http://127.0.0.1:9",
+        script(vec![
+            (HTTP_OK, r#"{"jobId":"job-6"}"#),
+            (HTTP_OK, r#"{"status":"working"}"#),
+            (HTTP_OK, leaked),
+        ]),
+    )
+    .expect("pending")
+    .with_poll(
+        Duration::from_millis(1),
+        Duration::from_millis(1),
+        Duration::from_secs(2),
+    );
+    assert!(futures::executor::block_on(pending.prove(CIRCUIT, &witness)).is_ok());
+    let dropped = PrivacyProverClient::new(
+        "http://127.0.0.1:9",
+        script(vec![(HTTP_OK, r#"{"jobId":"job-7"}"#), (0, "")]),
+    )
+    .expect("dropped");
+    assert!(matches!(
+        futures::executor::block_on(dropped.prove(CIRCUIT, &witness)),
+        Err(Error::Prover(ProverFailure::Transport))
+    ));
+    let mut blank = proof_value(["0x1", "0x2"]);
+    blank["ar"] = json!(["0x", "0x1"]);
+    assert!(parse_prover_proof(&blank, CIRCUIT).is_err());
+    let clear = PrivacyProverClient::new("http://example.com", script(Vec::new())).expect("clear");
+    assert!(matches!(
+        futures::executor::block_on(clear.prove(CIRCUIT, &witness)),
+        Err(Error::Prover(ProverFailure::Cleartext))
+    ));
+    let bad_job = PrivacyProverClient::new(
+        "http://127.0.0.1:9",
+        script(vec![(HTTP_OK, r#"{"jobId":"bad id"}"#)]),
+    )
+    .expect("bad job");
+    assert!(matches!(
+        futures::executor::block_on(bad_job.prove(CIRCUIT, &witness)),
+        Err(Error::Prover(ProverFailure::Job))
+    ));
+    let expired = PrivacyProverClient::new(
+        "http://127.0.0.1:9",
+        script(vec![(HTTP_OK, r#"{"jobId":"job-8"}"#)]),
+    )
+    .expect("expired")
+    .with_poll(Duration::ZERO, Duration::from_millis(1), Duration::ZERO);
+    assert!(matches!(
+        futures::executor::block_on(expired.prove(CIRCUIT, &witness)),
+        Err(Error::Prover(ProverFailure::Timeout))
+    ));
 }
 
 impl rest::Transport<ProverDestination> for HttpAdapter {

@@ -9,8 +9,10 @@ The wire format is a native port of Helius `zolana` tag `v0.8.0`
 (`6660d9839714`). It does not depend on `zolana-client` or `solana-sdk`.
 Serialization follows `wincode` 0.5 field order, checked against golden bytes
 from that serializer. X25519, HKDF-SHA256, and AES-256-CTR sit behind the
-`crypto` feature. Poseidon, nullifier derivation, and Groth16 proving stay
-with the caller: pass proof bytes you already have.
+`crypto` feature. The `poseidon` feature adds Circom BN254 commitments,
+`owner_hash`, nullifiers, and the blinding-seed derivations. Groth16 proving
+stays with the prover: pass a witness you already have, or the published
+`transfer-2x2` fixture.
 
 ```rust
 use solana_kit_core::Address;

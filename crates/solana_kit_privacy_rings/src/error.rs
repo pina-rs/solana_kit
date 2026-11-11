@@ -62,6 +62,8 @@ pub enum ProverFailure {
     ProofPoint,
     /// A proof field had the wrong shape.
     ProofParse,
+    /// The indexed route is not served by this prover.
+    Indexer,
 }
 
 impl fmt::Display for Error {
@@ -79,5 +81,26 @@ impl StdError for Error {
 
         let _ = self;
         None
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{Error, StdError};
+
+    #[test]
+    fn display_names_the_failure() {
+        let limit = Error::Limit("page");
+        assert!(limit.to_string().contains("page"));
+        assert!(StdError::source(&limit).is_none());
+    }
+
+    #[cfg(feature = "crypto")]
+    #[test]
+    fn pda_source_is_the_inner_error() {
+        use solana_kit_core::crypto::PdaError;
+
+        let wrapped = Error::Pda(PdaError::SeedTooLong);
+        assert!(StdError::source(&wrapped).is_some());
     }
 }

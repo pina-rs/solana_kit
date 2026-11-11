@@ -153,3 +153,36 @@ fn has_api_key(query: &str) -> bool {
             .unwrap_or(false)
     })
 }
+
+#[cfg(test)]
+mod tests {
+    use super::ProverEndpoint;
+
+    #[test]
+    fn rejected_urls_and_debug_stay_keyless() {
+        assert!(ProverEndpoint::parse("notaurl").is_err());
+        assert!(ProverEndpoint::parse("ftp://example.com").is_err());
+        assert!(
+            ProverEndpoint::parse("http://api.localhost")
+                .expect("localhost suffix")
+                .is_loopback()
+        );
+        assert!(ProverEndpoint::parse("http://").is_err());
+        assert!(ProverEndpoint::parse("http://a@b").is_err());
+        assert!(ProverEndpoint::parse("http:// ").is_err());
+        assert!(
+            ProverEndpoint::parse("http://[::1]")
+                .expect("ipv6")
+                .is_loopback()
+        );
+        assert!(
+            !ProverEndpoint::parse("http://[2001:db8::1]")
+                .expect("ipv6")
+                .is_loopback()
+        );
+        assert!(ProverEndpoint::parse("http://[]").is_err());
+        assert!(ProverEndpoint::parse("http://:80").is_err());
+        let endpoint = ProverEndpoint::parse("http://127.0.0.1:3001").expect("loopback");
+        assert!(format!("{endpoint:?}").contains("127.0.0.1"));
+    }
+}

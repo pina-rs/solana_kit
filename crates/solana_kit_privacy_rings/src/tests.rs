@@ -8,7 +8,9 @@ use solana_kit_client::{Client, Limits, Reply, Request, Transport, TransportErro
 use solana_kit_core::address_constants::{SYSTEM_PROGRAM, TOKEN_PROGRAM};
 use solana_kit_core::{AccountRole, Address};
 
-use crate::encode::{TransferLeg, write_confidential, write_transact};
+use crate::encode::{
+    AnonymousRingProof, Bsb22, EddsaProof, Message, TransferLeg, write_confidential, write_transact,
+};
 use crate::{
     AssetDeposit, CPI_AUTHORITY, CacheAccess, CacheWrite, CacheWriter, Circuit,
     ConfidentialPlaintext, ConfidentialTransfer, DEPOSIT_TAG, Deposit, DepositAsset, Error,
@@ -16,8 +18,8 @@ use crate::{
     GetShieldedTransactionsByNullifiers, GetShieldedTransactionsBySignature,
     GetShieldedTransactionsByTags, GetUserRecords, HistoryFilters, Input, MAX_CACHE_WRITES,
     OwnerTag, Proof, SHIELDED_POOL_PROGRAM, SOL_INTERFACE, STATE_TREE, Settlement, ShieldedOutput,
-    SlotBounds, SplDeposit, SplWithdrawalAccounts, TRANSACT_TAG, Transact, TransactBody,
-    TreeContext, USER_REGISTRY_PROGRAM, Withdraw,
+    SlotBounds, SplDeposit, SplDepositAccounts, SplWithdrawalAccounts, TRANSACT_TAG, Transact,
+    TransactBody, TreeContext, USER_REGISTRY_PROGRAM, Withdraw,
 };
 
 const DEPOSIT_GOLDEN: &str = "01000100070707070707070707070707070707070707070707070707070707070707070709090909090909090909090909090909090909090909090909090909090909092a000000000000000102006869";
@@ -418,6 +420,22 @@ fn transact_rejects_a_third_tree_and_a_zero_leg() {
     ));
 }
 
+#[test]
+fn two_withdrawal_legs_share_one_transact() {
+    let mut transaction = transact_for(sample_body());
+    transaction.settlements.push(Settlement::SolWithdrawal {
+        recipient: address(FIXTURE_8),
+        amount: 8,
+    });
+    let instruction = transaction.instruction().expect("two legs");
+    let recipients = instruction
+        .accounts
+        .iter()
+        .filter(|meta| meta.address == address(FIXTURE_12) || meta.address == address(FIXTURE_8))
+        .count();
+    assert_eq!(recipients, 2);
+}
+
 fn transact_for(body: TransactBody) -> Transact {
     Transact {
         payer: address(2),
@@ -753,6 +771,21 @@ fn history_and_proof_shapes_round_trip() {
         .validate()
         .is_err()
     );
+    assert!(
+        GetUserRecords {
+            owners: vec!["owner".to_owned()],
+        }
+        .validate()
+        .is_ok()
+    );
+    assert!(
+        GetMerkleProofs {
+            tree_account: "tree".to_owned(),
+            leaves: vec!["leaf".to_owned()],
+        }
+        .validate()
+        .is_ok()
+    );
 }
 
 struct Recorded {
@@ -794,4 +827,361 @@ fn client_call_posts_the_method_to_one_exchange() {
     assert!(frame["params"].is_object());
 
     assert!(frame["id"].is_number());
+}
+
+fn one_deposit(asset: DepositAsset) -> AssetDeposit {
+    AssetDeposit {
+        asset,
+        view_tag: [3; 32],
+        owner: [4; 32],
+        amount: 1,
+        memo: None,
+    }
+}
+
+fn spl_at(byte: u8) -> DepositAsset {
+    DepositAsset::Spl(SplDeposit {
+        mint: address(byte),
+        user_token: address(FIXTURE_6),
+        token_program: TOKEN_PROGRAM,
+        interface: address(FIXTURE_8),
+        interface_bump: FIXTURE_9,
+    })
+}
+
+#[test]
+fn deposit_bounds_and_mint_conflicts_fail() {
+    let empty = Deposit {
+        tree: address(1),
+        depositor: address(2),
+        deposits: Vec::new(),
+    };
+    assert!(empty.instruction().is_err());
+    let mut many = Vec::new();
+
+    for _ in 0..=u8::MAX {
+        many.push(one_deposit(DepositAsset::Sol));
+    }
+
+    assert!(
+        Deposit {
+            tree: address(1),
+            depositor: address(2),
+            deposits: many,
+        }
+        .instruction()
+        .is_err()
+    );
+    let mut assets = vec![one_deposit(DepositAsset::Sol)];
+
+    for byte in [FIXTURE_5, FIXTURE_6, FIXTURE_7, FIXTURE_8, FIXTURE_9] {
+        assets.push(one_deposit(spl_at(byte)));
+    }
+
+    assert!(
+        Deposit {
+            tree: address(1),
+            depositor: address(2),
+            deposits: assets,
+        }
+        .instruction()
+        .is_err()
+    );
+    let first = spl_at(FIXTURE_5);
+    let second = DepositAsset::Spl(SplDeposit {
+        mint: address(FIXTURE_5),
+        user_token: address(FIXTURE_6),
+        token_program: TOKEN_PROGRAM,
+        interface: address(FIXTURE_8),
+        interface_bump: FIXTURE_7,
+    });
+    assert!(
+        Deposit {
+            tree: address(1),
+            depositor: address(2),
+            deposits: vec![one_deposit(first), one_deposit(second)],
+        }
+        .instruction()
+        .is_err()
+    );
+}
+
+#[test]
+fn identical_spl_deposits_share_one_group() {
+    let repeated = spl_at(FIXTURE_5);
+    assert!(
+        Deposit {
+            tree: address(1),
+            depositor: address(2),
+            deposits: vec![one_deposit(repeated), one_deposit(repeated)],
+        }
+        .instruction()
+        .is_ok()
+    );
+}
+
+fn bsb22() -> Bsb22 {
+    Bsb22 {
+        commitment: [1; 32],
+        commitment_pok: [2; 32],
+    }
+}
+
+fn cache_access() -> CacheAccess {
+    CacheAccess {
+        read_bitmap: 1,
+        write_slots: [CacheWrite::NONE; MAX_CACHE_WRITES],
+    }
+}
+
+#[test]
+fn every_circuit_selector_and_public_leg_encodes() {
+    let anonymous = AnonymousRingProof {
+        bsb22: bsb22(),
+        default_owner_tag: Some([3; 32]),
+    };
+    let eddsa = EddsaProof {
+        bsb22: bsb22(),
+        owner_pk: [4; 32],
+    };
+    let cache = cache_access();
+    let circuits = [
+        Circuit::ConfidentialRingEddsa(1, 2, 3),
+        Circuit::RingAuthority(1, 2, 3),
+        Circuit::AnonymousRingEddsa(1, 2, 3, anonymous),
+        Circuit::ConfidentialRingEddsaCached(1, 2, 3, cache),
+        Circuit::AnonymousRingEddsaCached(1, 2, 3, anonymous, cache),
+        Circuit::ConfidentialEddsa(1, 2, 3, eddsa),
+        Circuit::ConfidentialEddsaCached(1, 2, 3, eddsa, cache),
+    ];
+
+    for circuit in circuits {
+        let mut body = sample_body();
+        body.circuit = circuit;
+        body.data_hash = Some([5; 32]);
+        body.outputs[0].owner_tag = OwnerTag::Inline([6; 32]);
+        body.outputs[0].data = Some(vec![7]);
+        body.messages.push(Message {
+            view_tag: [8; 32],
+            data: vec![FIXTURE_9],
+        });
+        let _ = circuit.cache();
+        assert!(
+            write_transact(
+                &body,
+                &[
+                    TransferLeg::SolDeposit(1),
+                    TransferLeg::SplDeposit {
+                        amount: 2,
+                        interface_bump: 3,
+                    }
+                ]
+            )
+            .is_ok()
+        );
+    }
+}
+
+#[test]
+fn anonymous_ring_allows_a_missing_owner_tag() {
+    let mut absent = sample_body();
+    absent.circuit = Circuit::AnonymousRingEddsa(
+        1,
+        2,
+        3,
+        AnonymousRingProof {
+            bsb22: bsb22(),
+            default_owner_tag: None,
+        },
+    );
+    assert!(write_transact(&absent, &[]).is_ok());
+}
+
+#[test]
+fn short_confidential_notes_fail_to_parse() {
+    assert!(crate::read_confidential(&[]).is_err());
+    let mut short_ring = vec![0; 49];
+    short_ring[48] = 1;
+    assert!(crate::read_confidential(&short_ring).is_err());
+}
+
+#[test]
+fn confidential_ring_note_round_trips() {
+    let note = ConfidentialPlaintext {
+        asset_id: 1,
+        amount: 2,
+        blinding: [3; 32],
+        ring_program_id: Some([4; 32]),
+        records: vec![1, 0, 0, 0, 9],
+    };
+    let encoded = write_confidential(&note);
+    assert_eq!(crate::read_confidential(&encoded).expect("note"), note);
+}
+
+#[test]
+fn transact_bounds_reject_unbalanced_accounts() {
+    let mut transaction = transact_for(sample_body());
+    transaction.settlements = vec![Settlement::SolDeposit {
+        recipient: address(FIXTURE_8),
+        amount: 1,
+    }];
+    assert!(transaction.instruction().is_ok());
+    transaction.settlements = vec![Settlement::SplDeposit {
+        accounts: SplDepositAccounts {
+            mint: address(FIXTURE_5),
+            interface: address(FIXTURE_8),
+            token_authority: address(FIXTURE_6),
+            user_token: address(FIXTURE_7),
+            token_program: TOKEN_PROGRAM,
+        },
+        amount: 1,
+        interface_bump: FIXTURE_9,
+    }];
+    assert!(transaction.instruction().is_ok());
+    let mut cached = sample_body();
+    cached.circuit = Circuit::ConfidentialSignerCached(
+        1,
+        2,
+        3,
+        CacheAccess {
+            read_bitmap: 0,
+            write_slots: [CacheWrite::NONE; MAX_CACHE_WRITES],
+        },
+    );
+    assert!(transact_for(cached).instruction().is_err());
+    let mut wide = sample_body();
+    wide.outputs = vec![wide.outputs[0].clone(); 33];
+    assert!(transact_for(wide).instruction().is_err());
+    let mut trees = transact_for(sample_body());
+    trees.input_trees.clear();
+    assert!(trees.instruction().is_err());
+    trees = transact_for(sample_body());
+    trees.body.tree_contexts.clear();
+    assert!(trees.instruction().is_err());
+    trees = transact_for(sample_body());
+    trees.body.inputs[0].tree_index = 1;
+    assert!(trees.instruction().is_err());
+    trees = transact_for(sample_body());
+    trees.settlements = vec![
+        Settlement::SolWithdrawal {
+            recipient: address(FIXTURE_8),
+            amount: 1,
+        };
+        33
+    ];
+    assert!(trees.instruction().is_err());
+}
+
+#[test]
+fn transact_rejects_a_short_nullifier_list() {
+    let mut trees = transact_for(sample_body());
+    trees.nullifier_accounts.pop();
+    assert!(trees.instruction().is_err());
+}
+
+#[test]
+fn rpc_validators_reject_empty_pages() {
+    let tags = GetEncryptedUtxosByTags {
+        tags: Vec::new(),
+        filters: None,
+        limit: Some(0),
+        min_context_slot: None,
+        pagination_token: None,
+        ring_program_id: None,
+    };
+    assert!(tags.validate().is_err());
+    let nullifiers = GetShieldedTransactionsByNullifiers {
+        nullifiers: Vec::new(),
+        filters: None,
+        limit: None,
+        min_context_slot: None,
+        pagination_token: None,
+    };
+    assert!(nullifiers.validate().is_err());
+    let leaves = GetNonInclusionProofs {
+        tree_account: "tree".to_owned(),
+        leaves: Vec::new(),
+    };
+    assert!(leaves.validate().is_err());
+    assert!(
+        GetMerkleProofs {
+            tree_account: "tree".to_owned(),
+            leaves: Vec::new(),
+        }
+        .validate()
+        .is_err()
+    );
+    let history = GetShieldedTransactionsByTags {
+        tags: Vec::new(),
+        filters: None,
+        limit: Some(0),
+        min_context_slot: None,
+        pagination_token: None,
+        ring_program_id: None,
+    };
+    assert!(history.validate().is_err());
+    assert!(GetUserRecords { owners: Vec::new() }.validate().is_err());
+}
+
+#[test]
+fn rpc_validators_accept_one_entry() {
+    let mut tags = GetEncryptedUtxosByTags {
+        tags: vec!["tag".to_owned()],
+        filters: None,
+        limit: None,
+        min_context_slot: None,
+        pagination_token: None,
+        ring_program_id: None,
+    };
+    assert!(tags.validate().is_ok());
+    tags.limit = Some(0);
+    assert!(tags.validate().is_err());
+    tags.limit = Some(1);
+    assert!(tags.validate().is_ok());
+    assert!(
+        GetShieldedTransactionsByTags {
+            tags: vec!["tag".to_owned()],
+            filters: None,
+            limit: None,
+            min_context_slot: None,
+            pagination_token: None,
+            ring_program_id: None,
+        }
+        .validate()
+        .is_ok()
+    );
+    assert!(
+        GetShieldedTransactionsByNullifiers {
+            nullifiers: vec!["nullifier".to_owned()],
+            filters: None,
+            limit: None,
+            min_context_slot: None,
+            pagination_token: None,
+        }
+        .validate()
+        .is_ok()
+    );
+    assert!(
+        GetNonInclusionProofs {
+            tree_account: "tree".to_owned(),
+            leaves: vec!["leaf".to_owned()],
+        }
+        .validate()
+        .is_ok()
+    );
+    assert!(
+        GetMerkleProofs {
+            tree_account: "tree".to_owned(),
+            leaves: vec!["leaf".to_owned()],
+        }
+        .validate()
+        .is_ok()
+    );
+    assert!(
+        GetUserRecords {
+            owners: vec!["owner".to_owned()],
+        }
+        .validate()
+        .is_ok()
+    );
 }

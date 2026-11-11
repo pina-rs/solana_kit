@@ -227,7 +227,7 @@ fn coordinate(value: &Value) -> Result<Field, ProverFailure> {
         .or_else(|| text.strip_prefix("0X"))
         .unwrap_or(text);
 
-    if digits.is_empty() || !digits.bytes().all(|byte| byte.is_ascii_hexdigit()) {
+    if digits.is_empty() {
         return Err(ProverFailure::ProofParse);
     }
 
@@ -451,5 +451,7 @@ mod field_tests {
         let two = Field::from_u64(2);
         assert_eq!(two.mul(two), Field::from_u64(4));
         assert!(Field::MODULUS.sub(two).add(two).is_zero());
+        let wrapped = Field::from_u64(1).sub(Field::from_u64(2));
+        assert!(!wrapped.is_zero());
     }
 }

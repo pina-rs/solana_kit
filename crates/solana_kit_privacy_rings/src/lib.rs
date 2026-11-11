@@ -18,10 +18,15 @@ mod address;
 mod deposit;
 mod encode;
 mod error;
+mod history;
 #[cfg(feature = "crypto")]
 mod pda;
+#[cfg(feature = "poseidon")]
+mod poseidon;
 mod prover;
 mod rpc;
+#[cfg(feature = "crypto")]
+mod spend;
 
 mod transact;
 #[cfg(feature = "crypto")]
@@ -35,13 +40,23 @@ pub use encode::{
     read_confidential, write_confidential,
 };
 pub use error::{Error, ProverFailure};
+pub use history::{Page, collect_pages, spent_nullifiers};
 #[cfg(feature = "crypto")]
 pub use pda::{nullifier_account, sol_interface, spl_interface, state_tree, user_record};
+#[cfg(feature = "poseidon")]
+pub use poseidon::{
+    UtxoPreimage, derive_output_blinding_seed, derive_private_tx_blinding,
+    derive_transact_output_blinding, nullifier, nullifier_pubkey, owner_hash, poseidon_hash,
+    right_align, solana_owner_identity, utxo_commitment,
+};
 pub use prover::{
-    Delivery, PrivacyProverClient, ProverDestination, ProverEndpoint, parse_prover_proof,
-    proving_key_sha256,
+    Delivery, HEADER_CIPHERTEXT, HEADER_ENC, HEADER_VERSION, IndexedCircuit, PrivacyProverClient,
+    ProverDestination, ProverEndpoint, TEE_VERSION, gpu_nonce, hex_encode, parse_prover_proof,
+    proving_key_sha256, report_data, request_aad,
 };
 pub use rpc::*;
+#[cfg(feature = "crypto")]
+pub use spend::{retain_non_inclusion, subtract_nullified};
 pub use transact::{
     CacheWriter, ConfidentialTransfer, Settlement, SplDepositAccounts, SplWithdrawalAccounts,
     Transact, Withdraw,

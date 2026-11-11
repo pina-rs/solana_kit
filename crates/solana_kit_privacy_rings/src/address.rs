@@ -185,3 +185,14 @@ pub fn deposit_blinding(tree: &[u8; 32], leaf_index: u64) -> [u8; 32] {
     digest[0] = 0;
     digest.into()
 }
+
+#[cfg(test)]
+mod tests {
+    use super::local_indexer_url;
+
+    #[test]
+    fn local_indexer_rejects_a_punctuated_method() {
+        assert!(local_indexer_url("").is_err());
+        assert!(local_indexer_url("get/user").is_err());
+    }
+}
