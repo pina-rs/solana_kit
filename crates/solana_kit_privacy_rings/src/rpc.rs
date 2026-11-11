@@ -402,6 +402,39 @@ pub struct GetUserRecords {
     pub owners: Vec<String>,
 }
 
+/// One nullifier still sitting in a tree's on-chain input queue.
+#[derive(Clone, Debug, PartialEq, Eq, Deserialize)]
+pub struct NullifierQueueElement {
+    /// Queue sequence. Later calls pass the next sequence as `start_seq`.
+    pub seq: u64,
+    /// Nullifier hash, base58.
+    pub value: String,
+}
+
+/// `getNullifierQueueElements` result, in input-queue order.
+#[derive(Clone, Debug, PartialEq, Eq, Deserialize)]
+pub struct NullifierQueue {
+    /// Indexer context.
+    pub context: IndexerContext,
+    /// Elements with `seq >= start_seq`, oldest first.
+    pub elements: Vec<NullifierQueueElement>,
+}
+
+/// `getNullifierQueueElements`.
+///
+/// The indexer returns queued nullifiers for one tree. `start_seq` is
+/// inclusive. `limit` is the page size, from 1 to 1,000.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct GetNullifierQueueElements {
+    /// State or nullifier tree account, base58.
+    pub tree_account: String,
+    /// First sequence to return. Zero starts at the head of the queue.
+    pub start_seq: u64,
+    /// Maximum number of elements.
+    pub limit: u64,
+}
+
 impl GetEncryptedUtxosByTags {
     /// Checks the documented page and tag bounds. It does not contact the network.
     ///
@@ -468,6 +501,20 @@ impl GetUserRecords {
     pub fn validate(&self) -> Result<(), Error> {
         if self.owners.is_empty() || self.owners.len() > 100 {
             return Err(Error::Limit("user record owners"));
+        }
+
+        Ok(())
+    }
+}
+
+impl GetNullifierQueueElements {
+    /// Checks the documented page bound.
+    ///
+    /// # Errors
+    /// Rejects an empty tree account or a limit outside 1..=1,000.
+    pub fn validate(&self) -> Result<(), Error> {
+        if self.tree_account.is_empty() || !(1..=1_000).contains(&self.limit) {
+            return Err(Error::Limit("nullifier queue"));
         }
 
         Ok(())
@@ -558,3 +605,8 @@ method!(
     NonInclusionProofs
 );
 method!(GetUserRecords, "getUserRecords", UserRecords);
+method!(
+    GetNullifierQueueElements,
+    "getNullifierQueueElements",
+    NullifierQueue
+);

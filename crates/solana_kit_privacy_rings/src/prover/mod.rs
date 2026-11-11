@@ -16,14 +16,19 @@
 //! A prover that is not on a loopback host refuses the call unless
 //! [`PrivacyProverClient::allow_unauthenticated_remote_prover`] is set. The
 //! flag sends the witness as ordinary JSON, which a local prover accepts and a
-//! TEE-only gateway rejects. [`tee`] binds the quote's `report_data` and the
-//! HPKE additional data. It does not verify an Intel or Nitro quote and it
-//! does not seal the body. [`PrivacyProverClient::prove_indexed`] posts to
+//! TEE-only gateway rejects. [`tee`] binds `report_data`. The `tee` feature
+//! checks an AWS Nitro COSE document and seals the body with HPKE. The
+//! transport still owns HTTP headers, so the caller attaches `Spr-Tee` and
+//! `Spr-Tee-Enc`. [`PrivacyProverClient::prove_indexed`] posts to
 //! `/prove/{circuit}/indexed`. A remote URL must be `https`.
 
 mod endpoint;
+#[cfg(feature = "tee")]
+mod hpke;
 mod indexed;
 mod keys;
+#[cfg(feature = "tee")]
+mod nitro;
 mod proof;
 mod tee;
 
@@ -35,12 +40,21 @@ use solana_kit_client::rest::{self, Body, Method};
 use crate::encode::{Proof, TransactBody};
 use crate::error::{Error, ProverFailure};
 pub use endpoint::ProverEndpoint;
+#[cfg(feature = "tee")]
+pub use hpke::{
+    OpenedRequest, SealedRequest, open_prover_request, open_prover_response, seal_prover_request,
+};
 pub use indexed::IndexedCircuit;
 pub use keys::proving_key_sha256;
+#[cfg(feature = "tee")]
+pub use nitro::{
+    NitroMeasurement, NitroPolicy, VerifiedNitro, verify_attestation, verify_nitro,
+    verify_nitro_with,
+};
 pub use proof::parse_prover_proof;
 pub use tee::{
-    HEADER_CIPHERTEXT, HEADER_ENC, HEADER_VERSION, TEE_VERSION, gpu_nonce, hex_encode, report_data,
-    request_aad,
+    HEADER_CIPHERTEXT, HEADER_ENC, HEADER_VERSION, TEE_VERSION, gpu_nonce, hex_decode, hex_encode,
+    report_data, request_aad,
 };
 
 const MAX_REPLY_BYTES: usize = 1024 * 1024;
@@ -78,10 +92,9 @@ pub struct ProverDestination {
 
 /// HTTP client for the Helius remote prover.
 ///
-/// The witness is posted as JSON, unchanged apart from that encoding. This
-/// crate does not assemble the witness: the TypeScript and Rust SDKs build it
-/// with Poseidon, and inventing those field elements would produce a proof the
-/// program rejects.
+/// The witness is posted as JSON, unchanged apart from that encoding.
+/// `confidential_transfer_witness` builds that JSON from notes and Merkle
+/// paths when the `poseidon` feature is on.
 pub struct PrivacyProverClient<T> {
     transport: T,
     endpoint: ProverEndpoint,
@@ -186,9 +199,9 @@ where
 
     /// `GET /attestation?nonce=` for the 32-byte client nonce.
     ///
-    /// The body is the prover's attestation document. This method does not
-    /// verify the quote. Compare [`report_data`] with the quote's report data
-    /// before trusting `hpke_public_key`.
+    /// The body is the prover's attestation document. The `tee` feature
+    /// verifies that Nitro COSE document and seals a later witness to the
+    /// HPKE key it binds.
     ///
     /// # Errors
     /// Rejects a remote cleartext call, a non-success status, or a body that

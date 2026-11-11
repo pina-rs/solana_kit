@@ -10,9 +10,11 @@ The wire format is a native port of Helius `zolana` tag `v0.8.0`
 Serialization follows `wincode` 0.5 field order, checked against golden bytes
 from that serializer. X25519, HKDF-SHA256, and AES-256-CTR sit behind the
 `crypto` feature. The `poseidon` feature adds Circom BN254 commitments,
-`owner_hash`, nullifiers, and the blinding-seed derivations. Groth16 proving
-stays with the prover: pass a witness you already have, or the published
-`transfer-2x2` fixture.
+`owner_hash`, nullifiers, the blinding-seed derivations, and
+`confidential_transfer_witness`, which builds the gnark witness from notes
+and Merkle paths. The `tee` feature verifies an AWS Nitro attestation
+document and seals a prover request with HPKE. Groth16 proving stays with
+the prover. The built `transfer-2x2` witness matches the published fixture.
 
 ```rust
 use solana_kit_core::Address;
@@ -82,5 +84,5 @@ or owners, and it does not derive nullifiers.
 Program addresses match the v0.8.0 constants and the
 [addresses guide](https://www.helius.dev/docs/privacy/addresses). RPC fields
 match the [Privacy Rings API reference](https://www.helius.dev/docs/api-reference/privacy)
-(OpenAPI 0.51.2). `getNullifierQueueElements` is named in the overview and has
-no published schema, so this crate does not send it.
+(OpenAPI 0.51.2). `getNullifierQueueElements` pages the nullifier queue by
+tree, `startSeq`, and a limit from 1 to 1000.

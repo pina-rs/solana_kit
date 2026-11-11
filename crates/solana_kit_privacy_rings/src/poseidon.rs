@@ -195,7 +195,7 @@ fn hash_fields(inputs: &[&[u8]]) -> Result<[u8; FIELD_BYTES], Error> {
         .map_err(|_| Error::Limit("poseidon"))
 }
 
-fn hash_bytes(bytes: &[u8]) -> Result<[u8; FIELD_BYTES], Error> {
+pub(crate) fn hash_bytes(bytes: &[u8]) -> Result<[u8; FIELD_BYTES], Error> {
     let mut chunks = bytes.chunks(PACK_CHUNK);
     let Some(first) = chunks.next() else {
         return Ok([0; FIELD_BYTES]);

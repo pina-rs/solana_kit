@@ -14,7 +14,7 @@ use crate::encode::{
 use crate::{
     AssetDeposit, CPI_AUTHORITY, CacheAccess, CacheWrite, CacheWriter, Circuit,
     ConfidentialPlaintext, ConfidentialTransfer, DEPOSIT_TAG, Deposit, DepositAsset, Error,
-    GetEncryptedUtxosByTags, GetMerkleProofs, GetNonInclusionProofs,
+    GetEncryptedUtxosByTags, GetMerkleProofs, GetNonInclusionProofs, GetNullifierQueueElements,
     GetShieldedTransactionsByNullifiers, GetShieldedTransactionsBySignature,
     GetShieldedTransactionsByTags, GetUserRecords, HistoryFilters, Input, MAX_CACHE_WRITES,
     OwnerTag, Proof, SHIELDED_POOL_PROGRAM, SOL_INTERFACE, STATE_TREE, Settlement, ShieldedOutput,
@@ -1183,5 +1183,55 @@ fn rpc_validators_accept_one_entry() {
         }
         .validate()
         .is_ok()
+    );
+}
+
+#[test]
+fn nullifier_queue_uses_the_indexer_page_shape() {
+    let request = GetNullifierQueueElements {
+        tree_account: "tree".to_owned(),
+        start_seq: 4,
+        limit: 2,
+    };
+    assert!(request.validate().is_ok());
+    let params = serde_json::to_value(&request).expect("params");
+    assert_eq!(params["treeAccount"], "tree");
+    assert_eq!(params["startSeq"], 4);
+    assert_eq!(params["limit"], 2);
+    assert_eq!(
+        <GetNullifierQueueElements as Method>::NAME,
+        "getNullifierQueueElements"
+    );
+    let page = request
+        .decode(r#"{"context":{"blockTime":1,"slot":2},"elements":[{"seq":4,"value":"nf"}]}"#)
+        .expect("page");
+    assert_eq!(page.elements[0].seq, 4);
+    assert_eq!(page.elements[0].value, "nf");
+    assert!(
+        GetNullifierQueueElements {
+            tree_account: String::new(),
+            start_seq: 0,
+            limit: 1,
+        }
+        .validate()
+        .is_err()
+    );
+    assert!(
+        GetNullifierQueueElements {
+            tree_account: "tree".to_owned(),
+            start_seq: 0,
+            limit: 0,
+        }
+        .validate()
+        .is_err()
+    );
+    assert!(
+        GetNullifierQueueElements {
+            tree_account: "tree".to_owned(),
+            start_seq: 0,
+            limit: 1_001,
+        }
+        .validate()
+        .is_err()
     );
 }

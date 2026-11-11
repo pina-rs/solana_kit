@@ -35,8 +35,7 @@ Pass any of these to `Client::call`. The method name is the last path segment.
 | `GetMerkleProofs` | State-tree inclusion proofs |
 | `GetNonInclusionProofs` | Nullifier absence proofs |
 | `GetUserRecords` | Registry viewing and nullifier keys |
-
-`getNullifierQueueElements` appears in the API overview without a published schema. It is not implemented.
+| `GetNullifierQueueElements` | Nullifier queue page from `startSeq`, limit 1 to 1000 |
 
 ## Prover
 
@@ -44,16 +43,16 @@ Pass any of these to `Client::call`. The method name is the last path segment.
 
 The client is generic over `solana_kit_client::rest::Transport<ProverDestination>`. The transport sets `X-Sync` or `X-Async` from `ProverDestination::delivery` and sends an API key as a header. The client rejects a URL that already contains `api-key`, and it does not write the key into a URL or an error.
 
-A prover on `127.0.0.1`, `localhost`, `*.localhost`, or `::1` accepts the JSON body directly. Any other host requires `allow_unauthenticated_remote_prover(true)` and an `https` URL. `report_data`, `gpu_nonce`, and `request_aad` match the published TEE vectors. Quote verification and the HPKE seal are not in this crate, so the flag still sends the witness in the clear. `prove_indexed` posts to `/prove/{circuit}/indexed`. `fetch_attestation` reads `GET /attestation?nonce=`.
+A prover on `127.0.0.1`, `localhost`, `*.localhost`, or `::1` accepts the JSON body directly. Any other host requires `allow_unauthenticated_remote_prover(true)` and an `https` URL. `report_data`, `gpu_nonce`, and `request_aad` match the published TEE vectors. The `tee` feature checks a Nitro COSE_Sign1 attestation against the AWS root and the caller's PCR policy, then seals the request with HPKE. The shared HTTP transport has no custom headers, so the caller attaches `Spr-Tee` and `Spr-Tee-Enc` to the sealed bytes. `prove_indexed` posts to `/prove/{circuit}/indexed`. `fetch_attestation` reads `GET /attestation?nonce=`.
 
-The pinned proving-key SHA-256 must match `provingKeySha256` in the response. The `poseidon` feature hashes commitments, `owner_hash`, nullifiers, and the three blinding derivations with the published vectors. It does not build a full gnark witness from notes. A proof is only as good as the witness you pass in.
+The pinned proving-key SHA-256 must match `provingKeySha256` in the response. With `poseidon`, `confidential_transfer_witness` builds the gnark witness from notes and Merkle paths for `transfer-confidential`, `transfer-confidential-eddsa`, and `transfer-eddsa-ring`. Those three published fixtures rebuild byte for byte. The merge circuit is a separate prover program. The Dart client does not assemble it, and this crate does not stub it.
 
 ### Running a prover locally
 
 Helius publishes the prover and the circuit artifacts:
 
 - The prover binary is the `prover-linux-x64` asset on the `cli-v0.10.0` release of `helius-labs/privacy-rings` (version `2.0.7`). Its SHA-256 is in that release's `SHA256SUMS`.
-- The gnark circuits and the witness assembler are in that repository, under `prover/server` and `sdk-libs/client/src/prover`.
+- The gnark circuits are in that repository, under `prover/server`. This crate's witness builder follows `sdk-libs/client` at tag `v0.8.0`.
 - Proving keys are public at `https://d3gbdb0egjwcw9.cloudfront.net/` plus the `prefix` in `prover/server/prover/provingkeys/proving-keys.lock`. `transfer_confidential_1_2.key` is 9,268,304 bytes and matches pin `c0b5c1a1081136911a6ad5496fb989ed26d85b09e983a4d5048cff96e0833d85`. The full set is several gigabytes, and one batch key is about 74 GB.
 
 This repository has no devenv or Nix setup, so the prover stays an external binary:
@@ -73,7 +72,7 @@ curl -fsSL -o proving-keys/transfer_confidential_1_2.key \
   --server-only
 ```
 
-Point `PRIVACY_RINGS_LOCAL_PROVER_URL` at `http://127.0.0.1:3001` and run the ignored test. Loopback does not need the unauthenticated opt-in. An empty witness gets a `400` from this binary, which shows the client reached it. `local_prover_proves_the_published_witness` posts `tests/fixtures/transfer-2x2.json` to a prover that serves `transfer_confidential_2_2`.
+Point `PRIVACY_RINGS_LOCAL_PROVER_URL` at `http://127.0.0.1:3001` and run the ignored test. Loopback does not need the unauthenticated opt-in. An empty witness gets a `400` from this binary, which shows the client reached it. `local_prover_proves_the_published_witness` posts `tests/fixtures/transfer-2x2.json` to a prover that serves `transfer_confidential_2_2`. `confidential_transfer_witness` rebuilds that fixture, so the proof is the witness this crate builds.
 
 The hosted mainnet and devnet provers answer `401` without a key. The ignored live test reads `HELIUS_PRIVACY_RINGS_LIVE=1` and `HELIUS_API_KEY`. CI does not set either variable, and this crate's tests do not either. The test sends the key as an `x-api-key` header and never puts it in the URL.
 

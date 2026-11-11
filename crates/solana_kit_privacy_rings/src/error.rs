@@ -26,6 +26,8 @@ pub enum Error {
     Pda(solana_kit_core::crypto::PdaError),
     /// The remote prover refused the call or returned a proof this client will not use.
     Prover(ProverFailure),
+    /// A witness field, attestation document, or HPKE seal was rejected.
+    Attestation(&'static str),
 }
 
 /// A prover request that did not produce a usable proof.

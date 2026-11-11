@@ -17,6 +17,7 @@ const NONCE_BYTES: usize = 32;
 const DIGEST_BYTES: usize = 32;
 const REPORT_BYTES: usize = 64;
 const HEX_RADIX: u32 = 16;
+
 const PERCENT_WIDTH: usize = 2;
 
 /// Header that names the TEE wire version.
@@ -79,6 +80,27 @@ pub fn request_aad(method: &str, request_uri: &str) -> String {
     }
 
     format!("{method} {route}?{kept}")
+}
+
+/// Decodes lowercase or uppercase hex. An empty string is empty bytes.
+///
+/// # Errors
+/// Rejects an odd length or a character that is not a hex digit.
+pub fn hex_decode(text: &str) -> Result<Vec<u8>, crate::Error> {
+    if !text.len().is_multiple_of(PERCENT_WIDTH) {
+        return Err(crate::Error::Attestation("hex"));
+    }
+
+    let bytes = text.as_bytes();
+    let mut decoded = Vec::with_capacity(text.len() / PERCENT_WIDTH);
+
+    for index in (0..bytes.len()).step_by(PERCENT_WIDTH) {
+        let high = hex_value(bytes[index]).ok_or(crate::Error::Attestation("hex"))?;
+        let low = hex_value(bytes[index + 1]).ok_or(crate::Error::Attestation("hex"))?;
+        decoded.push((high << 4) | low);
+    }
+
+    Ok(decoded)
 }
 
 /// Lowercase hex for the attestation nonce query.
@@ -165,11 +187,13 @@ fn form_decode(raw: &str) -> String {
 fn push_form_byte(bytes: &[u8], cursor: usize, decoded: &mut Vec<u8>) -> usize {
     if bytes[cursor] == b'+' {
         decoded.push(b' ');
+
         return cursor + 1;
     }
 
     if let Some(value) = percent_byte(bytes, cursor) {
         decoded.push(value);
+
         return cursor + 1 + PERCENT_WIDTH;
     }
 
@@ -206,15 +230,6 @@ mod tests {
     const REPORT: &str = "00e611aac3df68da4c51dfe291e0b9093b426c3a985952f9be71cc11f3eef90113c540c58fdde93b451fb22f80d87143d42b0fc3de8b79fefe88ececba955e03";
     const REPORT_NO_GPU: &str = "b862900309ded091670546a72ac72e6aefcd3bb1da1516d739933ce9fc025ad366fbddd3915b948749c809916909f902e57e354ffdff2c0e731080994283216a";
     const GPU_NONCE: &str = "a60303f260939f6351f9ae36813887f29d56809a05f5379712dc1f3ce039405d";
-
-    fn decode_hex(text: &str) -> Vec<u8> {
-        (0..text.len())
-            .step_by(PERCENT_WIDTH)
-            .map(|index| {
-                u8::from_str_radix(&text[index..index + PERCENT_WIDTH], HEX_RADIX).unwrap()
-            })
-            .collect()
-    }
 
     #[test]
     fn report_and_gpu_nonce_match_the_tee_vector() {
@@ -311,6 +326,9 @@ mod tests {
             assert_eq!(request_aad(method, target), expected);
         }
 
-        assert_eq!(decode_hex("0f"), vec![0x0f]);
+        assert_eq!(hex_decode("0f").expect("nibble"), vec![0x0f]);
+        assert_eq!(hex_decode("").expect("empty"), Vec::<u8>::new());
+        assert!(hex_decode("abc").is_err());
+        assert!(hex_decode("zz").is_err());
     }
 }

@@ -27,6 +27,8 @@ mod prover;
 mod rpc;
 #[cfg(feature = "crypto")]
 mod spend;
+#[cfg(feature = "poseidon")]
+mod witness;
 
 mod transact;
 #[cfg(feature = "crypto")]
@@ -51,8 +53,14 @@ pub use poseidon::{
 };
 pub use prover::{
     Delivery, HEADER_CIPHERTEXT, HEADER_ENC, HEADER_VERSION, IndexedCircuit, PrivacyProverClient,
-    ProverDestination, ProverEndpoint, TEE_VERSION, gpu_nonce, hex_encode, parse_prover_proof,
-    proving_key_sha256, report_data, request_aad,
+    ProverDestination, ProverEndpoint, TEE_VERSION, gpu_nonce, hex_decode, hex_encode,
+    parse_prover_proof, proving_key_sha256, report_data, request_aad,
+};
+#[cfg(feature = "tee")]
+pub use prover::{
+    NitroMeasurement, NitroPolicy, OpenedRequest, SealedRequest, VerifiedNitro,
+    open_prover_request, open_prover_response, seal_prover_request, verify_attestation,
+    verify_nitro, verify_nitro_with,
 };
 pub use rpc::*;
 #[cfg(feature = "crypto")]
@@ -64,6 +72,11 @@ pub use transact::{
 #[cfg(feature = "crypto")]
 pub use viewing::{
     AssetBalance, OpenedNote, ProoflessNote, TrackedNote, ViewingKey, private_balances,
+};
+#[cfg(feature = "poseidon")]
+pub use witness::{
+    IndexedLookup, IndexedTree, NotePreimage, OutputNote, SignedOwner, SpendNote, TransferCircuit,
+    TransferWitness, TreeSlotWitness, confidential_transfer_witness, indexed_proof_request,
 };
 
 #[cfg(test)]
