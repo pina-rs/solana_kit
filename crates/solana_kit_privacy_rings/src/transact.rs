@@ -241,6 +241,7 @@ impl Withdraw {
                 return Err(Error::SettlementMismatch);
             }
         }
+
         Transact {
             payer: self.payer,
             input_trees: self.input_trees.clone(),
@@ -264,39 +265,72 @@ impl Transact {
     /// mismatched input, tree, output, or settlement counts, a zero public
     /// amount, or a ciphertext longer than `u16`.
     pub fn instruction(&self) -> Result<Instruction, Error> {
+        self.check_circuit()?;
+        self.check_counts()?;
+        self.check_input_trees()?;
+
+        Ok(Instruction {
+            program_address: SHIELDED_POOL_PROGRAM,
+            accounts: self.accounts(),
+            data: self.encode_data()?,
+        })
+    }
+
+    fn check_circuit(&self) -> Result<(), Error> {
         if !self.body.circuit.fits_transact() {
             return Err(Error::Limit("transact circuit"));
         }
+
         let cache = self.body.circuit.cache();
         let reads = cache.is_some_and(crate::encode::CacheAccess::reads);
         let writes = cache.is_some_and(crate::encode::CacheAccess::writes_cache);
+
         if cache.is_some() && !reads && !writes {
             return Err(Error::Limit("transact cache"));
         }
+
         if reads != self.read_cache.is_some() || writes != self.write_cache.is_some() {
             return Err(Error::SettlementMismatch);
         }
+
+        Ok(())
+    }
+
+    fn check_counts(&self) -> Result<(), Error> {
         if self.input_trees.is_empty() || self.input_trees.len() > MAX_INPUT_TREES {
             return Err(Error::Limit("transact input trees"));
         }
+
         if self.input_trees.len() != self.body.tree_contexts.len() {
             return Err(Error::SettlementMismatch);
         }
+
         if self.nullifier_accounts.len() != self.body.inputs.len() {
             return Err(Error::SettlementMismatch);
         }
+
         if self.body.outputs.len() > MAX_OUTPUTS {
             return Err(Error::Limit("transact outputs"));
         }
+
         if self.settlements.len() > MAX_INTERFACE_TRANSFERS {
             return Err(Error::Limit("transact settlement legs"));
         }
+
+        Ok(())
+    }
+
+    fn check_input_trees(&self) -> Result<(), Error> {
         for input in &self.body.inputs {
             if usize::from(input.tree_index) >= self.input_trees.len() {
                 return Err(Error::SettlementMismatch);
             }
         }
 
+        Ok(())
+    }
+
+    fn encode_data(&self) -> Result<Vec<u8>, Error> {
         let legs: Vec<TransferLeg> = self
             .settlements
             .iter()
@@ -306,7 +340,10 @@ impl Transact {
         let mut writer = Writer::new();
         writer.u8(TRANSACT_TAG);
         writer.raw(&write_transact(&self.body, &legs)?);
+        Ok(writer.finish())
+    }
 
+    fn accounts(&self) -> Vec<AccountMeta> {
         let mut accounts = vec![
             meta(self.payer, AccountRole::WritableSigner),
             meta(self.output_tree, AccountRole::Writable),
@@ -334,22 +371,21 @@ impl Transact {
                 .copied()
                 .map(|signer| meta(signer, AccountRole::ReadonlySigner)),
         );
+
         for settlement in &self.settlements {
             settlement.accounts(&mut accounts);
         }
+
         if let Some(cache) = self.read_cache {
             accounts.push(meta(cache, AccountRole::Readonly));
         }
+
         if let Some(cache) = self.write_cache {
             accounts.push(meta(cache.cache, AccountRole::Writable));
             accounts.push(meta(cache.writer, AccountRole::ReadonlySigner));
         }
 
-        Ok(Instruction {
-            program_address: SHIELDED_POOL_PROGRAM,
-            accounts,
-            data: writer.finish(),
-        })
+        accounts
     }
 }
 

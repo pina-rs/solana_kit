@@ -36,6 +36,11 @@ pub use keys::proving_key_sha256;
 pub use proof::parse_prover_proof;
 
 const MAX_REPLY_BYTES: usize = 1024 * 1024;
+const INITIAL_POLL_MS: u64 = 25;
+const MAX_WAIT_SECS: u64 = 20 * 60;
+const HTTP_TOO_MANY: u16 = 429;
+const HTTP_SERVER_ERROR: u16 = 500;
+const JOB_ID_LIMIT: usize = 256;
 
 /// How the transport delivers one prover call.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -90,9 +95,9 @@ impl<T> PrivacyProverClient<T> {
             transport,
             endpoint: ProverEndpoint::parse(endpoint)?,
             allow_unauthenticated_remote_prover: false,
-            poll_interval: Duration::from_millis(25),
+            poll_interval: Duration::from_millis(INITIAL_POLL_MS),
             max_poll_interval: Duration::from_secs(1),
-            max_wait: Duration::from_secs(20 * 60),
+            max_wait: Duration::from_secs(MAX_WAIT_SECS),
         })
     }
 
@@ -155,60 +160,95 @@ where
     pub async fn prove(&self, circuit: &str, witness: &Value) -> Result<Proof, Error> {
         self.require_transport()?;
         let name = circuit_name(circuit)?;
-        if proving_key_sha256(name).is_none() {
-            return Err(ProverFailure::UnknownCircuit.into());
-        }
+        require_known_circuit(name)?;
         let body = serde_json::to_vec(witness).map_err(|_| ProverFailure::ProofParse)?;
-        let mut queued = false;
-        for _ in 0..2 {
-            let delivery = if queued {
-                Delivery::Async
-            } else {
-                Delivery::Sync
-            };
-            let reply = self
-                .exchange(delivery, Method::Post, name, None, Body::Json(body.clone()))
-                .await?;
-            if reply.status == 429 && !queued {
-                queued = true;
-                continue;
-            }
-            if !(200..300).contains(&reply.status) {
-                return Err(ProverFailure::Http(reply.status).into());
-            }
-            let value = serde_json::from_slice::<Value>(&reply.body)
-                .map_err(|_| ProverFailure::Response)?;
-            if let Some(job) = queued_job(&value) {
-                return self.poll(name, job).await;
-            }
-            return Ok(parse_prover_proof(&value, name)?);
-        }
-        Err(ProverFailure::Http(429).into())
+        self.prove_known(name, body).await
     }
 
     fn require_transport(&self) -> Result<(), Error> {
         if self.endpoint.is_loopback() {
             return Ok(());
         }
+
         if !self.allow_unauthenticated_remote_prover {
             return Err(ProverFailure::Cleartext.into());
         }
+
         if !self.endpoint.origin().starts_with("https://") {
             return Err(ProverFailure::Config.into());
         }
+
         Ok(())
     }
 
+    /// Posts once in sync mode, then once in async mode when the prover is busy.
+    ///
+    /// The hosted prover answers 429 under load. The second post asks for a job
+    /// id instead of holding the connection open.
+    async fn prove_known(&self, name: &str, body: Vec<u8>) -> Result<Proof, Error> {
+        let mut queued = false;
+
+        for _ in 0..2 {
+            let reply = self
+                .exchange(
+                    delivery_for(queued),
+                    Method::Post,
+                    name,
+                    None,
+                    Body::Json(body.clone()),
+                )
+                .await?;
+
+            if let Some(proof) = self.interpret_post(name, &reply, &mut queued).await? {
+                return Ok(proof);
+            }
+        }
+
+        Err(ProverFailure::Http(HTTP_TOO_MANY).into())
+    }
+
+    async fn interpret_post(
+        &self,
+        name: &str,
+        reply: &solana_kit_client::Reply,
+        queued: &mut bool,
+    ) -> Result<Option<Proof>, Error> {
+        if reply.status == HTTP_TOO_MANY && !*queued {
+            *queued = true;
+            return Ok(None);
+        }
+
+        if !(200..300).contains(&reply.status) {
+            return Err(ProverFailure::Http(reply.status).into());
+        }
+
+        let value =
+            serde_json::from_slice::<Value>(&reply.body).map_err(|_| ProverFailure::Response)?;
+
+        if let Some(job) = queued_job(&value) {
+            return Ok(Some(self.poll(name, job).await?));
+        }
+
+        Ok(Some(parse_prover_proof(&value, name)?))
+    }
+
+    /// Polls an async job until it completes or the wait bound passes.
+    ///
+    /// Client errors are final. Server errors wait and retry, because the
+    /// prover returns them while a job is still queued.
     async fn poll(&self, circuit: &str, job_id: &str) -> Result<Proof, Error> {
         if !is_job_id(job_id) {
             return Err(ProverFailure::Job.into());
         }
+
         let deadline = Instant::now() + self.max_wait;
         let mut interval = self.poll_interval;
+
         loop {
             if Instant::now() >= deadline {
                 return Err(ProverFailure::Timeout.into());
             }
+
             let reply = self
                 .exchange(
                     Delivery::Status,
@@ -218,34 +258,21 @@ where
                     Body::Absent,
                 )
                 .await?;
-            if (400..500).contains(&reply.status) {
-                return Err(ProverFailure::Http(reply.status).into());
-            }
-            if reply.status >= 500 {
-                interval = self.wait(interval, deadline)?;
-                continue;
-            }
-            let value = serde_json::from_slice::<Value>(&reply.body)
-                .map_err(|_| ProverFailure::Response)?;
-            let Some(object) = value.as_object() else {
-                return Err(ProverFailure::Response.into());
-            };
-            match object.get("status").and_then(Value::as_str) {
-                Some("failed") => return Err(ProverFailure::Server.into()),
-                Some("completed") => {
-                    let result = object.get("result").unwrap_or(&value);
-                    return Ok(parse_prover_proof(result, circuit)?);
-                }
-                _ => interval = self.wait(interval, deadline)?,
+
+            match read_status(circuit, &reply)? {
+                Poll::Retry => interval = self.wait(interval, deadline)?,
+                Poll::Done(proof) => return Ok(proof),
             }
         }
     }
 
     fn wait(&self, interval: Duration, deadline: Instant) -> Result<Duration, Error> {
         let now = Instant::now();
+
         if now >= deadline {
             return Err(ProverFailure::Timeout.into());
         }
+
         let remaining = deadline.saturating_duration_since(now);
         std::thread::sleep(interval.min(remaining));
         Ok(interval.saturating_mul(2).min(self.max_poll_interval))
@@ -260,9 +287,11 @@ where
         body: Body,
     ) -> Result<solana_kit_client::Reply, Error> {
         let mut segments = vec!["prove".to_owned(), circuit.to_owned()];
+
         if delivery == Delivery::Status {
             segments.push("status".to_owned());
         }
+
         let query = job_id
             .map(|job| vec![("jobId".to_owned(), job.to_owned())])
             .unwrap_or_default();
@@ -281,9 +310,11 @@ where
             })
             .await
             .map_err(|_| ProverFailure::Transport)?;
+
         if reply.body.len() > MAX_REPLY_BYTES {
             return Err(ProverFailure::Response.into());
         }
+
         Ok(reply)
     }
 }
@@ -299,6 +330,7 @@ impl TransactBody {
 
 fn circuit_name(circuit: &str) -> Result<&str, Error> {
     let name = circuit.strip_suffix(".key").unwrap_or(circuit);
+
     if name.is_empty()
         || name.contains('/')
         || name.contains('\\')
@@ -312,9 +344,11 @@ fn circuit_name(circuit: &str) -> Result<&str, Error> {
 
 fn queued_job(value: &Value) -> Option<&str> {
     let object = value.as_object()?;
+
     if object.contains_key("proof") {
         return None;
     }
+
     object.get("jobId").and_then(Value::as_str)
 }
 
@@ -323,10 +357,56 @@ mod tests;
 
 fn is_job_id(job_id: &str) -> bool {
     !job_id.is_empty()
-        && job_id.len() <= 256
+        && job_id.len() <= JOB_ID_LIMIT
         && job_id
             .bytes()
             .all(|byte| byte.is_ascii_alphanumeric() || byte == b'_' || byte == b'-')
+}
+
+fn require_known_circuit(name: &str) -> Result<(), Error> {
+    if proving_key_sha256(name).is_none() {
+        return Err(ProverFailure::UnknownCircuit.into());
+    }
+
+    Ok(())
+}
+
+fn delivery_for(queued: bool) -> Delivery {
+    if queued {
+        Delivery::Async
+    } else {
+        Delivery::Sync
+    }
+}
+
+enum Poll {
+    Retry,
+    Done(Proof),
+}
+
+fn read_status(circuit: &str, reply: &solana_kit_client::Reply) -> Result<Poll, Error> {
+    if (400..500).contains(&reply.status) {
+        return Err(ProverFailure::Http(reply.status).into());
+    }
+
+    if reply.status >= HTTP_SERVER_ERROR {
+        return Ok(Poll::Retry);
+    }
+
+    let value =
+        serde_json::from_slice::<Value>(&reply.body).map_err(|_| ProverFailure::Response)?;
+    let Some(object) = value.as_object() else {
+        return Err(ProverFailure::Response.into());
+    };
+
+    match object.get("status").and_then(Value::as_str) {
+        Some("failed") => Err(ProverFailure::Server.into()),
+        Some("completed") => {
+            let result = object.get("result").unwrap_or(&value);
+            Ok(Poll::Done(parse_prover_proof(result, circuit)?))
+        }
+        _ => Ok(Poll::Retry),
+    }
 }
 
 impl From<ProverFailure> for Error {

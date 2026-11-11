@@ -20,35 +20,9 @@ impl ProverEndpoint {
     /// an `api-key` query parameter. The key belongs on the transport, as a
     /// header, and must not be written into a URL or an error.
     pub fn parse(input: &str) -> Result<Self, ProverFailure> {
-        let Some((scheme, rest)) = input.split_once("://") else {
-            return Err(ProverFailure::Config);
-        };
-        if scheme != "http" && scheme != "https" {
-            return Err(ProverFailure::Config);
-        }
-        if rest.is_empty() || rest.contains([' ', '\n', '\r', '\t', '#', '\\']) {
-            return Err(ProverFailure::Config);
-        }
-        let (authority, tail) = match rest.split_once('/') {
-            Some((authority, tail)) => (authority, tail),
-            None => (rest, ""),
-        };
-        if authority.is_empty() || authority.contains('@') {
-            return Err(ProverFailure::Config);
-        }
-        let (path, query) = match tail.split_once('?') {
-            Some((path, query)) => (path, Some(query)),
-            None => (tail, None),
-        };
-        if query.is_some_and(has_api_key) {
-            return Err(ProverFailure::Config);
-        }
-        let host = host_name(authority).ok_or(ProverFailure::Config)?;
-        let path = if path.is_empty() {
-            "/".to_owned()
-        } else {
-            format!("/{path}")
-        };
+        let (scheme, authority, tail) = split_url(input)?;
+        let (path, host) = path_and_host(authority, tail)?;
+
         Ok(Self {
             origin: format!("{scheme}://{authority}"),
             path,
@@ -75,14 +49,17 @@ impl ProverEndpoint {
     #[must_use]
     pub fn is_loopback(&self) -> bool {
         let host = self.host.trim_end_matches('.');
+
         if host.eq_ignore_ascii_case("localhost")
             || host.to_ascii_lowercase().ends_with(".localhost")
         {
             return true;
         }
+
         if let Ok(address) = host.parse::<Ipv4Addr>() {
             return address.is_loopback();
         }
+
         host.parse::<Ipv6Addr>()
             .is_ok_and(|address| address.is_loopback())
     }
@@ -98,21 +75,74 @@ impl std::fmt::Debug for ProverEndpoint {
     }
 }
 
+/// Splits a prover URL into scheme, authority, and the path tail.
+///
+/// Userinfo is rejected here so an API key cannot hide in the authority.
+fn split_url(input: &str) -> Result<(&str, &str, &str), ProverFailure> {
+    let Some((scheme, rest)) = input.split_once("://") else {
+        return Err(ProverFailure::Config);
+    };
+
+    if scheme != "http" && scheme != "https" {
+        return Err(ProverFailure::Config);
+    }
+
+    if rest.is_empty() || rest.contains([' ', '\n', '\r', '\t', '#', '\\']) {
+        return Err(ProverFailure::Config);
+    }
+
+    let (authority, tail) = match rest.split_once('/') {
+        Some((authority, tail)) => (authority, tail),
+        None => (rest, ""),
+    };
+
+    if authority.is_empty() || authority.contains('@') {
+        return Err(ProverFailure::Config);
+    }
+
+    Ok((scheme, authority, tail))
+}
+
+fn path_and_host(authority: &str, tail: &str) -> Result<(String, String), ProverFailure> {
+    let (path, query) = match tail.split_once('?') {
+        Some((path, query)) => (path, Some(query)),
+        None => (tail, None),
+    };
+
+    if query.is_some_and(has_api_key) {
+        return Err(ProverFailure::Config);
+    }
+
+    let host = host_name(authority).ok_or(ProverFailure::Config)?;
+    let path = if path.is_empty() {
+        "/".to_owned()
+    } else {
+        format!("/{path}")
+    };
+
+    Ok((path, host))
+}
+
 fn host_name(authority: &str) -> Option<String> {
     if let Some(host) = authority.strip_prefix('[') {
         let (host, _port) = host.split_once(']')?;
+
         if host.is_empty() {
             return None;
         }
+
         return Some(host.to_owned());
     }
+
     let host = authority
         .rsplit_once(':')
         .map(|(host, _)| host)
         .unwrap_or(authority);
+
     if host.is_empty() || host.contains(':') {
         return None;
     }
+
     Some(host.to_owned())
 }
 

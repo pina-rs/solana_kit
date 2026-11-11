@@ -92,6 +92,7 @@ impl TransferLeg {
         if self.amount() == 0 {
             return Err(Error::ZeroAmount);
         }
+
         match self {
             Self::SolDeposit(amount) => {
                 writer.u8(0);
@@ -118,6 +119,7 @@ impl TransferLeg {
                 writer.u8(interface_bump);
             }
         }
+
         Ok(())
     }
 
@@ -261,6 +263,7 @@ impl CacheAccess {
 
     fn write(self, writer: &mut Writer) {
         writer.u64(self.read_bitmap);
+
         for slot in self.write_slots {
             writer.u8(slot.output);
             writer.u8(slot.slot);
@@ -341,18 +344,25 @@ impl Circuit {
     }
 
     fn write(self, writer: &mut Writer) {
+        /// Wire tags above the four conventional discriminants.
+        const RING_CACHED: u16 = 5;
+        const ANONYMOUS_CACHED: u16 = 6;
+        const EDDSA: u16 = 7;
+        const EDDSA_CACHED: u16 = 8;
         let tag: u16 = match self {
             Self::ConfidentialSigner(..) => 0,
             Self::ConfidentialRingEddsa(..) => 1,
             Self::RingAuthority(..) => 2,
             Self::AnonymousRingEddsa(..) => 3,
             Self::ConfidentialSignerCached(..) => 4,
-            Self::ConfidentialRingEddsaCached(..) => 5,
-            Self::AnonymousRingEddsaCached(..) => 6,
-            Self::ConfidentialEddsa(..) => 7,
-            Self::ConfidentialEddsaCached(..) => 8,
+            Self::ConfidentialRingEddsaCached(..) => RING_CACHED,
+            Self::AnonymousRingEddsaCached(..) => ANONYMOUS_CACHED,
+            Self::ConfidentialEddsa(..) => EDDSA,
+            Self::ConfidentialEddsaCached(..) => EDDSA_CACHED,
         };
+
         writer.u16(tag);
+
         match self {
             Self::ConfidentialSigner(inputs, outputs, assets)
             | Self::ConfidentialRingEddsa(inputs, outputs, assets)
@@ -435,21 +445,31 @@ pub struct TransactBody {
     pub tree_contexts: Vec<TreeContext>,
 }
 
+/// Writes the transact payload as one length-prefixed sequence.
+///
+/// The on-chain reader consumes the sections in this order and does not accept
+/// a tagged alternative, so the branches follow the optional fields rather than
+/// a single uniform record.
 pub(crate) fn write_transact(body: &TransactBody, legs: &[TransferLeg]) -> Result<Vec<u8>, Error> {
     let mut writer = Writer::new();
     writer.u64(body.expiry_unix_ts);
     writer.raw(&body.tx_viewing_pk);
     writer.raw(&body.salt);
     writer.count(legs.len())?;
+
     for leg in legs {
         leg.write(&mut writer)?;
     }
+
     writer.option_array(body.data_hash);
+
     writer.option_array(body.ring_data_hash);
     writer.count(body.outputs.len())?;
+
     for output in &body.outputs {
         writer.raw(&output.utxo_hash);
         output.owner_tag.write(&mut writer);
+
         match &output.data {
             None => writer.u8(0),
             Some(data) => {
@@ -458,24 +478,31 @@ pub(crate) fn write_transact(body: &TransactBody, legs: &[TransferLeg]) -> Resul
             }
         }
     }
+
     writer.count(body.messages.len())?;
+
     for message in &body.messages {
         writer.raw(&message.view_tag);
         writer.bytes_u16(&message.data)?;
     }
+
     writer.raw(&body.private_tx_hash);
     body.circuit.write(&mut writer);
     body.proof.write(&mut writer);
     writer.count(body.inputs.len())?;
+
     for input in &body.inputs {
         writer.raw(&input.nullifier_hash);
         writer.u8(input.tree_index);
     }
+
     writer.count(body.tree_contexts.len())?;
+
     for context in &body.tree_contexts {
         writer.u16(context.utxo_tree_root_index);
         writer.u16(context.nullifier_tree_root_index);
     }
+
     Ok(writer.finish())
 }
 
@@ -502,11 +529,13 @@ pub fn write_confidential(note: &ConfidentialPlaintext) -> Vec<u8> {
     writer.u64(note.amount);
     writer.raw(&note.blinding);
     writer.option_array(note.ring_program_id);
+
     if note.records.is_empty() {
         writer.u8(0);
     } else {
         writer.raw(&note.records);
     }
+
     writer.finish()
 }
 
@@ -515,25 +544,47 @@ pub fn write_confidential(note: &ConfidentialPlaintext) -> Vec<u8> {
 /// # Errors
 /// Rejects a buffer shorter than the fixed prefix or a ring tag other than 0 or 1.
 pub fn read_confidential(bytes: &[u8]) -> Result<ConfidentialPlaintext, Error> {
-    if bytes.len() < 8 + 8 + 32 + 1 {
+    const ASSET_LEN: usize = 8;
+    const AMOUNT_LEN: usize = 8;
+    const BLINDING_LEN: usize = 32;
+    const RING_TAG_LEN: usize = 1;
+    const PREFIX_LEN: usize = ASSET_LEN + AMOUNT_LEN + BLINDING_LEN + RING_TAG_LEN;
+    const RING_INDEX: usize = ASSET_LEN + AMOUNT_LEN + BLINDING_LEN;
+    const AFTER_RING: usize = RING_INDEX + RING_TAG_LEN;
+    const ADDRESS_LEN: usize = 32;
+
+    if bytes.len() < PREFIX_LEN {
         return Err(Error::Plaintext);
     }
-    let asset_id = u64::from_le_bytes(bytes[0..8].try_into().expect("8 bytes"));
-    let amount = u64::from_le_bytes(bytes[8..16].try_into().expect("8 bytes"));
-    let mut blinding = [0; 32];
-    blinding.copy_from_slice(&bytes[16..48]);
-    let (ring_program_id, rest) = match bytes[48] {
-        0 => (None, &bytes[49..]),
+
+    let asset_id = u64::from_le_bytes(
+        bytes[0..ASSET_LEN]
+            .try_into()
+            .expect("asset field is eight bytes"),
+    );
+    let amount = u64::from_le_bytes(
+        bytes[ASSET_LEN..ASSET_LEN + AMOUNT_LEN]
+            .try_into()
+            .expect("amount field is eight bytes"),
+    );
+    let mut blinding = [0; BLINDING_LEN];
+    blinding.copy_from_slice(&bytes[ASSET_LEN + AMOUNT_LEN..RING_INDEX]);
+
+    let (ring_program_id, rest) = match bytes[RING_INDEX] {
+        0 => (None, &bytes[AFTER_RING..]),
         1 => {
-            if bytes.len() < 49 + 32 {
+            if bytes.len() < AFTER_RING + ADDRESS_LEN {
                 return Err(Error::Plaintext);
             }
-            let mut ring = [0; 32];
-            ring.copy_from_slice(&bytes[49..81]);
-            (Some(ring), &bytes[81..])
+
+            let mut ring = [0; ADDRESS_LEN];
+            let ring_end = AFTER_RING + ADDRESS_LEN;
+            ring.copy_from_slice(&bytes[AFTER_RING..ring_end]);
+            (Some(ring), &bytes[ring_end..])
         }
         _ => return Err(Error::Plaintext),
     };
+
     Ok(ConfidentialPlaintext {
         asset_id,
         amount,

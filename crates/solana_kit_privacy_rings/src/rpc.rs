@@ -435,6 +435,7 @@ impl GetShieldedTransactionsByNullifiers {
         if self.nullifiers.is_empty() || self.nullifiers.len() > 1_000 {
             return Err(Error::Limit("nullifier list"));
         }
+
         validate_limit(self.limit)
     }
 }
@@ -468,6 +469,7 @@ impl GetUserRecords {
         if self.owners.is_empty() || self.owners.len() > 100 {
             return Err(Error::Limit("user record owners"));
         }
+
         Ok(())
     }
 }
@@ -476,6 +478,7 @@ fn validate_tags(tags: &[String], ring: Option<&str>) -> Result<(), Error> {
     if tags.len() > 1_000 || (tags.is_empty() && ring.unwrap_or("").is_empty()) {
         return Err(Error::Limit("view tags"));
     }
+
     Ok(())
 }
 
@@ -492,6 +495,7 @@ fn validate_leaves(leaves: &[String]) -> Result<(), Error> {
     if leaves.is_empty() || leaves.len() > 1_000 {
         return Err(Error::Limit("proof leaves"));
     }
+
     Ok(())
 }
 
@@ -514,6 +518,7 @@ fn decode_object<T: for<'de> Deserialize<'de>>(
             <serde_json::Error as serde::de::Error>::custom("expected a privacy result object"),
         ));
     }
+
     serde_json::from_str(result).map_err(solana_kit_client::Error::Schema)
 }
 

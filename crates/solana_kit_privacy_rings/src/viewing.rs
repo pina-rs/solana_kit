@@ -24,6 +24,15 @@ const HPKE_PREFIX: &[u8] = b"TSPP/hpke/";
 const CONFIDENTIAL_SCHEME: u8 = 3;
 const RING_CONFIDENTIAL_SCHEME: u8 = 4;
 const PROOFLESS_SCHEME: u8 = 0;
+const VIEWING_KEY_LEN: usize = 33;
+const PAYLOAD_HEADER_LEN: usize = 5;
+const PROOFLESS_NOTE_LEN: usize = 104;
+const SIGN_BYTE: usize = 31;
+const CURVE_LOW: u8 = 237;
+const CLAMP_BYTE: u8 = 127;
+const OWNER_LEN: usize = 32;
+const BLINDING_END: usize = 64;
+const ASSET_END: usize = 96;
 
 type Aes256Ctr = Ctr32BE<Aes256>;
 
@@ -91,6 +100,7 @@ impl ViewingKey {
     ) -> Result<OpenedNote, Error> {
         let body = encoding_body(payload)?;
         let (&scheme, rest) = body.split_first().ok_or(Error::Plaintext)?;
+
         match scheme {
             PROOFLESS_SCHEME => parse_proofless(rest),
             CONFIDENTIAL_SCHEME | RING_CONFIDENTIAL_SCHEME => {
@@ -107,15 +117,24 @@ impl ViewingKey {
         slot_index: u32,
         body: &[u8],
     ) -> Result<OpenedNote, Error> {
-        if body.len() < 33 {
+        if body.len() < VIEWING_KEY_LEN {
             return Err(Error::Plaintext);
         }
-        let mut embedded = [0; 33];
-        embedded.copy_from_slice(&body[..33]);
+
+        let mut embedded = [0; VIEWING_KEY_LEN];
+        embedded.copy_from_slice(&body[..VIEWING_KEY_LEN]);
+
         if embedded != self.public_key()? {
             return Err(Error::NotForViewer);
         }
-        let plaintext = decrypt_ciphertext(self, tx_viewing_pk, salt, slot_index, &body[33..])?;
+
+        let plaintext = decrypt_ciphertext(
+            self,
+            tx_viewing_pk,
+            salt,
+            slot_index,
+            &body[VIEWING_KEY_LEN..],
+        )?;
         Ok(OpenedNote::Confidential(read_confidential(&plaintext)?))
     }
 }
@@ -181,32 +200,35 @@ pub fn private_balances(
 ) -> Result<Vec<AssetBalance>, Error> {
     let mut seen: BTreeMap<(u16, u64), &OpenedNote> = BTreeMap::new();
     let mut totals: BTreeMap<(u8, [u8; 8], [u8; 32]), u64> = BTreeMap::new();
+
     for note in notes {
         if spent.contains(&(note.tree_id, note.leaf_index)) {
             continue;
         }
+
         match seen.entry((note.tree_id, note.leaf_index)) {
             std::collections::btree_map::Entry::Occupied(existing) => {
-                if existing.get() != &&note.note {
-                    return Err(Error::Limit("conflicting leaf"));
-                }
+                reject_conflicting_leaf(existing.get(), &note.note)?;
                 continue;
             }
             std::collections::btree_map::Entry::Vacant(slot) => {
                 slot.insert(&note.note);
             }
         }
+
         let (kind, id, mint, amount) = match &note.note {
             OpenedNote::Confidential(plain) => {
                 (0, plain.asset_id.to_le_bytes(), [0; 32], plain.amount)
             }
             OpenedNote::Proofless(plain) => (1, [0; 8], plain.asset, plain.amount),
         };
+
         let entry = totals.entry((kind, id, mint)).or_insert(0);
         *entry = entry
             .checked_add(amount)
             .ok_or(Error::Limit("balance overflow"))?;
     }
+
     Ok(totals
         .into_iter()
         .map(|((kind, id, mint), amount)| AssetBalance {
@@ -236,9 +258,11 @@ fn decrypt_ciphertext(
 
 fn diffie_hellman(secret: &[u8; 32], peer: &[u8; 32]) -> Result<[u8; 32], Error> {
     let shared = MontgomeryPoint(*peer).mul_clamped(*secret).to_bytes();
+
     if shared == [0; 32] {
         return Err(Error::NonContributory);
     }
+
     Ok(shared)
 }
 
@@ -269,20 +293,29 @@ fn derive_key(
     Ok((key, nonce))
 }
 
+fn reject_conflicting_leaf(existing: &OpenedNote, candidate: &OpenedNote) -> Result<(), Error> {
+    if existing != candidate {
+        return Err(Error::Limit("conflicting leaf"));
+    }
+
+    Ok(())
+}
+
 fn apply_ctr(key: &[u8; 32], nonce: &[u8; 12], buffer: &mut [u8]) {
-    let mut iv = [0; 16];
-    iv[..12].copy_from_slice(nonce);
-    iv[15] = 2;
-    let mut cipher = Aes256Ctr::new(key.into(), (&iv).into());
+    let mut counter = [0; 16];
+    counter[..12].copy_from_slice(nonce);
+    counter[15] = 2;
+    let mut cipher = Aes256Ctr::new(key.into(), (&counter).into());
     cipher.apply_keystream(buffer);
 }
 
-fn tagged(u: &[u8; 32]) -> Result<[u8; 33], Error> {
-    if !canonical(u) {
+fn tagged(scalar: &[u8; 32]) -> Result<[u8; 33], Error> {
+    if !canonical(scalar) {
         return Err(Error::Key);
     }
-    let mut bytes = [X25519_KEY_TAG; 33];
-    bytes[1..].copy_from_slice(u);
+
+    let mut bytes = [X25519_KEY_TAG; VIEWING_KEY_LEN];
+    bytes[1..].copy_from_slice(scalar);
     Ok(bytes)
 }
 
@@ -290,42 +323,64 @@ fn coordinate(tagged_key: &[u8; 33]) -> Result<[u8; 32], Error> {
     if tagged_key[0] != X25519_KEY_TAG {
         return Err(Error::Key);
     }
-    let mut u = [0; 32];
-    u.copy_from_slice(&tagged_key[1..]);
-    if !canonical(&u) {
+
+    let mut scalar = [0; 32];
+    scalar.copy_from_slice(&tagged_key[1..]);
+
+    if !canonical(&scalar) {
         return Err(Error::Key);
     }
-    Ok(u)
+
+    Ok(scalar)
 }
 
-fn canonical(u: &[u8; 32]) -> bool {
-    if u[31] & 0x80 != 0 {
+/// Rejects a u-coordinate that is not the canonical representative.
+///
+/// The high bit is a sign bit in the curve encoding, and a value at or above
+/// the field prime is not an X25519 scalar this crate can use.
+fn canonical(scalar: &[u8; 32]) -> bool {
+    if scalar[SIGN_BYTE] & 0x80 != 0 {
         return false;
     }
+
     let mut prime = [0xff; 32];
-    prime[0] = 237;
-    prime[31] = 127;
-    for index in (0..32).rev() {
-        if u[index] < prime[index] {
+    prime[0] = CURVE_LOW;
+    prime[SIGN_BYTE] = CLAMP_BYTE;
+
+    for index in (0..scalar.len()).rev() {
+        if scalar[index] < prime[index] {
             return true;
         }
-        if u[index] > prime[index] {
+
+        if scalar[index] > prime[index] {
             return false;
         }
     }
+
     false
 }
 
 fn encoding_body(payload: &[u8]) -> Result<&[u8], Error> {
-    if payload.len() < 5 {
+    if payload.len() < PAYLOAD_HEADER_LEN {
         return Err(Error::Plaintext);
     }
-    let len = u32::from_le_bytes(payload[1..5].try_into().map_err(|_| Error::Plaintext)?) as usize;
-    let end = 5usize.checked_add(len).ok_or(Error::Plaintext)?;
-    let body = payload.get(5..end).ok_or(Error::Plaintext)?;
+
+    let len = u32::from_le_bytes(
+        payload[1..PAYLOAD_HEADER_LEN]
+            .try_into()
+            .map_err(|_| Error::Plaintext)?,
+    ) as usize;
+    let end = PAYLOAD_HEADER_LEN
+        .checked_add(len)
+        .ok_or(Error::Plaintext)?;
+    let body = payload
+        .get(PAYLOAD_HEADER_LEN..end)
+        .ok_or(Error::Plaintext)?;
+
     if payload.len() != end {
         return Err(Error::Plaintext);
     }
+
     match payload[0] {
         0 | 1 => Ok(body),
         _ => Err(Error::Plaintext),
@@ -333,16 +388,22 @@ fn encoding_body(payload: &[u8]) -> Result<&[u8], Error> {
 }
 
 fn parse_proofless(bytes: &[u8]) -> Result<OpenedNote, Error> {
-    if bytes.len() < 104 {
+    if bytes.len() < PROOFLESS_NOTE_LEN {
         return Err(Error::Plaintext);
     }
-    let mut owner = [0; 32];
-    let mut blinding = [0; 32];
-    let mut asset = [0; 32];
-    owner.copy_from_slice(&bytes[0..32]);
-    blinding.copy_from_slice(&bytes[32..64]);
-    asset.copy_from_slice(&bytes[64..96]);
-    let amount = u64::from_le_bytes(bytes[96..104].try_into().map_err(|_| Error::Plaintext)?);
+
+    let mut owner = [0; OWNER_LEN];
+    let mut blinding = [0; OWNER_LEN];
+    let mut asset = [0; OWNER_LEN];
+    owner.copy_from_slice(&bytes[0..OWNER_LEN]);
+    blinding.copy_from_slice(&bytes[OWNER_LEN..BLINDING_END]);
+    asset.copy_from_slice(&bytes[BLINDING_END..ASSET_END]);
+
+    let amount = u64::from_le_bytes(
+        bytes[ASSET_END..PROOFLESS_NOTE_LEN]
+            .try_into()
+            .map_err(|_| Error::Plaintext)?,
+    );
     Ok(OpenedNote::Proofless(ProoflessNote {
         owner,
         blinding,
@@ -436,6 +497,7 @@ mod tests {
         let ciphertext = seal(&[9; 32], &recipient, &salt, 1, &plaintext);
         let ephemeral =
             tagged(&MontgomeryPoint::mul_base_clamped([9; 32]).to_bytes()).expect("ephemeral");
+
         let mut body = recipient.to_vec();
         body.extend(ciphertext);
         let mut payload = vec![1];
@@ -445,10 +507,12 @@ mod tests {
         let opened = viewing
             .open_output(&ephemeral, &salt, 1, &payload)
             .expect("open");
+
         match opened {
             OpenedNote::Confidential(plain) => assert_eq!(plain.amount, 99),
             OpenedNote::Proofless(_) => panic!("confidential note"),
         }
+
         assert!(viewing.open_output(&ephemeral, &salt, 2, &payload).is_err());
         let other = ViewingKey::from_bytes([8; 32]);
         assert!(matches!(
@@ -469,6 +533,7 @@ mod tests {
         let mut payload = vec![0];
         payload.extend(u32::try_from(body.len()).expect("len").to_le_bytes());
         payload.extend(body);
+
         let viewing = ViewingKey::from_bytes([1; 32]);
         let opened = viewing
             .open_output(&[4; 33], &[0; 16], 0, &payload)
@@ -506,9 +571,11 @@ mod tests {
         let once = private_balances(&repeated, &BTreeSet::new()).expect("dedup");
         assert_eq!(once[0].amount, 40);
         let mut conflict = notes[0].clone();
+
         if let OpenedNote::Proofless(plain) = &mut conflict.note {
             plain.amount = 1;
         }
+
         assert!(matches!(
             private_balances(&[notes[0].clone(), conflict], &BTreeSet::new()),
             Err(crate::Error::Limit("conflicting leaf"))

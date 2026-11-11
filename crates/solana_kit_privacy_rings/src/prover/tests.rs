@@ -20,6 +20,19 @@ use crate::{
 };
 
 const CIRCUIT: &str = "transfer_confidential_1_2";
+const HTTP_OK: u16 = 200;
+const HTTP_TOO_MANY: u16 = 429;
+const HTTP_ERROR: u16 = 500;
+const HEADER_BUDGET: usize = 64 * 1024;
+const TARGET_BUDGET: usize = 8 * 1024;
+const REQUEST_TIMEOUT_SECS: u64 = 5;
+
+const SHORT_POLL_MS: u64 = 20;
+const MEDIUM_POLL_MS: u64 = 50;
+const SLOW_POLL_MS: u64 = 200;
+const POLL_BOUND_SECS: u64 = 20;
+const NULLIFIER_BYTE: u8 = 13;
+const FIELD_BYTES: usize = 32;
 
 fn pin() -> &'static str {
     proving_key_sha256(CIRCUIT).expect("pinned circuit")
@@ -44,14 +57,14 @@ fn negated_a() -> [u8; 32] {
 #[test]
 fn gnark_proof_negates_a_and_keeps_the_g2_bytes() {
     let proof = parse_prover_proof(&proof_value(["0x1", "0x2"]), CIRCUIT).expect("proof");
-    let mut c = [0; 32];
-    c[31] = 1;
+    let mut compressed = [0; 32];
+    compressed[31] = 1;
     assert_eq!(proof.a, negated_a());
-    assert_eq!(proof.c, c);
+    assert_eq!(proof.c, compressed);
     assert_eq!(proof.b, [0; 128]);
 
     // Solana's canonical big-endian G2 compression test point, kept raw.
-    let g2: [u8; 128] = [
+    let proof_b: [u8; 128] = [
         40, 57, 233, 205, 180, 46, 35, 111, 215, 5, 23, 93, 12, 71, 118, 225, 7, 46, 247, 147, 47,
         130, 106, 189, 184, 80, 146, 103, 141, 52, 242, 25, 0, 203, 124, 176, 110, 34, 151, 212,
         66, 180, 238, 151, 236, 189, 133, 209, 17, 137, 205, 183, 168, 196, 92, 159, 75, 174, 81,
@@ -61,19 +74,26 @@ fn gnark_proof_negates_a_and_keeps_the_g2_bytes() {
         174, 90, 17, 19, 189, 62, 147, 152, 18,
     ];
     let mut rows = Vec::new();
+
     for row in 0..2 {
         let mut pair = Vec::new();
+
         for column in 0..2 {
-            let start = (row * 2 + column) * 32;
-            pair.push(format!("0x{}", hex_encode(&g2[start..start + 32])));
+            let start = (row * 2 + column) * FIELD_BYTES;
+            pair.push(format!(
+                "0x{}",
+                hex_encode(&proof_b[start..start + FIELD_BYTES])
+            ));
         }
+
         rows.push(pair);
     }
+
     let mut value = proof_value(["0x0", "0x0"]);
     value["bs"] = json!(rows);
     value["krs"] = json!(["0x0", "0x0"]);
     let proof = parse_prover_proof(&value, CIRCUIT).expect("g2");
-    assert_eq!(proof.b, g2);
+    assert_eq!(proof.b, proof_b);
     assert_eq!(proof.a, [0; 32]);
 }
 
@@ -99,6 +119,7 @@ fn proving_key_and_point_failures_match_the_typescript_cases() {
     ));
     let mut foreign = proof_value(["0x0", "0x0"]);
     foreign["provingKeySha256"] = json!("ab".repeat(32));
+
     foreign["krs"] = json!(["0x0", "0x0"]);
     assert!(matches!(
         parse_prover_proof(&foreign, CIRCUIT),
@@ -120,7 +141,7 @@ fn compressed_proof_is_the_transact_proof() {
         input_trees: vec![STATE_TREE],
         output_tree: STATE_TREE,
         owner: address(3),
-        nullifier_accounts: vec![address(13)],
+        nullifier_accounts: vec![address(NULLIFIER_BYTE)],
         settlement: Settlement::SolWithdrawal {
             recipient: address(12),
             amount: 7,
@@ -173,7 +194,7 @@ fn http_mock_covers_sync_async_timeout_and_errors() {
     let server = Mock::start();
     let witness = json!({"inputs": []});
 
-    server.respond(200, proof_value(["0x1", "0x2"]).to_string());
+    server.respond(HTTP_OK, proof_value(["0x1", "0x2"]).to_string());
     let prover = prover_client(&server, None);
     let proof = futures::executor::block_on(prover.prove(CIRCUIT, &witness)).expect("sync");
     assert_eq!(proof.a, negated_a());
@@ -186,10 +207,10 @@ fn http_mock_covers_sync_async_timeout_and_errors() {
     assert_eq!(seen[0].body, witness.to_string());
     assert!(!seen[0].path.contains("api-key"));
 
-    server.respond(429, "busy".to_owned());
-    server.respond(200, json!({"jobId": "job_1"}).to_string());
+    server.respond(HTTP_TOO_MANY, "busy".to_owned());
+    server.respond(HTTP_OK, json!({"jobId": "job_1"}).to_string());
     server.respond(
-        200,
+        HTTP_OK,
         json!({"status": "completed", "result": proof_value(["0x1", "0x2"])}).to_string(),
     );
     let proof = futures::executor::block_on(prover.prove(&format!("{CIRCUIT}.key"), &witness))
@@ -198,11 +219,19 @@ fn http_mock_covers_sync_async_timeout_and_errors() {
     let seen = server.take();
     assert_eq!(seen[0].header("x-sync").as_deref(), Some("true"));
     assert_eq!(seen[1].header("x-async").as_deref(), Some("true"));
+
     assert_eq!(seen[1].path, format!("/prove/{CIRCUIT}"));
     assert_eq!(seen[2].method, "GET");
     assert_eq!(seen[2].path, format!("/prove/{CIRCUIT}/status?jobId=job_1"));
+}
 
-    server.respond(200, json!({"jobId": "job_1"}).to_string());
+#[test]
+fn http_mock_reports_timeout_malformed_bodies_and_bad_jobs() {
+    let server = Mock::start();
+    let witness = json!({"inputs": []});
+    let prover = prover_client(&server, None);
+
+    server.respond(HTTP_OK, json!({"jobId": "job_1"}).to_string());
     let timeout_client = prover_client(&server, None).with_poll(
         Duration::from_millis(1),
         Duration::from_millis(1),
@@ -212,15 +241,15 @@ fn http_mock_covers_sync_async_timeout_and_errors() {
         futures::executor::block_on(timeout_client.prove(CIRCUIT, &witness)).expect_err("timeout");
     assert!(matches!(error, Error::Prover(ProverFailure::Timeout)));
 
-    server.respond(200, "nope".to_owned());
+    server.respond(HTTP_OK, "nope".to_owned());
     let error = futures::executor::block_on(prover.prove(CIRCUIT, &witness)).expect_err("json");
     assert!(matches!(error, Error::Prover(ProverFailure::Response)));
 
-    server.respond(500, "down".to_owned());
+    server.respond(HTTP_ERROR, "down".to_owned());
     let error = futures::executor::block_on(prover.prove(CIRCUIT, &witness)).expect_err("http");
     assert!(matches!(error, Error::Prover(ProverFailure::Http(500))));
 
-    server.respond(200, json!({"jobId": "bad id"}).to_string());
+    server.respond(HTTP_OK, json!({"jobId": "bad id"}).to_string());
     let error = futures::executor::block_on(prover.prove(CIRCUIT, &witness)).expect_err("job");
     assert!(matches!(error, Error::Prover(ProverFailure::Job)));
 }
@@ -230,11 +259,12 @@ fn the_transport_sends_the_api_key_as_a_header() {
     let server = Mock::start();
     let mut zero = proof_value(["0x0", "0x0"]);
     zero["krs"] = json!(["0x0", "0x0"]);
-    server.respond(200, zero.to_string());
+    server.respond(HTTP_OK, zero.to_string());
     let prover = prover_client(&server, Some("header-key"));
     futures::executor::block_on(prover.prove(CIRCUIT, &json!({}))).expect("header");
     let seen = server.take();
     assert_eq!(seen[0].header("x-api-key").as_deref(), Some("header-key"));
+
     assert!(!seen[0].target.contains("api-key"));
 }
 
@@ -247,13 +277,14 @@ fn local_prover_accepts_a_loopback_witness() {
     let client = PrivacyProverClient::new(&url, HttpAdapter::new(None))
         .expect("endpoint")
         .with_poll(
-            Duration::from_millis(20),
-            Duration::from_millis(50),
+            Duration::from_millis(SHORT_POLL_MS),
+            Duration::from_millis(MEDIUM_POLL_MS),
             Duration::from_secs(3),
         );
     let result = futures::executor::block_on(
         client.prove(CIRCUIT, &json!({"circuitType": "transfer-confidential"})),
     );
+
     match result {
         Ok(proof) => assert_eq!(proof.a.len(), 32),
         Err(Error::Prover(ProverFailure::Http(status))) => {
@@ -273,6 +304,7 @@ fn live_prover_reaches_helius() {
     if std::env::var("HELIUS_PRIVACY_RINGS_LIVE").ok().as_deref() != Some("1") {
         return;
     }
+
     let key = std::env::var("HELIUS_API_KEY").expect("HELIUS_API_KEY");
     let url = std::env::var("HELIUS_PRIVACY_RINGS_PROVER_URL")
         .unwrap_or_else(|_| crate::Cluster::Devnet.prover_url());
@@ -280,13 +312,14 @@ fn live_prover_reaches_helius() {
         .expect("endpoint")
         .allow_unauthenticated_remote_prover(true)
         .with_poll(
-            Duration::from_millis(200),
+            Duration::from_millis(SLOW_POLL_MS),
             Duration::from_secs(1),
-            Duration::from_secs(20),
+            Duration::from_secs(POLL_BOUND_SECS),
         );
     let result = futures::executor::block_on(
         client.prove(CIRCUIT, &json!({"circuitType": "transfer-confidential"})),
     );
+
     match result {
         Ok(proof) => assert_eq!(proof.b.len(), 128),
         Err(Error::Prover(ProverFailure::Http(status))) => {
@@ -368,6 +401,10 @@ struct Mock {
 }
 
 impl Mock {
+    /// Binds an ephemeral loopback listener and answers the scripted statuses.
+    ///
+    /// The thread owns the socket so each test can drive a real HTTP exchange
+    /// without a shared port.
     fn start() -> Self {
         let listener = TcpListener::bind(SocketAddr::from(([127, 0, 0, 1], 0))).expect("bind");
         let port = listener.local_addr().expect("addr").port();
@@ -378,16 +415,8 @@ impl Mock {
         std::thread::spawn(move || {
             for stream in listener.incoming() {
                 let Ok(mut stream) = stream else { break };
-                let _ = stream.set_read_timeout(Some(Duration::from_secs(2)));
-                if let Some(request) = read_http(&mut stream) {
-                    seen_thread.lock().expect("seen").push(request.seen);
-                    let response = pending_thread
-                        .lock()
-                        .expect("pending")
-                        .pop_front()
-                        .unwrap_or((500, "missing script".to_owned()));
-                    let _ = write_http(&mut stream, response.0, &response.1);
-                }
+
+                serve_one(&mut stream, &pending_thread, &seen_thread);
             }
         });
         Self {
@@ -413,23 +442,80 @@ struct RawRequest {
     seen: Seen,
 }
 
+/// Reads one HTTP/1.1 request from the test server.
+///
+/// The parser is local so the suite does not depend on an HTTP crate. Header
+/// and body limits stay separate because a missing content-length must not
+/// wait forever.
+fn serve_one(
+    stream: &mut TcpStream,
+    pending: &Arc<Mutex<VecDeque<(u16, String)>>>,
+    seen: &Arc<Mutex<Vec<Seen>>>,
+) {
+    let _ = stream.set_read_timeout(Some(Duration::from_secs(2)));
+    let Some(request) = read_http(stream) else {
+        return;
+    };
+    seen.lock().expect("seen").push(request.seen);
+    let response = pending
+        .lock()
+        .expect("pending")
+        .pop_front()
+        .unwrap_or((HTTP_ERROR, "missing script".to_owned()));
+    let _ = write_http(stream, response.0, &response.1);
+}
+
 fn read_http(stream: &mut TcpStream) -> Option<RawRequest> {
+    let (buffer, header_end) = read_header_bytes(stream)?;
+    let head = parse_request_head(&buffer[..header_end])?;
+    let body = read_body_bytes(stream, &buffer, header_end, head.length)?;
+
+    Some(RawRequest {
+        seen: Seen {
+            method: head.method,
+            path: head.path,
+            target: head.target,
+            headers: head.headers,
+            body,
+        },
+    })
+}
+
+/// Buffers until the header terminator. A client that never sends one is cut
+/// off at the header budget so the test thread cannot block the suite.
+fn read_header_bytes(stream: &mut TcpStream) -> Option<(Vec<u8>, usize)> {
     let mut buffer = Vec::new();
     let mut chunk = [0; 1024];
-    let header_end = loop {
+
+    loop {
         let read = stream.read(&mut chunk).ok()?;
+
         if read == 0 {
             return None;
         }
+
         buffer.extend_from_slice(&chunk[..read]);
+
         if let Some(end) = buffer.windows(4).position(|window| window == b"\r\n\r\n") {
-            break end;
+            return Some((buffer, end));
         }
-        if buffer.len() > 64 * 1024 {
+
+        if buffer.len() > HEADER_BUDGET {
             return None;
         }
-    };
-    let head = String::from_utf8_lossy(&buffer[..header_end]).into_owned();
+    }
+}
+
+struct RequestHead {
+    method: String,
+    path: String,
+    target: String,
+    headers: Vec<(String, String)>,
+    length: usize,
+}
+
+fn parse_request_head(head_bytes: &[u8]) -> Option<RequestHead> {
+    let head = String::from_utf8_lossy(head_bytes).into_owned();
     let mut lines = head.split("\r\n");
     let request_line = lines.next()?;
     let mut parts = request_line.split(' ');
@@ -438,43 +524,60 @@ fn read_http(stream: &mut TcpStream) -> Option<RawRequest> {
     let path = target.clone();
     let mut headers = Vec::new();
     let mut length = 0usize;
+
     for line in lines {
         let Some((name, value)) = line.split_once(':') else {
             continue;
         };
         let name = name.trim().to_owned();
         let value = value.trim().to_owned();
+
         if name.eq_ignore_ascii_case("content-length") {
             length = value.parse().unwrap_or(0);
         }
+
         headers.push((name, value));
     }
+
+    Some(RequestHead {
+        method,
+        path,
+        target,
+        headers,
+        length,
+    })
+}
+
+fn read_body_bytes(
+    stream: &mut TcpStream,
+    buffer: &[u8],
+    header_end: usize,
+    length: usize,
+) -> Option<String> {
     let mut body = buffer[header_end + 4..].to_vec();
+    let mut chunk = [0; 1024];
+
     while body.len() < length {
         let read = stream.read(&mut chunk).ok()?;
+
         if read == 0 {
             break;
         }
+
         body.extend_from_slice(&chunk[..read]);
     }
+
     body.truncate(length);
-    Some(RawRequest {
-        seen: Seen {
-            method,
-            path,
-            target,
-            headers,
-            body: String::from_utf8_lossy(&body).into_owned(),
-        },
-    })
+    Some(String::from_utf8_lossy(&body).into_owned())
 }
 
 fn write_http(stream: &mut TcpStream, status: u16, body: &str) -> std::io::Result<()> {
     let reason = match status {
-        200 => "OK",
-        429 => "Too Many Requests",
+        HTTP_OK => "OK",
+        HTTP_TOO_MANY => "Too Many Requests",
         _ => "Error",
     };
+
     write!(
         stream,
         "HTTP/1.1 {status} {reason}\r\ncontent-type: application/json\r\ncontent-length: {}\r\nconnection: close\r\n\r\n{body}",
@@ -486,10 +589,12 @@ fn write_http(stream: &mut TcpStream, status: u16, body: &str) -> std::io::Resul
 fn hex_encode(bytes: &[u8]) -> String {
     const HEX: &[u8] = b"0123456789abcdef";
     let mut out = String::with_capacity(bytes.len() * 2);
+
     for byte in bytes {
         out.push(HEX[usize::from(byte >> 4)] as char);
         out.push(HEX[usize::from(byte & 0x0f)] as char);
     }
+
     out
 }
 
@@ -518,7 +623,7 @@ struct HttpAdapter {
 impl HttpAdapter {
     fn new(api_key: Option<String>) -> Self {
         let agent = ureq::Agent::config_builder()
-            .timeout_global(Some(Duration::from_secs(5)))
+            .timeout_global(Some(Duration::from_secs(REQUEST_TIMEOUT_SECS)))
             .http_status_as_error(false)
             .max_redirects(0)
             .build()
@@ -526,53 +631,91 @@ impl HttpAdapter {
         Self { agent, api_key }
     }
 
+    /// Sends one prover request and returns the raw reply.
+    ///
+    /// GET and POST use different ureq builders, so the header setup stays in
+    /// two helpers instead of one generic call.
     fn execute(&self, request: rest::Request<ProverDestination>) -> Result<Reply, TransportError> {
         let content_type = request.body.content_type();
         let target = rest::request_target(
             request.service.endpoint.path(),
             &request.path_segments,
             &request.query,
-            8 * 1024,
+            TARGET_BUDGET,
         )?;
         let url = format!("{}{target}", request.service.endpoint.origin());
-        let response = match request.method {
-            Method::Get => {
-                let mut call = self.agent.get(&url).header("accept", "application/json");
-                if let Some(key) = &self.api_key {
-                    call = call.header("x-api-key", key);
-                }
-                call.call()
-            }
-            Method::Post => {
-                let mut call = self
-                    .agent
-                    .post(&url)
-                    .header("accept", "application/json")
-                    .header("content-type", content_type.unwrap_or("application/json"));
-                match request.service.delivery {
-                    Delivery::Sync => call = call.header("X-Sync", "true"),
-                    Delivery::Async => call = call.header("X-Async", "true"),
-                    Delivery::Status => {}
-                }
-                if let Some(key) = &self.api_key {
-                    call = call.header("x-api-key", key);
-                }
-                call.send(request.body.into_bytes())
-            }
-            Method::Put | Method::Patch | Method::Delete => {
-                return Err(TransportError::new(TransportFailureKind::Denied));
-            }
-        }
-        .map_err(|error| TransportError::with_source(TransportFailureKind::Io, error))?;
+        let method = request.method;
+        let delivery = request.service.delivery;
+        let bytes = request.body.into_bytes();
+        let response = self.dispatch(method, delivery, &url, content_type, bytes)?;
         let status = response.status().as_u16();
         let body = response
             .into_body()
             .read_to_vec()
             .map_err(|error| TransportError::with_source(TransportFailureKind::Io, error))?;
+
         if body.len() > request.max_reply_bytes {
             return Err(TransportError::new(TransportFailureKind::Denied));
         }
+
         Ok(Reply { status, body })
+    }
+
+    fn dispatch(
+        &self,
+        method: Method,
+        delivery: Delivery,
+        url: &str,
+        content_type: Option<&str>,
+        bytes: Vec<u8>,
+    ) -> Result<ureq::http::Response<ureq::Body>, TransportError> {
+        match method {
+            Method::Get => self
+                .get(url)
+                .map_err(|error| TransportError::with_source(TransportFailureKind::Io, error)),
+            Method::Post => self
+                .post(url, content_type, delivery, bytes)
+                .map_err(|error| TransportError::with_source(TransportFailureKind::Io, error)),
+            Method::Put | Method::Patch | Method::Delete => {
+                Err(TransportError::new(TransportFailureKind::Denied))
+            }
+        }
+    }
+
+    fn get(&self, url: &str) -> Result<ureq::http::Response<ureq::Body>, ureq::Error> {
+        let mut call = self.agent.get(url).header("accept", "application/json");
+
+        if let Some(key) = &self.api_key {
+            call = call.header("x-api-key", key);
+        }
+
+        call.call()
+    }
+
+    fn post(
+        &self,
+        url: &str,
+        content_type: Option<&str>,
+        delivery: Delivery,
+        bytes: Vec<u8>,
+    ) -> Result<ureq::http::Response<ureq::Body>, ureq::Error> {
+        let mut call = self
+            .agent
+            .post(url)
+            .header("accept", "application/json")
+            .header("content-type", content_type.unwrap_or("application/json"));
+
+        call = match delivery {
+            Delivery::Sync => call.header("X-Sync", "true"),
+            Delivery::Async => call.header("X-Async", "true"),
+            Delivery::Status => call,
+        };
+
+        if let Some(key) = &self.api_key {
+            call = call.header("x-api-key", key);
+        }
+
+        call.send(bytes)
     }
 }
 

@@ -71,25 +71,35 @@ struct Layout {
 }
 
 impl Layout {
+    /// Groups native SOL once and one SPL group per mint.
+    ///
+    /// The program allows five assets, so repeated mints share a group instead
+    /// of counting as a new asset.
     fn new(deposits: &[AssetDeposit]) -> Result<Self, Error> {
         if deposits.is_empty() {
             return Err(Error::Limit("deposit batch is empty"));
         }
+
         if deposits.len() > usize::from(u8::MAX) {
             return Err(Error::Limit("deposit batch exceeds 255 entries"));
         }
+
         let mut has_sol = false;
         let mut spl = Vec::new();
+
         for deposit in deposits {
             match deposit.asset {
                 DepositAsset::Sol => has_sol = true,
                 DepositAsset::Spl(accounts) => push_spl(&mut spl, accounts)?,
             }
         }
+
         let asset_count = usize::from(has_sol) + spl.len();
+
         if asset_count > MAX_DEPOSIT_ASSETS {
             return Err(Error::Limit("deposit batch exceeds five assets"));
         }
+
         Ok(Self { has_sol, spl })
     }
 
@@ -105,6 +115,7 @@ impl Layout {
                 usize::from(self.has_sol) + position
             }
         };
+
         u8::try_from(index).map_err(|_| Error::Limit("deposit asset index"))
     }
 }
@@ -121,6 +132,7 @@ fn push_spl(groups: &mut Vec<SplGroup>, accounts: SplDeposit) -> Result<(), Erro
         {
             return Err(Error::SettlementMismatch);
         }
+
         return Ok(());
     }
     groups.push(SplGroup { accounts });
@@ -138,29 +150,21 @@ impl Deposit {
         let mut writer = Writer::new();
         writer.u8(DEPOSIT_TAG);
         writer.count(usize::from(layout.has_sol) + layout.spl.len())?;
+
         if layout.has_sol {
             writer.u8(0);
         }
+
         for group in &layout.spl {
             writer.u8(1);
+
             writer.u8(group.accounts.interface_bump);
         }
+
         writer.count(self.deposits.len())?;
+
         for deposit in &self.deposits {
-            if deposit.amount == 0 {
-                return Err(Error::ZeroAmount);
-            }
-            writer.u8(layout.asset_index(deposit.asset)?);
-            writer.raw(&deposit.view_tag);
-            writer.raw(&deposit.owner);
-            writer.u64(deposit.amount);
-            match &deposit.memo {
-                None => writer.u8(0),
-                Some(memo) => {
-                    writer.u8(1);
-                    writer.bytes_u16(memo)?;
-                }
-            }
+            write_deposit(&mut writer, &layout, deposit)?;
         }
 
         let mut accounts = vec![
@@ -168,6 +172,7 @@ impl Deposit {
             meta(self.depositor, AccountRole::WritableSigner),
             meta(SHIELDED_POOL_PROGRAM, AccountRole::Readonly),
         ];
+
         if layout.has_sol {
             accounts.push(meta(
                 solana_kit_core::address_constants::SYSTEM_PROGRAM,
@@ -175,6 +180,7 @@ impl Deposit {
             ));
             accounts.push(meta(SOL_INTERFACE, AccountRole::Writable));
         }
+
         for group in &layout.spl {
             let spl = group.accounts;
             accounts.extend([
@@ -191,6 +197,31 @@ impl Deposit {
             data: writer.finish(),
         })
     }
+}
+
+fn write_deposit(
+    writer: &mut Writer,
+    layout: &Layout,
+    deposit: &AssetDeposit,
+) -> Result<(), Error> {
+    if deposit.amount == 0 {
+        return Err(Error::ZeroAmount);
+    }
+
+    writer.u8(layout.asset_index(deposit.asset)?);
+    writer.raw(&deposit.view_tag);
+    writer.raw(&deposit.owner);
+    writer.u64(deposit.amount);
+
+    match &deposit.memo {
+        None => writer.u8(0),
+        Some(memo) => {
+            writer.u8(1);
+            writer.bytes_u16(memo)?;
+        }
+    }
+
+    Ok(())
 }
 
 fn meta(address: Address, role: AccountRole) -> AccountMeta {

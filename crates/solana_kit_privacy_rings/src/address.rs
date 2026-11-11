@@ -133,6 +133,7 @@ impl Cluster {
         if method.is_empty() || !method.bytes().all(|byte| byte.is_ascii_alphanumeric()) {
             return Err(Error::Limit("privacy RPC method name"));
         }
+
         Ok(format!("{}/v1/spr/{method}", self.rpc_origin()))
     }
 
@@ -154,6 +155,7 @@ pub fn local_indexer_url(method: &str) -> Result<String, Error> {
     if method.is_empty() || !method.bytes().all(|byte| byte.is_ascii_alphanumeric()) {
         return Err(Error::Limit("privacy RPC method name"));
     }
+
     Ok(format!("http://127.0.0.1:8784/{method}"))
 }
 

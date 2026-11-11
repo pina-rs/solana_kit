@@ -61,6 +61,7 @@ exclude = [
 resolver = "3"
 
 [workspace.package]
+version = "0.1.0"
 authors = ["Ifiok Jr. <ifiokotung@gmail.com>"]
 edition = "2024"
 license = "Unlicense"

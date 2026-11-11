@@ -23,6 +23,19 @@ use crate::{
 const DEPOSIT_GOLDEN: &str = "01000100070707070707070707070707070707070707070707070707070707070707070709090909090909090909090909090909090909090909090909090909090909092a000000000000000102006869";
 const TRANSACT_GOLDEN: &str = "ffffffffffffffff040404040404040404040404040404040404040404040404040404040404040404030303030303030303030303030303030101070000000000000000000101010101010101010101010101010101010101010101010101010101010101010102000008080808080808080808080808080808080808080808080808080808080808080000010203000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000010b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b000104000500";
 const PLAINTEXT_GOLDEN: &str = "0100000000000000630000000000000002020202020202020202020202020202020202020202020202020202020202020000";
+const FIXTURE_5: u8 = 5;
+const FIXTURE_6: u8 = 6;
+const FIXTURE_7: u8 = 7;
+const FIXTURE_8: u8 = 8;
+const FIXTURE_9: u8 = 9;
+const FIXTURE_12: u8 = 12;
+const FIXTURE_13: u8 = 13;
+const FIXTURE_20: u8 = 20;
+const SECOND_NOTE_OFFSET: usize = 6 + 1 + 32 + 32 + 8 + 1;
+const SPL_GROUP_INDEX: usize = 5;
+const SPL_TAIL_LEN: usize = 5;
+const READ_SLOT: u64 = 5;
+const MAINNET_SLOT: u64 = 467_025_494;
 
 fn hex(text: &str) -> Vec<u8> {
     (0..text.len())
@@ -143,10 +156,10 @@ fn deposit_payload_matches_wincode() {
 #[test]
 fn deposit_puts_sol_ahead_of_an_earlier_spl_entry() {
     let spl = SplDeposit {
-        mint: address(5),
-        user_token: address(6),
+        mint: address(FIXTURE_5),
+        user_token: address(FIXTURE_6),
         token_program: TOKEN_PROGRAM,
-        interface: address(8),
+        interface: address(FIXTURE_8),
         interface_bump: 9,
     };
     let instruction = Deposit {
@@ -175,27 +188,28 @@ fn deposit_puts_sol_ahead_of_an_earlier_spl_entry() {
     assert_eq!(&data[1..5], &[2, 0, 1, 9]);
     assert_eq!(data[5], 2);
     assert_eq!(data[6], 1);
-    let second_asset = 6 + 1 + 32 + 32 + 8 + 1;
+    let second_asset = SECOND_NOTE_OFFSET;
     assert_eq!(data[second_asset], 0);
+
     assert_eq!(
-        instruction.accounts[5].address, TOKEN_PROGRAM,
+        instruction.accounts[SPL_GROUP_INDEX].address, TOKEN_PROGRAM,
         "SPL group follows the SOL group"
     );
-    assert_eq!(instruction.accounts[6].address, address(5));
-    assert_eq!(instruction.accounts[8].address, address(8));
+    assert_eq!(instruction.accounts[6].address, address(FIXTURE_5));
+    assert_eq!(instruction.accounts[8].address, address(FIXTURE_8));
 }
 
 #[test]
 fn deposit_rejects_conflicts_and_empty_batches() {
     let first = SplDeposit {
-        mint: address(5),
-        user_token: address(6),
+        mint: address(FIXTURE_5),
+        user_token: address(FIXTURE_6),
         token_program: TOKEN_PROGRAM,
-        interface: address(8),
+        interface: address(FIXTURE_8),
         interface_bump: 9,
     };
     let mut second = first;
-    second.user_token = address(7);
+    second.user_token = address(FIXTURE_7);
     let conflict = Deposit {
         tree: address(1),
         depositor: address(2),
@@ -243,13 +257,13 @@ fn transact_payload_matches_wincode_and_withdraw_accounts() {
     let encoded = write_transact(&body, &[TransferLeg::SolWithdrawal(7)]).expect("bytes");
     assert_eq!(encoded, hex(TRANSACT_GOLDEN));
 
-    let recipient = address(12);
+    let recipient = address(FIXTURE_12);
     let instruction = Withdraw {
         payer: address(2),
         input_trees: vec![STATE_TREE],
         output_tree: STATE_TREE,
         owner: address(3),
-        nullifier_accounts: vec![address(13)],
+        nullifier_accounts: vec![address(FIXTURE_13)],
         settlement: Settlement::SolWithdrawal {
             recipient,
             amount: 7,
@@ -272,7 +286,7 @@ fn transact_payload_matches_wincode_and_withdraw_accounts() {
             (SHIELDED_POOL_PROGRAM, AccountRole::Readonly),
             (SYSTEM_PROGRAM, AccountRole::Readonly),
             (STATE_TREE, AccountRole::Writable),
-            (address(13), AccountRole::Writable),
+            (address(FIXTURE_13), AccountRole::Writable),
             (address(3), AccountRole::ReadonlySigner),
             (SOL_INTERFACE, AccountRole::Writable),
             (recipient, AccountRole::Writable),
@@ -285,10 +299,10 @@ fn confidential_transfer_has_no_public_leg() {
     let instruction = ConfidentialTransfer {
         payer: address(2),
         input_trees: vec![address(4)],
-        output_tree: address(5),
+        output_tree: address(FIXTURE_5),
         owner: address(3),
-        additional_owners: vec![address(6)],
-        nullifier_accounts: vec![address(7)],
+        additional_owners: vec![address(FIXTURE_6)],
+        nullifier_accounts: vec![address(FIXTURE_7)],
         body: sample_body(),
     }
     .instruction()
@@ -301,7 +315,7 @@ fn confidential_transfer_has_no_public_leg() {
             .all(|meta| meta.address != SOL_INTERFACE)
     );
     assert_eq!(instruction.accounts[6].address, address(3));
-    assert_eq!(instruction.accounts[7].address, address(6));
+    assert_eq!(instruction.accounts[7].address, address(FIXTURE_6));
     assert_eq!(instruction.accounts[6].role, AccountRole::ReadonlySigner);
 }
 
@@ -319,17 +333,17 @@ fn spl_withdraw_appends_the_cpi_authority() {
         nullifier_tree_root_index: 0,
     });
     let accounts = SplWithdrawalAccounts {
-        mint: address(8),
-        interface: address(9),
+        mint: address(FIXTURE_8),
+        interface: address(FIXTURE_9),
         user_token: address(10),
         token_program: TOKEN_PROGRAM,
     };
     let instruction = Withdraw {
         payer: address(2),
         input_trees: vec![address(4)],
-        output_tree: address(5),
+        output_tree: address(FIXTURE_5),
         owner: address(3),
-        nullifier_accounts: vec![address(7)],
+        nullifier_accounts: vec![address(FIXTURE_7)],
         settlement: Settlement::SplWithdrawal {
             accounts,
             amount: 9,
@@ -343,16 +357,17 @@ fn spl_withdraw_appends_the_cpi_authority() {
         .accounts
         .iter()
         .rev()
-        .take(5)
+        .take(SPL_TAIL_LEN)
         .map(|meta| meta.address)
         .collect();
+
     assert_eq!(
         tail,
         vec![
             TOKEN_PROGRAM,
             address(10),
-            address(9),
-            address(8),
+            address(FIXTURE_9),
+            address(FIXTURE_8),
             CPI_AUTHORITY,
         ]
     );
@@ -367,10 +382,10 @@ fn transact_rejects_a_third_tree_and_a_zero_leg() {
         payer: address(1),
         input_trees: vec![address(1), address(2), address(3)],
         output_tree: address(4),
-        owner: address(5),
-        nullifier_accounts: vec![address(6)],
+        owner: address(FIXTURE_5),
+        nullifier_accounts: vec![address(FIXTURE_6)],
         settlement: Settlement::SolWithdrawal {
-            recipient: address(7),
+            recipient: address(FIXTURE_7),
             amount: 1,
         },
         body: body.clone(),
@@ -381,10 +396,10 @@ fn transact_rejects_a_third_tree_and_a_zero_leg() {
         payer: address(1),
         input_trees: vec![address(1)],
         output_tree: address(4),
-        owner: address(5),
-        nullifier_accounts: vec![address(6)],
+        owner: address(FIXTURE_5),
+        nullifier_accounts: vec![address(FIXTURE_6)],
         settlement: Settlement::SolWithdrawal {
-            recipient: address(7),
+            recipient: address(FIXTURE_7),
             amount: 0,
         },
         body: sample_body(),
@@ -392,7 +407,7 @@ fn transact_rejects_a_third_tree_and_a_zero_leg() {
     assert!(matches!(zero.instruction(), Err(Error::ZeroAmount)));
     let deposit_leg = Withdraw {
         settlement: Settlement::SolDeposit {
-            recipient: address(7),
+            recipient: address(FIXTURE_7),
             amount: 1,
         },
         ..zero
@@ -409,9 +424,9 @@ fn transact_for(body: TransactBody) -> Transact {
         input_trees: vec![STATE_TREE],
         output_tree: STATE_TREE,
         owner_signers: vec![address(3)],
-        nullifier_accounts: vec![address(13)],
+        nullifier_accounts: vec![address(FIXTURE_13)],
         settlements: vec![Settlement::SolWithdrawal {
-            recipient: address(12),
+            recipient: address(FIXTURE_12),
             amount: 7,
         }],
         read_cache: None,
@@ -435,7 +450,7 @@ fn transact_rejects_ring_selectors_and_appends_cache_accounts() {
         2,
         3,
         CacheAccess {
-            read_bitmap: 1 << 5,
+            read_bitmap: 1 << READ_SLOT,
             write_slots: [CacheWrite::NONE; MAX_CACHE_WRITES],
         },
     );
@@ -444,10 +459,11 @@ fn transact_rejects_ring_selectors_and_appends_cache_accounts() {
         Err(Error::SettlementMismatch)
     ));
     let mut with_read = transact_for(cached);
-    with_read.read_cache = Some(address(20));
+    with_read.read_cache = Some(address(FIXTURE_20));
     let instruction = with_read.instruction().expect("read cache");
     let tail = instruction.accounts.last().expect("cache account");
-    assert_eq!(tail.address, address(20));
+    assert_eq!(tail.address, address(FIXTURE_20));
+
     assert_eq!(tail.role, AccountRole::Readonly);
 
     let mut writing = sample_body();
@@ -469,6 +485,7 @@ fn transact_rejects_ring_selectors_and_appends_cache_accounts() {
     });
     let instruction = with_write.instruction().expect("write cache");
     let accounts = &instruction.accounts;
+
     let write = &accounts[accounts.len() - 2];
     let writer = accounts.last().expect("writer");
     assert_eq!(write.address, address(21));
@@ -516,8 +533,8 @@ fn tag_query_matches_the_documented_mainnet_request() {
         tags: vec!["5Vt1Mnq2b9ynV1EMXS564i5ZDuNudxm8ZG7yCXfH55M".to_owned()],
         filters: Some(HistoryFilters {
             slot: Some(SlotBounds {
-                gte: Some(467_025_494),
-                lte: Some(467_025_494),
+                gte: Some(MAINNET_SLOT),
+                lte: Some(MAINNET_SLOT),
                 ..SlotBounds::default()
             }),
         }),
@@ -531,7 +548,7 @@ fn tag_query_matches_the_documented_mainnet_request() {
         serde_json::to_value(&request).expect("params"),
         serde_json::json!({
             "tags": ["5Vt1Mnq2b9ynV1EMXS564i5ZDuNudxm8ZG7yCXfH55M"],
-            "filters": { "slot": { "gte": 467025494, "lte": 467025494 } },
+            "filters": { "slot": { "gte": MAINNET_SLOT, "lte": MAINNET_SLOT } },
             "limit": 1
         })
     );
@@ -571,6 +588,7 @@ fn recorded_mainnet_examples_decode() {
             .leaf_index,
         3_555
     );
+
     assert_eq!(
         page.data[0].outputs[1]
             .output_slot
@@ -624,8 +642,8 @@ fn history_and_proof_shapes_round_trip() {
         tags: vec!["5Vt1Mnq2b9ynV1EMXS564i5ZDuNudxm8ZG7yCXfH55M".to_owned()],
         filters: Some(HistoryFilters {
             slot: Some(SlotBounds {
-                gte: Some(467_025_494),
-                lte: Some(467_025_494),
+                gte: Some(MAINNET_SLOT),
+                lte: Some(MAINNET_SLOT),
                 ..SlotBounds::default()
             }),
         }),
@@ -774,5 +792,6 @@ fn client_call_posts_the_method_to_one_exchange() {
     let frame = seen.borrow().clone().expect("request");
     assert_eq!(frame["method"], "getUserRecords");
     assert!(frame["params"].is_object());
+
     assert!(frame["id"].is_number());
 }

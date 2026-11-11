@@ -76,6 +76,7 @@ impl StdError for Error {
         if let Self::Pda(error) = self {
             return Some(error);
         }
+
         let _ = self;
         None
     }
