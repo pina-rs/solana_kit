@@ -45,6 +45,7 @@
 # Services
 
 - [Helius](services/helius.md)
+- [Privacy Rings](services/privacy-rings.md)
 - [Jupiter](services/jupiter.md)
 - [Pyth](services/pyth.md)
 - [Surfpool](services/surfpool.md)

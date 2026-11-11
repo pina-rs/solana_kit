@@ -283,6 +283,12 @@ versioned_files = [
   { path = "Cargo.toml", type = "cargo", fields = ["workspace.dependencies.solana_kit_mpl_token_metadata"] },
 ]
 
+[package.solana_kit_privacy_rings]
+path = "crates/solana_kit_privacy_rings"
+type = "cargo"
+changelog = false
+publish = { enabled = false }
+
 [package.solana_kit_pyth]
 path = "crates/solana_kit_pyth"
 type = "cargo"
