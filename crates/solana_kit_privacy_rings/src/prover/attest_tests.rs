@@ -14,6 +14,8 @@ const HTTP_OK: u16 = 200;
 const LOOPBACK: &str = "http://127.0.0.1:9";
 const PINNED_TIMESTAMP_MS: u64 = 1_791_307_410_659;
 
+type RecordedQuery = Vec<(String, String)>;
+
 fn live_body() -> Value {
     serde_json::from_str(include_str!(
         "../../tests/fixtures/nitro-live-attestation.json"
@@ -69,13 +71,13 @@ struct QuoteTransport {
     status: u16,
     body: String,
     calls: Arc<Mutex<usize>>,
-    queries: Arc<Mutex<Vec<Vec<(String, String)>>>>,
+    queries: Arc<Mutex<Vec<RecordedQuery>>>,
 }
 
 struct QuoteFixture {
     client: PrivacyProverClient<QuoteTransport>,
     calls: Arc<Mutex<usize>>,
-    queries: Arc<Mutex<Vec<Vec<(String, String)>>>>,
+    queries: Arc<Mutex<Vec<RecordedQuery>>>,
 }
 
 fn quote_transport(status: u16, body: String) -> QuoteFixture {
