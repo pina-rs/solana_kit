@@ -4,7 +4,9 @@
 //! the public fields the transact instruction already committed to. This
 //! module fills the Poseidon nullifiers, output blindings, output
 //! commitments, `privateTxHash`, and `publicInputHash`. The JSON object is
-//! the body of `POST /prove/transfer_confidential_*`.
+//! the body of `POST /prove/transfer_confidential_*`. The same witness also
+//! builds the unresolved body of `POST /prove/{circuit}/indexed`, whose
+//! paths the indexer fills after resolving the trees.
 
 use serde_json::{Map, Value};
 
@@ -18,9 +20,17 @@ use crate::poseidon::{
 const FIELD_BYTES: usize = 32;
 const PUBLIC_SLOTS: usize = 3;
 const INPUT_TREES: usize = 5;
+/// Trees one indexed request may name. The prover resolves at most this many.
+const INDEXED_TREES: usize = 2;
 const UTXO_DOMAIN: u8 = 3;
 const ADDRESS_DOMAIN: u8 = 2;
 const MAX_SAFE_INTEGER: u64 = (1 << 53) - 1;
+/// Distinct addresses one transaction can carry.
+const MAX_TRANSACTION_ADDRESSES: usize = 64;
+/// Addresses every transact needs besides its nullifier PDAs and owner
+/// signers: payer, input tree, the shielded-pool program, and the system
+/// program.
+const FIXED_TRANSACT_ADDRESSES: usize = 4;
 
 /// Eight note fields the transfer circuit hashes, each one field element.
 #[derive(Clone, Copy, PartialEq, Eq)]
@@ -69,7 +79,10 @@ pub struct TreeSlotWitness {
 pub struct SpendNote {
     /// Opened note. Its blinding is the value committed in the state tree.
     pub note: NotePreimage,
-    /// Index into [`TransferWitness::tree_slots`]. The commitment uses that id.
+    /// Index into [`TransferWitness::tree_slots`]. The commitment uses that
+    /// id. An indexed request reads the same field as the slot of
+    /// [`IndexedLookup`]: it must select a slot whose id the supplied tree
+    /// at that position carries.
     pub tree_slot: u64,
     /// Padding input.
     pub is_dummy: bool,
@@ -179,7 +192,10 @@ pub struct TransferWitness {
     pub public_amounts: [[u8; FIELD_BYTES]; PUBLIC_SLOTS],
     /// Ring program id. Zero for the default ring.
     pub ring_program_id: [u8; FIELD_BYTES],
-    /// Signer public-key hashes. The confidential circuit wants one more than the input count.
+    /// Signer public-key hashes. The pinned circuit fixes the length at the
+    /// signer width for the input count: `min(n, 64 - 4 - n) + 1` slots, one
+    /// more than the inputs while the transaction can still carry that many
+    /// addresses, capped once it cannot.
     pub signer_public_key_hashes: Vec<[u8; FIELD_BYTES]>,
     /// `1` when dummy inputs are allowed.
     pub input_flags: [u8; FIELD_BYTES],
@@ -217,20 +233,26 @@ impl std::fmt::Debug for TransferWitness {
 /// One tree the indexed prover should read.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct IndexedTree {
-    /// Tree account, base58.
+    /// Tree account, base58. It must decode to exactly one 32-byte value.
     pub tree: String,
-    /// Tree id the prepared witness already uses.
-    pub id: u64,
+    /// Tree id the witness's selected tree slot carries. Ids and addresses
+    /// must be distinct across the list.
+    pub id: u16,
 }
 
 /// One inclusion or non-inclusion lookup inside an indexed proof request.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct IndexedLookup {
-    /// Tree slot of this input.
-    pub tree_slot: u64,
-    /// Commitment, base58, when the input is a state inclusion.
+    /// Position of this input's tree in the request's tree list. It must
+    /// equal the input's own tree slot, whose slot id the tree at this
+    /// position carries.
+    pub tree_slot: u8,
+    /// Commitment, base58, when the input is a state inclusion. It must
+    /// spell the commitment the witness derives.
     pub commitment: Option<String>,
-    /// Nullifier, base58, when the input is a non-inclusion.
+    /// Nullifier, base58, when the input is a compact dummy that publishes
+    /// zero: the indexer fetches the exclusion witness for this derived
+    /// nullifier instead.
     pub nullifier: Option<String>,
 }
 
@@ -238,8 +260,93 @@ pub struct IndexedLookup {
 ///
 /// # Errors
 /// Rejects an empty spend, a zero blinding seed, a tree slot that is not in
-/// `tree_slots`, or a Poseidon input the field cannot hold.
+/// `tree_slots`, a rail or shape the pinned proving keys do not serve, a
+/// signer vector that is not at the pinned circuit width, or a Poseidon
+/// input the field cannot hold.
 pub fn confidential_transfer_witness(witness: &TransferWitness) -> Result<Value, Error> {
+    let built = build(witness)?;
+    Ok(witness_json(
+        witness,
+        &built.spent,
+        &built.created,
+        &built.private_tx,
+        &built.public_hash,
+    ))
+}
+
+/// Body of `POST /prove/{circuit}/indexed`.
+///
+/// Everything derives from the same [`TransferWitness`] the full builder
+/// takes. The embedded `prepared` object drops what the indexer owns: the
+/// tree slots, the public-input hash, and every input's state and nullifier
+/// paths, indices, and exclusion bounds, which the prover inserts after it
+/// resolves `trees`. `publicInputs` is the public transcript without the
+/// tree-slot chain: the server inserts the resolved tree hash at position 2
+/// before folding, so the full proof and the indexed proof commit to the
+/// same statement. Inputs need no Merkle roots or paths here. The trees
+/// bind the request: each lookup's `tree_slot` is a position in `trees`,
+/// that position's `id` must equal the id of the witness slot the input's
+/// `tree_slot` selects, and every supplied tree must be named, so the
+/// server resolves exactly the trees the commitments name. Commitments and
+/// nullifiers in `lookups` stay base58, which is how the indexer spells
+/// them.
+///
+/// # Errors
+/// Rejects a witness the full builder rejects, trees or lookups that
+/// violate the pinned envelope (tree count, widths, duplicate ids or
+/// addresses, a lookup that disagrees with its prepared input, or a tree no
+/// input names), or a `min_context_slot` that does not fit in a JSON
+/// number.
+pub fn indexed_proof_request(
+    witness: &TransferWitness,
+    trees: &[IndexedTree],
+    lookups: &[IndexedLookup],
+    min_context_slot: Option<u64>,
+) -> Result<Value, Error> {
+    if min_context_slot.is_some_and(|slot| slot > MAX_SAFE_INTEGER) {
+        return Err(Error::Limit("min context slot"));
+    }
+
+    let built = build(witness)?;
+    check_envelope(&built, witness, trees, lookups)?;
+    let mut public_inputs = built.public_fields.clone();
+    // Position 2 folds the five local tree-slot hashes. The server resolves
+    // the supplied trees itself and inserts that hash there before folding.
+    public_inputs.remove(2);
+
+    let mut body = Map::new();
+    body.insert(
+        "circuitType".to_owned(),
+        Value::from(circuit_name(&witness.circuit)),
+    );
+    body.insert(
+        "prepared".to_owned(),
+        prepared_json(witness, &built.spent, &built.created, &built.private_tx),
+    );
+    body.insert("trees".to_owned(), tree_json(trees));
+    body.insert("inputs".to_owned(), lookup_json(lookups));
+    body.insert("publicInputs".to_owned(), field_list(&public_inputs));
+
+    if let Some(slot) = min_context_slot {
+        body.insert("minContextSlot".to_owned(), Value::from(slot));
+    }
+
+    Ok(Value::Object(body))
+}
+
+/// One pass over a validated witness: the derived nullifiers, notes, the
+/// private transaction hash, and the public transcript fields.
+struct Built {
+    spent: Spent,
+    created: Created,
+    private_tx: [u8; FIELD_BYTES],
+    /// Public transcript the full proof folds. Position 2 is the tree-slot
+    /// chain the indexed prover replaces with its own resolution.
+    public_fields: Vec<[u8; FIELD_BYTES]>,
+    public_hash: [u8; FIELD_BYTES],
+}
+
+fn build(witness: &TransferWitness) -> Result<Built, Error> {
     check_shape(witness)?;
     let spent = spend_inputs(witness)?;
     let created = create_outputs(witness, &spent.first_nullifier)?;
@@ -252,51 +359,21 @@ pub fn confidential_transfer_witness(witness: &TransferWitness) -> Result<Value,
         &witness.blinding_seed,
     )
     .map_err(Error::from)?;
-    let public_hash = public_input_hash(witness, &spent.nullifiers, &created.hashes, &private_tx)?;
-    Ok(witness_json(
-        witness,
-        &spent,
-        &created,
-        &private_tx,
-        &public_hash,
-    ))
-}
-
-/// Body of `POST /prove/{circuit}/indexed`.
-///
-/// `prepared` is the object [`confidential_transfer_witness`] returns.
-/// Commitments and nullifiers in `lookups` stay base58, which is how the
-/// indexer spells them.
-///
-/// # Errors
-/// Rejects a `min_context_slot` that does not fit in a JSON number.
-pub fn indexed_proof_request(
-    prepared: &Value,
-    trees: &[IndexedTree],
-    lookups: &[IndexedLookup],
-    public_inputs: &[[u8; FIELD_BYTES]],
-    min_context_slot: Option<u64>,
-) -> Result<Value, Error> {
-    if min_context_slot.is_some_and(|slot| slot > MAX_SAFE_INTEGER) {
-        return Err(Error::Limit("min context slot"));
-    }
-
-    let mut body = Map::new();
-    body.insert("circuitType".to_owned(), prepared["circuitType"].clone());
-    body.insert("prepared".to_owned(), prepared.clone());
-    body.insert("trees".to_owned(), tree_json(trees));
-    body.insert("inputs".to_owned(), lookup_json(lookups));
-    body.insert("publicInputs".to_owned(), field_list(public_inputs));
-
-    if let Some(slot) = min_context_slot {
-        body.insert("minContextSlot".to_owned(), Value::from(slot));
-    }
-
-    Ok(Value::Object(body))
+    let public_fields =
+        public_transcript(witness, &spent.nullifiers, &created.hashes, &private_tx)?;
+    let public_hash = hash_chain4(&public_fields)?;
+    Ok(Built {
+        spent,
+        created,
+        private_tx,
+        public_fields,
+        public_hash,
+    })
 }
 
 struct Spent {
     nullifiers: Vec<[u8; FIELD_BYTES]>,
+    commitments: Vec<[u8; FIELD_BYTES]>,
     private_hashes: Vec<[u8; FIELD_BYTES]>,
     address_nullifiers: Vec<[u8; FIELD_BYTES]>,
     first_nullifier: [u8; FIELD_BYTES],
@@ -308,9 +385,51 @@ struct Created {
     private_hashes: Vec<[u8; FIELD_BYTES]>,
 }
 
+/// Width of the public signer vector the pinned circuits reserve for
+/// `n_inputs` inputs: one slot per input while the transaction can still
+/// carry that many addresses after the fixed accounts and one nullifier PDA
+/// per input, capped, plus the one extra slot beyond those. `None` when no
+/// width exists.
+fn signer_width(n_inputs: usize) -> Option<usize> {
+    let remaining =
+        MAX_TRANSACTION_ADDRESSES.checked_sub(FIXED_TRANSACT_ADDRESSES.checked_add(n_inputs)?)?;
+    n_inputs.min(remaining).checked_add(1)
+}
+
+/// Key-name prefix of the pinned proving keys each rail proves under.
+fn rail_prefix(circuit: &TransferCircuit) -> &'static str {
+    match circuit {
+        TransferCircuit::Confidential => "transfer_confidential",
+        TransferCircuit::ConfidentialEddsa(_) => "transfer_confidential_eddsa",
+        TransferCircuit::EddsaRing { .. } => "transfer_eddsa_ring",
+    }
+}
+
+/// Whether the pinned proving keys serve this rail and shape.
+///
+/// The pinned key names are the one shape source: a witness whose input and
+/// output counts name no pinned key cannot be proven anywhere, so the
+/// builder refuses it instead of emitting an unservable body.
+fn pinned_shape(circuit: &TransferCircuit, inputs: usize, outputs: usize) -> bool {
+    let name = format!("{}_{inputs}_{outputs}", rail_prefix(circuit));
+    crate::prover::proving_key_sha256(&name).is_some()
+}
+
 fn check_shape(witness: &TransferWitness) -> Result<(), Error> {
+    // Each check names the field it refuses, and the shape gates come first:
+    // a witness whose rail and counts name no pinned proving key, or whose
+    // signer vector is not at the circuit width, cannot prove anywhere, so
+    // the per-field bounds below never see it.
     if witness.inputs.is_empty() || witness.outputs.is_empty() {
         return Err(Error::Limit("witness inputs"));
+    }
+
+    if !pinned_shape(
+        &witness.circuit,
+        witness.inputs.len(),
+        witness.outputs.len(),
+    ) {
+        return Err(Error::Limit("shape"));
     }
 
     if witness.tree_slots.len() != INPUT_TREES {
@@ -321,7 +440,8 @@ fn check_shape(witness: &TransferWitness) -> Result<(), Error> {
         return Err(Error::Attestation("blinding seed"));
     }
 
-    if witness.signer_public_key_hashes.len() != witness.inputs.len() + 1 {
+    let width = signer_width(witness.inputs.len()).ok_or(Error::Limit("signer hashes"))?;
+    if witness.signer_public_key_hashes.len() != width {
         return Err(Error::Limit("signer hashes"));
     }
 
@@ -340,7 +460,13 @@ fn check_shape(witness: &TransferWitness) -> Result<(), Error> {
 }
 
 fn spend_inputs(witness: &TransferWitness) -> Result<Spent, Error> {
+    // Every input derives its own commitment and nullifier, and the private
+    // transcript folds the two domains on separate chains: only a utxo
+    // commitment rides the private hash and only an address nullifier rides
+    // the address chain, so a mixed spend keeps each rail's members in
+    // input order and zeroes the rest.
     let mut nullifiers = Vec::with_capacity(witness.inputs.len());
+    let mut commitments = Vec::with_capacity(witness.inputs.len());
     let mut private_hashes = Vec::with_capacity(witness.inputs.len());
     let mut address_nullifiers = Vec::with_capacity(witness.inputs.len());
 
@@ -361,11 +487,13 @@ fn spend_inputs(witness: &TransferWitness) -> Result<Spent, Error> {
         });
 
         nullifiers.push(spent);
+        commitments.push(commitment);
     }
 
     let first_nullifier = nullifiers[0];
     Ok(Spent {
         nullifiers,
+        commitments,
         private_hashes,
         address_nullifiers,
         first_nullifier,
@@ -404,9 +532,10 @@ fn create_outputs(
 }
 
 fn tree_id(witness: &TransferWitness, slot: u64) -> Result<[u8; FIELD_BYTES], Error> {
+    let index = usize::try_from(slot).map_err(|_| Error::Limit("tree slot"))?;
     witness
         .tree_slots
-        .get(slot as usize)
+        .get(index)
         .map(|slot| slot.id)
         .ok_or(Error::Limit("tree slot"))
 }
@@ -445,12 +574,17 @@ fn private_tx_hash(
     ])
 }
 
-fn public_input_hash(
+/// The public transcript the full proof folds.
+///
+/// Position 2 is the tree-slot chain. The indexed prover resolves the
+/// supplied trees itself and inserts that hash at the same position, so the
+/// indexed request carries this list with position 2 removed.
+fn public_transcript(
     witness: &TransferWitness,
     nullifiers: &[[u8; FIELD_BYTES]],
     output_hashes: &[[u8; FIELD_BYTES]],
     private_tx: &[u8; FIELD_BYTES],
-) -> Result<[u8; FIELD_BYTES], Error> {
+) -> Result<Vec<[u8; FIELD_BYTES]>, Error> {
     let slots = slot_hashes(&witness.tree_slots)?;
     let owners = &witness.published_output_owner_public_key_hashes;
     let mut fields = vec![
@@ -474,7 +608,7 @@ fn public_input_hash(
     fields.push(right_hash_chain4(owners)?);
     fields.push(witness.cache_tree_id);
     fields.push(witness.cache_read_hash_chain);
-    hash_chain4(&fields)
+    Ok(fields)
 }
 
 fn after_private_tx(witness: &TransferWitness) -> Result<Vec<[u8; FIELD_BYTES]>, Error> {
@@ -654,6 +788,229 @@ fn witness_json(
     ];
     pairs.extend(signature_pairs(&witness.circuit));
     json_object(&pairs)
+}
+
+/// The unresolved prepared object an indexed request embeds.
+///
+/// It carries the same public fields the full body carries, minus what the
+/// indexer owns: no `treeSlots`, no `publicInputHash`, and each input
+/// reduced to the six fields the caller supplies. The prover fills every
+/// state and nullifier path, index, and exclusion bound after resolving the
+/// trees.
+fn prepared_json(
+    witness: &TransferWitness,
+    spent: &Spent,
+    created: &Created,
+    private_tx: &[u8; FIELD_BYTES],
+) -> Value {
+    let inputs = witness.inputs.iter().enumerate().map(|(index, input)| {
+        json_object(&[
+            ("utxo", note_json(&input.note)),
+            ("isDummy", flag_value(input.is_dummy)),
+            ("treeSlot", field_value(&slot_field(input.tree_slot))),
+            ("nullifier", field_value(&spent.nullifiers[index])),
+            ("ownerPkHash", field_value(&input.owner_public_key_hash)),
+            ("nullifierSecret", field_value(&input.nullifier_secret)),
+        ])
+    });
+    let mut pairs = vec![
+        ("circuitType", Value::from(circuit_name(&witness.circuit))),
+        ("nInputs", Value::from(witness.inputs.len())),
+        ("nOutputs", Value::from(witness.outputs.len())),
+        ("inputs", Value::Array(inputs.collect())),
+        ("outputs", output_json(witness, created)),
+        ("outputTreeId", field_value(&witness.output_tree_id)),
+        ("externalDataHash", field_value(&witness.external_data_hash)),
+        ("privateTxHash", field_value(private_tx)),
+        ("blindingSeed", field_value(&witness.blinding_seed)),
+        ("publicAssets", field_list(&witness.public_assets)),
+        ("publicAmounts", field_list(&witness.public_amounts)),
+        ("ringProgramId", field_value(&witness.ring_program_id)),
+        (
+            "signerPkHashes",
+            field_list(&witness.signer_public_key_hashes),
+        ),
+        ("inputFlags", field_value(&witness.input_flags)),
+        (
+            "publishedOutputOwnerPkHashes",
+            field_list(&witness.published_output_owner_public_key_hashes),
+        ),
+        ("cacheTreeId", field_value(&witness.cache_tree_id)),
+        (
+            "cacheReadHashChain",
+            field_value(&witness.cache_read_hash_chain),
+        ),
+        ("cacheReadHashes", field_list(&witness.cache_read_hashes)),
+        ("cacheIsCached", field_list(&witness.cache_is_cached)),
+        ("cacheReadIndex", field_list(&witness.cache_read_index)),
+    ];
+    pairs.extend(signature_pairs(&witness.circuit));
+    json_object(&pairs)
+}
+
+/// Validates the trees and lookups against the pinned indexed envelope.
+///
+/// The prover refuses, before any indexer lookup, a body whose trees are
+/// not one or two distinct 32-byte base58 addresses with distinct ids,
+/// whose lookups do not line up with the prepared inputs one for one, whose
+/// per-input slot or commitment or nullifier disagrees with what the
+/// prepared input proves, or whose tree no input names. Applying the same
+/// rules here fails malformed caller data before transport.
+fn check_envelope(
+    built: &Built,
+    witness: &TransferWitness,
+    trees: &[IndexedTree],
+    lookups: &[IndexedLookup],
+) -> Result<(), Error> {
+    check_trees(trees)?;
+    if lookups.len() != witness.inputs.len() {
+        return Err(Error::Limit("indexed lookups"));
+    }
+
+    let mut opened = [false; INDEXED_TREES];
+    for (index, (input, lookup)) in witness.inputs.iter().zip(lookups).enumerate() {
+        let slot = usize::from(lookup.tree_slot);
+        if slot >= trees.len() {
+            return Err(Error::Limit("indexed tree slot"));
+        }
+
+        check_lookup_tree(
+            input,
+            lookup,
+            &trees[slot],
+            &witness.tree_slots[slot].id,
+            opened[slot],
+        )?;
+        check_lookup_flags(
+            input,
+            lookup,
+            cached(&witness.cache_is_cached[index]),
+            &built.spent.commitments[index],
+            &built.spent.nullifiers[index],
+        )?;
+        opened[slot] = true;
+    }
+
+    if !opened[..trees.len()].iter().all(|named| *named) {
+        return Err(Error::Limit("indexed tree"));
+    }
+
+    Ok(())
+}
+
+/// Validates the supplied trees: one or two distinct entries whose
+/// addresses decode to exactly one 32-byte field each.
+fn check_trees(trees: &[IndexedTree]) -> Result<(), Error> {
+    if trees.is_empty() || trees.len() > INDEXED_TREES {
+        return Err(Error::Limit("indexed trees"));
+    }
+
+    for (index, tree) in trees.iter().enumerate() {
+        if !is_base58_field(&tree.tree) {
+            return Err(Error::Limit("indexed tree address"));
+        }
+
+        if trees[..index]
+            .iter()
+            .any(|previous| previous.id == tree.id || previous.tree == tree.tree)
+        {
+            return Err(Error::Limit("indexed tree"));
+        }
+    }
+
+    Ok(())
+}
+
+/// Binds one lookup to its tree.
+///
+/// The input's own slot must name the same position, the tree's id must be
+/// the id of the witness slot the input selects — the server resolves the
+/// tree at this position and the circuit commits to the selected slot's id,
+/// so the two must agree — and a dummy may only join a tree an earlier
+/// input opened.
+fn check_lookup_tree(
+    input: &SpendNote,
+    lookup: &IndexedLookup,
+    tree: &IndexedTree,
+    tree_slot_id: &[u8; FIELD_BYTES],
+    opened: bool,
+) -> Result<(), Error> {
+    if input.tree_slot != u64::from(lookup.tree_slot)
+        || *tree_slot_id != slot_field(u64::from(tree.id))
+    {
+        return Err(Error::Limit("indexed tree slot"));
+    }
+
+    if input.is_dummy && !opened {
+        return Err(Error::Limit("indexed lookup"));
+    }
+
+    Ok(())
+}
+
+/// Whether a per-input cache flag marks the input as served from the cache.
+fn cached(flags: &[u8; FIELD_BYTES]) -> bool {
+    *flags != [0; FIELD_BYTES]
+}
+
+/// Validates one lookup against what its prepared input proves.
+///
+/// The input's dummy, cache, and address flags decide whether the lookup
+/// carries a commitment, spelled as the derived commitment; only a compact
+/// dummy that publishes zero carries a nullifier, spelled as the derived
+/// nullifier the indexer fetches the exclusion witness for.
+fn check_lookup_flags(
+    input: &SpendNote,
+    lookup: &IndexedLookup,
+    cached: bool,
+    derived_commitment: &[u8; FIELD_BYTES],
+    derived_nullifier: &[u8; FIELD_BYTES],
+) -> Result<(), Error> {
+    let address = domain_tag(&input.note.domain) == ADDRESS_DOMAIN;
+
+    if input.is_dummy && cached {
+        return Err(Error::Limit("indexed lookup"));
+    }
+
+    if (input.is_dummy || cached || address) != lookup.commitment.is_none() {
+        return Err(Error::Limit("indexed lookup"));
+    }
+
+    if lookup
+        .commitment
+        .as_deref()
+        .is_some_and(|commitment| commitment != base58_field(derived_commitment))
+    {
+        return Err(Error::Limit("indexed lookup"));
+    }
+
+    // Compact padding publishes nullifier zero but proves non-inclusion of
+    // its derived dummy nullifier, which only the lookup carries.
+    let compact = input.is_dummy && *derived_nullifier == [0; FIELD_BYTES];
+    if compact != lookup.nullifier.is_some()
+        || lookup
+            .nullifier
+            .as_deref()
+            .is_some_and(|nullifier| nullifier != base58_field(derived_nullifier))
+    {
+        return Err(Error::Limit("indexed lookup"));
+    }
+
+    Ok(())
+}
+
+/// Canonical base58 spelling of one 32-byte field, the form the indexer
+/// uses for commitments and nullifiers.
+fn base58_field(field: &[u8; FIELD_BYTES]) -> String {
+    bs58::encode(field).into_string()
+}
+
+/// Whether `text` decodes to exactly one 32-byte field, the width every
+/// base58 value in the indexed envelope carries.
+fn is_base58_field(text: &str) -> bool {
+    bs58::decode(text)
+        .into_vec()
+        .is_ok_and(|decoded| decoded.len() == FIELD_BYTES)
 }
 
 fn circuit_name(circuit: &TransferCircuit) -> &'static str {
@@ -1052,6 +1409,10 @@ mod tests {
         assert_eq!(right_hash_chain4(&[one]).unwrap(), one);
 
         assert_eq!(nonzero_hash_chain(&[[0; 32], one]).unwrap(), one);
+        assert_eq!(nonzero_hash_chain(&[]).unwrap(), [0; 32]);
+        assert_eq!(hash_chain4(&[]).unwrap(), [0; 32]);
+        assert_eq!(right_hash_chain4(&[]).unwrap(), [0; 32]);
+        assert_eq!(right_hash_chain(&[]).unwrap(), [0; 32]);
         witness.tree_slots.pop();
         assert!(matches!(
             confidential_transfer_witness(&witness),
@@ -1102,35 +1463,552 @@ mod tests {
         ));
     }
 
+    /// Encodes fixture bytes, including intentionally invalid field widths.
+    fn base58(field: &[u8]) -> String {
+        bs58::encode(field).into_string()
+    }
+
+    /// A distinct 32-byte tree address for the position it names.
+    fn tree_address(position: usize) -> String {
+        let mut address = [9u8; 32];
+        address[0] += position as u8;
+        base58(&address)
+    }
+
+    /// Repeats the first input, and its per-input cache fields, until the
+    /// witness names `inputs` inputs.
+    fn scale_inputs(witness: &mut TransferWitness, inputs: usize) {
+        let input = witness.inputs[0].clone();
+        witness.inputs = vec![input; inputs];
+        let hashes = witness.cache_read_hashes[0];
+        witness.cache_read_hashes = vec![hashes; inputs];
+        let cached = witness.cache_is_cached[0];
+        witness.cache_is_cached = vec![cached; inputs];
+        let index = witness.cache_read_index[0];
+        witness.cache_read_index = vec![index; inputs];
+    }
+
     #[test]
-    fn indexed_request_wraps_the_prepared_witness() {
-        let (_, witness) = load(TRANSFER);
-        let prepared = confidential_transfer_witness(&witness).expect("witness");
-        let request = indexed_proof_request(
-            &prepared,
-            &[IndexedTree {
-                tree: "tree".to_owned(),
-                id: 7,
-            }],
-            &[IndexedLookup {
-                tree_slot: 0,
-                commitment: Some("commit".to_owned()),
+    fn signer_width_follows_the_pinned_shape_contract() {
+        for (inputs, width) in [
+            (1usize, 2usize),
+            (2, 3),
+            (30, 31),
+            (31, 30),
+            (32, 29),
+            (40, 21),
+            (48, 13),
+            (49, 12),
+        ] {
+            assert_eq!(signer_width(inputs), Some(width), "{inputs} inputs");
+        }
+
+        assert_eq!(signer_width(60), Some(1));
+        assert_eq!(signer_width(61), None);
+        assert_eq!(signer_width(usize::MAX), None);
+    }
+
+    #[test]
+    fn large_pinned_shapes_build_at_the_circuit_signer_width() {
+        let (_, mut witness) = load(TRANSFER);
+
+        for inputs in [32usize, 40, 48, 49] {
+            scale_inputs(&mut witness, inputs);
+            let width = signer_width(inputs).expect("supported shape");
+            witness.signer_public_key_hashes = vec![[9; FIELD_BYTES]; width];
+            assert!(
+                confidential_transfer_witness(&witness).is_ok(),
+                "{inputs} inputs at width {width}"
+            );
+            // The input-count-plus-one rule the builder replaced stops
+            // holding one past thirty inputs.
+            witness.signer_public_key_hashes = vec![[9; FIELD_BYTES]; inputs + 1];
+            assert!(
+                matches!(
+                    confidential_transfer_witness(&witness),
+                    Err(Error::Limit("signer hashes"))
+                ),
+                "{inputs} inputs at width {}",
+                inputs + 1
+            );
+        }
+    }
+
+    #[test]
+    fn confidential_eddsa_large_shapes_build_at_the_circuit_width() {
+        let json = include_str!("../tests/fixtures/confidential-eddsa-2x8.json");
+        let (_, mut witness) = load(json);
+        scale_inputs(&mut witness, 48);
+        let width = signer_width(48).expect("supported shape");
+        witness.signer_public_key_hashes = vec![[1; FIELD_BYTES]; width];
+        assert!(confidential_transfer_witness(&witness).is_ok(), "48x8");
+
+        let output = witness.outputs[0].clone();
+        witness.outputs = vec![output; 16];
+        let owner = witness.published_output_owner_public_key_hashes[0];
+        witness.published_output_owner_public_key_hashes = vec![owner; 16];
+        assert!(confidential_transfer_witness(&witness).is_ok(), "48x16");
+
+        witness.signer_public_key_hashes = vec![[1; FIELD_BYTES]; 49];
+        assert!(matches!(
+            confidential_transfer_witness(&witness),
+            Err(Error::Limit("signer hashes"))
+        ));
+    }
+
+    #[test]
+    fn unsupported_shapes_name_no_pinned_key() {
+        let (_, mut witness) = load(TRANSFER);
+        scale_inputs(&mut witness, 33);
+        witness.signer_public_key_hashes = vec![[0; FIELD_BYTES]; signer_width(33).expect("width")];
+        assert!(matches!(
+            confidential_transfer_witness(&witness),
+            Err(Error::Limit("shape"))
+        ));
+
+        let (_, mut witness) = load(TRANSFER);
+        let output = witness.outputs[0].clone();
+        witness.outputs.push(output);
+        let owner = witness.published_output_owner_public_key_hashes[0];
+        witness.published_output_owner_public_key_hashes.push(owner);
+        assert!(matches!(
+            confidential_transfer_witness(&witness),
+            Err(Error::Limit("shape"))
+        ));
+
+        let (_, mut witness) = load(TRANSFER);
+        scale_inputs(&mut witness, 49);
+        witness.signer_public_key_hashes = vec![[0; FIELD_BYTES]; 50];
+        assert!(matches!(
+            confidential_transfer_witness(&witness),
+            Err(Error::Limit("signer hashes"))
+        ));
+    }
+
+    #[test]
+    fn a_tree_slot_beyond_the_word_width_is_rejected() {
+        // The smallest slot a 32-bit `usize` cannot carry; truncation on
+        // such a target keeps only the low bits.
+        const WORD_WIDTH: u64 = 1 << 32;
+        let (_, mut witness) = load(TRANSFER);
+
+        for slot in 0..INPUT_TREES as u64 {
+            witness.inputs[0].tree_slot = slot;
+            assert!(
+                confidential_transfer_witness(&witness).is_ok(),
+                "slot {slot}"
+            );
+        }
+
+        for slot in [INPUT_TREES as u64, WORD_WIDTH + 3, u64::MAX] {
+            witness.inputs[0].tree_slot = slot;
+            assert!(
+                matches!(
+                    confidential_transfer_witness(&witness),
+                    Err(Error::Limit("tree slot"))
+                ),
+                "slot {slot}"
+            );
+        }
+    }
+
+    /// The indexed public-input prefix the published fixture must produce,
+    /// assembled from the fixture's own published fields in transcript
+    /// order and without the tree-slot chain at position 2.
+    fn published_indexed_public_inputs(published: &Value) -> Vec<[u8; 32]> {
+        let nullifiers: Vec<[u8; 32]> = published["inputs"]
+            .as_array()
+            .expect("inputs")
+            .iter()
+            .map(|input| parse_field(&input["nullifier"]))
+            .collect();
+        let hashes: Vec<[u8; 32]> = published["outputs"]
+            .as_array()
+            .expect("outputs")
+            .iter()
+            .map(|output| parse_field(&output["hash"]))
+            .collect();
+        let mut transcript = vec![
+            right_hash_chain4(&nullifiers).expect("nullifiers"),
+            right_hash_chain4(&hashes).expect("outputs"),
+            parse_field(&published["outputTreeId"]),
+            parse_field(&published["privateTxHash"]),
+        ];
+
+        // The signed rails add the message digest and the owner field right
+        // after the private transaction hash, exactly where the full
+        // transcript folds them.
+        match published["circuitType"].as_str().expect("circuit") {
+            "transfer-confidential-eddsa" => {
+                let owner = owner_of(published);
+                let digest = message_digest(&owner.message_hash_low, &owner.message_hash_high);
+                transcript.push(hash_bytes(&digest).expect("digest"));
+                transcript.push(solana_owner_identity(&owner.public_key).expect("identity"));
+            }
+            "transfer-eddsa-ring" => {
+                let owner = owner_of(published);
+                let digest = message_digest(&owner.message_hash_low, &owner.message_hash_high);
+                transcript.push(hash_bytes(&digest).expect("digest"));
+                transcript.push(parse_field(&published["defaultOwnerPkHash"]));
+            }
+            _ => {}
+        }
+
+        transcript.push(parse_field(&published["externalDataHash"]));
+
+        for slot in 0..PUBLIC_SLOTS {
+            transcript.push(parse_field(&published["publicAssets"][slot]));
+            transcript.push(parse_field(&published["publicAmounts"][slot]));
+        }
+
+        transcript.push(parse_field(&published["ringProgramId"]));
+        transcript.push(right_hash_chain(&fields(&published["signerPkHashes"])).expect("signers"));
+        transcript.push(parse_field(&published["inputFlags"]));
+        transcript.push(
+            right_hash_chain4(&fields(&published["publishedOutputOwnerPkHashes"])).expect("owners"),
+        );
+        transcript.push(parse_field(&published["cacheTreeId"]));
+        transcript.push(parse_field(&published["cacheReadHashChain"]));
+        transcript
+    }
+
+    /// Trees and lookups one valid indexed request for `witness`: one tree
+    /// entry per distinct named slot, in first-use order, carrying the
+    /// commitments the witness derives.
+    fn fixture_trees_and_lookups(
+        witness: &TransferWitness,
+    ) -> (Vec<IndexedTree>, Vec<IndexedLookup>) {
+        let mut trees: Vec<IndexedTree> = Vec::new();
+        let mut lookups = Vec::new();
+
+        for input in &witness.inputs {
+            let slot = usize::try_from(input.tree_slot).expect("slot");
+            let raw = u64::from_be_bytes(witness.tree_slots[slot].id[24..].try_into().expect("id"));
+            let id = u16::try_from(raw).expect("tree id");
+
+            let position = match trees.iter().position(|tree| tree.id == id) {
+                Some(position) => position,
+                None => {
+                    trees.push(IndexedTree {
+                        tree: tree_address(trees.len()),
+                        id,
+                    });
+                    trees.len() - 1
+                }
+            };
+            let tree = tree_id(witness, input.tree_slot).expect("tree slot");
+            let commitment = commit(&input.note, &tree, &input.note.blinding).expect("commitment");
+            lookups.push(IndexedLookup {
+                tree_slot: u8::try_from(position).expect("position"),
+                commitment: Some(base58(&commitment)),
                 nullifier: None,
-            }],
-            &[[0; 32]],
-            Some(9),
-        )
-        .expect("indexed");
+            });
+        }
+
+        (trees, lookups)
+    }
+
+    #[test]
+    fn indexed_request_derives_the_unresolved_envelope() {
+        let (published, witness) = load(TRANSFER);
+        let (trees, lookups) = fixture_trees_and_lookups(&witness);
+        let request = indexed_proof_request(&witness, &trees, &lookups, Some(9)).expect("indexed");
+
+        let keys: Vec<&str> = request
+            .as_object()
+            .expect("object")
+            .keys()
+            .map(String::as_str)
+            .collect();
+        assert_eq!(
+            keys,
+            [
+                "circuitType",
+                "inputs",
+                "minContextSlot",
+                "prepared",
+                "publicInputs",
+                "trees"
+            ]
+        );
         assert_eq!(request["circuitType"], "transfer-confidential");
         assert_eq!(request["trees"][0]["id"], 7);
-        assert_eq!(request["inputs"][0]["commitment"], "commit");
+        assert_eq!(
+            request["inputs"][0]["commitment"].as_str(),
+            lookups[0].commitment.as_deref()
+        );
         assert!(request["inputs"][0]["nullifier"].is_null());
         assert_eq!(request["minContextSlot"], 9);
 
-        assert!(indexed_proof_request(&prepared, &[], &[], &[], Some(1 << 53)).is_err());
-        assert_eq!(nonzero_hash_chain(&[]).unwrap(), [0; 32]);
-        assert_eq!(hash_chain4(&[]).unwrap(), [0; 32]);
-        assert_eq!(right_hash_chain4(&[]).unwrap(), [0; 32]);
-        assert_eq!(right_hash_chain(&[]).unwrap(), [0; 32]);
+        // The prepared object omits everything the indexer owns.
+        let prepared = &request["prepared"];
+        assert!(prepared.get("treeSlots").is_none());
+        assert!(prepared.get("publicInputHash").is_none());
+
+        for input in prepared["inputs"].as_array().expect("prepared inputs") {
+            let keys: Vec<&str> = input
+                .as_object()
+                .expect("input")
+                .keys()
+                .map(String::as_str)
+                .collect();
+            assert_eq!(
+                keys,
+                [
+                    "isDummy",
+                    "nullifier",
+                    "nullifierSecret",
+                    "ownerPkHash",
+                    "treeSlot",
+                    "utxo"
+                ]
+            );
+        }
+
+        assert_eq!(prepared["blindingSeed"], published["blindingSeed"]);
+        assert_eq!(prepared["privateTxHash"], published["privateTxHash"]);
+        assert_eq!(prepared["signerPkHashes"], published["signerPkHashes"]);
+        assert_eq!(prepared["cacheIsCached"], published["cacheIsCached"]);
+        assert_eq!(prepared["nInputs"], published["nInputs"]);
+
+        // The indexed public inputs are the full transcript without the
+        // tree-slot chain, and inserting the resolved chain at position 2
+        // reconstitutes the published hash.
+        let expected = published_indexed_public_inputs(&published);
+        assert_eq!(expected.len(), CONFIDENTIAL_PREFIX);
+        assert_eq!(field_list(&expected), request["publicInputs"]);
+        let chain =
+            right_hash_chain(&slot_hashes(&witness.tree_slots).expect("slots")).expect("chain");
+        let mut resolved = expected;
+        resolved.insert(2, chain);
+        assert_eq!(
+            hash_chain4(&resolved).expect("hash"),
+            parse_field(&published["publicInputHash"])
+        );
+
+        let unsigned = indexed_proof_request(&witness, &trees, &lookups, None).expect("unsigned");
+        assert!(unsigned.get("minContextSlot").is_none());
+    }
+
+    /// Public-input count of the confidential transcript prefix without the
+    /// tree-slot chain.
+    const CONFIDENTIAL_PREFIX: usize = 17;
+    /// The signed rails add the digest and the owner field.
+    const SIGNED_PREFIX: usize = 19;
+
+    /// Runs one expected indexed refusal and names the case that failed.
+    fn refused(
+        witness: &TransferWitness,
+        trees: &[IndexedTree],
+        lookups: &[IndexedLookup],
+        label: &'static str,
+    ) {
+        let error = indexed_proof_request(witness, trees, lookups, Some(9)).expect_err(label);
+        assert!(matches!(error, Error::Limit(_)), "{label}: {error:?}");
+    }
+
+    /// Rewrites every lookup so each carries `commitment` and `nullifier`.
+    fn rewritten_lookups(
+        lookups: &[IndexedLookup],
+        commitment: Option<String>,
+        nullifier: Option<String>,
+    ) -> Vec<IndexedLookup> {
+        lookups
+            .iter()
+            .map(|lookup| IndexedLookup {
+                commitment: commitment.clone(),
+                nullifier: nullifier.clone(),
+                ..lookup.clone()
+            })
+            .collect()
+    }
+
+    #[test]
+    fn indexed_public_inputs_follow_the_signed_rails() {
+        for json in [
+            include_str!("../tests/fixtures/confidential-eddsa-2x8.json"),
+            include_str!("../tests/fixtures/eddsa-ring-2x2.json"),
+        ] {
+            let (published, witness) = load(json);
+            let (trees, lookups) = fixture_trees_and_lookups(&witness);
+            let request = indexed_proof_request(&witness, &trees, &lookups, None).expect("indexed");
+            let expected = published_indexed_public_inputs(&published);
+            let circuit = request["circuitType"].as_str().expect("circuit");
+
+            let width = match circuit {
+                "transfer-confidential" => CONFIDENTIAL_PREFIX,
+                _ => SIGNED_PREFIX,
+            };
+            assert_eq!(expected.len(), width, "{circuit}");
+            assert_eq!(field_list(&expected), request["publicInputs"]);
+
+            let chain =
+                right_hash_chain(&slot_hashes(&witness.tree_slots).expect("slots")).expect("chain");
+            let mut resolved = expected;
+            resolved.insert(2, chain);
+            assert_eq!(
+                hash_chain4(&resolved).expect("hash"),
+                parse_field(&published["publicInputHash"]),
+                "{circuit}"
+            );
+        }
+    }
+
+    #[test]
+    fn indexed_request_rejects_malformed_trees() {
+        let (_, witness) = load(TRANSFER);
+        let (trees, lookups) = fixture_trees_and_lookups(&witness);
+        let tree = &trees[0];
+
+        refused(&witness, &[], &lookups, "no trees");
+        refused(
+            &witness,
+            &[
+                tree.clone(),
+                IndexedTree {
+                    tree: tree_address(1),
+                    id: 1,
+                },
+                IndexedTree {
+                    tree: tree_address(2),
+                    id: 2,
+                },
+            ],
+            &lookups,
+            "three trees",
+        );
+
+        let duplicate_id = [
+            tree.clone(),
+            IndexedTree {
+                tree: tree_address(1),
+                id: tree.id,
+            },
+        ];
+        refused(&witness, &duplicate_id, &lookups, "duplicate tree id");
+
+        let duplicate_address = [
+            tree.clone(),
+            IndexedTree {
+                tree: tree.tree.clone(),
+                id: 3,
+            },
+        ];
+        refused(
+            &witness,
+            &duplicate_address,
+            &lookups,
+            "duplicate tree address",
+        );
+
+        let unbound = [IndexedTree {
+            tree: tree.tree.clone(),
+            id: 99,
+        }];
+        refused(&witness, &unbound, &lookups, "unbound tree id");
+
+        let not_base58 = [IndexedTree {
+            tree: "0x07".to_owned(),
+            id: tree.id,
+        }];
+        refused(&witness, &not_base58, &lookups, "address not base58");
+
+        let narrow = [4u8; FIELD_BYTES / 2];
+        let too_narrow = [IndexedTree {
+            tree: base58(&narrow),
+            id: tree.id,
+        }];
+        refused(&witness, &too_narrow, &lookups, "address too narrow");
+
+        // The request binds each tree to the id of the witness slot its
+        // inputs select; a tree the inputs never name cannot resolve.
+        let unused = [
+            tree.clone(),
+            IndexedTree {
+                tree: tree_address(1),
+                id: 3,
+            },
+        ];
+        refused(&witness, &unused, &lookups, "tree no input names");
+    }
+
+    #[test]
+    fn indexed_request_rejects_malformed_lookups() {
+        let (_, witness) = load(TRANSFER);
+        let (trees, lookups) = fixture_trees_and_lookups(&witness);
+
+        refused(&witness, &trees, &[], "no lookups");
+        refused(&witness, &trees, &[lookups[0].clone()], "lookup count");
+        refused(
+            &witness,
+            &trees,
+            &[IndexedLookup {
+                tree_slot: 1,
+                commitment: lookups[0].commitment.clone(),
+                nullifier: None,
+            }],
+            "slot beyond trees",
+        );
+        refused(
+            &witness,
+            &trees,
+            &rewritten_lookups(&lookups, None, None),
+            "missing commitment",
+        );
+
+        let foreign = base58(&[1; FIELD_BYTES]);
+        refused(
+            &witness,
+            &trees,
+            &rewritten_lookups(&lookups, Some(foreign), None),
+            "wrong commitment",
+        );
+        let stray = base58(&[2; FIELD_BYTES]);
+        refused(
+            &witness,
+            &trees,
+            &rewritten_lookups(&lookups, lookups[0].commitment.clone(), Some(stray)),
+            "unexpected nullifier",
+        );
+    }
+
+    #[test]
+    fn indexed_request_rejects_unproven_lookup_flags() {
+        let (_, witness) = load(TRANSFER);
+        let (trees, lookups) = fixture_trees_and_lookups(&witness);
+        let without = rewritten_lookups(&lookups, None, None);
+
+        // A dummy joins only a tree an earlier input opened, and neither a
+        // dummy nor a cached input carries a commitment.
+        let mut dummy = witness.clone();
+        dummy.inputs[1].is_dummy = true;
+        let dummy_lookups = Vec::from([lookups[0].clone(), without[1].clone()]);
+        assert!(indexed_proof_request(&dummy, &trees, &dummy_lookups, None).is_ok());
+        refused(&dummy, &trees, &lookups, "commitment on dummy");
+
+        let mut first_dummy = witness.clone();
+        first_dummy.inputs[0].is_dummy = true;
+        let opened_late = Vec::from([without[0].clone(), lookups[1].clone()]);
+        refused(
+            &first_dummy,
+            &trees,
+            &opened_late,
+            "tree starts with a dummy",
+        );
+
+        let mut cached = witness.clone();
+        cached.cache_is_cached[0] = slot_field(1);
+        let cached_lookups = Vec::from([without[0].clone(), lookups[1].clone()]);
+        assert!(indexed_proof_request(&cached, &trees, &cached_lookups, None).is_ok());
+        refused(&cached, &trees, &lookups, "commitment on cached input");
+
+        let mut cached_dummy = dummy;
+        cached_dummy.cache_is_cached[1] = slot_field(1);
+        refused(&cached_dummy, &trees, &dummy_lookups, "cached dummy");
+
+        assert!(matches!(
+            indexed_proof_request(&witness, &trees, &lookups, Some(MAX_SAFE_INTEGER + 1)),
+            Err(Error::Limit("min context slot"))
+        ));
     }
 }

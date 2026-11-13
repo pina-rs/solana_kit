@@ -12,9 +12,11 @@ from that serializer. X25519, HKDF-SHA256, and AES-256-CTR sit behind the
 `crypto` feature. The `poseidon` feature adds Circom BN254 commitments,
 `owner_hash`, nullifiers, the blinding-seed derivations, and
 `confidential_transfer_witness`, which builds the gnark witness from notes
-and Merkle paths. The `tee` feature verifies an AWS Nitro attestation
-document and seals a prover request with HPKE. Groth16 proving stays with
-the prover. The built `transfer-2x2` witness matches the published fixture.
+and Merkle paths, sized for the pinned circuit shapes. `indexed_proof_request`
+builds the unresolved indexed body from the same witness. The `tee` feature
+verifies an AWS Nitro attestation document and seals a prover request with
+HPKE. Groth16 proving stays with the prover. The built `transfer-2x2`
+witness matches the published fixture.
 
 ```rust
 use solana_kit_core::Address;
