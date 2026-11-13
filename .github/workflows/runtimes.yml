@@ -64,9 +64,14 @@ jobs:
 
           unzip -q "$host_dir/driver.zip" -d "$host_dir"
 
+          capabilities="$host_dir/webdriver.json"
+
+          jq -n --arg binary "$host_dir/chrome-linux64/chrome" \
+            '{"goog:chromeOptions": {binary: $binary}}' > "$capabilities"
+
           printf \
-            'WASMTIME=%s/wasmtime-v50.0.0-x86_64-linux/wasmtime\nCHROME=%s/chrome-linux64/chrome\nCHROMEDRIVER=%s/chromedriver-linux64/chromedriver\n' \
-            "$host_dir" "$host_dir" "$host_dir" >> "$GITHUB_ENV"
+            'WASMTIME=%s/wasmtime-v50.0.0-x86_64-linux/wasmtime\nCHROME=%s/chrome-linux64/chrome\nCHROMEDRIVER=%s/chromedriver-linux64/chromedriver\nWASM_BINDGEN_TEST_WEBDRIVER_JSON=%s\n' \
+            "$host_dir" "$host_dir" "$host_dir" "$capabilities" >> "$GITHUB_ENV"
 
       - name: Execute suite, corruption controls, dependency gates and clean consumer
         shell: bash
