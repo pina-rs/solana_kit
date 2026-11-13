@@ -15,8 +15,18 @@ from that serializer. X25519, HKDF-SHA256, and AES-256-CTR sit behind the
 and Merkle paths, sized for the pinned circuit shapes. `indexed_proof_request`
 builds the unresolved indexed body from the same witness. The `tee` feature
 verifies an AWS Nitro attestation document and seals a prover request with
-HPKE. Groth16 proving stays with the prover. The built `transfer-2x2`
-witness matches the published fixture.
+HPKE. `PrivacyProverClient::attest` runs the attestation round in one call: it
+draws a fresh 32-byte nonce from the caller's `rand_core` generator for every
+attempt, fetches `GET /attestation?nonce=`, and verifies the quote against the
+caller's `NitroPolicy` at the caller's clock. `max_age_secs` and
+`max_future_secs` (seconds) bound the signed document timestamp on both sides
+of `now_secs`, and `VerifiedNitro::timestamp_ms` exposes that timestamp for
+any later reuse decision. There is no attestation cache, and an entropy
+failure from the generator returns an error before any request.
+`fetch_unverified_attestation` returns the raw `GET /attestation?nonce=` body
+for callers that pair their own fresh CSPRNG nonce with `verify_attestation`;
+a raw fetch alone does not prevent a replay. Groth16 proving stays with the
+prover. The built `transfer-2x2` witness matches the published fixture.
 
 ```rust
 use solana_kit_core::Address;

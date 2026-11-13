@@ -80,6 +80,55 @@ fn upstream_cbor_cases_match_the_test_root() {
     assert!(verify_nitro_with(&document, &[0; 32], &nonce, &policy, now, &root).is_err());
 }
 
+fn live_parts() -> (Value, NitroPolicy, [u8; 32], u64) {
+    let body: Value = serde_json::from_str(include_str!(
+        "../../../tests/fixtures/nitro-live-attestation.json"
+    ))
+    .unwrap();
+    let policy_body: Value = serde_json::from_str(include_str!(
+        "../../../tests/fixtures/nitro-live-policy.json"
+    ))
+    .unwrap();
+    let policy = policy_from(&policy_body["deployment"]);
+    let nonce = hex_array::<32>(body["nonce"].as_str().unwrap());
+    let now = body["captured_at"].as_u64().unwrap();
+    (body, policy, nonce, now)
+}
+
+#[test]
+fn the_verified_quote_exposes_its_signed_timestamp() {
+    let (body, policy, nonce, now) = live_parts();
+    let verified = verify_attestation(&body, &nonce, &policy, now).expect("live quote");
+
+    // The signed NSM timestamp is milliseconds since the epoch: the capture
+    // second 1791307410 plus 659 ms, read from the pinned document bytes.
+    assert_eq!(verified.timestamp_ms, 1_791_307_410_659);
+}
+
+#[test]
+fn a_stale_quote_is_rejected_while_its_certificates_stay_valid() {
+    let (body, policy, nonce, now) = live_parts();
+    let error = verify_attestation(&body, &nonce, &policy, now + 3600).expect_err("stale quote");
+
+    // The NSM leaf certificate stays valid for about three hours after the
+    // capture, so only the policy age window can refuse this body.
+    assert!(matches!(error, Error::Attestation("age")));
+}
+
+#[test]
+fn the_live_quote_age_bound_is_exact_to_the_millisecond() {
+    let (body, policy, nonce, now) = live_parts();
+
+    // The document was minted 659 ms into the capture second, so at exactly
+    // max_age_secs the signed age is 599.341 s and it still verifies.
+    let verified = verify_attestation(&body, &nonce, &policy, now + 600).expect("boundary");
+    assert_eq!(verified.timestamp_ms, 1_791_307_410_659);
+
+    // One second later the same signed body is too old.
+    let error = verify_attestation(&body, &nonce, &policy, now + 601).expect_err("stale");
+    assert!(matches!(error, Error::Attestation("age")));
+}
+
 fn policy_from(value: &Value) -> NitroPolicy {
     let measurements = value["measurements"]
         .as_array()
@@ -91,9 +140,17 @@ fn policy_from(value: &Value) -> NitroPolicy {
             pcr2: hex_array(item["pcr2"].as_str().unwrap()),
         })
         .collect();
+
     NitroPolicy {
         measurements,
         hpke_public_key: None,
+        // The deployment policy fixtures declare `max_age_secs: 600`; the
+        // helper honors it instead of widening the bound to accept a fixture.
+        max_age_secs: value["max_age_secs"].as_u64().unwrap_or(0),
+        // The fixture format predates the future-skew field. A small
+        // explicit skew keeps documents minted inside their capture second
+        // acceptable; it never disables the future check.
+        max_future_secs: value["max_future_secs"].as_u64().unwrap_or(60),
     }
 }
 
@@ -247,6 +304,185 @@ fn document_fields_outside_the_profile_are_rejected() {
     let mut optional = base.clone();
     optional.retain(|(name, _)| *name != ciborium::Value::Text("public_key".to_owned()));
     rejected(&sign_entries(optional, &key), &fixture);
+}
+
+#[test]
+fn malformed_or_missing_timestamps_are_rejected() {
+    let (fixture, base, key) = fixture_parts();
+    let mut text = base.clone();
+    set_field(
+        &mut text,
+        "timestamp",
+        ciborium::Value::Text("1800000000000".to_owned()),
+    );
+    rejected(&sign_entries(text, &key), &fixture);
+
+    // One past the accepted range: the signed field must stay below 2^53.
+    let mut out_of_range = base.clone();
+    set_field(
+        &mut out_of_range,
+        "timestamp",
+        ciborium::Value::Integer((1u64 << 53).into()),
+    );
+    rejected(&sign_entries(out_of_range, &key), &fixture);
+
+    let mut missing = base;
+    missing.retain(|(name, _)| *name != ciborium::Value::Text("timestamp".to_owned()));
+    rejected(&sign_entries(missing, &key), &fixture);
+}
+
+#[test]
+fn the_age_boundary_is_millisecond_exact() {
+    let (fixture, base, key) = fixture_parts();
+    let now = fixture["now"].as_u64().unwrap();
+    let age = fixture["policy"]["max_age_secs"].as_u64().unwrap();
+    let root = hex_bytes(fixture["root"].as_str().unwrap());
+    let nonce = hex_array::<32>(fixture["nonce"].as_str().unwrap());
+    let hpke = hex_array::<32>(fixture["hpke_public_key"].as_str().unwrap());
+    let policy = policy_from(&fixture["policy"]);
+    assert_eq!(policy.max_age_secs, age);
+
+    let mut exact = base.clone();
+    set_field(
+        &mut exact,
+        "timestamp",
+        ciborium::Value::Integer(((now - age) * 1000).into()),
+    );
+    assert!(
+        verify_nitro_with(
+            &sign_entries(exact, &key),
+            &hpke,
+            &nonce,
+            &policy,
+            now,
+            &root
+        )
+        .is_ok()
+    );
+
+    let mut stale = base;
+    set_field(
+        &mut stale,
+        "timestamp",
+        ciborium::Value::Integer(((now - age) * 1000 - 1).into()),
+    );
+    let error = verify_nitro_with(
+        &sign_entries(stale, &key),
+        &hpke,
+        &nonce,
+        &policy,
+        now,
+        &root,
+    )
+    .expect_err("stale");
+    assert!(matches!(error, Error::Attestation("age")));
+}
+
+#[test]
+fn a_document_too_far_in_the_future_is_rejected() {
+    let (fixture, base, key) = fixture_parts();
+    let now = fixture["now"].as_u64().unwrap();
+    let root = hex_bytes(fixture["root"].as_str().unwrap());
+    let nonce = hex_array::<32>(fixture["nonce"].as_str().unwrap());
+    let hpke = hex_array::<32>(fixture["hpke_public_key"].as_str().unwrap());
+    let mut policy = policy_from(&fixture["policy"]);
+    policy.max_future_secs = 60;
+
+    let mut edge = base.clone();
+    set_field(
+        &mut edge,
+        "timestamp",
+        ciborium::Value::Integer(((now + 60) * 1000).into()),
+    );
+    assert!(
+        verify_nitro_with(
+            &sign_entries(edge, &key),
+            &hpke,
+            &nonce,
+            &policy,
+            now,
+            &root
+        )
+        .is_ok()
+    );
+
+    let mut ahead = base;
+    set_field(
+        &mut ahead,
+        "timestamp",
+        ciborium::Value::Integer(((now + 60) * 1000 + 1).into()),
+    );
+    let error = verify_nitro_with(
+        &sign_entries(ahead, &key),
+        &hpke,
+        &nonce,
+        &policy,
+        now,
+        &root,
+    )
+    .expect_err("future");
+    assert!(matches!(error, Error::Attestation("future")));
+}
+
+#[test]
+fn zero_max_age_is_the_strictest_bound_not_a_disabled_check() {
+    let (fixture, base, key) = fixture_parts();
+    let now = fixture["now"].as_u64().unwrap();
+    let root = hex_bytes(fixture["root"].as_str().unwrap());
+    let nonce = hex_array::<32>(fixture["nonce"].as_str().unwrap());
+    let hpke = hex_array::<32>(fixture["hpke_public_key"].as_str().unwrap());
+    let mut policy = policy_from(&fixture["policy"]);
+    policy.max_age_secs = 0;
+
+    // The fixture document was minted inside the caller's own second.
+    assert!(
+        verify_nitro_with(
+            &sign_entries(base.clone(), &key),
+            &hpke,
+            &nonce,
+            &policy,
+            now,
+            &root
+        )
+        .is_ok()
+    );
+
+    let mut older = base;
+    set_field(
+        &mut older,
+        "timestamp",
+        ciborium::Value::Integer((now * 1000 - 1).into()),
+    );
+    let error = verify_nitro_with(
+        &sign_entries(older, &key),
+        &hpke,
+        &nonce,
+        &policy,
+        now,
+        &root,
+    )
+    .expect_err("older");
+    assert!(matches!(error, Error::Attestation("age")));
+}
+
+#[test]
+fn extreme_clocks_and_policies_stay_panic_free() {
+    let (fixture, base, key) = fixture_parts();
+    let now = fixture["now"].as_u64().unwrap();
+    let root = hex_bytes(fixture["root"].as_str().unwrap());
+    let nonce = hex_array::<32>(fixture["nonce"].as_str().unwrap());
+    let hpke = hex_array::<32>(fixture["hpke_public_key"].as_str().unwrap());
+    let document = sign_entries(base, &key);
+    let mut wide = policy_from(&fixture["policy"]);
+    wide.max_age_secs = u64::MAX;
+    wide.max_future_secs = u64::MAX;
+
+    // A caller clock outside the certificate window fails there first, and
+    // the millisecond comparison behind it never sees that value.
+    assert!(verify_nitro_with(&document, &hpke, &nonce, &wide, u64::MAX, &root).is_err());
+
+    // Maximum-width policy bounds cannot overflow the comparison.
+    assert!(verify_nitro_with(&document, &hpke, &nonce, &wide, now, &root).is_ok());
 }
 
 #[test]

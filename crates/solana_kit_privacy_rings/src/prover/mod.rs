@@ -38,6 +38,9 @@ use std::time::{Duration, Instant};
 use serde_json::Value;
 use solana_kit_client::rest::{self, Body, Method};
 
+#[cfg(feature = "tee")]
+use rand_core::{CryptoRng, RngCore};
+
 use crate::encode::{Proof, TransactBody};
 use crate::error::{Error, ProverFailure};
 pub use endpoint::ProverEndpoint;
@@ -202,16 +205,24 @@ where
             .await
     }
 
-    /// `GET /attestation?nonce=` for the 32-byte client nonce.
+    /// `GET /attestation?nonce=` for the 32-byte client nonce, without
+    /// verifying the reply.
     ///
-    /// The body is the prover's attestation document. The `tee` feature
-    /// verifies that Nitro COSE document and seals a later witness to the
-    /// HPKE key it binds.
+    /// The body is the prover's attestation document, returned raw. This
+    /// call verifies nothing. Replay protection exists only when the caller
+    /// draws the nonce from a cryptographic generator for this one attempt
+    /// and passes that same value to
+    /// [`verify_attestation`](crate::verify_attestation) immediately after:
+    /// a repeated nonce re-fetches a byte-identical, cacheable URL, and a
+    /// body captured from an earlier attempt with that nonce still verifies.
+    /// A raw fetch therefore does not prevent a replay on its own. Prefer
+    /// [`PrivacyProverClient::attest`], which draws the nonce and verifies
+    /// in one step.
     ///
     /// # Errors
     /// Rejects a remote cleartext call, a non-success status, or a body that
     /// is not JSON.
-    pub async fn fetch_attestation(&self, nonce: &[u8; 32]) -> Result<Value, Error> {
+    pub async fn fetch_unverified_attestation(&self, nonce: &[u8; 32]) -> Result<Value, Error> {
         self.require_transport()?;
         let reply = self
             .transport
@@ -234,6 +245,55 @@ where
         }
 
         serde_json::from_slice(&reply.body).map_err(|_| ProverFailure::Response.into())
+    }
+
+    /// Runs one attestation round: draws the challenge, fetches the quote,
+    /// and verifies it, in a single attempt.
+    ///
+    /// The 32-byte nonce is drawn from `rng`, a caller-supplied cryptographic
+    /// generator, for every call. A caller-chosen nonce is not accepted here,
+    /// and an entropy failure returns an error before the transport is
+    /// touched instead of continuing with a zeroed or repeated nonce. The
+    /// quote is then verified against `policy` at the caller's `now_secs`:
+    /// certificate validity, measurements, the optional HPKE pin, an exact
+    /// nonce match that pins the quote to this challenge, and the policy's
+    /// age window over the document's signed timestamp. Keep the generator
+    /// freshly seeded and never deliberately reset it, the way
+    /// [`seal_prover_request`] expects.
+    ///
+    /// There is no attestation cache and no automatic reuse lifetime: call
+    /// `attest` again for a new session, and decide any later reuse from
+    /// [`VerifiedNitro::timestamp_ms`]. The transport still owns HTTP
+    /// headers, so the caller attaches `Spr-Tee` and `Spr-Tee-Enc` to the
+    /// requests this session seals.
+    ///
+    /// # Errors
+    /// Rejects an entropy failure from `rng`, a remote cleartext call, a
+    /// prover HTTP or transport error, a body that is not JSON, and any
+    /// document [`verify_attestation`] would reject, including one minted
+    /// for a different or replayed challenge.
+    #[cfg(feature = "tee")]
+    pub async fn attest<R>(
+        &self,
+        rng: &mut R,
+        policy: &NitroPolicy,
+        now_secs: u64,
+    ) -> Result<VerifiedNitro, Error>
+    where
+        R: RngCore + CryptoRng,
+    {
+        self.require_transport()?;
+        let mut nonce = [0u8; 32];
+
+        // Security: a zeroed or repeated nonce would make the quote URL and
+        // the report_data binding replayable, so an entropy failure returns
+        // before any request instead of continuing with a known nonce.
+        if rng.try_fill_bytes(&mut nonce).is_err() {
+            return Err(Error::Attestation("entropy"));
+        }
+
+        let body = self.fetch_unverified_attestation(&nonce).await?;
+        verify_attestation(&body, &nonce, policy, now_secs)
     }
 
     async fn prove_route(
@@ -463,6 +523,8 @@ fn queued_job(value: &Value) -> Option<&str> {
     object.get("jobId").and_then(Value::as_str)
 }
 
+#[cfg(all(test, feature = "tee"))]
+mod attest_tests;
 #[cfg(test)]
 mod tests;
 

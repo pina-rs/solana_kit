@@ -943,17 +943,18 @@ fn indexed_route_and_attestation_use_their_paths() {
         Err(Error::Prover(ProverFailure::Http(404)))
     ));
     let nonce = [0x11; FIELD_BYTES];
-    let unavailable = futures::executor::block_on(client.fetch_attestation(&nonce));
+    let unavailable = futures::executor::block_on(client.fetch_unverified_attestation(&nonce));
     assert!(matches!(
         unavailable,
         Err(Error::Prover(ProverFailure::Http(500)))
     ));
-    let garbled_document = futures::executor::block_on(client.fetch_attestation(&nonce));
+    let garbled_document = futures::executor::block_on(client.fetch_unverified_attestation(&nonce));
     assert!(matches!(
         garbled_document,
         Err(Error::Prover(ProverFailure::Response))
     ));
-    let document = futures::executor::block_on(client.fetch_attestation(&nonce)).expect("document");
+    let document =
+        futures::executor::block_on(client.fetch_unverified_attestation(&nonce)).expect("document");
     assert_eq!(document["platform"], "dstack-tdx");
     let seen = paths.lock().expect("paths").clone();
     assert_eq!(seen[0], ["prove", CIRCUIT, "indexed"]);

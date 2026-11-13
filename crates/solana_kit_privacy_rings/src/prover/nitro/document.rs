@@ -28,6 +28,8 @@ pub(super) struct MeasuredDocument {
     pub pcr0: [u8; PCR_LEN],
     pub pcr1: [u8; PCR_LEN],
     pub pcr2: [u8; PCR_LEN],
+    /// Signed NSM timestamp, in milliseconds since the epoch.
+    pub timestamp_ms: u64,
     pub nonce: Option<Vec<u8>>,
     pub public_key: Option<Vec<u8>>,
     pub report_data: [u8; REPORT_LEN],
@@ -78,6 +80,7 @@ pub(super) fn inspect_document(
         pcr0,
         pcr1: document.pcr(1)?,
         pcr2: document.pcr(2)?,
+        timestamp_ms: document.timestamp_ms,
         nonce: document.nonce,
         public_key: document.public_key,
         report_data,
@@ -95,6 +98,8 @@ struct AttestationDocument {
     pcrs: BTreeMap<usize, Vec<u8>>,
     certificate: Vec<u8>,
     cabundle: Vec<Vec<u8>>,
+    /// Signed NSM timestamp, in milliseconds since the epoch.
+    timestamp_ms: u64,
     public_key: Option<Vec<u8>>,
     user_data: Option<Vec<u8>>,
     nonce: Option<Vec<u8>>,
@@ -114,17 +119,24 @@ impl AttestationDocument {
             return Err(Error::Attestation("module"));
         }
 
-        match fields.take("timestamp")? {
-            Value::Integer(timestamp)
-                if u64::try_from(timestamp).is_ok_and(|value| value < (1 << 53)) => {}
-            _ => return Err(Error::Attestation("timestamp")),
-        }
+        let Value::Integer(timestamp) = fields.take("timestamp")? else {
+            return Err(Error::Attestation("timestamp"));
+        };
+
+        // The Nitro Secure Module emits milliseconds since the epoch. The
+        // value is signed payload data, so it is kept here and checked
+        // against the caller's clock only after the quote authenticates.
+        let timestamp_ms = u64::try_from(timestamp)
+            .ok()
+            .filter(|value| *value < (1 << 53))
+            .ok_or(Error::Attestation("timestamp"))?;
 
         let document = Self {
             digest: fields.text("digest")?,
             pcrs: pcrs(fields.take("pcrs")?)?,
             certificate: fields.bytes("certificate")?,
             cabundle: cabundle(fields.take("cabundle")?)?,
+            timestamp_ms,
             public_key: fields.optional_bytes("public_key")?,
             user_data: fields.optional_bytes("user_data")?,
             nonce: fields.optional_bytes("nonce")?,
