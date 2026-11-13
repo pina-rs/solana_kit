@@ -23,7 +23,7 @@ const ADDRESS_DOMAIN: u8 = 2;
 const MAX_SAFE_INTEGER: u64 = (1 << 53) - 1;
 
 /// Eight note fields the transfer circuit hashes, each one field element.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, PartialEq, Eq)]
 pub struct NotePreimage {
     /// Circuit domain separator.
     pub domain: [u8; FIELD_BYTES],
@@ -43,6 +43,16 @@ pub struct NotePreimage {
     pub ring_program_id: [u8; FIELD_BYTES],
 }
 
+impl std::fmt::Debug for NotePreimage {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        // Security: the amount and blinding are secrets and every field is
+        // note content, so Debug keeps only the type.
+        formatter
+            .debug_struct("NotePreimage")
+            .finish_non_exhaustive()
+    }
+}
+
 /// One public tree the witness names.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct TreeSlotWitness {
@@ -55,7 +65,7 @@ pub struct TreeSlotWitness {
 }
 
 /// One input note plus the inclusion and non-inclusion paths that spend it.
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, PartialEq, Eq)]
 pub struct SpendNote {
     /// Opened note. Its blinding is the value committed in the state tree.
     pub note: NotePreimage,
@@ -81,8 +91,22 @@ pub struct SpendNote {
     pub nullifier_low_path_index: [u8; FIELD_BYTES],
 }
 
+impl std::fmt::Debug for SpendNote {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        // Security: nullifier_secret and the note preimage are spend secrets
+        // whose image is the published nullifier; Debug keeps only the shape.
+        formatter
+            .debug_struct("SpendNote")
+            .field("tree_slot", &self.tree_slot)
+            .field("is_dummy", &self.is_dummy)
+            .field("state_path_len", &self.state_path.len())
+            .field("nullifier_low_path_len", &self.nullifier_low_path.len())
+            .finish_non_exhaustive()
+    }
+}
+
 /// One output note. The circuit replaces `note.blinding`.
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, PartialEq, Eq)]
 pub struct OutputNote {
     /// Note preimage. `blinding` is ignored.
     pub note: NotePreimage,
@@ -92,6 +116,17 @@ pub struct OutputNote {
     pub owner_public_key_hash: [u8; FIELD_BYTES],
     /// Recipient nullifier public key.
     pub nullifier_public_key: [u8; FIELD_BYTES],
+}
+
+impl std::fmt::Debug for OutputNote {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        // Security: the note preimage carries the value and the derived
+        // blinding; Debug keeps only the shape.
+        formatter
+            .debug_struct("OutputNote")
+            .field("is_dummy", &self.is_dummy)
+            .finish_non_exhaustive()
+    }
 }
 
 /// One Ed25519 owner signature carried by an in-circuit rail.
@@ -124,7 +159,7 @@ pub enum TransferCircuit {
 }
 
 /// Public inputs and private notes of one confidential transfer.
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, PartialEq, Eq)]
 pub struct TransferWitness {
     /// Notes being spent.
     pub inputs: Vec<SpendNote>,
@@ -162,6 +197,21 @@ pub struct TransferWitness {
     pub cache_read_index: Vec<[u8; FIELD_BYTES]>,
     /// Circuit rail. It selects the public-input tail and the extra JSON fields.
     pub circuit: TransferCircuit,
+}
+
+impl std::fmt::Debug for TransferWitness {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        // Security: the inputs carry nullifier secrets, amounts, and
+        // blindings, and the outputs carry derived blindings; Debug keeps
+        // counts and the circuit variant only.
+        formatter
+            .debug_struct("TransferWitness")
+            .field("inputs", &self.inputs.len())
+            .field("outputs", &self.outputs.len())
+            .field("tree_slots", &self.tree_slots.len())
+            .field("circuit", &circuit_name(&self.circuit))
+            .finish_non_exhaustive()
+    }
 }
 
 /// One tree the indexed prover should read.
@@ -935,6 +985,47 @@ mod tests {
         let (published, witness) = load(TRANSFER);
         let built = confidential_transfer_witness(&witness).expect("witness");
         assert_eq!(built, published);
+    }
+
+    #[test]
+    fn debug_output_redacts_secrets_but_keeps_the_shape() {
+        let (_, mut witness) = load(TRANSFER);
+        witness.inputs[0].nullifier_secret = ascii_field(b"nullifier-secret-dummy");
+        witness.inputs[0].note.amount = ascii_field(b"input-amount-dummy");
+        witness.inputs[0].note.blinding = ascii_field(b"input-blinding-dummy");
+        witness.outputs[0].note.amount = ascii_field(b"output-amount-dummy");
+        let secret = witness.inputs[0].nullifier_secret;
+        let amount = witness.inputs[0].note.amount;
+        let blinding = witness.inputs[0].note.blinding;
+        let output_amount = witness.outputs[0].note.amount;
+
+        let rendered = format!("{witness:?}");
+        for field in [&secret, &amount, &blinding, &output_amount] {
+            assert!(!rendered.contains(format!("{field:?}").as_str()));
+            assert!(!rendered.contains(hex_text(field).as_str()));
+        }
+
+        assert!(rendered.contains("TransferWitness"));
+        assert!(rendered.contains("inputs: 2"));
+        assert!(rendered.contains("outputs: 2"));
+        assert!(rendered.contains("transfer-confidential"));
+        let spend = format!("{:?}", witness.inputs[0]);
+        assert!(spend.contains("SpendNote"));
+        assert!(!spend.contains(format!("{secret:?}").as_str()));
+        assert!(spend.contains("state_path_len"));
+        let note = format!("{:?}", witness.inputs[0].note);
+        assert!(note.contains("NotePreimage"));
+        assert!(!note.contains(format!("{amount:?}").as_str()));
+        let output = format!("{:?}", witness.outputs[0]);
+        assert!(output.contains("OutputNote"));
+        assert!(!output.contains(format!("{output_amount:?}").as_str()));
+    }
+
+    /// Distinctive ASCII fields so a leaked rendering is obvious in the diff.
+    fn ascii_field(text: &[u8]) -> [u8; 32] {
+        let mut field = [0u8; 32];
+        field[..text.len()].copy_from_slice(text);
+        field
     }
 
     #[test]

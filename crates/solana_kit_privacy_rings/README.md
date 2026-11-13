@@ -46,8 +46,10 @@ instruction (tag 16).
 Indexer calls take a URL from `Cluster::indexer_url` or `local_indexer_url`.
 The path ends in the method name. `PrivacyProverClient` posts a witness to
 `Cluster::prover_url` or `local_prover_url`. The transport adds the API key as
-a header. These strings never contain one. A remote prover must be `https` and
-the caller must set `allow_unauthenticated_remote_prover`; loopback does not.
+a header. These strings never contain one, and the client refuses any base
+URL that carries a query, so a key can never ride in the origin. A remote
+prover must be `https` and the caller must set
+`allow_unauthenticated_remote_prover`; loopback does not.
 
 ```rust
 use solana_kit_client::methods::Method;
