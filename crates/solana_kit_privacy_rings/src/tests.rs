@@ -1202,36 +1202,39 @@ fn nullifier_queue_uses_the_indexer_page_shape() {
         <GetNullifierQueueElements as Method>::NAME,
         "getNullifierQueueElements"
     );
+    let value = bs58::encode([7u8; 32]).into_string();
     let page = request
-        .decode(r#"{"context":{"blockTime":1,"slot":2},"elements":[{"seq":4,"value":"nf"}]}"#)
+        .decode(queue_page_with(&value).as_str())
         .expect("page");
     assert_eq!(page.elements[0].seq, 4);
-    assert_eq!(page.elements[0].value, "nf");
-    assert!(
-        GetNullifierQueueElements {
-            tree_account: String::new(),
-            start_seq: 0,
-            limit: 1,
-        }
-        .validate()
-        .is_err()
-    );
-    assert!(
-        GetNullifierQueueElements {
-            tree_account: "tree".to_owned(),
-            start_seq: 0,
-            limit: 0,
-        }
-        .validate()
-        .is_err()
-    );
-    assert!(
-        GetNullifierQueueElements {
-            tree_account: "tree".to_owned(),
-            start_seq: 0,
-            limit: 1_001,
-        }
-        .validate()
-        .is_err()
-    );
+    assert_eq!(page.elements[0].value, value);
+
+    for value in ["nf", "0", "11"] {
+        let error = <GetNullifierQueueElements as Method>::decode(
+            &request,
+            queue_page_with(value).as_str(),
+        )
+        .expect_err("queue value schema error");
+        assert!(error.to_string().contains("queue value"), "{error}");
+    }
+
+    assert!(rejects_queue_bound("", 0, 1));
+    assert!(rejects_queue_bound("tree", 0, 0));
+    assert!(rejects_queue_bound("tree", 0, 1_001));
+}
+
+fn queue_page_with(value: &str) -> String {
+    format!(
+        r#"{{"context":{{"blockTime":1,"slot":2}},"elements":[{{"seq":4,"value":"{value}"}}]}}"#
+    )
+}
+
+fn rejects_queue_bound(tree_account: &str, start_seq: u64, limit: u64) -> bool {
+    GetNullifierQueueElements {
+        tree_account: tree_account.to_owned(),
+        start_seq,
+        limit,
+    }
+    .validate()
+    .is_err()
 }

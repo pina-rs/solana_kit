@@ -42,7 +42,7 @@ pub use encode::{
     read_confidential, write_confidential,
 };
 pub use error::{Error, ProverFailure};
-pub use history::{Page, collect_pages, spent_nullifiers};
+pub use history::{Page, collect_nullifier_queue, collect_pages, spent_nullifiers};
 #[cfg(feature = "crypto")]
 pub use pda::{nullifier_account, sol_interface, spl_interface, state_tree, user_record};
 #[cfg(feature = "poseidon")]
@@ -79,5 +79,7 @@ pub use witness::{
     TransferWitness, TreeSlotWitness, confidential_transfer_witness, indexed_proof_request,
 };
 
+#[cfg(test)]
+mod admission_tests;
 #[cfg(test)]
 mod tests;

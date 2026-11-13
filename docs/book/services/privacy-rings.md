@@ -26,16 +26,35 @@ The `crypto` feature adds viewing-key decryption and the shielded-pool PDA helpe
 
 Pass any of these to `Client::call`. The method name is the last path segment.
 
-| Method | Response |
-| --- | --- |
-| `GetEncryptedUtxosByTags` | Matching encrypted outputs |
-| `GetShieldedTransactionsByTags` | Shielded history for view tags |
-| `GetShieldedTransactionsBySignature` | Events in one Solana transaction |
-| `GetShieldedTransactionsByNullifiers` | Shielded history for nullifiers |
-| `GetMerkleProofs` | State-tree inclusion proofs |
-| `GetNonInclusionProofs` | Nullifier absence proofs |
-| `GetUserRecords` | Registry viewing and nullifier keys |
-| `GetNullifierQueueElements` | Nullifier queue page from `startSeq`, limit 1 to 1000 |
+| Method                                | Response                                              |
+| ------------------------------------- | ----------------------------------------------------- |
+| `GetEncryptedUtxosByTags`             | Matching encrypted outputs                            |
+| `GetShieldedTransactionsByTags`       | Shielded history for view tags                        |
+| `GetShieldedTransactionsBySignature`  | Events in one Solana transaction                      |
+| `GetShieldedTransactionsByNullifiers` | Shielded history for nullifiers                       |
+| `GetMerkleProofs`                     | State-tree inclusion proofs                           |
+| `GetNonInclusionProofs`               | Nullifier absence proofs                              |
+| `GetUserRecords`                      | Registry viewing and nullifier keys                   |
+| `GetNullifierQueueElements`           | Nullifier queue page from `startSeq`, limit 1 to 1000 |
+
+Decode admits each response against its request before it is typed. A history
+page must serialize an explicit `paginationToken` (`null` ends the history; a
+missing key is a schema error), `minContextSlot` rejects a page whose
+`context.slot` sits below the requested floor, and the requested limit bounds
+transaction groups, not nested outputs or events. `GetShieldedTransactionsBySignature` events must name the requested signature, `GetMerkleProofs` and
+`GetNonInclusionProofs` return one proof per requested leaf in request order
+inside the requested tree, `GetUserRecords` returns one record per owner
+(`null` when absent), and `GetNullifierQueueElements` pages are ordered oldest
+first from the inclusive `startSeq` with 32-byte base58 values.
+
+`UtxoPage` and `ShieldedPage` convert into `Page`, which carries the page's
+claimed `context_slot`. `collect_pages` follows tokens under a requested
+floor, refuses a page older than its predecessor or a token that repeats, and
+errors when the page budget runs out with a token still present.
+`collect_nullifier_queue` does the same for the queue with a checked
+`start_seq` cursor. These checks bind what the provider declares; they do not
+prove the indexer indexed honestly, and a multi-page walk is not an atomic
+snapshot — the aggregate carries the last page's claimed context.
 
 ## Prover
 

@@ -5,10 +5,15 @@
 //! [`crate::Cluster::indexer_url`]. The Kit client sends the body; the
 //! transport chooses that URL and adds the API key.
 
-use serde::{Deserialize, Serialize};
+use std::fmt;
+use std::marker::PhantomData;
+
+use serde::de::Visitor;
+use serde::{Deserialize, Deserializer, Serialize};
 use solana_kit_client::methods::Method;
 
 use crate::Error;
+use crate::history::Page;
 
 /// Slot bounds. Supplied fields combine with AND.
 #[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
@@ -110,7 +115,9 @@ pub struct UtxoPage {
     pub output_tree_id: Option<u16>,
     /// Matching transactions.
     pub data: Vec<UtxoTransaction>,
-    /// Continuation token. `None` ends the page.
+    /// Continuation token. The producer serializes the key on every page:
+    /// explicit `null` ends the history, so a missing key is a schema error.
+    #[serde(deserialize_with = "required_nullable")]
     pub pagination_token: Option<String>,
 }
 
@@ -177,7 +184,9 @@ pub struct ShieldedPage {
     pub output_tree_id: Option<u16>,
     /// Matching transactions.
     pub data: Vec<ShieldedTransactionGroup>,
-    /// Continuation token.
+    /// Continuation token. The producer serializes the key on every page:
+    /// explicit `null` ends the history, so a missing key is a schema error.
+    #[serde(deserialize_with = "required_nullable")]
     pub pagination_token: Option<String>,
 }
 
@@ -405,9 +414,9 @@ pub struct GetUserRecords {
 /// One nullifier still sitting in a tree's on-chain input queue.
 #[derive(Clone, Debug, PartialEq, Eq, Deserialize)]
 pub struct NullifierQueueElement {
-    /// Queue sequence. Later calls pass the next sequence as `start_seq`.
+    /// Queue sequence. `next_start_seq` maps a full page to the next one.
     pub seq: u64,
-    /// Nullifier hash, base58.
+    /// Nullifier hash, base58, exactly 32 decoded bytes.
     pub value: String,
 }
 
@@ -416,7 +425,8 @@ pub struct NullifierQueueElement {
 pub struct NullifierQueue {
     /// Indexer context.
     pub context: IndexerContext,
-    /// Elements with `seq >= start_seq`, oldest first.
+    /// Elements with `seq >= start_seq`, oldest first. Queue pruning may
+    /// leave gaps between sequences.
     pub elements: Vec<NullifierQueueElement>,
 }
 
@@ -519,6 +529,68 @@ impl GetNullifierQueueElements {
 
         Ok(())
     }
+
+    /// Admits one decoded page against this request.
+    ///
+    /// The page holds at most `limit` elements, every sequence sits at or
+    /// after the inclusive `start_seq`, sequences are strictly increasing
+    /// oldest first with no duplicates, and every value decodes as base58 to
+    /// exactly the 32 bytes of a nullifier hash. Pruned queues legitimately
+    /// leave sequence gaps. The result names the queue element the response
+    /// carries: the queue output has no tree identity of its own, so this
+    /// binds the page to the request, not to any tree.
+    ///
+    /// # Errors
+    /// Returns the name of the violated queue rule.
+    fn check_queue_page(&self, page: &NullifierQueue) -> Result<(), &'static str> {
+        if page.elements.len() as u64 > self.limit {
+            return Err("queue page bound");
+        }
+
+        let mut previous: Option<u64> = None;
+
+        for element in &page.elements {
+            if element.seq < self.start_seq {
+                return Err("queue sequence bound");
+            }
+
+            if previous.is_some_and(|previous| element.seq <= previous) {
+                return Err("queue order");
+            }
+
+            previous = Some(element.seq);
+
+            if crate::history::decode_nullifier(&element.value).is_err() {
+                return Err("queue value");
+            }
+        }
+
+        Ok(())
+    }
+
+    /// The `start_seq` that fetches past this page.
+    ///
+    /// A page shorter than the request's `limit` — including an empty page —
+    /// ends the queue, and a full page advances to one past its last
+    /// sequence, skipping pruned gaps. A full page whose last sequence is
+    /// `u64::MAX` cannot advance and is an error, never a wrapped or
+    /// restarted cursor.
+    ///
+    /// # Errors
+    /// Rejects a page that violates the queue contract, and a cursor overflow.
+    pub fn next_start_seq(&self, page: &NullifierQueue) -> Result<Option<u64>, Error> {
+        self.check_queue_page(page).map_err(Error::Limit)?;
+
+        if page.elements.is_empty() || (page.elements.len() as u64) < self.limit {
+            return Ok(None);
+        }
+
+        page.elements
+            .last()
+            .and_then(|last| last.seq.checked_add(1))
+            .map(Some)
+            .ok_or(Error::Limit("queue sequence bound"))
+    }
 }
 
 fn validate_tags(tags: &[String], ring: Option<&str>) -> Result<(), Error> {
@@ -557,56 +629,309 @@ pub fn decode_base64(text: &str) -> Result<Vec<u8>, Error> {
         .map_err(|_| Error::Base64)
 }
 
+/// A schema failure with the violated contract in the message.
+fn schema(message: impl fmt::Display) -> solana_kit_client::Error {
+    solana_kit_client::Error::Schema(<serde_json::Error as serde::de::Error>::custom(message))
+}
+
 fn decode_object<T: for<'de> Deserialize<'de>>(
     result: &str,
 ) -> Result<T, solana_kit_client::Error> {
     if !result.trim_start().starts_with('{') {
-        return Err(solana_kit_client::Error::Schema(
-            <serde_json::Error as serde::de::Error>::custom("expected a privacy result object"),
-        ));
+        return Err(schema("expected a privacy result object"));
     }
 
     serde_json::from_str(result).map_err(solana_kit_client::Error::Schema)
 }
 
-macro_rules! method {
-    ($ty:ty, $name:literal, $response:ty) => {
-        impl Method for $ty {
-            type Response = $response;
-            const NAME: &'static str = $name;
+/// Required nullable field: serde's ordinary `Option` also accepts a missing
+/// field, and the pinned producer serializes `paginationToken` on every page,
+/// `null` when the history ends. A page from before the field existed is
+/// refused instead of silently completing a walk.
+fn required_nullable<'de, D, T>(deserializer: D) -> Result<Option<T>, D::Error>
+where
+    D: Deserializer<'de>,
+    T: Deserialize<'de>,
+{
+    struct Nullable<T>(PhantomData<T>);
 
-            fn decode(&self, result: &str) -> Result<Self::Response, solana_kit_client::Error> {
-                decode_object(result)
-            }
+    impl<'de, T: Deserialize<'de>> Visitor<'de> for Nullable<T> {
+        type Value = Option<T>;
+
+        fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+            formatter.write_str("a present nullable value")
         }
-    };
+
+        fn visit_none<E: serde::de::Error>(self) -> Result<Self::Value, E> {
+            Ok(None)
+        }
+
+        fn visit_unit<E: serde::de::Error>(self) -> Result<Self::Value, E> {
+            Ok(None)
+        }
+
+        fn visit_some<D: Deserializer<'de>>(
+            self,
+            deserializer: D,
+        ) -> Result<Self::Value, D::Error> {
+            T::deserialize(deserializer).map(Some)
+        }
+    }
+
+    deserializer.deserialize_option(Nullable(PhantomData))
 }
 
-method!(GetEncryptedUtxosByTags, "getEncryptedUtxosByTags", UtxoPage);
-method!(
-    GetShieldedTransactionsByTags,
-    "getShieldedTransactionsByTags",
-    ShieldedPage
-);
-method!(
-    GetShieldedTransactionsBySignature,
-    "getShieldedTransactionsBySignature",
-    ShieldedSignaturePage
-);
-method!(
-    GetShieldedTransactionsByNullifiers,
-    "getShieldedTransactionsByNullifiers",
-    ShieldedPage
-);
-method!(GetMerkleProofs, "getMerkleProofs", MerkleProofs);
-method!(
-    GetNonInclusionProofs,
-    "getNonInclusionProofs",
-    NonInclusionProofs
-);
-method!(GetUserRecords, "getUserRecords", UserRecords);
-method!(
-    GetNullifierQueueElements,
-    "getNullifierQueueElements",
-    NullifierQueue
-);
+/// The request-relative controls every paginated page satisfies: the page
+/// snapshot is at least as fresh as the requested minimum slot, and the page
+/// carries no more transaction groups than the requested size. Slot filters
+/// describe which rows the indexer matched, not snapshot freshness, so they
+/// play no part in the fence.
+fn check_page_bounds(
+    context_slot: u64,
+    groups: usize,
+    min_context_slot: Option<u64>,
+    limit: Option<u64>,
+) -> Result<(), solana_kit_client::Error> {
+    if let Some(floor) = min_context_slot
+        && context_slot < floor
+    {
+        return Err(schema(format_args!(
+            "page context slot {context_slot} is below the requested minContextSlot {floor}"
+        )));
+    }
+
+    if let Some(limit) = limit
+        && groups as u64 > limit
+    {
+        return Err(schema(format_args!(
+            "page holds {groups} transaction groups beyond the requested limit {limit}"
+        )));
+    }
+
+    Ok(())
+}
+
+/// Binds positional proofs to their request: one proof per requested leaf,
+/// every proof inside the requested tree, and each proof leaf equal to the
+/// leaf asked for at its position. Repeated requested leaves keep repeated
+/// proofs.
+fn check_positional_proofs<'a>(
+    tree_account: &str,
+    leaves: &[String],
+    proofs: impl IntoIterator<Item = (&'a str, &'a MerkleContext)>,
+) -> Result<(), solana_kit_client::Error> {
+    let mut count = 0usize;
+
+    for (position, (leaf, context)) in proofs.into_iter().enumerate() {
+        if position >= leaves.len() {
+            return Err(schema(format_args!(
+                "{} proofs for {} requested leaves",
+                position + 1,
+                leaves.len()
+            )));
+        }
+
+        if context.tree != tree_account {
+            return Err(schema(format_args!(
+                "proof {position} names tree {} but the request asked for {tree_account}",
+                context.tree
+            )));
+        }
+
+        if leaf != leaves[position] {
+            return Err(schema(format_args!(
+                "proof {position} names leaf {leaf} but the request asked for {}",
+                leaves[position]
+            )));
+        }
+
+        count = position + 1;
+    }
+
+    if count != leaves.len() {
+        return Err(schema(format_args!(
+            "{count} proofs for {} requested leaves",
+            leaves.len()
+        )));
+    }
+
+    Ok(())
+}
+
+impl Method for GetEncryptedUtxosByTags {
+    type Response = UtxoPage;
+    const NAME: &'static str = "getEncryptedUtxosByTags";
+
+    fn decode(&self, result: &str) -> Result<Self::Response, solana_kit_client::Error> {
+        let page: UtxoPage = decode_object(result)?;
+        check_page_bounds(
+            page.context.slot,
+            page.data.len(),
+            self.min_context_slot,
+            self.limit,
+        )?;
+
+        Ok(page)
+    }
+}
+
+impl Method for GetShieldedTransactionsByTags {
+    type Response = ShieldedPage;
+    const NAME: &'static str = "getShieldedTransactionsByTags";
+
+    fn decode(&self, result: &str) -> Result<Self::Response, solana_kit_client::Error> {
+        let page: ShieldedPage = decode_object(result)?;
+        check_page_bounds(
+            page.context.slot,
+            page.data.len(),
+            self.min_context_slot,
+            self.limit,
+        )?;
+
+        Ok(page)
+    }
+}
+
+impl Method for GetShieldedTransactionsBySignature {
+    type Response = ShieldedSignaturePage;
+    const NAME: &'static str = "getShieldedTransactionsBySignature";
+
+    fn decode(&self, result: &str) -> Result<Self::Response, solana_kit_client::Error> {
+        let page: ShieldedSignaturePage = decode_object(result)?;
+
+        for entry in &page.transactions {
+            let found = entry.transaction.tx_signature.as_str();
+
+            if found != self.tx_signature {
+                return Err(schema(format_args!(
+                    "event {} names signature {found} but the request asked for {}",
+                    entry.event_index, self.tx_signature
+                )));
+            }
+        }
+
+        Ok(page)
+    }
+}
+
+impl Method for GetShieldedTransactionsByNullifiers {
+    type Response = ShieldedPage;
+    const NAME: &'static str = "getShieldedTransactionsByNullifiers";
+
+    fn decode(&self, result: &str) -> Result<Self::Response, solana_kit_client::Error> {
+        let page: ShieldedPage = decode_object(result)?;
+        check_page_bounds(
+            page.context.slot,
+            page.data.len(),
+            self.min_context_slot,
+            self.limit,
+        )?;
+
+        Ok(page)
+    }
+}
+
+impl Method for GetMerkleProofs {
+    type Response = MerkleProofs;
+    const NAME: &'static str = "getMerkleProofs";
+
+    fn decode(&self, result: &str) -> Result<Self::Response, solana_kit_client::Error> {
+        let proofs: MerkleProofs = decode_object(result)?;
+        check_positional_proofs(
+            &self.tree_account,
+            &self.leaves,
+            proofs
+                .proofs
+                .iter()
+                .map(|proof| (proof.leaf.as_str(), &proof.merkle_context)),
+        )?;
+
+        Ok(proofs)
+    }
+}
+
+impl Method for GetNonInclusionProofs {
+    type Response = NonInclusionProofs;
+    const NAME: &'static str = "getNonInclusionProofs";
+
+    fn decode(&self, result: &str) -> Result<Self::Response, solana_kit_client::Error> {
+        let proofs: NonInclusionProofs = decode_object(result)?;
+        check_positional_proofs(
+            &self.tree_account,
+            &self.leaves,
+            proofs
+                .proofs
+                .iter()
+                .map(|proof| (proof.leaf.as_str(), &proof.merkle_context)),
+        )?;
+
+        Ok(proofs)
+    }
+}
+
+impl Method for GetUserRecords {
+    type Response = UserRecords;
+    const NAME: &'static str = "getUserRecords";
+
+    fn decode(&self, result: &str) -> Result<Self::Response, solana_kit_client::Error> {
+        let records: UserRecords = decode_object(result)?;
+
+        if records.records.len() != self.owners.len() {
+            return Err(schema(format_args!(
+                "{} records for {} requested owners",
+                records.records.len(),
+                self.owners.len()
+            )));
+        }
+
+        for (position, (record, owner)) in
+            records.records.iter().zip(self.owners.iter()).enumerate()
+        {
+            let Some(record) = record else {
+                continue;
+            };
+
+            if record.owner != *owner {
+                return Err(schema(format_args!(
+                    "record {position} names owner {} but the request asked for {owner}",
+                    record.owner
+                )));
+            }
+        }
+
+        Ok(records)
+    }
+}
+
+impl Method for GetNullifierQueueElements {
+    type Response = NullifierQueue;
+    const NAME: &'static str = "getNullifierQueueElements";
+
+    fn decode(&self, result: &str) -> Result<Self::Response, solana_kit_client::Error> {
+        let page: NullifierQueue = decode_object(result)?;
+        self.check_queue_page(&page)
+            .map_err(|rule| schema(format_args!("{rule} rejected")))?;
+
+        Ok(page)
+    }
+}
+
+impl From<UtxoPage> for Page<UtxoTransaction> {
+    fn from(page: UtxoPage) -> Self {
+        Page {
+            context_slot: page.context.slot,
+            items: page.data,
+            pagination_token: page.pagination_token,
+        }
+    }
+}
+
+impl From<ShieldedPage> for Page<ShieldedTransactionGroup> {
+    fn from(page: ShieldedPage) -> Self {
+        Page {
+            context_slot: page.context.slot,
+            items: page.data,
+            pagination_token: page.pagination_token,
+        }
+    }
+}
