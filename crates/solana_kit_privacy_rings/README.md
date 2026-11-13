@@ -18,7 +18,8 @@ verifies an AWS Nitro attestation document and seals a prover request with
 HPKE. `PrivacyProverClient::attest` runs the attestation round in one call: it
 draws a fresh 32-byte nonce from the caller's `rand_core` generator for every
 attempt, fetches `GET /attestation?nonce=`, and verifies the quote against the
-caller's `NitroPolicy` at the caller's clock. `max_age_secs` and
+caller's `NitroPolicy` using a `now_secs` callback sampled after the fetch
+completes. `max_age_secs` and
 `max_future_secs` (seconds) bound the signed document timestamp on both sides
 of `now_secs`, and `VerifiedNitro::timestamp_ms` exposes that timestamp for
 any later reuse decision. There is no attestation cache, and an entropy

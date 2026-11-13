@@ -134,7 +134,8 @@ impl RngCore for PinnedNonceRng {
     }
 
     fn next_u64(&mut self) -> u64 {
-        u64::from_be_bytes(*fixture_nonce()) ^ (self.draws as u64).wrapping_mul(0x9E37_79B9)
+        let prefix = fixture_nonce()[..8].try_into().expect("nonce prefix");
+        u64::from_be_bytes(prefix) ^ (self.draws as u64).wrapping_mul(0x9E37_79B9)
     }
 
     fn fill_bytes(&mut self, dest: &mut [u8]) {
@@ -197,8 +198,8 @@ fn attest_binds_a_fresh_nonce_to_one_quote() {
     let now = live_body()["captured_at"].as_u64().expect("captured_at");
     let mut rng = PinnedNonceRng::new();
 
-    let verified =
-        futures::executor::block_on(fixture.client.attest(&mut rng, &policy, now)).expect("attest");
+    let verified = futures::executor::block_on(fixture.client.attest(&mut rng, &policy, || now))
+        .expect("attest");
     assert_eq!(rng.draws, 1);
     assert_eq!(*fixture.calls.lock().expect("calls"), 1);
 
@@ -223,7 +224,7 @@ fn attest_binds_a_fresh_nonce_to_one_quote() {
     // A second call draws a new nonce, and the transport still answers with
     // the first quote: that quote belongs to the previous challenge and must
     // not verify.
-    let replayed = futures::executor::block_on(fixture.client.attest(&mut rng, &policy, now));
+    let replayed = futures::executor::block_on(fixture.client.attest(&mut rng, &policy, || now));
     assert!(matches!(replayed, Err(Error::Attestation("nonce"))));
     assert_eq!(rng.draws, 2);
     assert_eq!(*fixture.calls.lock().expect("calls"), 2);
@@ -237,7 +238,7 @@ fn attest_propagates_http_transport_and_verification_failures() {
     let error = futures::executor::block_on(fixture.client.attest(
         &mut PinnedNonceRng::new(),
         &live_policy(),
-        now,
+        || now,
     ))
     .expect_err("http");
     assert!(matches!(error, Error::Prover(ProverFailure::Http(500))));
@@ -247,7 +248,7 @@ fn attest_propagates_http_transport_and_verification_failures() {
     let error = futures::executor::block_on(fixture.client.attest(
         &mut PinnedNonceRng::new(),
         &live_policy(),
-        now,
+        || now,
     ))
     .expect_err("transport");
     assert!(matches!(error, Error::Prover(ProverFailure::Transport)));
@@ -257,7 +258,7 @@ fn attest_propagates_http_transport_and_verification_failures() {
     let error = futures::executor::block_on(fixture.client.attest(
         &mut PinnedNonceRng::new(),
         &live_policy(),
-        now,
+        || now,
     ))
     .expect_err("json");
     assert!(matches!(error, Error::Prover(ProverFailure::Response)));
@@ -269,7 +270,7 @@ fn attest_propagates_http_transport_and_verification_failures() {
     let error = futures::executor::block_on(fixture.client.attest(
         &mut PinnedNonceRng::new(),
         &live_policy(),
-        now,
+        || now,
     ))
     .expect_err("platform");
     assert!(matches!(error, Error::Attestation("platform")));
@@ -282,7 +283,7 @@ fn attest_propagates_http_transport_and_verification_failures() {
     let error = futures::executor::block_on(fixture.client.attest(
         &mut PinnedNonceRng::new(),
         &pinned,
-        now,
+        || now,
     ))
     .expect_err("pin");
     assert!(matches!(error, Error::Attestation("hpke pin")));
@@ -291,9 +292,12 @@ fn attest_propagates_http_transport_and_verification_failures() {
 #[test]
 fn an_entropy_failure_returns_before_any_transport_call() {
     let fixture = quote_transport(HTTP_OK, live_body().to_string());
-    let error =
-        futures::executor::block_on(fixture.client.attest(&mut ExhaustedRng, &live_policy(), 0))
-            .expect_err("exhausted entropy");
+    let error = futures::executor::block_on(fixture.client.attest(
+        &mut ExhaustedRng,
+        &live_policy(),
+        || panic!("clock must not be sampled after an entropy failure"),
+    ))
+    .expect_err("exhausted entropy");
 
     // The error is a fixed label: no nonce, clock, or RNG detail rides out,
     // and the transport was never asked for a quote.
@@ -301,4 +305,22 @@ fn an_entropy_failure_returns_before_any_transport_call() {
     assert_eq!(format!("{error:?}"), "Attestation(\"entropy\")");
     assert_eq!(*fixture.calls.lock().expect("calls"), 0);
     assert!(fixture.queries.lock().expect("queries").is_empty());
+}
+
+#[test]
+fn attest_samples_the_clock_after_the_quote_arrives() {
+    let fixture = quote_transport(HTTP_OK, live_body().to_string());
+    let now = live_body()["captured_at"].as_u64().expect("captured_at");
+    let completed_at = || {
+        assert_eq!(*fixture.calls.lock().expect("calls"), 1);
+        now + 601
+    };
+    let error = futures::executor::block_on(fixture.client.attest(
+        &mut PinnedNonceRng::new(),
+        &live_policy(),
+        completed_at,
+    ))
+    .expect_err("quote expired during the fetch");
+
+    assert!(matches!(error, Error::Attestation("age")));
 }

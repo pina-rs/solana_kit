@@ -211,13 +211,13 @@ where
     /// The body is the prover's attestation document, returned raw. This
     /// call verifies nothing. Replay protection exists only when the caller
     /// draws the nonce from a cryptographic generator for this one attempt
-    /// and passes that same value to
-    /// [`verify_attestation`](crate::verify_attestation) immediately after:
+    /// and passes that same value to `verify_attestation` immediately after:
     /// a repeated nonce re-fetches a byte-identical, cacheable URL, and a
-    /// body captured from an earlier attempt with that nonce still verifies.
+    /// body captured from an earlier attempt with that nonce still verifies
+    /// within its policy age window and certificate validity.
     /// A raw fetch therefore does not prevent a replay on its own. Prefer
-    /// [`PrivacyProverClient::attest`], which draws the nonce and verifies
-    /// in one step.
+    /// `PrivacyProverClient::attest` with the `tee` feature, which draws the
+    /// nonce and verifies in one step.
     ///
     /// # Errors
     /// Rejects a remote cleartext call, a non-success status, or a body that
@@ -254,7 +254,8 @@ where
     /// generator, for every call. A caller-chosen nonce is not accepted here,
     /// and an entropy failure returns an error before the transport is
     /// touched instead of continuing with a zeroed or repeated nonce. The
-    /// quote is then verified against `policy` at the caller's `now_secs`:
+    /// quote is then verified against `policy` at the time returned by the
+    /// caller's `now_secs` callback, sampled after the fetch completes:
     /// certificate validity, measurements, the optional HPKE pin, an exact
     /// nonce match that pins the quote to this challenge, and the policy's
     /// age window over the document's signed timestamp. Keep the generator
@@ -273,14 +274,15 @@ where
     /// document [`verify_attestation`] would reject, including one minted
     /// for a different or replayed challenge.
     #[cfg(feature = "tee")]
-    pub async fn attest<R>(
+    pub async fn attest<R, F>(
         &self,
         rng: &mut R,
         policy: &NitroPolicy,
-        now_secs: u64,
+        now_secs: F,
     ) -> Result<VerifiedNitro, Error>
     where
         R: RngCore + CryptoRng,
+        F: FnOnce() -> u64,
     {
         self.require_transport()?;
         let mut nonce = [0u8; 32];
@@ -293,7 +295,7 @@ where
         }
 
         let body = self.fetch_unverified_attestation(&nonce).await?;
-        verify_attestation(&body, &nonce, policy, now_secs)
+        verify_attestation(&body, &nonce, policy, now_secs())
     }
 
     async fn prove_route(

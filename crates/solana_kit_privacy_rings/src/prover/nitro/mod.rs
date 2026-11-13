@@ -40,8 +40,9 @@ pub struct NitroPolicy {
     pub hpke_public_key: Option<[u8; 32]>,
     /// Maximum age of the document's signed timestamp, in seconds. A document
     /// older than this at the caller's `now_secs` is rejected, even while its
-    /// certificates are still valid. Zero accepts only timestamps inside the
-    /// caller's own second; it never disables the check.
+    /// certificates are still valid. Zero rejects every timestamp strictly
+    /// older than the caller's clock; it never disables the check. Future
+    /// timestamps remain subject to `max_future_secs`.
     pub max_age_secs: u64,
     /// How far ahead of the caller's `now_secs` the signed timestamp may sit,
     /// in seconds. Zero rejects any timestamp in the future.
@@ -164,8 +165,8 @@ pub fn verify_nitro_with(
 /// value times 1,000 and summed with the same-width skew cannot approach
 /// `u128`'s range, so no step can overflow, and `saturating_sub` keeps a
 /// caller clock below the age limit from rejecting every document. A zero
-/// `max_age_secs` is the strictest setting, not a disabled check: only a
-/// timestamp inside the caller's own second survives it.
+/// `max_age_secs` rejects every timestamp strictly older than the caller's
+/// clock; it never disables the check. The future bound remains separate.
 fn check_document_age(timestamp_ms: u64, policy: &NitroPolicy, now_secs: u64) -> Result<(), Error> {
     const MS_PER_SEC: u128 = 1_000;
 
@@ -189,7 +190,7 @@ fn check_document_age(timestamp_ms: u64, policy: &NitroPolicy, now_secs: u64) ->
 ///
 /// The nonce must be a fresh value the caller drew for this one attempt and
 /// sent with the fetch; a nonce that repeats an earlier attempt accepts a
-/// replayed body for as long as its certificates are valid. Prefer
+/// replayed body within its policy age window and certificate validity. Prefer
 /// [`PrivacyProverClient::attest`](crate::PrivacyProverClient::attest),
 /// which draws the nonce, fetches, and verifies in one step.
 ///
