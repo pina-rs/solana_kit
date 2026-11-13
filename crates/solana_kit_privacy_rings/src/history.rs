@@ -307,13 +307,14 @@ mod tests {
         assert_eq!(collect_pages(&fetch, 4, None).expect("pages"), vec![1, 2]);
         assert!(format!("{:?}", page(1, vec![1], Some("next"))).contains("next"));
         assert!(matches!(
-            collect_pages(&fetch, 1, None),
+            collect_pages(|_| Ok(page(3, vec![3], Some("next"))), 1, None),
             Err(Error::Limit("page"))
         ));
         assert!(matches!(
             collect_pages(&fetch, 0, None),
             Err(Error::Limit("page"))
         ));
+        assert_eq!(step.get(), 3);
     }
 
     #[test]
