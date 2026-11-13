@@ -178,6 +178,33 @@ fn an_api_key_in_the_url_is_refused_and_not_echoed() {
 }
 
 #[test]
+fn an_api_key_before_the_path_is_refused_and_not_echoed() {
+    let secret = "super-secret-key";
+
+    for url in [
+        format!("http://127.0.0.1:3001?api-key={secret}"),
+        format!("http://127.0.0.1:3001/v1/spr?api-key={secret}"),
+        format!("https://prover.example?%61pi-key={secret}"),
+        "http://attacker.example?.localhost".to_owned(),
+    ] {
+        // Construction fails before the transport can ever be touched.
+        let error =
+            PrivacyProverClient::new(&url, CountingTransport::default()).expect_err("query in url");
+        assert!(
+            matches!(error, Error::Prover(ProverFailure::Config)),
+            "{url}"
+        );
+        assert!(!format!("{error:?}").contains(secret));
+    }
+
+    let client = PrivacyProverClient::new("http://127.0.0.1:3001", CountingTransport::default())
+        .expect("endpoint");
+    let rendered = format!("{client:?}");
+    assert!(rendered.contains("127.0.0.1:3001"));
+    assert!(!rendered.contains('?'));
+}
+
+#[test]
 fn a_remote_cleartext_prover_is_not_called() {
     let transport = CountingTransport::default();
     let calls = Arc::clone(&transport.calls);

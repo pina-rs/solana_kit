@@ -84,7 +84,7 @@ pub enum Delivery {
 /// the prover will not treat the call as synchronous.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ProverDestination {
-    /// Base URL. It has no userinfo and no `api-key` query parameter.
+    /// Base URL. It has no userinfo and no query or fragment.
     pub endpoint: ProverEndpoint,
     /// Header the transport adds.
     pub delivery: Delivery,
@@ -110,8 +110,10 @@ impl<T> PrivacyProverClient<T> {
     /// or `https://devnet.helius-rpc.com/v1/spr`.
     ///
     /// # Errors
-    /// Rejects a URL that is not `http` or `https`, or that contains an
-    /// `api-key` query parameter.
+    /// Rejects a URL that is not `http` or `https`, that has userinfo, that
+    /// carries any query or fragment, or whose host or port does not parse.
+    /// An `api-key` therefore cannot ride in the origin, and it belongs on
+    /// the transport as a header.
     pub fn new(endpoint: &str, transport: T) -> Result<Self, Error> {
         Ok(Self {
             transport,
