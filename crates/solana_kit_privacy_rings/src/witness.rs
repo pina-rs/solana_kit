@@ -1734,7 +1734,7 @@ mod tests {
         assert_eq!(request["circuitType"], "transfer-confidential");
         assert_eq!(request["trees"][0]["id"], 7);
         assert_eq!(
-            request["inputs"][0]["commitment"],
+            request["inputs"][0]["commitment"].as_str(),
             lookups[0].commitment.as_deref()
         );
         assert!(request["inputs"][0]["nullifier"].is_null());
