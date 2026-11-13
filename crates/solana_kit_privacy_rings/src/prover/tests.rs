@@ -859,6 +859,7 @@ fn indexed_async_poll_uses_the_key_status_route() {
         replies: Mutex::new(VecDeque::from([
             (HTTP_TOO_MANY, "{}"),
             (HTTP_OK, r#"{"jobId":"job_1"}"#),
+            (HTTP_OK, r#"{"status":"queued"}"#),
             (HTTP_OK, completed),
         ])),
         paths: Arc::clone(&paths),
@@ -879,22 +880,31 @@ fn indexed_async_poll_uses_the_key_status_route() {
     assert_eq!(proof.a, negated_a());
 
     let seen = paths.lock().expect("paths").clone();
+    assert_eq!(seen.len(), 4);
     assert_eq!(seen[0], ["prove", CIRCUIT, "indexed"]);
     assert_eq!(seen[1], ["prove", CIRCUIT, "indexed"]);
     assert_eq!(seen[2], ["prove", CIRCUIT, "status"]);
+    assert_eq!(seen[3], ["prove", CIRCUIT, "status"]);
     let deliveries = deliveries.lock().expect("deliveries").clone();
     assert_eq!(
         deliveries,
-        [Delivery::Sync, Delivery::Async, Delivery::Status]
+        [
+            Delivery::Sync,
+            Delivery::Async,
+            Delivery::Status,
+            Delivery::Status
+        ]
     );
     let queries = queries.lock().expect("queries").clone();
     assert_eq!(queries[0], Vec::<(String, String)>::new());
     assert_eq!(queries[1], Vec::<(String, String)>::new());
     assert_eq!(queries[2], [("jobId".to_owned(), "job_1".to_owned())]);
+    assert_eq!(queries[3], queries[2]);
     let bodies = bodies.lock().expect("bodies").clone();
     assert_eq!(bodies[0].as_deref(), Some(body.as_bytes()));
     assert_eq!(bodies[1], bodies[0]);
     assert_eq!(bodies[2], None);
+    assert_eq!(bodies[3], None);
 }
 
 #[test]

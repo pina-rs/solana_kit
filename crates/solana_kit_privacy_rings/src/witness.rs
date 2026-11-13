@@ -393,7 +393,7 @@ struct Created {
 fn signer_width(n_inputs: usize) -> Option<usize> {
     let remaining =
         MAX_TRANSACTION_ADDRESSES.checked_sub(FIXED_TRANSACT_ADDRESSES.checked_add(n_inputs)?)?;
-    Some(n_inputs.min(remaining).checked_add(1)?)
+    n_inputs.min(remaining).checked_add(1)
 }
 
 /// Key-name prefix of the pinned proving keys each rail proves under.
@@ -967,6 +967,11 @@ fn check_lookup_flags(
     derived_nullifier: &[u8; FIELD_BYTES],
 ) -> Result<(), Error> {
     let address = domain_tag(&input.note.domain) == ADDRESS_DOMAIN;
+
+    if input.is_dummy && cached {
+        return Err(Error::Limit("indexed lookup"));
+    }
+
     if (input.is_dummy || cached || address) != lookup.commitment.is_none() {
         return Err(Error::Limit("indexed lookup"));
     }
@@ -1458,8 +1463,8 @@ mod tests {
         ));
     }
 
-    /// A base58 spelling of one 32-byte field, the form the indexer uses.
-    fn base58(field: &[u8; 32]) -> String {
+    /// Encodes fixture bytes, including intentionally invalid field widths.
+    fn base58(field: &[u8]) -> String {
         bs58::encode(field).into_string()
     }
 
@@ -1996,6 +2001,10 @@ mod tests {
         let cached_lookups = Vec::from([without[0].clone(), lookups[1].clone()]);
         assert!(indexed_proof_request(&cached, &trees, &cached_lookups, None).is_ok());
         refused(&cached, &trees, &lookups, "commitment on cached input");
+
+        let mut cached_dummy = dummy;
+        cached_dummy.cache_is_cached[1] = slot_field(1);
+        refused(&cached_dummy, &trees, &dummy_lookups, "cached dummy");
 
         assert!(matches!(
             indexed_proof_request(&witness, &trees, &lookups, Some(MAX_SAFE_INTEGER + 1)),
