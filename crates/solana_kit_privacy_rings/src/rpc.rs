@@ -6,9 +6,7 @@
 //! transport chooses that URL and adds the API key.
 
 use std::fmt;
-use std::marker::PhantomData;
 
-use serde::de::Visitor;
 use serde::{Deserialize, Deserializer, Serialize};
 use solana_kit_client::methods::Method;
 
@@ -543,6 +541,8 @@ impl GetNullifierQueueElements {
     /// # Errors
     /// Returns the name of the violated queue rule.
     fn check_queue_page(&self, page: &NullifierQueue) -> Result<(), &'static str> {
+        self.validate().map_err(|_| "queue request")?;
+
         if page.elements.len() as u64 > self.limit {
             return Err("queue page bound");
         }
@@ -648,37 +648,11 @@ fn decode_object<T: for<'de> Deserialize<'de>>(
 /// field, and the pinned producer serializes `paginationToken` on every page,
 /// `null` when the history ends. A page from before the field existed is
 /// refused instead of silently completing a walk.
-fn required_nullable<'de, D, T>(deserializer: D) -> Result<Option<T>, D::Error>
+fn required_nullable<'de, D>(deserializer: D) -> Result<Option<String>, D::Error>
 where
     D: Deserializer<'de>,
-    T: Deserialize<'de>,
 {
-    struct Nullable<T>(PhantomData<T>);
-
-    impl<'de, T: Deserialize<'de>> Visitor<'de> for Nullable<T> {
-        type Value = Option<T>;
-
-        fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
-            formatter.write_str("a present nullable value")
-        }
-
-        fn visit_none<E: serde::de::Error>(self) -> Result<Self::Value, E> {
-            Ok(None)
-        }
-
-        fn visit_unit<E: serde::de::Error>(self) -> Result<Self::Value, E> {
-            Ok(None)
-        }
-
-        fn visit_some<D: Deserializer<'de>>(
-            self,
-            deserializer: D,
-        ) -> Result<Self::Value, D::Error> {
-            T::deserialize(deserializer).map(Some)
-        }
-    }
-
-    deserializer.deserialize_option(Nullable(PhantomData))
+    Option::deserialize(deserializer)
 }
 
 /// The request-relative controls every paginated page satisfies: the page
@@ -758,6 +732,40 @@ fn check_positional_proofs<'a>(
     Ok(())
 }
 
+/// Checks that outputs retain their enclosing transaction's identity.
+fn check_utxo_groups(groups: &[UtxoTransaction]) -> Result<(), solana_kit_client::Error> {
+    for group in groups {
+        if group
+            .outputs
+            .iter()
+            .any(|output| output.tx_signature != group.signature || output.slot != group.slot)
+        {
+            return Err(schema("UTXO output disagrees with its transaction group"));
+        }
+    }
+
+    Ok(())
+}
+
+/// Checks that events retain their enclosing transaction's identity.
+fn check_shielded_groups(
+    groups: &[ShieldedTransactionGroup],
+) -> Result<(), solana_kit_client::Error> {
+    for group in groups {
+        if group
+            .events
+            .iter()
+            .any(|event| event.tx_signature != group.signature || event.slot != group.slot)
+        {
+            return Err(schema(
+                "shielded event disagrees with its transaction group",
+            ));
+        }
+    }
+
+    Ok(())
+}
+
 impl Method for GetEncryptedUtxosByTags {
     type Response = UtxoPage;
     const NAME: &'static str = "getEncryptedUtxosByTags";
@@ -770,6 +778,7 @@ impl Method for GetEncryptedUtxosByTags {
             self.min_context_slot,
             self.limit,
         )?;
+        check_utxo_groups(&page.data)?;
 
         Ok(page)
     }
@@ -787,6 +796,7 @@ impl Method for GetShieldedTransactionsByTags {
             self.min_context_slot,
             self.limit,
         )?;
+        check_shielded_groups(&page.data)?;
 
         Ok(page)
     }
@@ -798,6 +808,10 @@ impl Method for GetShieldedTransactionsBySignature {
 
     fn decode(&self, result: &str) -> Result<Self::Response, solana_kit_client::Error> {
         let page: ShieldedSignaturePage = decode_object(result)?;
+        let expected_slot = page
+            .transactions
+            .first()
+            .map(|entry| entry.transaction.slot);
 
         for entry in &page.transactions {
             let found = entry.transaction.tx_signature.as_str();
@@ -807,6 +821,17 @@ impl Method for GetShieldedTransactionsBySignature {
                     "event {} names signature {found} but the request asked for {}",
                     entry.event_index, self.tx_signature
                 )));
+            }
+
+            if Some(entry.transaction.slot) != expected_slot
+                || entry
+                    .transaction
+                    .event_index
+                    .is_some_and(|index| index != entry.event_index)
+            {
+                return Err(schema(
+                    "event index or slot disagrees with the signature result",
+                ));
             }
         }
 
@@ -826,6 +851,7 @@ impl Method for GetShieldedTransactionsByNullifiers {
             self.min_context_slot,
             self.limit,
         )?;
+        check_shielded_groups(&page.data)?;
 
         Ok(page)
     }

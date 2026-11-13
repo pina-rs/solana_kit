@@ -46,7 +46,7 @@ fn nullifier(byte: u8) -> String {
 
 fn utxo_page(slot: u64, groups: usize, outputs: usize, token: &str) -> String {
     let output = format!(
-        r#"{{"viewTag":"tv","outputContext":{{"hash":"h","tree":"{TREE}","treeId":0,"leafIndex":0}},"payload":""}}"#
+        r#"{{"slot":1,"txSignature":"{SIGNATURE}","outputSlot":{{"viewTag":"tv","outputContext":{{"hash":"h","tree":"{TREE}","treeId":0,"leafIndex":0}},"payload":""}}}}"#
     );
 
     let data: Vec<String> = (0..groups)
@@ -261,6 +261,82 @@ fn an_explicit_null_token_ends_the_page_and_a_nonempty_token_continues() {
         .decode(&shielded_page(2, 0, 0, r#""""#))
         .expect("empty token");
     assert_eq!(empty.pagination_token.as_deref(), Some(""));
+}
+
+#[test]
+fn grouped_transaction_identities_must_agree() {
+    let utxo: serde_json::Value =
+        serde_json::from_str(&utxo_page(2, 1, 1, "null")).expect("UTXO page");
+    assert!(utxo_request(None, None).decode(&utxo.to_string()).is_ok());
+
+    for (field, value) in [
+        ("txSignature", serde_json::Value::from(FOREIGN_SIGNATURE)),
+        ("slot", serde_json::Value::from(2u64)),
+    ] {
+        let mut conflicting = utxo.clone();
+        conflicting["data"][0]["outputs"][0][field] = value;
+        schema_message(utxo_request(None, None).decode(&conflicting.to_string()));
+    }
+
+    let shielded: serde_json::Value =
+        serde_json::from_str(&shielded_page(2, 1, 1, "null")).expect("shielded page");
+    assert!(
+        shielded_request(None, None)
+            .decode(&shielded.to_string())
+            .is_ok()
+    );
+
+    for (field, value) in [
+        ("txSignature", serde_json::Value::from(FOREIGN_SIGNATURE)),
+        ("slot", serde_json::Value::from(2u64)),
+    ] {
+        let mut conflicting = shielded.clone();
+        conflicting["data"][0]["events"][0][field] = value;
+        let body = conflicting.to_string();
+        schema_message(shielded_request(None, None).decode(&body));
+        schema_message(spent_request(None, None).decode(&body));
+    }
+}
+
+#[test]
+fn signature_event_indices_and_slots_must_agree() {
+    let request = GetShieldedTransactionsBySignature {
+        tx_signature: SIGNATURE.to_owned(),
+    };
+    let mut valid: serde_json::Value =
+        serde_json::from_str(&signature_page(&[SIGNATURE, SIGNATURE])).expect("signature page");
+    valid["transactions"][1]["transaction"]["eventIndex"] = 1u64.into();
+    assert!(request.decode(&valid.to_string()).is_ok());
+
+    for (field, value) in [
+        ("eventIndex", serde_json::Value::from(0u64)),
+        ("slot", serde_json::Value::from(2u64)),
+    ] {
+        let mut conflicting = valid.clone();
+        conflicting["transactions"][1]["transaction"][field] = value;
+        schema_message(request.decode(&conflicting.to_string()));
+    }
+}
+
+#[test]
+fn queue_response_admission_rejects_invalid_request_bounds() {
+    let body = queue_page(2, &[]);
+    let page = serde_json::from_str::<crate::NullifierQueue>(&body).expect("empty page");
+
+    for request in [
+        queue_request(0, 0),
+        queue_request(0, 1_001),
+        GetNullifierQueueElements {
+            tree_account: String::new(),
+            ..queue_request(0, 1)
+        },
+    ] {
+        schema_message(request.decode(&body));
+        assert!(matches!(
+            request.next_start_seq(&page),
+            Err(crate::Error::Limit("queue request"))
+        ));
+    }
 }
 
 #[test]
