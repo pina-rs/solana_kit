@@ -96,14 +96,17 @@ AES-CTR, and opening a proofless deposit does not check its owner; keep
 `open_output` results untrusted until they pass admission.
 
 With `poseidon`, `verify_note` checks an expected owner and recomputes the
-commitment with the pinned UTXO domain. It admits only data-free confidential
-notes (no ring program id and no application data) and data-free proofless
-notes (no trailing metadata); ring- or data-bearing shapes fail closed.
-`private_balances` (alias `verified_balances`) sums only `VerifiedNote` values
-by verified commitment, so one commitment counts once across leaf relabels and
-a spent commitment stays excluded. It does not derive nullifiers and matching an
-indexer-supplied commitment is not independent chain inclusion: callers must
-obtain trustworthy commitment and tree context.
+commitment with the pinned UTXO domain. For proofless notes it requires an
+explicit trusted mint-to-asset-field resolver so the commitment uses the
+registry asset field while the note keeps its displayed mint. It admits only
+data-free confidential notes (no ring program id and no application data) and
+data-free proofless notes whose trailing wire fields are the canonical empty
+option tags; ring-, data-, or extension-bearing shapes fail closed.
+`private_balances` sums only `VerifiedNote` values by verified commitment, so
+one commitment counts once across leaf relabels and a spent commitment stays
+excluded. It does not derive nullifiers and matching an indexer-supplied
+commitment is not independent chain inclusion: callers must obtain trustworthy
+commitment and tree context.
 
 Program addresses match the v0.8.0 constants and the
 [addresses guide](https://www.helius.dev/docs/privacy/addresses). RPC fields

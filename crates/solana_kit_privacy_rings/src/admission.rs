@@ -42,19 +42,53 @@ impl VerifiedNote {
     }
 }
 
-use crate::viewing::AssetBalance;
+/// Balance for one admitted asset.
+///
+/// `asset_id` identifies confidential registry assets. `mint` identifies
+/// proofless deposits by their displayed mint bytes. Only one is set for a
+/// given balance entry.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct AssetBalance {
+    /// Confidential registry asset id.
+    pub asset_id: Option<u64>,
+    /// Proofless mint or token address bytes.
+    pub mint: Option<[u8; 32]>,
+    /// Total amount in base units.
+    pub amount: u64,
+}
 
 /// Sums verified notes whose commitment is not in `spent`.
+///
+/// # Errors
+/// Rejects conflicting leaf or commitment claims and balance overflow.
 pub fn private_balances(
     notes: &[VerifiedNote],
     spent: &BTreeSet<[u8; 32]>,
 ) -> Result<Vec<AssetBalance>, Error> {
     let mut by_leaf: BTreeMap<(u16, u64), [u8; 32]> = BTreeMap::new();
-    let mut by_commitment: BTreeMap<[u8; 32], (u16, &OpenedNote)> = BTreeMap::new();
+    let mut seen: BTreeSet<[u8; 32]> = BTreeSet::new();
     let mut totals: BTreeMap<(u8, [u8; 8], [u8; 32]), u64> = BTreeMap::new();
 
     for note in notes {
-        process_balance_note(note, spent, &mut by_leaf, &mut by_commitment, &mut totals)?;
+        let commitment = note.commitment();
+        let leaf = (note.tree_id(), note.leaf_index());
+        if let Some(existing) = by_leaf.insert(leaf, commitment) {
+            if existing != commitment {
+                return Err(Error::Limit("conflicting leaf"));
+            }
+        }
+
+        if spent.contains(&commitment) {
+            continue;
+        }
+
+        if !seen.insert(commitment) {
+            // Same verified commitment may appear again only through the same
+            // leaf claim above; duplicates do not contribute twice.
+            continue;
+        }
+
+        add_note_total(&mut totals, note.note())?;
     }
 
     Ok(totals
@@ -65,64 +99,6 @@ pub fn private_balances(
             amount,
         })
         .collect())
-}
-
-fn process_balance_note(
-    note: &VerifiedNote,
-    spent: &BTreeSet<[u8; 32]>,
-    by_leaf: &mut BTreeMap<(u16, u64), [u8; 32]>,
-    by_commitment: &mut BTreeMap<[u8; 32], (u16, &OpenedNote)>,
-    totals: &mut BTreeMap<(u8, [u8; 8], [u8; 32]), u64>,
-) -> Result<(), Error> {
-    if spent.contains(&note.commitment()) {
-        return Ok(());
-    }
-
-    if is_conflicting_leaf(
-        by_leaf,
-        note.tree_id(),
-        note.leaf_index(),
-        note.commitment(),
-    ) {
-        return Err(Error::Limit("conflicting leaf"));
-    }
-
-    by_leaf
-        .entry((note.tree_id(), note.leaf_index()))
-        .or_insert(note.commitment());
-
-    if is_duplicate_commitment(by_commitment, note.commitment()) {
-        let consistent = by_commitment
-            .get(&note.commitment())
-            .is_some_and(|(tree, existing)| *tree == note.tree_id() && *existing == note.note());
-        if !consistent {
-            return Err(Error::Limit("conflicting commitment"));
-        }
-        return Ok(());
-    }
-
-    by_commitment.insert(note.commitment(), (note.tree_id(), note.note()));
-    add_note_total(totals, note.note())?;
-
-    Ok(())
-}
-
-fn is_conflicting_leaf(
-    by_leaf: &BTreeMap<(u16, u64), [u8; 32]>,
-    tree_id: u16,
-    leaf_index: u64,
-    commitment: [u8; 32],
-) -> bool {
-    by_leaf
-        .get(&(tree_id, leaf_index))
-        .is_some_and(|existing| *existing != commitment)
-}
-
-fn is_duplicate_commitment(
-    by_commitment: &BTreeMap<[u8; 32], (u16, &OpenedNote)>,
-    commitment: [u8; 32],
-) -> bool {
-    by_commitment.contains_key(&commitment)
 }
 
 fn add_note_total(
@@ -142,14 +118,27 @@ fn add_note_total(
     Ok(())
 }
 
+/// Verifies a note's owner and recomputes its UTXO commitment.
+///
+/// `resolve_proofless_asset` supplies the trusted asset field used in the
+/// proofless commitment for the note's displayed mint. It is consulted only
+/// for [`OpenedNote::Proofless`] notes and must bind the returned field to that
+/// mint.
+///
+/// # Errors
+/// Rejects owner, shape, or commitment mismatches and unsupported records.
 #[cfg(feature = "poseidon")]
-pub fn verify_note(
+pub fn verify_note<F>(
     note: OpenedNote,
     tree_id: u16,
     leaf_index: u64,
     expected_owner: [u8; 32],
     published_commitment: [u8; 32],
-) -> Result<VerifiedNote, Error> {
+    resolve_proofless_asset: F,
+) -> Result<VerifiedNote, Error>
+where
+    F: FnOnce(&[u8; 32]) -> Option<[u8; 32]>,
+{
     match note {
         OpenedNote::Confidential(plain) => verify_confidential_note(
             plain,
@@ -164,6 +153,7 @@ pub fn verify_note(
             leaf_index,
             expected_owner,
             published_commitment,
+            resolve_proofless_asset(&plain.asset),
         ),
     }
 }
@@ -225,6 +215,7 @@ fn verify_proofless_note(
     leaf_index: u64,
     expected_owner: [u8; 32],
     published_commitment: [u8; 32],
+    resolved_asset: Option<[u8; 32]>,
 ) -> Result<VerifiedNote, Error> {
     use crate::poseidon::{UtxoPreimage, right_align, utxo_commitment};
 
@@ -238,6 +229,7 @@ fn verify_proofless_note(
         return Err(Error::Limit("unsupported note shape"));
     }
 
+    let asset = resolved_asset.ok_or(Error::Limit("unresolved proofless asset"))?;
     let amount = right_align(&plain.amount.to_be_bytes())?;
     let tree = right_align(&tree_id.to_be_bytes())?;
     let domain = right_align(&[UTXO_DOMAIN])?;
@@ -246,7 +238,7 @@ fn verify_proofless_note(
         domain,
         tree_id: tree,
         owner: plain.owner,
-        asset: plain.asset,
+        asset,
         amount,
         blinding: plain.blinding,
         data_hash: [0; 32],

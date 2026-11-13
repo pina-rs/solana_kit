@@ -37,24 +37,10 @@ mod transact;
 mod viewing;
 
 pub use address::*;
-#[cfg(feature = "crypto")]
-pub use admission::VerifiedNote as AdmittedNote;
-#[cfg(feature = "crypto")]
-pub use admission::VerifiedNote as OwnedNote;
-#[cfg(feature = "crypto")]
-pub use admission::private_balances as verified_balances;
-#[cfg(feature = "crypto")]
-pub use admission::private_balances as admitted_balances;
-#[cfg(all(feature = "crypto", feature = "poseidon"))]
-pub use admission::verify_note;
-#[cfg(all(feature = "crypto", feature = "poseidon"))]
-pub use admission::verify_note as admit_note;
-#[cfg(all(feature = "crypto", feature = "poseidon"))]
-pub use admission::verify_note as verify_note_commitment;
 #[cfg(all(feature = "crypto", feature = "poseidon"))]
 pub use admission::verify_note;
 #[cfg(feature = "crypto")]
-pub use admission::{VerifiedNote, private_balances};
+pub use admission::{AssetBalance, VerifiedNote, private_balances};
 pub use deposit::{AssetDeposit, Deposit, DepositAsset, SplDeposit};
 pub use encode::{
     AnonymousRingProof, Bsb22, CacheAccess, CacheWrite, Circuit, ConfidentialPlaintext, EddsaProof,
@@ -90,13 +76,15 @@ pub use transact::{
     Transact, Withdraw,
 };
 #[cfg(feature = "crypto")]
-pub use viewing::{AssetBalance, OpenedNote, ProoflessNote, TrackedNote, ViewingKey};
+pub use viewing::{OpenedNote, ProoflessNote, TrackedNote, ViewingKey};
 #[cfg(feature = "poseidon")]
 pub use witness::{
     IndexedLookup, IndexedTree, NotePreimage, OutputNote, SignedOwner, SpendNote, TransferCircuit,
     TransferWitness, TreeSlotWitness, confidential_transfer_witness, indexed_proof_request,
 };
 
+#[cfg(all(test, feature = "crypto"))]
+mod admission_behavior_tests;
 #[cfg(test)]
 mod admission_tests;
 #[cfg(test)]

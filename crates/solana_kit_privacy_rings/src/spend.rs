@@ -22,7 +22,11 @@ pub fn subtract_nullified(
 ) -> Vec<VerifiedNote> {
     notes
         .iter()
-        .filter(|note| !is_spent(note, nullifier_of, spent))
+        .filter(|note| {
+            !nullifier_of
+                .get(&note.commitment())
+                .is_some_and(|nullifier| spent.contains(nullifier))
+        })
         .cloned()
         .collect()
 }
@@ -39,48 +43,37 @@ pub fn retain_non_inclusion(
 ) -> Vec<VerifiedNote> {
     notes
         .iter()
-        .filter(|note| is_unspent(note, nullifier_of, unspent))
+        .filter(|note| match nullifier_of.get(&note.commitment()) {
+            Some(nullifier) => unspent.contains(nullifier),
+            None => true,
+        })
         .cloned()
         .collect()
-}
-
-fn is_spent(
-    note: &VerifiedNote,
-    nullifier_of: &BTreeMap<[u8; 32], [u8; 32]>,
-    spent: &BTreeSet<[u8; 32]>,
-) -> bool {
-    nullifier_of
-        .get(&note.commitment())
-        .is_some_and(|nullifier| spent.contains(nullifier))
-}
-
-fn is_unspent(
-    note: &VerifiedNote,
-    nullifier_of: &BTreeMap<[u8; 32], [u8; 32]>,
-    unspent: &BTreeSet<[u8; 32]>,
-) -> bool {
-    match nullifier_of.get(&note.commitment()) {
-        Some(nullifier) => unspent.contains(nullifier),
-        None => true,
-    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
     #[cfg(feature = "poseidon")]
+    use crate::admission::verify_note;
+    #[cfg(feature = "poseidon")]
     use crate::encode::ConfidentialPlaintext;
     #[cfg(feature = "poseidon")]
     use crate::poseidon::{UtxoPreimage, right_align, utxo_commitment};
     #[cfg(feature = "poseidon")]
-    use crate::viewing::{OpenedNote, VerifiedNote, verify_note};
+    use crate::viewing::OpenedNote;
 
     #[cfg(feature = "poseidon")]
-    fn note(tree_id: u16, leaf_index: u64, commitment_byte: u8) -> VerifiedNote {
+    fn note(
+        tree_id: u16,
+        leaf_index: u64,
+        blinding_byte: u8,
+        amount: u64,
+    ) -> crate::admission::VerifiedNote {
         let plain = ConfidentialPlaintext {
             asset_id: 1,
-            amount: 4,
-            blinding: [2; 32],
+            amount,
+            blinding: [blinding_byte; 32],
             ring_program_id: None,
             records: Vec::new(),
         };
@@ -90,20 +83,20 @@ mod tests {
             tree_id: right_align(&tree_id.to_be_bytes()).unwrap(),
             owner: expected_owner,
             asset: right_align(&1u64.to_be_bytes()).unwrap(),
-            amount: right_align(&4u64.to_be_bytes()).unwrap(),
-            blinding: [2; 32],
+            amount: right_align(&amount.to_be_bytes()).unwrap(),
+            blinding: [blinding_byte; 32],
             data_hash: [0; 32],
             ring_data_hash: [0; 32],
             ring_program_id: [0; 32],
         })
         .unwrap();
-        let _ = commitment_byte;
         verify_note(
             OpenedNote::Confidential(plain),
             tree_id,
             leaf_index,
             expected_owner,
             published,
+            |_| None,
         )
         .unwrap()
     }
@@ -111,8 +104,9 @@ mod tests {
     #[cfg(feature = "poseidon")]
     #[test]
     fn spent_nullifiers_drop_and_non_inclusion_keeps() {
-        let n2 = note(1, 2, 0);
-        let n3 = note(1, 3, 0);
+        let n2 = note(1, 2, 2, 4);
+        let n3 = note(1, 3, 3, 5);
+        assert_ne!(n2.commitment(), n3.commitment());
         let notes = vec![n2.clone(), n3.clone()];
         let mut derived = BTreeMap::new();
         derived.insert(n2.commitment(), [9; 32]);
@@ -120,7 +114,7 @@ mod tests {
         spent.insert([9; 32]);
         let left = subtract_nullified(&notes, &derived, &spent);
         assert_eq!(left.len(), 1);
-        assert_eq!(left[0].leaf_index(), 3);
+        assert_eq!(left[0].commitment(), n3.commitment());
 
         let mut unspent = BTreeSet::new();
         unspent.insert([9; 32]);
@@ -128,7 +122,22 @@ mod tests {
         both.insert(n3.commitment(), [8; 32]);
         let kept = retain_non_inclusion(&notes, &both, &unspent);
         assert_eq!(kept.len(), 1);
-        assert_eq!(kept[0].leaf_index(), 2);
+        assert_eq!(kept[0].commitment(), n2.commitment());
+        // Unknown commitment remains unprovable and is kept.
         assert_eq!(retain_non_inclusion(&notes, &derived, &unspent).len(), 2);
+    }
+
+    #[cfg(feature = "poseidon")]
+    #[test]
+    fn duplicate_aliases_filter_by_commitment() {
+        let n2 = note(1, 2, 2, 4);
+        let alias = n2.clone();
+        let notes = vec![n2.clone(), alias];
+        let mut derived = BTreeMap::new();
+        derived.insert(n2.commitment(), [9; 32]);
+        let spent = BTreeSet::from([[9; 32]]);
+        assert!(subtract_nullified(&notes, &derived, &spent).is_empty());
+        let unspent = BTreeSet::from([[8; 32]]);
+        assert!(retain_non_inclusion(&notes, &derived, &unspent).is_empty());
     }
 }
