@@ -99,5 +99,18 @@ or owners, and it does not derive nullifiers.
 Program addresses match the v0.8.0 constants and the
 [addresses guide](https://www.helius.dev/docs/privacy/addresses). RPC fields
 match the [Privacy Rings API reference](https://www.helius.dev/docs/api-reference/privacy)
-(OpenAPI 0.51.2). `getNullifierQueueElements` pages the nullifier queue by
-tree, `startSeq`, and a limit from 1 to 1000.
+(OpenAPI 0.51.2). Decode admits each response against its request: every
+history page serializes an explicit `paginationToken` (`null` ends the
+history, and a missing key is a schema error), `minContextSlot` rejects a page
+whose `context.slot` sits below the floor, the requested limit bounds
+transaction groups, signature events must name the requested signature, proofs
+bind positionally to the requested leaves and tree, registry records bind
+count and owner, and queue pages stay ordered from the inclusive `startSeq`
+with 32-byte base58 values. `UtxoPage` and `ShieldedPage` convert into `Page`,
+and `collect_pages` walks them under a slot floor, a nondecreasing watermark,
+and token-cycle rejection. For the queue, `next_start_seq` returns the next
+checked cursor and `collect_nullifier_queue` walks full pages with a fixed
+tree and limit. These checks bind what the provider declares — they do not
+prove the indexer indexed honestly, and a multi-page walk is not an atomic
+snapshot. `getNullifierQueueElements` pages the nullifier queue by tree,
+`startSeq`, and a limit from 1 to 1000.
