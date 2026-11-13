@@ -20,7 +20,8 @@
 //! checks an AWS Nitro COSE document and seals the body with HPKE. The
 //! transport still owns HTTP headers, so the caller attaches `Spr-Tee` and
 //! `Spr-Tee-Enc`. [`PrivacyProverClient::prove_indexed`] posts to
-//! `/prove/{circuit}/indexed`. A remote URL must be `https`.
+//! `/prove/{circuit}/indexed` and polls a queued job at the same
+//! `/prove/{circuit}/status` route. A remote URL must be `https`.
 
 mod endpoint;
 #[cfg(feature = "tee")]
@@ -189,7 +190,9 @@ where
     /// Posts the same witness to `/prove/{circuit}/indexed`.
     ///
     /// A `404` whose body has no `code` means this prover was not started with
-    /// an indexer. A coded `404` is reported as [`ProverFailure::Http`].
+    /// an indexer. A coded `404` is reported as [`ProverFailure::Http`]. A
+    /// queued job is polled at `/prove/{circuit}/status`, the key status
+    /// route the indexed reply names.
     ///
     /// # Errors
     /// Rejects a remote cleartext call, a bad circuit name, a proving-key
@@ -388,7 +391,11 @@ where
     ) -> Result<solana_kit_client::Reply, Error> {
         let mut segments = vec!["prove".to_owned(), circuit.to_owned()];
 
-        if route == ProofRoute::Indexed {
+        // The indexed route posts to /prove/{circuit}/indexed, but a queued
+        // job is polled at the plain key status route: the prover registers
+        // /prove/{key}, /prove/{key}/indexed and /prove/{key}/status, and no
+        // path carries both segments.
+        if route == ProofRoute::Indexed && delivery != Delivery::Status {
             segments.push("indexed".to_owned());
         }
 

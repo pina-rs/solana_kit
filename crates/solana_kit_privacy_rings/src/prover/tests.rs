@@ -800,6 +800,8 @@ struct Scripted {
     replies: Mutex<VecDeque<(u16, &'static str)>>,
     paths: Arc<Mutex<Vec<Vec<String>>>>,
     queries: Arc<Mutex<Vec<RecordedQuery>>>,
+    deliveries: Arc<Mutex<Vec<Delivery>>>,
+    bodies: Arc<Mutex<Vec<Option<Vec<u8>>>>>,
 }
 
 impl rest::Transport<ProverDestination> for Scripted {
@@ -814,6 +816,14 @@ impl rest::Transport<ProverDestination> for Scripted {
             .expect("paths")
             .push(request.path_segments);
         self.queries.lock().expect("queries").push(request.query);
+        self.deliveries
+            .lock()
+            .expect("deliveries")
+            .push(request.service.delivery);
+        self.bodies
+            .lock()
+            .expect("bodies")
+            .push(request.body.as_deref().map(<[u8]>::to_vec));
         let (status, body) = self
             .replies
             .lock()
@@ -833,6 +843,61 @@ impl rest::Transport<ProverDestination> for Scripted {
 }
 
 #[test]
+fn indexed_async_poll_uses_the_key_status_route() {
+    let completed = format!(
+        r#"{{"status":"completed","result":{}}}"#,
+        serde_json::to_string(&proof_value(["0x1", "0x2"])).expect("json")
+    );
+    let completed: &'static str = Box::leak(completed.into_boxed_str());
+    let paths = Arc::new(Mutex::new(Vec::new()));
+    let queries = Arc::new(Mutex::new(Vec::new()));
+    let deliveries = Arc::new(Mutex::new(Vec::new()));
+    let bodies = Arc::new(Mutex::new(Vec::new()));
+    let witness = json!({"circuitType": "transfer-confidential"});
+    let body = witness.to_string();
+    let scripted = Scripted {
+        replies: Mutex::new(VecDeque::from([
+            (HTTP_TOO_MANY, "{}"),
+            (HTTP_OK, r#"{"jobId":"job_1"}"#),
+            (HTTP_OK, completed),
+        ])),
+        paths: Arc::clone(&paths),
+        queries: Arc::clone(&queries),
+        deliveries: Arc::clone(&deliveries),
+        bodies: Arc::clone(&bodies),
+    };
+    let client = PrivacyProverClient::new("http://127.0.0.1:9", scripted)
+        .expect("endpoint")
+        .with_poll(
+            Duration::from_millis(1),
+            Duration::from_millis(1),
+            Duration::from_secs(2),
+        );
+
+    let proof =
+        futures::executor::block_on(client.prove_indexed(CIRCUIT, &witness)).expect("proof");
+    assert_eq!(proof.a, negated_a());
+
+    let seen = paths.lock().expect("paths").clone();
+    assert_eq!(seen[0], ["prove", CIRCUIT, "indexed"]);
+    assert_eq!(seen[1], ["prove", CIRCUIT, "indexed"]);
+    assert_eq!(seen[2], ["prove", CIRCUIT, "status"]);
+    let deliveries = deliveries.lock().expect("deliveries").clone();
+    assert_eq!(
+        deliveries,
+        [Delivery::Sync, Delivery::Async, Delivery::Status]
+    );
+    let queries = queries.lock().expect("queries").clone();
+    assert_eq!(queries[0], Vec::<(String, String)>::new());
+    assert_eq!(queries[1], Vec::<(String, String)>::new());
+    assert_eq!(queries[2], [("jobId".to_owned(), "job_1".to_owned())]);
+    let bodies = bodies.lock().expect("bodies").clone();
+    assert_eq!(bodies[0].as_deref(), Some(body.as_bytes()));
+    assert_eq!(bodies[1], bodies[0]);
+    assert_eq!(bodies[2], None);
+}
+
+#[test]
 fn indexed_route_and_attestation_use_their_paths() {
     let paths = Arc::new(Mutex::new(Vec::new()));
     let queries = Arc::new(Mutex::new(Vec::new()));
@@ -847,6 +912,8 @@ fn indexed_route_and_attestation_use_their_paths() {
         ])),
         paths: Arc::clone(&paths),
         queries: Arc::clone(&queries),
+        deliveries: Arc::new(Mutex::new(Vec::new())),
+        bodies: Arc::new(Mutex::new(Vec::new())),
     };
     let client = PrivacyProverClient::new("http://127.0.0.1:9", scripted).expect("endpoint");
     let witness = json!({});
@@ -891,6 +958,8 @@ fn script(replies: Vec<(u16, &'static str)>) -> Scripted {
         replies: Mutex::new(VecDeque::from(replies)),
         paths: Arc::new(Mutex::new(Vec::new())),
         queries: Arc::new(Mutex::new(Vec::new())),
+        deliveries: Arc::new(Mutex::new(Vec::new())),
+        bodies: Arc::new(Mutex::new(Vec::new())),
     }
 }
 
