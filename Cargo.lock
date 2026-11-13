@@ -2875,7 +2875,7 @@ dependencies = [
  "hkdf",
  "light-poseidon",
  "p384",
- "rand_core",
+ "rand_core 0.6.4",
  "serde",
  "serde_json",
  "sha2 0.10.9",

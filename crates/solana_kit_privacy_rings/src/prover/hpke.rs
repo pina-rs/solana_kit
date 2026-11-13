@@ -4,8 +4,10 @@
 //! info `zolana/prover-tee/v1`. The response key is the HPKE export labeled
 //! `zolana/prover-tee/v1/response`. Additional data is [`super::request_aad`].
 //! The ephemeral seed is drawn from the caller's cryptographic RNG and wiped
-//! after use, and an all-zero X25519 shared secret aborts both directions, so
-//! no schedule is ever derived from a non-contributory exchange.
+//! after use — an entropy failure wipes the partial seed and returns an
+//! error, never a zeroed or fallback draw — and an all-zero X25519 shared
+//! secret aborts both directions, so no schedule is ever derived from a
+//! non-contributory exchange.
 
 use aes_gcm::aead::{Aead, Payload};
 use aes_gcm::{Aes256Gcm, KeyInit, Nonce};
@@ -72,14 +74,17 @@ impl std::fmt::Debug for OpenedRequest {
 /// Encrypts `plaintext` to `hpke_public_key` with a fresh ephemeral key.
 ///
 /// The X25519 ephemeral seed is drawn from `rng`, a caller-supplied
-/// cryptographic generator. One 32-byte draw seeds each request, and that
-/// fresh draw is what keeps the AES-256-GCM key and nonce unique across
-/// requests. This crate never falls back to a fixed seed or to an OS
-/// generator of its own.
+/// cryptographic generator. One 32-byte draw seeds each request; with a
+/// freshly seeded generator that is never deliberately reset, that draw
+/// keeps the AES-256-GCM key and nonce unique across requests. This crate
+/// never falls back to a fixed seed or to an OS generator of its own, and
+/// an entropy failure returns an error instead of a seal.
 ///
 /// # Errors
-/// Rejects a non-contributory X25519 shared secret, such as an all-zero or
-/// low-order recipient public key, and a seal the AEAD will not accept.
+/// Rejects an entropy failure from `rng` — the partial seed is wiped and no
+/// seal is returned — a non-contributory X25519 shared secret, such as an
+/// all-zero or low-order recipient public key, and a seal the AEAD will not
+/// accept.
 pub fn seal_prover_request<R>(
     hpke_public_key: &[u8; HASH_LEN],
     method: &str,
@@ -91,7 +96,15 @@ where
     R: RngCore + CryptoRng,
 {
     let mut ephemeral = [0u8; HASH_LEN];
-    rng.fill_bytes(&mut ephemeral);
+
+    // Security: `fill_bytes` may panic when the generator's entropy source
+    // fails. `try_fill_bytes` reports the failure instead, so the partial
+    // seed is wiped and no seal is ever derived from zeros or a fallback.
+    if rng.try_fill_bytes(&mut ephemeral).is_err() {
+        ephemeral.zeroize();
+        return Err(Error::Attestation("entropy"));
+    }
+
     let sealed =
         seal_with_ephemeral_seed(hpke_public_key, method, request_uri, plaintext, &ephemeral);
     ephemeral.zeroize();
@@ -206,10 +219,10 @@ fn key_schedule(
     schedule.extend(info_hash);
     let mut secret = labeled_extract(HPKE_SUITE, &secret_dh, "secret", &[]);
     secret_dh.zeroize();
-    let key = labeled_expand(&secret, HPKE_SUITE, "key", &schedule, HASH_LEN);
-    let nonce = labeled_expand(&secret, HPKE_SUITE, "base_nonce", &schedule, NONCE_LEN);
-    let export_secret = labeled_expand(&secret, HPKE_SUITE, "exp", &schedule, HASH_LEN);
-    let exporter = labeled_expand(
+    let mut key = labeled_expand(&secret, HPKE_SUITE, "key", &schedule, HASH_LEN);
+    let mut nonce = labeled_expand(&secret, HPKE_SUITE, "base_nonce", &schedule, NONCE_LEN);
+    let mut export_secret = labeled_expand(&secret, HPKE_SUITE, "exp", &schedule, HASH_LEN);
+    let mut exporter = labeled_expand(
         &export_secret,
         HPKE_SUITE,
         "sec",
@@ -321,6 +334,7 @@ mod tests {
     use super::*;
     use crate::prover::hex_decode;
     use rand_core::Error as RngError;
+    use std::num::NonZeroU32;
 
     fn vector() -> serde_json::Value {
         serde_json::from_str(include_str!("../../tests/fixtures/tee-vectors.json")).expect("vector")
@@ -374,6 +388,32 @@ mod tests {
     }
 
     impl CryptoRng for StepRng {}
+
+    /// A cryptographic-RNG double whose entropy source is exhausted, the way
+    /// an OS outage surfaces through `try_fill_bytes`.
+    struct ExhaustedRng;
+
+    impl RngCore for ExhaustedRng {
+        fn next_u32(&mut self) -> u32 {
+            0
+        }
+
+        fn next_u64(&mut self) -> u64 {
+            0
+        }
+
+        fn fill_bytes(&mut self, _dest: &mut [u8]) {
+            // The very panic production code avoids by calling
+            // `try_fill_bytes` instead.
+            panic!("entropy source is unavailable");
+        }
+
+        fn try_fill_bytes(&mut self, _dest: &mut [u8]) -> Result<(), RngError> {
+            Err(RngError::from(NonZeroU32::new(7).expect("nonzero")))
+        }
+    }
+
+    impl CryptoRng for ExhaustedRng {}
 
     #[test]
     fn published_ciphertext_opens_to_the_go_plaintext() {
@@ -487,6 +527,20 @@ mod tests {
     }
 
     #[test]
+    fn an_entropy_failure_returns_no_seal_and_no_sensitive_error() {
+        let vector = vector();
+        let key = bytes32(&vector["hpke_public_key"]);
+        let mut rng = ExhaustedRng;
+        let error = seal_prover_request(&key, "POST", "/prove/x", b"note", &mut rng)
+            .expect_err("exhausted entropy");
+
+        // The error is a fixed label: no seed, plaintext, or RNG detail
+        // rides out, and no seal was derived from a zeroed buffer.
+        assert!(matches!(error, Error::Attestation("entropy")));
+        assert_eq!(format!("{error:?}"), "Attestation(\"entropy\")");
+    }
+
+    #[test]
     fn an_all_zero_recipient_key_is_refused_before_any_key_is_derived() {
         let mut rng = StepRng::new(1);
         let error = seal_prover_request(&[0u8; 32], "POST", "/prove/x", b"note", &mut rng)
@@ -509,7 +563,13 @@ mod tests {
         let error = open_prover_request(&ikm, &[0u8; 32], &genuine.body, "POST", "/prove/x")
             .expect_err("identity enc");
         assert!(matches!(error, Error::NonContributory));
-        let error = open_prover_request(&ikm, &[1u8; 32], &genuine.body, "POST", "/prove/x")
+
+        // X25519 coordinates are little-endian, so u=1 is a single 1 in the
+        // first byte and zeros elsewhere: an order-eight point whose clamped
+        // scalar multiple is always the identity, all zero.
+        let mut order_eight = [0u8; HASH_LEN];
+        order_eight[0] = 1;
+        let error = open_prover_request(&ikm, &order_eight, &genuine.body, "POST", "/prove/x")
             .expect_err("order-eight enc");
         assert!(matches!(error, Error::NonContributory));
     }

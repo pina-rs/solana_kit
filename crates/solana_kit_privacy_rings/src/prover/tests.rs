@@ -205,6 +205,27 @@ fn an_api_key_before_the_path_is_refused_and_not_echoed() {
 }
 
 #[test]
+fn a_malformed_or_encoded_authority_is_refused_before_the_transport() {
+    for url in [
+        "http://ex%41mple.com",
+        "http://[not-an-ip]:3001",
+        "http://2130706433",
+        "http://bad_host.example",
+        "http://999.999.999.999",
+    ] {
+        // Construction fails before the transport can ever be touched.
+        let transport = CountingTransport::default();
+        let calls = Arc::clone(&transport.calls);
+        let error = PrivacyProverClient::new(url, transport).expect_err("malformed authority");
+        assert!(
+            matches!(error, Error::Prover(ProverFailure::Config)),
+            "{url}"
+        );
+        assert_eq!(*calls.lock().expect("calls"), 0, "{url}");
+    }
+}
+
+#[test]
 fn a_remote_cleartext_prover_is_not_called() {
     let transport = CountingTransport::default();
     let calls = Arc::clone(&transport.calls);
