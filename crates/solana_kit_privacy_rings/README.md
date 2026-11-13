@@ -92,9 +92,18 @@ With `crypto`, `ViewingKey` opens confidential and proofless indexer payloads.
 The decryption slot is the output's position in the full event. A tag query
 can omit outputs, so resolve that position through
 `GetShieldedTransactionsBySignature`. Confidential ciphertext is unauthenticated
-AES-CTR, and opening a proofless deposit does not check its owner.
-`private_balances` sums distinct unspent leaves. It does not verify commitments
-or owners, and it does not derive nullifiers.
+AES-CTR, and opening a proofless deposit does not check its owner; keep
+`open_output` results untrusted until they pass admission.
+
+With `poseidon`, `verify_note` checks an expected owner and recomputes the
+commitment with the pinned UTXO domain. It admits only data-free confidential
+notes (no ring program id and no application data) and data-free proofless
+notes (no trailing metadata); ring- or data-bearing shapes fail closed.
+`private_balances` (alias `verified_balances`) sums only `VerifiedNote` values
+by verified commitment, so one commitment counts once across leaf relabels and
+a spent commitment stays excluded. It does not derive nullifiers and matching an
+indexer-supplied commitment is not independent chain inclusion: callers must
+obtain trustworthy commitment and tree context.
 
 Program addresses match the v0.8.0 constants and the
 [addresses guide](https://www.helius.dev/docs/privacy/addresses). RPC fields

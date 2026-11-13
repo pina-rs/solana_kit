@@ -150,7 +150,7 @@ pub enum OpenedNote {
 }
 
 /// The fixed prefix of a proofless deposit output.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ProoflessNote {
     /// Recipient owner hash.
     pub owner: [u8; 32],
@@ -160,6 +160,9 @@ pub struct ProoflessNote {
     pub asset: [u8; 32],
     /// Amount in base units.
     pub amount: u64,
+    /// Trailing application/ring metadata retained from the payload. A
+    /// data-free proofless note has an empty vector.
+    pub records: Vec<u8>,
 }
 
 /// A decrypted note plus the leaf the indexer assigned it.
@@ -171,73 +174,6 @@ pub struct TrackedNote {
     pub leaf_index: u64,
     /// Decrypted or proofless note.
     pub note: OpenedNote,
-}
-
-/// Sum of unspent notes that share an asset key.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub struct AssetBalance {
-    /// Confidential asset id, or `None` for a proofless mint.
-    pub asset_id: Option<u64>,
-    /// Proofless mint, or `None` for a confidential asset id.
-    pub mint: Option<[u8; 32]>,
-    /// Total base units.
-    pub amount: u64,
-}
-
-/// Sums notes whose `(tree_id, leaf_index)` is not in `spent`.
-///
-/// The same leaf is counted once. Two different notes for one leaf are
-/// rejected. Confidential and proofless keys stay separate: a confidential
-/// asset id is not assumed to be a mint. This function does not check a
-/// proofless owner or a confidential commitment, and it does not derive
-/// nullifiers.
-///
-/// # Errors
-/// Rejects a leaf that appears twice with different contents, or a total that
-/// overflows `u64`.
-pub fn private_balances(
-    notes: &[TrackedNote],
-    spent: &std::collections::BTreeSet<(u16, u64)>,
-) -> Result<Vec<AssetBalance>, Error> {
-    let mut seen: BTreeMap<(u16, u64), &OpenedNote> = BTreeMap::new();
-    let mut totals: BTreeMap<(u8, [u8; 8], [u8; 32]), u64> = BTreeMap::new();
-
-    for note in notes {
-        if spent.contains(&(note.tree_id, note.leaf_index)) {
-            continue;
-        }
-
-        match seen.entry((note.tree_id, note.leaf_index)) {
-            std::collections::btree_map::Entry::Occupied(existing) => {
-                reject_conflicting_leaf(existing.get(), &note.note)?;
-                continue;
-            }
-            std::collections::btree_map::Entry::Vacant(slot) => {
-                slot.insert(&note.note);
-            }
-        }
-
-        let (kind, id, mint, amount) = match &note.note {
-            OpenedNote::Confidential(plain) => {
-                (0, plain.asset_id.to_le_bytes(), [0; 32], plain.amount)
-            }
-            OpenedNote::Proofless(plain) => (1, [0; 8], plain.asset, plain.amount),
-        };
-
-        let entry = totals.entry((kind, id, mint)).or_insert(0);
-        *entry = entry
-            .checked_add(amount)
-            .ok_or(Error::Limit("balance overflow"))?;
-    }
-
-    Ok(totals
-        .into_iter()
-        .map(|((kind, id, mint), amount)| AssetBalance {
-            asset_id: (kind == 0).then(|| u64::from_le_bytes(id)),
-            mint: (kind == 1).then_some(mint),
-            amount,
-        })
-        .collect())
 }
 
 fn decrypt_ciphertext(
@@ -292,14 +228,6 @@ fn derive_key(
     nonce.copy_from_slice(&okm[32..]);
     okm.zeroize();
     Ok((key, nonce))
-}
-
-fn reject_conflicting_leaf(existing: &OpenedNote, candidate: &OpenedNote) -> Result<(), Error> {
-    if existing != candidate {
-        return Err(Error::Limit("conflicting leaf"));
-    }
-
-    Ok(())
 }
 
 fn apply_ctr(key: &[u8; 32], nonce: &[u8; 12], buffer: &mut [u8]) {
@@ -405,19 +333,23 @@ fn parse_proofless(bytes: &[u8]) -> Result<OpenedNote, Error> {
             .try_into()
             .map_err(|_| Error::Plaintext)?,
     );
+    let records = bytes[PROOFLESS_NOTE_LEN..].to_vec();
     Ok(OpenedNote::Proofless(ProoflessNote {
         owner,
         blinding,
         asset,
         amount,
+        records,
     }))
 }
 
 #[cfg(test)]
 mod tests {
     use super::{ViewingKey, apply_ctr, canonical, coordinate, derive_key, diffie_hellman, tagged};
+    use crate::admission::{VerifiedNote, private_balances, verify_note};
     use crate::encode::{ConfidentialPlaintext, read_confidential, write_confidential};
-    use crate::{OpenedNote, ProoflessNote, TrackedNote, decode_base64, private_balances};
+    use crate::poseidon::{UtxoPreimage, right_align, utxo_commitment};
+    use crate::{OpenedNote, ProoflessNote, TrackedNote, decode_base64};
     use curve25519_dalek::montgomery::MontgomeryPoint;
     use std::collections::BTreeSet;
 
@@ -513,6 +445,7 @@ mod tests {
             blinding: [0; 32],
             asset: [0; 32],
             amount: 0,
+            records: Vec::new(),
         });
         let mut saw_confidential = false;
 
@@ -535,6 +468,7 @@ mod tests {
         assert_eq!(parsed.amount, note.amount);
     }
 
+    #[cfg(feature = "poseidon")]
     #[test]
     fn proofless_prefix_and_spent_notes_sum() {
         let mut body = vec![0];
@@ -551,49 +485,80 @@ mod tests {
             .open_output(&[4; 33], &[0; 16], 0, &payload)
             .expect("proofless");
         assert!(matches!(opened, OpenedNote::Proofless(_)));
-        let note = ProoflessNote {
-            owner: [4; 32],
-            blinding: [5; 32],
-            asset: [0; 32],
-            amount: 40,
+
+        let owner = [4; 32];
+        let blinding = [5; 32];
+        let asset = [0; 32];
+        let published = |amount: u64| {
+            utxo_commitment(&UtxoPreimage {
+                domain: right_align(&[3u8]).unwrap(),
+                tree_id: right_align(&0u16.to_be_bytes()).unwrap(),
+                owner,
+                asset,
+                amount: right_align(&amount.to_be_bytes()).unwrap(),
+                blinding,
+                data_hash: [0; 32],
+                ring_data_hash: [0; 32],
+                ring_program_id: [0; 32],
+            })
+            .unwrap()
         };
-        let notes = [
-            TrackedNote {
-                tree_id: 0,
-                leaf_index: 1,
-                note: OpenedNote::Proofless(note),
-            },
-            TrackedNote {
-                tree_id: 0,
-                leaf_index: 2,
-                note: OpenedNote::Proofless(super::ProoflessNote {
-                    owner: [4; 32],
-                    blinding: [5; 32],
-                    asset: [0; 32],
-                    amount: 2,
-                }),
-            },
-        ];
+
+        let v1 = verify_note(
+            OpenedNote::Proofless(ProoflessNote {
+                owner,
+                blinding,
+                asset,
+                amount: 40,
+                records: Vec::new(),
+            }),
+            0,
+            1,
+            owner,
+            published(40),
+        )
+        .expect("verify");
+        let v2 = verify_note(
+            OpenedNote::Proofless(ProoflessNote {
+                owner,
+                blinding,
+                asset,
+                amount: 2,
+                records: Vec::new(),
+            }),
+            0,
+            2,
+            owner,
+            published(2),
+        )
+        .expect("verify");
+
         let mut spent = BTreeSet::new();
-        spent.insert((0, 2));
-        let totals = private_balances(&notes, &spent).expect("sum");
+        spent.insert(v2.commitment());
+        let totals = private_balances(&[v1.clone(), v2.clone()], &spent).expect("sum");
         assert_eq!(totals.len(), 1);
         assert_eq!(totals[0].amount, 40);
         assert_eq!(totals[0].mint, Some([0; 32]));
         assert_eq!(totals[0].asset_id, None);
-        let repeated = [notes[0].clone(), notes[0].clone()];
+
+        let repeated = [v1.clone(), v1.clone()];
         let once = private_balances(&repeated, &BTreeSet::new()).expect("dedup");
         assert_eq!(once[0].amount, 40);
-        let mut conflict = notes[0].clone();
 
-        if let OpenedNote::Proofless(plain) = &mut conflict.note {
-            plain.amount = 1;
-        }
-
-        assert!(matches!(
-            private_balances(&[notes[0].clone(), conflict], &BTreeSet::new()),
-            Err(crate::Error::Limit("conflicting leaf"))
-        ));
+        let v1b = verify_note(
+            OpenedNote::Proofless(ProoflessNote {
+                owner,
+                blinding,
+                asset,
+                amount: 1,
+                records: Vec::new(),
+            }),
+            0,
+            1,
+            owner,
+            published(40),
+        );
+        assert!(v1b.is_err());
     }
 
     #[test]
@@ -703,17 +668,34 @@ mod tests {
                 .open_output(&peer, &[0; 16], 0, &framed(&confidential))
                 .is_err()
         );
-        let confidential_note = TrackedNote {
-            tree_id: 1,
-            leaf_index: 1,
-            note: OpenedNote::Confidential(ConfidentialPlaintext {
-                asset_id: 4,
-                amount: 5,
-                blinding: [0; 32],
-                ring_program_id: None,
-                records: Vec::new(),
-            }),
+        let expected_owner = [0; 32];
+        let plain = ConfidentialPlaintext {
+            asset_id: 4,
+            amount: 5,
+            blinding: [0; 32],
+            ring_program_id: None,
+            records: Vec::new(),
         };
+        let published = utxo_commitment(&UtxoPreimage {
+            domain: right_align(&[3u8]).unwrap(),
+            tree_id: right_align(&1u16.to_be_bytes()).unwrap(),
+            owner: expected_owner,
+            asset: right_align(&4u64.to_be_bytes()).unwrap(),
+            amount: right_align(&5u64.to_be_bytes()).unwrap(),
+            blinding: [0; 32],
+            data_hash: [0; 32],
+            ring_data_hash: [0; 32],
+            ring_program_id: [0; 32],
+        })
+        .unwrap();
+        let confidential_note = verify_note(
+            OpenedNote::Confidential(plain),
+            1,
+            1,
+            expected_owner,
+            published,
+        )
+        .expect("verify");
         let totals = private_balances(&[confidential_note], &BTreeSet::new()).expect("sum");
         assert_eq!(totals[0].amount, 5);
         assert_eq!(totals[0].asset_id, Some(4));

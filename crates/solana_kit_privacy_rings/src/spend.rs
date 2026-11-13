@@ -8,17 +8,18 @@
 
 use std::collections::{BTreeMap, BTreeSet};
 
-use crate::viewing::TrackedNote;
+use crate::admission::VerifiedNote;
 
 /// Drops notes whose derived nullifier is in `spent`.
 ///
-/// A note with no entry in `nullifier_of` is kept.
+/// A note with no entry in `nullifier_of` is kept. The map is keyed by the
+/// note's verified commitment, so relabelling a leaf cannot bypass filtering.
 #[must_use]
 pub fn subtract_nullified(
-    notes: &[TrackedNote],
-    nullifier_of: &BTreeMap<(u16, u64), [u8; 32]>,
+    notes: &[VerifiedNote],
+    nullifier_of: &BTreeMap<[u8; 32], [u8; 32]>,
     spent: &BTreeSet<[u8; 32]>,
-) -> Vec<TrackedNote> {
+) -> Vec<VerifiedNote> {
     notes
         .iter()
         .filter(|note| !is_spent(note, nullifier_of, spent))
@@ -32,10 +33,10 @@ pub fn subtract_nullified(
 /// note with no derived nullifier is kept, because the proof cannot name it.
 #[must_use]
 pub fn retain_non_inclusion(
-    notes: &[TrackedNote],
-    nullifier_of: &BTreeMap<(u16, u64), [u8; 32]>,
+    notes: &[VerifiedNote],
+    nullifier_of: &BTreeMap<[u8; 32], [u8; 32]>,
     unspent: &BTreeSet<[u8; 32]>,
-) -> Vec<TrackedNote> {
+) -> Vec<VerifiedNote> {
     notes
         .iter()
         .filter(|note| is_unspent(note, nullifier_of, unspent))
@@ -44,21 +45,21 @@ pub fn retain_non_inclusion(
 }
 
 fn is_spent(
-    note: &TrackedNote,
-    nullifier_of: &BTreeMap<(u16, u64), [u8; 32]>,
+    note: &VerifiedNote,
+    nullifier_of: &BTreeMap<[u8; 32], [u8; 32]>,
     spent: &BTreeSet<[u8; 32]>,
 ) -> bool {
     nullifier_of
-        .get(&(note.tree_id, note.leaf_index))
+        .get(&note.commitment())
         .is_some_and(|nullifier| spent.contains(nullifier))
 }
 
 fn is_unspent(
-    note: &TrackedNote,
-    nullifier_of: &BTreeMap<(u16, u64), [u8; 32]>,
+    note: &VerifiedNote,
+    nullifier_of: &BTreeMap<[u8; 32], [u8; 32]>,
     unspent: &BTreeSet<[u8; 32]>,
 ) -> bool {
-    match nullifier_of.get(&(note.tree_id, note.leaf_index)) {
+    match nullifier_of.get(&note.commitment()) {
         Some(nullifier) => unspent.contains(nullifier),
         None => true,
     }
@@ -67,41 +68,67 @@ fn is_unspent(
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[cfg(feature = "poseidon")]
     use crate::encode::ConfidentialPlaintext;
-    use crate::viewing::OpenedNote;
+    #[cfg(feature = "poseidon")]
+    use crate::poseidon::{UtxoPreimage, right_align, utxo_commitment};
+    #[cfg(feature = "poseidon")]
+    use crate::viewing::{OpenedNote, VerifiedNote, verify_note};
 
-    fn note(tree_id: u16, leaf_index: u64) -> TrackedNote {
-        TrackedNote {
+    #[cfg(feature = "poseidon")]
+    fn note(tree_id: u16, leaf_index: u64, commitment_byte: u8) -> VerifiedNote {
+        let plain = ConfidentialPlaintext {
+            asset_id: 1,
+            amount: 4,
+            blinding: [2; 32],
+            ring_program_id: None,
+            records: Vec::new(),
+        };
+        let expected_owner = [7; 32];
+        let published = utxo_commitment(&UtxoPreimage {
+            domain: right_align(&[3u8]).unwrap(),
+            tree_id: right_align(&tree_id.to_be_bytes()).unwrap(),
+            owner: expected_owner,
+            asset: right_align(&1u64.to_be_bytes()).unwrap(),
+            amount: right_align(&4u64.to_be_bytes()).unwrap(),
+            blinding: [2; 32],
+            data_hash: [0; 32],
+            ring_data_hash: [0; 32],
+            ring_program_id: [0; 32],
+        })
+        .unwrap();
+        let _ = commitment_byte;
+        verify_note(
+            OpenedNote::Confidential(plain),
             tree_id,
             leaf_index,
-            note: OpenedNote::Confidential(ConfidentialPlaintext {
-                asset_id: 1,
-                amount: 4,
-                blinding: [2; 32],
-                ring_program_id: None,
-                records: Vec::new(),
-            }),
-        }
+            expected_owner,
+            published,
+        )
+        .unwrap()
     }
 
+    #[cfg(feature = "poseidon")]
     #[test]
     fn spent_nullifiers_drop_and_non_inclusion_keeps() {
-        let notes = vec![note(1, 2), note(1, 3)];
+        let n2 = note(1, 2, 0);
+        let n3 = note(1, 3, 0);
+        let notes = vec![n2.clone(), n3.clone()];
         let mut derived = BTreeMap::new();
-        derived.insert((1, 2), [9; 32]);
+        derived.insert(n2.commitment(), [9; 32]);
         let mut spent = BTreeSet::new();
         spent.insert([9; 32]);
         let left = subtract_nullified(&notes, &derived, &spent);
         assert_eq!(left.len(), 1);
-        assert_eq!(left[0].leaf_index, 3);
+        assert_eq!(left[0].leaf_index(), 3);
 
         let mut unspent = BTreeSet::new();
         unspent.insert([9; 32]);
         let mut both = derived.clone();
-        both.insert((1, 3), [8; 32]);
+        both.insert(n3.commitment(), [8; 32]);
         let kept = retain_non_inclusion(&notes, &both, &unspent);
         assert_eq!(kept.len(), 1);
-        assert_eq!(kept[0].leaf_index, 2);
+        assert_eq!(kept[0].leaf_index(), 2);
         assert_eq!(retain_non_inclusion(&notes, &derived, &unspent).len(), 2);
     }
 }
