@@ -3,11 +3,28 @@
 use std::collections::{BTreeMap, BTreeSet};
 
 use crate::Error;
+#[cfg(feature = "poseidon")]
 use crate::encode::ConfidentialPlaintext;
-use crate::viewing::{OpenedNote, ProoflessNote};
+use crate::viewing::OpenedNote;
+#[cfg(feature = "poseidon")]
+use crate::viewing::ProoflessNote;
+
+/// Six borsh `Option` tags, all `None`: the canonical data-free proofless tail.
+#[cfg(feature = "poseidon")]
+const CANONICAL_PROOFLESS_TAIL: [u8; 6] = [0; 6];
 
 /// A note that passed ownership and commitment verification and may enter a
 /// private balance. Fields are private so callers cannot fabricate one.
+///
+/// ```compile_fail
+/// use solana_kit_privacy_rings::VerifiedNote;
+/// let _ = VerifiedNote {
+///     tree_id: 0,
+///     leaf_index: 0,
+///     commitment: [0; 32],
+///     note: unimplemented!(),
+/// };
+/// ```
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct VerifiedNote {
     tree_id: u16,
@@ -59,36 +76,23 @@ pub struct AssetBalance {
 
 /// Sums verified notes whose commitment is not in `spent`.
 ///
+/// One commitment counts once across leaf relabels. The same commitment
+/// presented through incompatible note representations is rejected instead of
+/// being summed under two balance keys.
+///
 /// # Errors
 /// Rejects conflicting leaf or commitment claims and balance overflow.
 pub fn private_balances(
     notes: &[VerifiedNote],
     spent: &BTreeSet<[u8; 32]>,
 ) -> Result<Vec<AssetBalance>, Error> {
-    let mut by_leaf: BTreeMap<(u16, u64), [u8; 32]> = BTreeMap::new();
-    let mut seen: BTreeSet<[u8; 32]> = BTreeSet::new();
-    let mut totals: BTreeMap<(u8, [u8; 8], [u8; 32]), u64> = BTreeMap::new();
+    let unique = unique_notes(notes)?;
+    let mut totals = BTreeMap::new();
 
-    for note in notes {
-        let commitment = note.commitment();
-        let leaf = (note.tree_id(), note.leaf_index());
-        if let Some(existing) = by_leaf.insert(leaf, commitment) {
-            if existing != commitment {
-                return Err(Error::Limit("conflicting leaf"));
-            }
+    for (commitment, note) in unique {
+        if !spent.contains(&commitment) {
+            add_note_total(&mut totals, note.note())?;
         }
-
-        if spent.contains(&commitment) {
-            continue;
-        }
-
-        if !seen.insert(commitment) {
-            // Same verified commitment may appear again only through the same
-            // leaf claim above; duplicates do not contribute twice.
-            continue;
-        }
-
-        add_note_total(&mut totals, note.note())?;
     }
 
     Ok(totals
@@ -99,6 +103,30 @@ pub fn private_balances(
             amount,
         })
         .collect())
+}
+
+// Validate the whole snapshot before spent filtering or arithmetic. A hash
+// binds the preimage but does not determine its displayed asset representation.
+fn unique_notes(notes: &[VerifiedNote]) -> Result<BTreeMap<[u8; 32], &VerifiedNote>, Error> {
+    let mut leaves = BTreeMap::new();
+    let mut commitments: BTreeMap<[u8; 32], &VerifiedNote> = BTreeMap::new();
+
+    for note in notes {
+        let leaf = (note.tree_id, note.leaf_index);
+        let previous = leaves.insert(leaf, note.commitment);
+
+        if previous.is_some_and(|hash| hash != note.commitment) {
+            return Err(Error::Limit("conflicting leaf"));
+        }
+
+        let previous = commitments.insert(note.commitment, note);
+
+        if previous.is_some_and(|other| other.tree_id != note.tree_id || other.note != note.note) {
+            return Err(Error::Limit("conflicting commitment"));
+        }
+    }
+
+    Ok(commitments)
 }
 
 fn add_note_total(
@@ -123,7 +151,11 @@ fn add_note_total(
 /// `resolve_proofless_asset` supplies the trusted asset field used in the
 /// proofless commitment for the note's displayed mint. It is consulted only
 /// for [`OpenedNote::Proofless`] notes and must bind the returned field to that
-/// mint.
+/// mint. The published commitment and tree context must be trusted; a hash match
+/// is not a Merkle inclusion proof. A proofless tail is admitted only when it
+/// is exactly the canonical six
+/// `None` option tags; the raw tail stays available on [`ProoflessNote::records`]
+/// for inspection.
 ///
 /// # Errors
 /// Rejects owner, shape, or commitment mismatches and unsupported records.
@@ -147,20 +179,24 @@ where
             expected_owner,
             published_commitment,
         ),
-        OpenedNote::Proofless(plain) => verify_proofless_note(
-            plain,
-            tree_id,
-            leaf_index,
-            expected_owner,
-            published_commitment,
-            resolve_proofless_asset(&plain.asset),
-        ),
+        OpenedNote::Proofless(plain) => {
+            let resolved_asset = resolve_proofless_asset(&plain.asset);
+
+            verify_proofless_note(
+                plain,
+                tree_id,
+                leaf_index,
+                expected_owner,
+                published_commitment,
+                resolved_asset,
+            )
+        }
     }
 }
 
 #[cfg(feature = "poseidon")]
 fn verify_confidential_note(
-    plain: ConfidentialPlaintext,
+    mut plain: ConfidentialPlaintext,
     tree_id: u16,
     leaf_index: u64,
     expected_owner: [u8; 32],
@@ -177,6 +213,9 @@ fn verify_confidential_note(
     if !plain.records.is_empty() && plain.records != [0] {
         return Err(Error::Limit("unsupported note shape"));
     }
+
+    // Equivalent empty encodings must compare equally across leaf aliases.
+    plain.records.clear();
 
     let asset = right_align(&plain.asset_id.to_be_bytes())?;
     let amount = right_align(&plain.amount.to_be_bytes())?;
@@ -225,7 +264,7 @@ fn verify_proofless_note(
         return Err(Error::Limit("owner mismatch"));
     }
 
-    if !plain.records.is_empty() {
+    if plain.records != CANONICAL_PROOFLESS_TAIL {
         return Err(Error::Limit("unsupported note shape"));
     }
 

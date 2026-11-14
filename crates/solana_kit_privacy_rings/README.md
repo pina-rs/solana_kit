@@ -95,7 +95,7 @@ can omit outputs, so resolve that position through
 AES-CTR, and opening a proofless deposit does not check its owner; keep
 `open_output` results untrusted until they pass admission.
 
-With `poseidon`, `verify_note` checks an expected owner and recomputes the
+With `crypto` and `poseidon`, `verify_note` checks an expected owner and recomputes the
 commitment with the pinned UTXO domain. For proofless notes it requires an
 explicit trusted mint-to-asset-field resolver so the commitment uses the
 registry asset field while the note keeps its displayed mint. It admits only
@@ -126,3 +126,20 @@ tree and limit. These checks bind what the provider declares — they do not
 prove the indexer indexed honestly, and a multi-page walk is not an atomic
 snapshot. `getNullifierQueueElements` pages the nullifier queue by tree,
 `startSeq`, and a limit from 1 to 1000.
+
+Balance admission preserves raw `OpenedNote` and `TrackedNote` inspection:
+proofless `records` contains every byte after the 104-byte prefix, including
+unsupported or malformed tails. Only exactly six zero `None` tags enter balances;
+ring and application notes remain inspection values. The expected owner hash,
+published commitment, tree context, and exact mint-to-asset-field mapping must
+come from trusted sources. A matching hash is not a Merkle inclusion proof.
+
+Migrate balance inputs from `TrackedNote` to `VerifiedNote` through `verify_note`.
+Key both `subtract_nullified` and `retain_non_inclusion` nullifier maps by verified
+commitment instead of `(tree_id, leaf_index)`. Unknown nullifiers remain in the
+result; these helpers cannot establish that such notes are unspent. Validate the
+complete snapshot with `private_balances` before discarding spent notes: conflicting
+leaf claims or commitment representations reject even when marked spent. Identical
+commitments count once across different leaves. Confidential asset ids and displayed
+proofless mints remain separate balance keys; representing one commitment through
+both rails or different displayed mints is an error in either order.

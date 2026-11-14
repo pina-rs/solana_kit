@@ -101,6 +101,23 @@ Blueshift's XARK stack is a separate Arkworks Groth16 toolchain. It does not pro
 
 `ViewingKey::open_output` decrypts a confidential or ring-confidential payload and reads a proofless deposit. The slot index is the output's position in that event's full `outputSlots` list. `GetEncryptedUtxosByTags` can return only the matching outputs, so that result's order is not the slot index. Look the output's `tx_signature` up with `GetShieldedTransactionsBySignature`, find the matching `output_slot`, and use its position in that event's `output_slots`.
 
-Confidential payloads use unauthenticated AES-CTR. `open_output` does not verify their Poseidon commitment and remains an inspection helper only. With the `poseidon` feature, `verify_note` checks an expected owner and recomputes the commitment using the pinned UTXO domain. For proofless notes it requires an explicit trusted mint-to-asset-field resolver so the commitment uses the registry asset field while the note keeps its displayed mint. It admits only data-free confidential notes (no ring program id and no application data) and data-free proofless notes whose trailing wire fields are the canonical empty option tags; ring-, data-, or extension-bearing shapes fail closed. A proofless deposit is cleartext, and opening it does not check `ProoflessNote::owner`; pass the expected owner to `verify_note`.
+Confidential payloads use unauthenticated AES-CTR. `open_output` does not verify their Poseidon commitment and remains an inspection helper only. With both `crypto` and `poseidon`, `verify_note` checks an expected owner and recomputes the commitment using the pinned UTXO domain. For proofless notes it requires an explicit trusted mint-to-asset-field resolver so the commitment uses the registry asset field while the note keeps its displayed mint. It admits only data-free confidential notes (no ring program id and no application data) and data-free proofless notes whose trailing wire fields are the canonical empty option tags; ring-, data-, or extension-bearing shapes fail closed. A proofless deposit is cleartext, and opening it does not check `ProoflessNote::owner`; pass the expected owner to `verify_note`.
 
 `private_balances` adds amounts for verified notes whose commitment the caller has not listed as spent. Commitments, not indexer leaf labels, identify notes, so one commitment counts once across leaf relabels and a spent commitment stays excluded. Confidential asset ids and proofless mints stay separate. Matching an indexer-supplied commitment is not independent chain inclusion: callers must obtain trustworthy commitment and tree context. With the `poseidon` feature, `nullifier` derives a spend tag. `subtract_nullified` drops notes whose tag is in `spent_nullifiers`. `retain_non_inclusion` keeps a note when that tag has a non-inclusion proof. A note with no derived tag stays, because the history does not name its leaf.
+
+Balance admission preserves raw `OpenedNote` and `TrackedNote` inspection:
+proofless `records` contains every byte after the 104-byte prefix, including
+unsupported or malformed tails. Only exactly six zero `None` tags enter balances;
+ring and application notes remain inspection values. The expected owner hash,
+published commitment, tree context, and exact mint-to-asset-field mapping must
+come from trusted sources. A matching hash is not a Merkle inclusion proof.
+
+Migrate balance inputs from `TrackedNote` to `VerifiedNote` through `verify_note`.
+Key both `subtract_nullified` and `retain_non_inclusion` nullifier maps by verified
+commitment instead of `(tree_id, leaf_index)`. Unknown nullifiers remain in the
+result; these helpers cannot establish that such notes are unspent. Validate the
+complete snapshot with `private_balances` before discarding spent notes: conflicting
+leaf claims or commitment representations reject even when marked spent. Identical
+commitments count once across different leaves. Confidential asset ids and displayed
+proofless mints remain separate balance keys; representing one commitment through
+both rails or different displayed mints is an error in either order.

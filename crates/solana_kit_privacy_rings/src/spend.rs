@@ -53,6 +53,7 @@ pub fn retain_non_inclusion(
 
 #[cfg(test)]
 mod tests {
+    #[cfg(feature = "poseidon")]
     use super::*;
     #[cfg(feature = "poseidon")]
     use crate::admission::verify_note;
@@ -131,7 +132,11 @@ mod tests {
     #[test]
     fn duplicate_aliases_filter_by_commitment() {
         let n2 = note(1, 2, 2, 4);
-        let alias = n2.clone();
+        // The same commitment published at a different leaf is still the same
+        // note: filtering keys on the commitment, not the indexer leaf label.
+        let alias = note(1, 3, 2, 4);
+        assert_eq!(n2.commitment(), alias.commitment());
+        assert_ne!(n2.leaf_index(), alias.leaf_index());
         let notes = vec![n2.clone(), alias];
         let mut derived = BTreeMap::new();
         derived.insert(n2.commitment(), [9; 32]);

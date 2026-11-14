@@ -81,7 +81,9 @@ impl ViewingKey {
     /// note with a commitment you trust before summing it.
     ///
     /// A proofless deposit is cleartext. This function does not check
-    /// [`ProoflessNote::owner`]. Leave out notes owned by someone else before
+    /// [`ProoflessNote::owner`] and keeps the trailing wire fields raw in
+    /// [`ProoflessNote::records`]; `verify_note` is what rejects a
+    /// non-canonical tail. Leave out notes owned by someone else before
     /// summing.
     ///
     /// `tx_viewing_pk` and `salt` are the transaction fields, already decoded
@@ -158,8 +160,11 @@ pub struct ProoflessNote {
     pub asset: [u8; 32],
     /// Amount in base units.
     pub amount: u64,
-    /// Trailing application/ring metadata retained from the payload. A
-    /// data-free proofless note has an empty vector.
+    /// Raw wire bytes after the fixed 104-byte prefix: the six borsh `Option`
+    /// fields in declaration order (`data_hash`, `utxo_data`, `ring_program_id`,
+    /// `ring_data_hash`, `ring_data`, `memo`). Six zero bytes are the canonical
+    /// data-free encoding (all six `None`); any other tail is retained here for
+    /// inspection. Balance admission accepts only the canonical tail.
     pub records: Vec<u8>,
 }
 
@@ -331,24 +336,16 @@ fn parse_proofless(bytes: &[u8]) -> Result<OpenedNote, Error> {
             .try_into()
             .map_err(|_| Error::Plaintext)?,
     );
-    let tail = &bytes[PROOFLESS_NOTE_PREFIX_LEN..];
     // ProoflessOutput has six Option fields after the fixed prefix:
     // data_hash, utxo_data, ring_program_id, ring_data_hash, ring_data, memo.
-    // Admission supports only canonical data-free records: all six None tags.
-    let canonical_empty = tail == [0, 0, 0, 0, 0, 0];
-    if !canonical_empty {
-        // Preserve raw inspection for callers but reject malformed/unsupported
-        // extension shapes rather than silently accepting them as data-free.
-        // We only accept the fully canonical empty tail here.
-        return Err(Error::Plaintext);
-    }
-
+    // The tail stays raw for inspection; `verify_note` admits only the six
+    // None tags and never treats an arbitrary or absent tail as data-free.
     Ok(OpenedNote::Proofless(ProoflessNote {
         owner,
         blinding,
         asset,
         amount,
-        records: Vec::new(),
+        records: bytes[PROOFLESS_NOTE_PREFIX_LEN..].to_vec(),
     }))
 }
 
@@ -482,28 +479,31 @@ mod tests {
                 blinding: [5; 32],
                 asset: [0; 32],
                 amount: 40,
-                records: Vec::new(),
+                records: vec![0, 0, 0, 0, 0, 0],
             })
         );
     }
 
     #[test]
-    fn proofless_with_extension_data_is_rejected() {
+    fn proofless_extension_tail_is_retained_for_inspection() {
+        let tail = [0, 1, 0, 0, 0, 0, 0, 0, 0];
         let mut body = vec![0u8];
         body.extend([4; 32]);
         body.extend([5; 32]);
         body.extend([0; 32]);
         body.extend(40u64.to_le_bytes());
-        // utxo_data present: data_hash None, utxo_data Some(empty vec encoded later?) - make simple non-empty option
-        body.extend([0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0]); // malformed/unsupported tail
+        body.extend(tail);
         let mut payload = vec![0];
         payload.extend(u32::try_from(body.len()).expect("len").to_le_bytes());
         payload.extend(body);
 
         let viewing = ViewingKey::from_bytes([1; 32]);
+        let opened = viewing
+            .open_output(&[4; 33], &[0; 16], 0, &payload)
+            .expect("raw tail retained");
         assert!(matches!(
-            viewing.open_output(&[4; 33], &[0; 16], 0, &payload),
-            Err(Error::Plaintext)
+            opened,
+            OpenedNote::Proofless(ref note) if note.records.as_slice() == tail
         ));
     }
 

@@ -83,7 +83,7 @@ pub use witness::{
     TransferWitness, TreeSlotWitness, confidential_transfer_witness, indexed_proof_request,
 };
 
-#[cfg(all(test, feature = "crypto"))]
+#[cfg(all(test, feature = "crypto", feature = "poseidon"))]
 mod admission_behavior_tests;
 #[cfg(test)]
 mod admission_tests;
