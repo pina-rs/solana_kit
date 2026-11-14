@@ -143,3 +143,21 @@ leaf claims or commitment representations reject even when marked spent. Identic
 commitments count once across different leaves. Confidential asset ids and displayed
 proofless mints remain separate balance keys; representing one commitment through
 both rails or different displayed mints is an error in either order.
+
+## Verification and coverage
+
+`.github/workflows/privacy-rings.yml` runs isolated, non-unified checks for
+this crate:
+
+- feature sets `""`, `crypto`, `poseidon`, `crypto,poseidon`, `tee`, and
+  `tee,poseidon`, each with `cargo test`, clippy (`-D warnings`), and
+  `RUSTDOCFLAGS=-D warnings cargo doc`;
+- the declared MSRV 1.89 library check with all features;
+- all-feature tests on `i686-unknown-linux-gnu`;
+- all-feature library builds for `wasm32-unknown-unknown`, `wasm32-wasip1`, and
+  `wasm32-wasip2` (compilation only);
+- the checksum-pinned local prover integration and its two ignored tests.
+
+These checks exercise crate contracts. They do not prove hosted indexer
+honesty, on-chain inclusion, that a note is unspent, or browser/WASI runtime
+behavior. Hosted live tests stay ignored.
