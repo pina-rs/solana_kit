@@ -11,7 +11,7 @@ permissions:
 jobs:
   local-prover:
     name: Local prover integration
-    runs-on: ubuntu-24.04
+    runs-on: "ubuntu-24.04"
     timeout-minutes: 45
 
     steps:
@@ -20,10 +20,12 @@ jobs:
           persist-credentials: false
 
       - name: Install pinned Rust
+
         run: |
           rustup toolchain install 1.99.1 --profile minimal
 
       - name: Download and verify the pinned prover binary
+
         run: |
           set -euo pipefail
           binary="prover-linux-x64-cli-v0.10.0"
@@ -48,6 +50,7 @@ jobs:
           "$RUNNER_TEMP/$binary" start --help >/dev/null
 
       - name: Download and verify the pinned proving keys
+
         run: |
           set -euo pipefail
           key_base="https://d3gbdb0egjwcw9.cloudfront.net/proving-keys/78751f5d1c591777"
@@ -65,6 +68,7 @@ jobs:
       - name: Start the owned loopback prover and run the ignored tests
         env:
           PRIVACY_RINGS_LOCAL_PROVER_URL: http://127.0.0.1:3001
+
         run: |
           set -euo pipefail
           binary="$RUNNER_TEMP/prover-linux-x64-cli-v0.10.0"
