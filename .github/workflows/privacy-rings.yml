@@ -126,4 +126,135 @@ jobs:
           name: privacy-rings-prover-log
           if-no-files-found: ignore
           retention-days: 1
+
           path: ${{ runner.temp }}/prover.log
+
+  feature-isolation:
+    name: Feature isolation (${{ matrix.features }})
+    runs-on: "ubuntu-24.04"
+    timeout-minutes: 30
+
+    strategy:
+      fail-fast: false
+      matrix:
+        features:
+          - ""
+          - "crypto"
+          - "poseidon"
+          - "crypto,poseidon"
+
+          - "tee"
+          - "tee,poseidon"
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Install pinned Rust
+        shell: bash
+        run: |
+          rustup toolchain install 1.99.1 --profile minimal --component clippy --component rustfmt
+
+      - name: Test, lint, and document one feature set
+        shell: bash
+        env:
+          FEATURES: ${{ matrix.features }}
+
+        run: |
+          set -euo pipefail
+          features=(--no-default-features)
+
+          if [ -n "$FEATURES" ]; then
+            features+=(--features "$FEATURES")
+          fi
+
+          cargo +1.99.1 test -p solana_kit_privacy_rings --locked "${features[@]}"
+
+          cargo +1.99.1 clippy -p solana_kit_privacy_rings --all-targets --locked \
+            "${features[@]}" -- -D warnings
+
+          RUSTDOCFLAGS="-D warnings" cargo +1.99.1 doc -p solana_kit_privacy_rings \
+            --no-deps --locked "${features[@]}"
+
+  msrv:
+    name: MSRV library
+    runs-on: "ubuntu-24.04"
+    timeout-minutes: 20
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Check library on the declared MSRV
+        shell: bash
+        run: |
+          rustup toolchain install 1.89.0 --profile minimal
+
+          cargo +1.89.0 check -p solana_kit_privacy_rings --all-features --lib --locked
+
+  thirty-two-bit:
+    name: i686 tests
+    runs-on: "ubuntu-24.04"
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Install i686 toolchain and linker
+        shell: bash
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc-multilib
+
+          rustup toolchain install 1.99.1 --profile minimal
+          rustup target add --toolchain 1.99.1 i686-unknown-linux-gnu
+
+      - name: Verify the i686 target pointer width
+        shell: bash
+        run: |
+          set -euo pipefail
+          width="$(rustc +1.99.1 --target i686-unknown-linux-gnu --print cfg \
+            | sed -n 's/^target_pointer_width="\([0-9]*\)"$/\1/p')"
+          test "$width" = "32"
+          echo "target_pointer_width=$width"
+
+      - name: Run all-feature tests on i686
+        shell: bash
+
+        run: |
+          cargo +1.99.1 test -p solana_kit_privacy_rings \
+            --target i686-unknown-linux-gnu --all-features --locked
+
+  wasm-build:
+    name: WASM library build (${{ matrix.target }})
+    runs-on: "ubuntu-24.04"
+    timeout-minutes: 20
+
+    strategy:
+      fail-fast: false
+      matrix:
+        target:
+          - wasm32-unknown-unknown
+          - wasm32-wasip1
+          - wasm32-wasip2
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Install pinned Rust and WASM target
+        shell: bash
+        run: |
+          rustup toolchain install 1.99.1 --profile minimal
+          rustup target add --toolchain 1.99.1 ${{ matrix.target }}
+
+      - name: Check the library on ${{ matrix.target }}
+        shell: bash
+        run: |
+          cargo +1.99.1 check -p solana_kit_privacy_rings --all-features --lib \
+            --target ${{ matrix.target }} --locked
