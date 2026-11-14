@@ -319,9 +319,8 @@ fn the_transport_sends_the_api_key_as_a_header() {
 #[test]
 #[ignore = "set PRIVACY_RINGS_LOCAL_PROVER_URL to a loopback prover"]
 fn local_prover_accepts_a_loopback_witness() {
-    let Ok(url) = std::env::var("PRIVACY_RINGS_LOCAL_PROVER_URL") else {
-        return;
-    };
+    let url = std::env::var("PRIVACY_RINGS_LOCAL_PROVER_URL")
+        .expect("PRIVACY_RINGS_LOCAL_PROVER_URL must be set to a loopback prover");
     let client = PrivacyProverClient::new(&url, HttpAdapter::new(None))
         .expect("endpoint")
         .with_poll(
@@ -333,25 +332,18 @@ fn local_prover_accepts_a_loopback_witness() {
         client.prove(CIRCUIT, &json!({"circuitType": "transfer-confidential"})),
     );
 
-    match result {
-        Ok(proof) => assert_eq!(proof.a.len(), 32),
-        Err(Error::Prover(ProverFailure::Http(status))) => {
-            assert_ne!(status, 401, "a loopback prover must not require a key");
-        }
-        Err(Error::Prover(ProverFailure::Server | ProverFailure::Response)) => {}
-        Err(Error::Prover(ProverFailure::Cleartext | ProverFailure::Config)) => {
-            panic!("loopback prover was refused before the request");
-        }
-        Err(error) => panic!("local prover: {error:?}"),
-    }
+    let error = result.expect_err("the pinned local prover rejects an empty witness");
+    assert!(
+        matches!(error, Error::Prover(ProverFailure::Http(400))),
+        "expected HTTP 400, got {error:?}"
+    );
 }
 
 #[test]
 #[ignore = "set PRIVACY_RINGS_LOCAL_PROVER_URL; does not use a Helius key"]
 fn local_prover_proves_the_published_witness() {
-    let Ok(url) = std::env::var("PRIVACY_RINGS_LOCAL_PROVER_URL") else {
-        return;
-    };
+    let url = std::env::var("PRIVACY_RINGS_LOCAL_PROVER_URL")
+        .expect("PRIVACY_RINGS_LOCAL_PROVER_URL must be set to a loopback prover");
     let witness: Value =
         serde_json::from_str(include_str!("../../tests/fixtures/transfer-2x2.json"))
             .expect("witness");

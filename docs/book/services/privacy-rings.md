@@ -70,28 +70,35 @@ The pinned proving-key SHA-256 must match `provingKeySha256` in the response. Wi
 
 Helius publishes the prover and the circuit artifacts:
 
-- The prover binary is the `prover-linux-x64` asset on the `cli-v0.10.0` release of `helius-labs/privacy-rings` (version `2.0.7`). Its SHA-256 is in that release's `SHA256SUMS`.
+- The prover binary is `prover-linux-x64-cli-v0.10.0` on the `cli-v0.10.0` release of `helius-labs/privacy-rings` (release commit `357dd92c99e9294a158118982918cf735998e21c`). Its SHA-256 is `4be11e2d877e5312bb64f298fb50eb69bb46b26059e8d523678338c0e10d11b2` (the release's `SHA256SUMS` asset has SHA-256 `c60bebdff467f413e79a915bffd68bef15d6ca804afcd844f466a3a39727675e`).
 - The gnark circuits are in that repository, under `prover/server`. This crate's witness builder follows `sdk-libs/client` at tag `v0.8.0`.
-- Proving keys are public at `https://d3gbdb0egjwcw9.cloudfront.net/` plus the `prefix` in `prover/server/prover/provingkeys/proving-keys.lock`. `transfer_confidential_1_2.key` is 9,268,304 bytes and matches pin `c0b5c1a1081136911a6ad5496fb989ed26d85b09e983a4d5048cff96e0833d85`. The full set is several gigabytes, and one batch key is about 74 GB.
+- Proving keys are public at `https://d3gbdb0egjwcw9.cloudfront.net/` plus the `prefix` (`proving-keys/78751f5d1c591777`) in `prover/server/prover/provingkeys/proving-keys.lock`. `transfer_confidential_1_2.key` is 9,268,304 bytes and matches pin `c0b5c1a1081136911a6ad5496fb989ed26d85b09e983a4d5048cff96e0833d85`. `transfer_confidential_2_2.key` is 16,407,649 bytes and matches pin `51380b1264737ebd4d31f40ebf6874db039078ce998d4fa187c049ace99798bb`. The full set is several gigabytes, and one batch key is about 74 GB.
 
 This repository has no devenv or Nix setup, so the prover stays an external binary:
 
 ```bash
 curl -fsSL -o prover \
   https://github.com/helius-labs/privacy-rings/releases/download/cli-v0.10.0/prover-linux-x64-cli-v0.10.0
+echo "4be11e2d877e5312bb64f298fb50eb69bb46b26059e8d523678338c0e10d11b2  prover" | sha256sum -c -
 chmod +x prover
 mkdir -p proving-keys
 curl -fsSL -o proving-keys/transfer_confidential_1_2.key \
   https://d3gbdb0egjwcw9.cloudfront.net/proving-keys/78751f5d1c591777/transfer_confidential_1_2.key
+echo "c0b5c1a1081136911a6ad5496fb989ed26d85b09e983a4d5048cff96e0833d85  proving-keys/transfer_confidential_1_2.key" | sha256sum -c -
+# The published 2x2 fixture also needs the second key:
+curl -fsSL -o proving-keys/transfer_confidential_2_2.key \
+  https://d3gbdb0egjwcw9.cloudfront.net/proving-keys/78751f5d1c591777/transfer_confidential_2_2.key
+echo "51380b1264737ebd4d31f40ebf6874db039078ce998d4fa187c049ace99798bb  proving-keys/transfer_confidential_2_2.key" | sha256sum -c -
 ./prover start \
   --prover-address 127.0.0.1:3001 \
-  --metrics-address 127.0.0.1:9997 \
+  --metrics-address 127.0.0.1:9998 \
   --keys-dir proving-keys \
   --serve transfer_confidential_1_2 \
+  --serve transfer_confidential_2_2 \
   --server-only
 ```
 
-Point `PRIVACY_RINGS_LOCAL_PROVER_URL` at `http://127.0.0.1:3001` and run the ignored test. Loopback does not need the unauthenticated opt-in. An empty witness gets a `400` from this binary, which shows the client reached it. `local_prover_proves_the_published_witness` posts `tests/fixtures/transfer-2x2.json` to a prover that serves `transfer_confidential_2_2`. `confidential_transfer_witness` rebuilds that fixture, so the proof is the witness this crate builds.
+Point `PRIVACY_RINGS_LOCAL_PROVER_URL` at `http://127.0.0.1:3001` and run the ignored tests. Loopback does not need the unauthenticated opt-in. An empty witness gets a `400` from this binary, which shows the client reached it. `local_prover_proves_the_published_witness` posts `tests/fixtures/transfer-2x2.json` to a prover that serves `transfer_confidential_2_2`, so that key must be present. `confidential_transfer_witness` rebuilds that fixture, so the proof is the witness this crate builds. No Helius API key is needed for this path. The repository's `.github/workflows/privacy-rings.yml` downloads the pinned binary and both keys, verifies their SHA-256 pins, starts a loopback prover, and runs both ignored tests; this documentation does not claim a green result until that workflow reports one.
 
 The hosted mainnet and devnet provers answer `401` without a key. The ignored live test reads `HELIUS_PRIVACY_RINGS_LIVE=1` and `HELIUS_API_KEY`. CI does not set either variable, and this crate's tests do not either. The test sends the key as an `x-api-key` header and never puts it in the URL.
 

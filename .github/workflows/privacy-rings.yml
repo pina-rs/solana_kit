@@ -1,0 +1,123 @@
+name: Privacy Rings local prover
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  local-prover:
+    name: Local prover integration
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Install pinned Rust
+        run: |
+          rustup toolchain install 1.99.1 --profile minimal
+
+      - name: Download and verify the pinned prover binary
+        run: |
+          set -euo pipefail
+          binary="prover-linux-x64-cli-v0.10.0"
+          url="https://github.com/helius-labs/privacy-rings/releases/download/cli-v0.10.0/${binary}"
+          curl --fail --location --silent --show-error "$url" \
+            --output "$RUNNER_TEMP/$binary"
+          echo "4be11e2d877e5312bb64f298fb50eb69bb46b26059e8d523678338c0e10d11b2  $RUNNER_TEMP/$binary" \
+            | sha256sum --check --strict
+
+          cp "$RUNNER_TEMP/$binary" "$RUNNER_TEMP/${binary}.corrupt"
+          printf 'x' | dd of="$RUNNER_TEMP/${binary}.corrupt" bs=1 seek=0 count=1 conv=notrunc status=none
+          if echo "4be11e2d877e5312bb64f298fb50eb69bb46b26059e8d523678338c0e10d11b2  $RUNNER_TEMP/${binary}.corrupt" \
+            | sha256sum --check --strict; then
+            echo "corrupt prover binary unexpectedly passed its checksum"
+            exit 1
+          else
+            echo "corrupt prover binary correctly rejected"
+          fi
+
+          chmod +x "$RUNNER_TEMP/$binary"
+          "$RUNNER_TEMP/$binary" --help >/dev/null
+          "$RUNNER_TEMP/$binary" start --help >/dev/null
+
+      - name: Download and verify the pinned proving keys
+        run: |
+          set -euo pipefail
+          key_base="https://d3gbdb0egjwcw9.cloudfront.net/proving-keys/78751f5d1c591777"
+          mkdir -p "$RUNNER_TEMP/proving-keys"
+          for spec in \
+            "transfer_confidential_1_2.key:c0b5c1a1081136911a6ad5496fb989ed26d85b09e983a4d5048cff96e0833d85" \
+            "transfer_confidential_2_2.key:51380b1264737ebd4d31f40ebf6874db039078ce998d4fa187c049ace99798bb"; do
+            name="${spec%%:*}"
+            digest="${spec##*:}"
+            curl --fail --location --silent --show-error \
+              "$key_base/$name" --output "$RUNNER_TEMP/proving-keys/$name"
+            echo "$digest  $RUNNER_TEMP/proving-keys/$name" | sha256sum --check --strict
+          done
+
+      - name: Start the owned loopback prover and run the ignored tests
+        env:
+          PRIVACY_RINGS_LOCAL_PROVER_URL: http://127.0.0.1:3001
+        run: |
+          set -euo pipefail
+          binary="$RUNNER_TEMP/prover-linux-x64-cli-v0.10.0"
+          keys="$RUNNER_TEMP/proving-keys"
+          log="$RUNNER_TEMP/prover.log"
+          pidfile="$RUNNER_TEMP/prover.pid"
+
+          "$binary" start \
+            --server-only \
+            --prover-address 127.0.0.1:3001 \
+            --metrics-address 127.0.0.1:9998 \
+            --keys-dir "$keys" \
+            --serve transfer_confidential_1_2 \
+            --serve transfer_confidential_2_2 \
+            >"$log" 2>&1 &
+          echo $! >"$pidfile"
+
+          cleanup() {
+            if [ -f "$pidfile" ]; then
+              pid="$(cat "$pidfile")"
+              if kill -0 "$pid" 2>/dev/null; then
+                kill "$pid" 2>/dev/null || true
+                wait "$pid" 2>/dev/null || true
+              fi
+            fi
+          }
+          trap cleanup EXIT
+
+          for attempt in $(seq 1 60); do
+            if ! kill -0 "$(cat "$pidfile")" 2>/dev/null; then
+              echo "prover exited before becoming ready"
+              cat "$log"
+              exit 1
+            fi
+            if curl --fail --silent --show-error http://127.0.0.1:3001/health >/dev/null 2>&1; then
+              echo "prover ready after ${attempt}s"
+              break
+            fi
+            sleep 1
+          done
+
+          curl --fail --silent --show-error http://127.0.0.1:3001/health >/dev/null
+
+          cargo +1.99.1 test -p solana_kit_privacy_rings --all-features --locked \
+            prover::tests::local_prover_accepts_a_loopback_witness -- --ignored --exact
+          cargo +1.99.1 test -p solana_kit_privacy_rings --all-features --locked \
+            prover::tests::local_prover_proves_the_published_witness -- --ignored --exact
+
+      - name: Retain prover log
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: privacy-rings-prover-log
+          if-no-files-found: ignore
+          retention-days: 1
+          path: ${{ runner.temp }}/prover.log
