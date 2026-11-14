@@ -1,0 +1,895 @@
+{
+  "schema_version": "0.10",
+  "kind": "monochange.releaseRecord",
+  "created_at": "2026-11-14T04:09:14Z",
+  "command": "release",
+  "version": "0.1.1",
+  "versions": {
+    "solana_kit_privacy_rings": "0.1.1"
+  },
+  "release_targets": [
+    {
+      "id": "solana_kit_privacy_rings",
+      "kind": "package",
+      "version": "0.1.1",
+      "version_format": "namespaced",
+      "tag": false,
+      "release": false,
+      "tag_name": "solana_kit_privacy_rings/v0.1.1",
+      "rendered_title": "solana_kit_privacy_rings v0.1.1 (2026-11-14)",
+      "rendered_changelog_title": "solana_kit_privacy_rings [0.1.1](https://github.com/pina-rs/solana_kit/releases/tag/solana_kit_privacy_rings/v0.1.1) (2026-11-14)",
+      "members": [
+        "solana_kit_privacy_rings"
+      ]
+    }
+  ],
+  "released_packages": [
+    "solana_kit_privacy_rings"
+  ],
+  "changed_files": [
+    "Cargo.lock",
+    "Cargo.toml",
+    "crates/solana_kit_privacy_rings/Cargo.toml"
+  ],
+  "package_publications": [],
+  "updated_changelogs": [],
+  "deleted_changesets": [
+    ".changeset/privacy-rings-attestation-freshness.md",
+    ".changeset/privacy-rings-balance-integrity.md",
+    ".changeset/privacy-rings-ci-coverage.md",
+    ".changeset/privacy-rings-confidentiality.md",
+    ".changeset/privacy-rings-indexed-contracts.md",
+    ".changeset/privacy-rings-indexer-admission.md",
+    ".changeset/privacy-rings-local-prover.md",
+    ".changeset/privacy-rings.md"
+  ],
+  "changesets": [
+    {
+      "path": ".changeset/privacy-rings-attestation-freshness.md",
+      "summary": "Enforce Nitro attestation freshness and bind safe challenges",
+      "details": "`NitroPolicy` gains `max_age_secs` and `max_future_secs` (seconds), and `verify_nitro` now compares the document's signed NSM timestamp with the caller's `now_secs` in exact milliseconds after the quote and its certificate chain authenticate, so a stale or excessively future document is rejected even while its certificates are still valid; zero bounds are the strictest setting, never a disabled check. The signed timestamp is retained on `VerifiedNitro::timestamp_ms` so callers can decide any later reuse themselves. `PrivacyProverClient::attest` runs one attestation round: it draws a fresh 32-byte nonce from a caller-supplied `rand_core` generator per attempt, fetches the quote, and verifies exactly that nonce — an entropy failure returns before any request, and a quote from a previous challenge cannot verify. The raw fetch helper is renamed to `fetch_unverified_attestation` to say what it does not do; callers that use it directly still own CSPRNG nonce generation and the one-attempt fetch/verify pairing.",
+      "targets": [
+        {
+          "id": "solana_kit_privacy_rings",
+          "kind": "package",
+          "bump": "minor",
+          "origin": "direct-change",
+          "evidence_refs": [],
+          "change_type": "minor"
+        }
+      ],
+      "context": {
+        "provider": "github",
+        "host": "github.com",
+        "capabilities": {
+          "commit_web_urls": true,
+          "actor_profiles": true,
+          "review_request_lookup": true,
+          "related_issues": true,
+          "issue_comments": true
+        },
+        "introduced": {
+          "actor": {
+            "provider": "github",
+            "host": "github.com",
+            "id": null,
+            "login": "ifiokjr",
+            "display_name": "ifiokjr",
+            "url": "https://github.com/ifiokjr",
+            "source": "review_request_author"
+          },
+          "commit": {
+            "provider": "github",
+            "host": "github.com",
+            "sha": "07b4821afc79343852f6c026e341942912d6f926",
+            "short_sha": "07b4821",
+            "url": "https://github.com/pina-rs/solana_kit/commit/07b4821afc79343852f6c026e341942912d6f926",
+            "authored_at": "2026-11-13T18:07:28Z",
+            "committed_at": "2026-11-13T18:07:28Z",
+            "author_name": "Ifiok Jr.",
+            "author_email": "1160934+ifiokjr@users.noreply.github.com"
+          },
+          "review_request": {
+            "provider": "github",
+            "host": "github.com",
+            "kind": "pull_request",
+            "id": "#196",
+            "title": "fix(privacy-rings): enforce nitro attestation freshness and safe challenges",
+            "url": "https://github.com/pina-rs/solana_kit/pull/196",
+            "author": {
+              "provider": "github",
+              "host": "github.com",
+              "id": null,
+              "login": "ifiokjr",
+              "display_name": "ifiokjr",
+              "url": "https://github.com/ifiokjr",
+              "source": "review_request_author"
+            }
+          }
+        },
+        "last_updated": {
+          "actor": {
+            "provider": "github",
+            "host": "github.com",
+            "id": null,
+            "login": "ifiokjr",
+            "display_name": "ifiokjr",
+            "url": "https://github.com/ifiokjr",
+            "source": "review_request_author"
+          },
+          "commit": {
+            "provider": "github",
+            "host": "github.com",
+            "sha": "07b4821afc79343852f6c026e341942912d6f926",
+            "short_sha": "07b4821",
+            "url": "https://github.com/pina-rs/solana_kit/commit/07b4821afc79343852f6c026e341942912d6f926",
+            "authored_at": "2026-11-13T18:07:28Z",
+            "committed_at": "2026-11-13T18:07:28Z",
+            "author_name": "Ifiok Jr.",
+            "author_email": "1160934+ifiokjr@users.noreply.github.com"
+          },
+          "review_request": {
+            "provider": "github",
+            "host": "github.com",
+            "kind": "pull_request",
+            "id": "#196",
+            "title": "fix(privacy-rings): enforce nitro attestation freshness and safe challenges",
+            "url": "https://github.com/pina-rs/solana_kit/pull/196",
+            "author": {
+              "provider": "github",
+              "host": "github.com",
+              "id": null,
+              "login": "ifiokjr",
+              "display_name": "ifiokjr",
+              "url": "https://github.com/ifiokjr",
+              "source": "review_request_author"
+            }
+          }
+        },
+        "related_issues": []
+      }
+    },
+    {
+      "path": ".changeset/privacy-rings-balance-integrity.md",
+      "summary": "Verify note ownership before private balances",
+      "details": "`open_output` remains an unauthenticated inspection helper. `verify_note` (`crypto` + `poseidon`) checks an expected owner and recomputes the commitment using the pinned UTXO domain, admitting only data-free confidential and proofless notes; ring- or data-bearing shapes fail closed. `private_balances` now takes `VerifiedNote` values and sums by verified commitment, so one commitment counts once across leaf relabels and a spent commitment stays excluded. `ProoflessNote` retains trailing metadata. `TrackedNote` is no longer a balance input.\n\nReject conflicting leaf and commitment representations before spent filtering, including cross-rail and different-mint aliases. Require a trusted mapping for the exact proofless mint. Preserve raw proofless tails for inspection while admitting only the six canonical empty option tags. Migrate nullifier maps to commitment keys so leaf relabels cannot bypass filtering. A hash match still requires trusted commitment/tree context and is not an inclusion proof.",
+      "targets": [
+        {
+          "id": "solana_kit_privacy_rings",
+          "kind": "package",
+          "bump": "minor",
+          "origin": "direct-change",
+          "evidence_refs": [],
+          "change_type": "minor"
+        }
+      ],
+      "context": {
+        "provider": "github",
+        "host": "github.com",
+        "capabilities": {
+          "commit_web_urls": true,
+          "actor_profiles": true,
+          "review_request_lookup": true,
+          "related_issues": true,
+          "issue_comments": true
+        },
+        "introduced": {
+          "actor": {
+            "provider": "github",
+            "host": "github.com",
+            "id": null,
+            "login": "ifiokjr",
+            "display_name": "ifiokjr",
+            "url": "https://github.com/ifiokjr",
+            "source": "review_request_author"
+          },
+          "commit": {
+            "provider": "github",
+            "host": "github.com",
+            "sha": "c8163f14b554f2ab695c13054e016b14c515dd68",
+            "short_sha": "c8163f1",
+            "url": "https://github.com/pina-rs/solana_kit/commit/c8163f14b554f2ab695c13054e016b14c515dd68",
+            "authored_at": "2026-11-14T01:19:42Z",
+            "committed_at": "2026-11-14T01:19:42Z",
+            "author_name": "Ifiok Jr.",
+            "author_email": "1160934+ifiokjr@users.noreply.github.com"
+          },
+          "review_request": {
+            "provider": "github",
+            "host": "github.com",
+            "kind": "pull_request",
+            "id": "#198",
+            "title": "fix(privacy-rings): require ownership and commitment verification before balances",
+            "url": "https://github.com/pina-rs/solana_kit/pull/198",
+            "author": {
+              "provider": "github",
+              "host": "github.com",
+              "id": null,
+              "login": "ifiokjr",
+              "display_name": "ifiokjr",
+              "url": "https://github.com/ifiokjr",
+              "source": "review_request_author"
+            }
+          }
+        },
+        "last_updated": {
+          "actor": {
+            "provider": "github",
+            "host": "github.com",
+            "id": null,
+            "login": "ifiokjr",
+            "display_name": "ifiokjr",
+            "url": "https://github.com/ifiokjr",
+            "source": "review_request_author"
+          },
+          "commit": {
+            "provider": "github",
+            "host": "github.com",
+            "sha": "c8163f14b554f2ab695c13054e016b14c515dd68",
+            "short_sha": "c8163f1",
+            "url": "https://github.com/pina-rs/solana_kit/commit/c8163f14b554f2ab695c13054e016b14c515dd68",
+            "authored_at": "2026-11-14T01:19:42Z",
+            "committed_at": "2026-11-14T01:19:42Z",
+            "author_name": "Ifiok Jr.",
+            "author_email": "1160934+ifiokjr@users.noreply.github.com"
+          },
+          "review_request": {
+            "provider": "github",
+            "host": "github.com",
+            "kind": "pull_request",
+            "id": "#198",
+            "title": "fix(privacy-rings): require ownership and commitment verification before balances",
+            "url": "https://github.com/pina-rs/solana_kit/pull/198",
+            "author": {
+              "provider": "github",
+              "host": "github.com",
+              "id": null,
+              "login": "ifiokjr",
+              "display_name": "ifiokjr",
+              "url": "https://github.com/ifiokjr",
+              "source": "review_request_author"
+            }
+          }
+        },
+        "related_issues": []
+      }
+    },
+    {
+      "path": ".changeset/privacy-rings-ci-coverage.md",
+      "summary": "Add isolated CI coverage for privacy rings",
+      "details": "Append feature-isolation, MSRV, 32-bit, and WASM build jobs to\n`.github/workflows/privacy-rings.yml` while preserving the checksum-pinned\nlocal prover job. Document the resulting coverage and its limits in the crate\nREADME and service docs.\n\nDisable AES-GCM's unused OS-randomness feature so the library can compile for\n`wasm32-unknown-unknown`. HPKE continues to obtain fresh entropy from the caller's\ncryptographic RNG; encryption and allocation remain enabled.",
+      "targets": [
+        {
+          "id": "solana_kit_privacy_rings",
+          "kind": "package",
+          "bump": "patch",
+          "origin": "direct-change",
+          "evidence_refs": [],
+          "change_type": "patch"
+        }
+      ],
+      "context": {
+        "provider": "github",
+        "host": "github.com",
+        "capabilities": {
+          "commit_web_urls": true,
+          "actor_profiles": true,
+          "review_request_lookup": true,
+          "related_issues": true,
+          "issue_comments": true
+        },
+        "introduced": {
+          "actor": {
+            "provider": "github",
+            "host": "github.com",
+            "id": null,
+            "login": "ifiokjr",
+            "display_name": "ifiokjr",
+            "url": "https://github.com/ifiokjr",
+            "source": "review_request_author"
+          },
+          "commit": {
+            "provider": "github",
+            "host": "github.com",
+            "sha": "61a28a51fb2e5183d65849c98d9ec8a083048753",
+            "short_sha": "61a28a5",
+            "url": "https://github.com/pina-rs/solana_kit/commit/61a28a51fb2e5183d65849c98d9ec8a083048753",
+            "authored_at": "2026-11-14T04:06:16Z",
+            "committed_at": "2026-11-14T04:06:16Z",
+            "author_name": "Ifiok Jr.",
+            "author_email": "1160934+ifiokjr@users.noreply.github.com"
+          },
+          "review_request": {
+            "provider": "github",
+            "host": "github.com",
+            "kind": "pull_request",
+            "id": "#200",
+            "title": "ci(privacy-rings): add isolated feature, MSRV, 32-bit, and WASM coverage",
+            "url": "https://github.com/pina-rs/solana_kit/pull/200",
+            "author": {
+              "provider": "github",
+              "host": "github.com",
+              "id": null,
+              "login": "ifiokjr",
+              "display_name": "ifiokjr",
+              "url": "https://github.com/ifiokjr",
+              "source": "review_request_author"
+            }
+          }
+        },
+        "last_updated": {
+          "actor": {
+            "provider": "github",
+            "host": "github.com",
+            "id": null,
+            "login": "ifiokjr",
+            "display_name": "ifiokjr",
+            "url": "https://github.com/ifiokjr",
+            "source": "review_request_author"
+          },
+          "commit": {
+            "provider": "github",
+            "host": "github.com",
+            "sha": "61a28a51fb2e5183d65849c98d9ec8a083048753",
+            "short_sha": "61a28a5",
+            "url": "https://github.com/pina-rs/solana_kit/commit/61a28a51fb2e5183d65849c98d9ec8a083048753",
+            "authored_at": "2026-11-14T04:06:16Z",
+            "committed_at": "2026-11-14T04:06:16Z",
+            "author_name": "Ifiok Jr.",
+            "author_email": "1160934+ifiokjr@users.noreply.github.com"
+          },
+          "review_request": {
+            "provider": "github",
+            "host": "github.com",
+            "kind": "pull_request",
+            "id": "#200",
+            "title": "ci(privacy-rings): add isolated feature, MSRV, 32-bit, and WASM coverage",
+            "url": "https://github.com/pina-rs/solana_kit/pull/200",
+            "author": {
+              "provider": "github",
+              "host": "github.com",
+              "id": null,
+              "login": "ifiokjr",
+              "display_name": "ifiokjr",
+              "url": "https://github.com/ifiokjr",
+              "source": "review_request_author"
+            }
+          }
+        },
+        "related_issues": []
+      }
+    },
+    {
+      "path": ".changeset/privacy-rings-confidentiality.md",
+      "summary": "Harden Privacy Rings prover confidentiality",
+      "details": "`PrivacyProverClient` now refuses any prover base URL that carries a query, so an API key can never survive in the origin or a request target, and host, port, and bracket tails must parse before the loopback decision. `seal_prover_request` draws a fresh HPKE ephemeral key from a caller-supplied `rand_core` generator instead of accepting a reusable seed, the DHKEM key schedule rejects an all-zero X25519 shared secret in both the seal and open paths, and the `Debug` output of witness and sealed-request types no longer prints nullifier secrets, note values, blindings, plaintexts, or response keys.",
+      "targets": [
+        {
+          "id": "solana_kit_privacy_rings",
+          "kind": "package",
+          "bump": "minor",
+          "origin": "direct-change",
+          "evidence_refs": [],
+          "change_type": "minor"
+        }
+      ],
+      "context": {
+        "provider": "github",
+        "host": "github.com",
+        "capabilities": {
+          "commit_web_urls": true,
+          "actor_profiles": true,
+          "review_request_lookup": true,
+          "related_issues": true,
+          "issue_comments": true
+        },
+        "introduced": {
+          "actor": {
+            "provider": "github",
+            "host": "github.com",
+            "id": null,
+            "login": "ifiokjr",
+            "display_name": "ifiokjr",
+            "url": "https://github.com/ifiokjr",
+            "source": "review_request_author"
+          },
+          "commit": {
+            "provider": "github",
+            "host": "github.com",
+            "sha": "f7cf4bcfec9845d1f126697de804ca4a64e6b213",
+            "short_sha": "f7cf4bc",
+            "url": "https://github.com/pina-rs/solana_kit/commit/f7cf4bcfec9845d1f126697de804ca4a64e6b213",
+            "authored_at": "2026-11-13T14:13:15Z",
+            "committed_at": "2026-11-13T14:13:15Z",
+            "author_name": "Ifiok Jr.",
+            "author_email": "1160934+ifiokjr@users.noreply.github.com"
+          },
+          "review_request": {
+            "provider": "github",
+            "host": "github.com",
+            "kind": "pull_request",
+            "id": "#193",
+            "title": "fix(privacy-rings): harden prover confidentiality",
+            "url": "https://github.com/pina-rs/solana_kit/pull/193",
+            "author": {
+              "provider": "github",
+              "host": "github.com",
+              "id": null,
+              "login": "ifiokjr",
+              "display_name": "ifiokjr",
+              "url": "https://github.com/ifiokjr",
+              "source": "review_request_author"
+            }
+          }
+        },
+        "last_updated": {
+          "actor": {
+            "provider": "github",
+            "host": "github.com",
+            "id": null,
+            "login": "ifiokjr",
+            "display_name": "ifiokjr",
+            "url": "https://github.com/ifiokjr",
+            "source": "review_request_author"
+          },
+          "commit": {
+            "provider": "github",
+            "host": "github.com",
+            "sha": "f7cf4bcfec9845d1f126697de804ca4a64e6b213",
+            "short_sha": "f7cf4bc",
+            "url": "https://github.com/pina-rs/solana_kit/commit/f7cf4bcfec9845d1f126697de804ca4a64e6b213",
+            "authored_at": "2026-11-13T14:13:15Z",
+            "committed_at": "2026-11-13T14:13:15Z",
+            "author_name": "Ifiok Jr.",
+            "author_email": "1160934+ifiokjr@users.noreply.github.com"
+          },
+          "review_request": {
+            "provider": "github",
+            "host": "github.com",
+            "kind": "pull_request",
+            "id": "#193",
+            "title": "fix(privacy-rings): harden prover confidentiality",
+            "url": "https://github.com/pina-rs/solana_kit/pull/193",
+            "author": {
+              "provider": "github",
+              "host": "github.com",
+              "id": null,
+              "login": "ifiokjr",
+              "display_name": "ifiokjr",
+              "url": "https://github.com/ifiokjr",
+              "source": "review_request_author"
+            }
+          }
+        },
+        "related_issues": []
+      }
+    },
+    {
+      "path": ".changeset/privacy-rings-indexed-contracts.md",
+      "summary": "Build witnesses for the pinned shapes and the indexed prover",
+      "details": "`confidential_transfer_witness` now sizes the public signer vector at the pinned shape width `min(n, 64 - 4 - n) + 1` instead of input count plus one, so the pinned 32/40/48/49-input confidential shapes and the 48x8 and 48x16 confidential EdDSA shapes build, and it refuses rail and shape pairs no pinned proving key serves. `indexed_proof_request` now takes the `TransferWitness` itself and derives the unresolved prepared witness and the public-input prefix the indexed prover accepts, validating trees, lookups, and slots against the pinned envelope before transport, and `prove_indexed` polls a queued job at `/prove/{circuit}/status` instead of an unregistered route. A tree slot beyond the word width is rejected before any indexing on every target.",
+      "targets": [
+        {
+          "id": "solana_kit_privacy_rings",
+          "kind": "package",
+          "bump": "minor",
+          "origin": "direct-change",
+          "evidence_refs": [],
+          "change_type": "minor"
+        }
+      ],
+      "context": {
+        "provider": "github",
+        "host": "github.com",
+        "capabilities": {
+          "commit_web_urls": true,
+          "actor_profiles": true,
+          "review_request_lookup": true,
+          "related_issues": true,
+          "issue_comments": true
+        },
+        "introduced": {
+          "actor": {
+            "provider": "github",
+            "host": "github.com",
+            "id": null,
+            "login": "ifiokjr",
+            "display_name": "ifiokjr",
+            "url": "https://github.com/ifiokjr",
+            "source": "review_request_author"
+          },
+          "commit": {
+            "provider": "github",
+            "host": "github.com",
+            "sha": "6597094355b668c88e6dd5251c4903de2c420190",
+            "short_sha": "6597094",
+            "url": "https://github.com/pina-rs/solana_kit/commit/6597094355b668c88e6dd5251c4903de2c420190",
+            "authored_at": "2026-11-13T16:07:49Z",
+            "committed_at": "2026-11-13T16:07:49Z",
+            "author_name": "Ifiok Jr.",
+            "author_email": "1160934+ifiokjr@users.noreply.github.com"
+          },
+          "review_request": {
+            "provider": "github",
+            "host": "github.com",
+            "kind": "pull_request",
+            "id": "#195",
+            "title": "fix(privacy-rings): build witnesses for pinned shapes and the indexed prover",
+            "url": "https://github.com/pina-rs/solana_kit/pull/195",
+            "author": {
+              "provider": "github",
+              "host": "github.com",
+              "id": null,
+              "login": "ifiokjr",
+              "display_name": "ifiokjr",
+              "url": "https://github.com/ifiokjr",
+              "source": "review_request_author"
+            }
+          }
+        },
+        "last_updated": {
+          "actor": {
+            "provider": "github",
+            "host": "github.com",
+            "id": null,
+            "login": "ifiokjr",
+            "display_name": "ifiokjr",
+            "url": "https://github.com/ifiokjr",
+            "source": "review_request_author"
+          },
+          "commit": {
+            "provider": "github",
+            "host": "github.com",
+            "sha": "6597094355b668c88e6dd5251c4903de2c420190",
+            "short_sha": "6597094",
+            "url": "https://github.com/pina-rs/solana_kit/commit/6597094355b668c88e6dd5251c4903de2c420190",
+            "authored_at": "2026-11-13T16:07:49Z",
+            "committed_at": "2026-11-13T16:07:49Z",
+            "author_name": "Ifiok Jr.",
+            "author_email": "1160934+ifiokjr@users.noreply.github.com"
+          },
+          "review_request": {
+            "provider": "github",
+            "host": "github.com",
+            "kind": "pull_request",
+            "id": "#195",
+            "title": "fix(privacy-rings): build witnesses for pinned shapes and the indexed prover",
+            "url": "https://github.com/pina-rs/solana_kit/pull/195",
+            "author": {
+              "provider": "github",
+              "host": "github.com",
+              "id": null,
+              "login": "ifiokjr",
+              "display_name": "ifiokjr",
+              "url": "https://github.com/ifiokjr",
+              "source": "review_request_author"
+            }
+          }
+        },
+        "related_issues": []
+      }
+    },
+    {
+      "path": ".changeset/privacy-rings-indexer-admission.md",
+      "summary": "Admit indexer responses against their requests",
+      "details": "History pages now require an explicit `paginationToken` member: a missing key is a schema error, and an explicit `null` still ends the walk. `Method::decode` binds each response to its request — `minContextSlot` fences the page's `context.slot`, the requested limit bounds transaction groups, signature events must name the requested signature, Merkle and non-inclusion proofs bind positionally to the requested leaves and tree, registry records bind count and owner, and nullifier-queue pages stay bounded, ordered from the inclusive `startSeq`, and carry 32-byte base58 values. `Page` carries the page's `context_slot`, `collect_pages` takes the requested floor and refuses regressing contexts and repeated tokens, and `UtxoPage` and `ShieldedPage` convert into it. `GetNullifierQueueElements::next_start_seq` returns the next checked cursor, and `collect_nullifier_queue` walks the queue with a fixed tree and limit, checked advancement, and monotonic context slots.",
+      "targets": [
+        {
+          "id": "solana_kit_privacy_rings",
+          "kind": "package",
+          "bump": "minor",
+          "origin": "direct-change",
+          "evidence_refs": [],
+          "change_type": "minor"
+        }
+      ],
+      "context": {
+        "provider": "github",
+        "host": "github.com",
+        "capabilities": {
+          "commit_web_urls": true,
+          "actor_profiles": true,
+          "review_request_lookup": true,
+          "related_issues": true,
+          "issue_comments": true
+        },
+        "introduced": {
+          "actor": {
+            "provider": "github",
+            "host": "github.com",
+            "id": null,
+            "login": "ifiokjr",
+            "display_name": "ifiokjr",
+            "url": "https://github.com/ifiokjr",
+            "source": "review_request_author"
+          },
+          "commit": {
+            "provider": "github",
+            "host": "github.com",
+            "sha": "858d4d56abea4a29dd298e41db709029484d17fd",
+            "short_sha": "858d4d5",
+            "url": "https://github.com/pina-rs/solana_kit/commit/858d4d56abea4a29dd298e41db709029484d17fd",
+            "authored_at": "2026-11-13T20:42:54Z",
+            "committed_at": "2026-11-13T20:42:54Z",
+            "author_name": "Ifiok Jr.",
+            "author_email": "1160934+ifiokjr@users.noreply.github.com"
+          },
+          "review_request": {
+            "provider": "github",
+            "host": "github.com",
+            "kind": "pull_request",
+            "id": "#197",
+            "title": "fix(privacy-rings): admit indexer responses against their requests",
+            "url": "https://github.com/pina-rs/solana_kit/pull/197",
+            "author": {
+              "provider": "github",
+              "host": "github.com",
+              "id": null,
+              "login": "ifiokjr",
+              "display_name": "ifiokjr",
+              "url": "https://github.com/ifiokjr",
+              "source": "review_request_author"
+            }
+          }
+        },
+        "last_updated": {
+          "actor": {
+            "provider": "github",
+            "host": "github.com",
+            "id": null,
+            "login": "ifiokjr",
+            "display_name": "ifiokjr",
+            "url": "https://github.com/ifiokjr",
+            "source": "review_request_author"
+          },
+          "commit": {
+            "provider": "github",
+            "host": "github.com",
+            "sha": "858d4d56abea4a29dd298e41db709029484d17fd",
+            "short_sha": "858d4d5",
+            "url": "https://github.com/pina-rs/solana_kit/commit/858d4d56abea4a29dd298e41db709029484d17fd",
+            "authored_at": "2026-11-13T20:42:54Z",
+            "committed_at": "2026-11-13T20:42:54Z",
+            "author_name": "Ifiok Jr.",
+            "author_email": "1160934+ifiokjr@users.noreply.github.com"
+          },
+          "review_request": {
+            "provider": "github",
+            "host": "github.com",
+            "kind": "pull_request",
+            "id": "#197",
+            "title": "fix(privacy-rings): admit indexer responses against their requests",
+            "url": "https://github.com/pina-rs/solana_kit/pull/197",
+            "author": {
+              "provider": "github",
+              "host": "github.com",
+              "id": null,
+              "login": "ifiokjr",
+              "display_name": "ifiokjr",
+              "url": "https://github.com/ifiokjr",
+              "source": "review_request_author"
+            }
+          }
+        },
+        "related_issues": []
+      }
+    },
+    {
+      "path": ".changeset/privacy-rings-local-prover.md",
+      "summary": "Verify ignored local-prover tests against pinned binary",
+      "details": "`local_prover_accepts_a_loopback_witness` and `local_prover_proves_the_published_witness` now fail when `PRIVACY_RINGS_LOCAL_PROVER_URL` is unset instead of silently passing, and the invalid-witness case expects the pinned prover's HTTP 400. `.github/workflows/privacy-rings.yml` downloads and checksum-verifies the pinned `prover-linux-x64-cli-v0.10.0` binary and both proving keys, starts an owned loopback prover, and runs both ignored tests. No hosted Helius endpoint or secret is used.",
+      "targets": [
+        {
+          "id": "solana_kit_privacy_rings",
+          "kind": "package",
+          "bump": "patch",
+          "origin": "direct-change",
+          "evidence_refs": [],
+          "change_type": "patch"
+        }
+      ],
+      "context": {
+        "provider": "github",
+        "host": "github.com",
+        "capabilities": {
+          "commit_web_urls": true,
+          "actor_profiles": true,
+          "review_request_lookup": true,
+          "related_issues": true,
+          "issue_comments": true
+        },
+        "introduced": {
+          "actor": {
+            "provider": "github",
+            "host": "github.com",
+            "id": null,
+            "login": "ifiokjr",
+            "display_name": "ifiokjr",
+            "url": "https://github.com/ifiokjr",
+            "source": "review_request_author"
+          },
+          "commit": {
+            "provider": "github",
+            "host": "github.com",
+            "sha": "83700cfff3ff4a23f68bc57e42a1e93388289448",
+            "short_sha": "83700cf",
+            "url": "https://github.com/pina-rs/solana_kit/commit/83700cfff3ff4a23f68bc57e42a1e93388289448",
+            "authored_at": "2026-11-14T02:49:14Z",
+            "committed_at": "2026-11-14T02:49:14Z",
+            "author_name": "Ifiok Jr.",
+            "author_email": "1160934+ifiokjr@users.noreply.github.com"
+          },
+          "review_request": {
+            "provider": "github",
+            "host": "github.com",
+            "kind": "pull_request",
+            "id": "#199",
+            "title": "ci(privacy-rings): verify ignored local-prover tests against pinned binary",
+            "url": "https://github.com/pina-rs/solana_kit/pull/199",
+            "author": {
+              "provider": "github",
+              "host": "github.com",
+              "id": null,
+              "login": "ifiokjr",
+              "display_name": "ifiokjr",
+              "url": "https://github.com/ifiokjr",
+              "source": "review_request_author"
+            }
+          }
+        },
+        "last_updated": {
+          "actor": {
+            "provider": "github",
+            "host": "github.com",
+            "id": null,
+            "login": "ifiokjr",
+            "display_name": "ifiokjr",
+            "url": "https://github.com/ifiokjr",
+            "source": "review_request_author"
+          },
+          "commit": {
+            "provider": "github",
+            "host": "github.com",
+            "sha": "83700cfff3ff4a23f68bc57e42a1e93388289448",
+            "short_sha": "83700cf",
+            "url": "https://github.com/pina-rs/solana_kit/commit/83700cfff3ff4a23f68bc57e42a1e93388289448",
+            "authored_at": "2026-11-14T02:49:14Z",
+            "committed_at": "2026-11-14T02:49:14Z",
+            "author_name": "Ifiok Jr.",
+            "author_email": "1160934+ifiokjr@users.noreply.github.com"
+          },
+          "review_request": {
+            "provider": "github",
+            "host": "github.com",
+            "kind": "pull_request",
+            "id": "#199",
+            "title": "ci(privacy-rings): verify ignored local-prover tests against pinned binary",
+            "url": "https://github.com/pina-rs/solana_kit/pull/199",
+            "author": {
+              "provider": "github",
+              "host": "github.com",
+              "id": null,
+              "login": "ifiokjr",
+              "display_name": "ifiokjr",
+              "url": "https://github.com/ifiokjr",
+              "source": "review_request_author"
+            }
+          }
+        },
+        "related_issues": []
+      }
+    },
+    {
+      "path": ".changeset/privacy-rings.md",
+      "summary": "Add a Privacy Rings client on Kit types",
+      "details": "Deposit, confidential transfer, and withdraw build shielded-pool instructions with Kit addresses. The crypto feature decrypts viewing-key payloads and derives the published PDAs. Typed methods cover the published Privacy Rings indexer RPC. `PrivacyProverClient` posts a witness to the remote prover and attaches the compressed proof.",
+      "targets": [
+        {
+          "id": "solana_kit_privacy_rings",
+          "kind": "package",
+          "bump": "minor",
+          "origin": "direct-change",
+          "evidence_refs": [],
+          "change_type": "minor"
+        }
+      ],
+      "context": {
+        "provider": "github",
+        "host": "github.com",
+        "capabilities": {
+          "commit_web_urls": true,
+          "actor_profiles": true,
+          "review_request_lookup": true,
+          "related_issues": true,
+          "issue_comments": true
+        },
+        "introduced": {
+          "actor": {
+            "provider": "github",
+            "host": "github.com",
+            "id": null,
+            "login": "ifiokjr",
+            "display_name": "ifiokjr",
+            "url": "https://github.com/ifiokjr",
+            "source": "review_request_author"
+          },
+          "commit": {
+            "provider": "github",
+            "host": "github.com",
+            "sha": "baa82f8f5771e9d0eae1aa64a0618b293d8dc1f0",
+            "short_sha": "baa82f8",
+            "url": "https://github.com/pina-rs/solana_kit/commit/baa82f8f5771e9d0eae1aa64a0618b293d8dc1f0",
+            "authored_at": "2026-11-11T12:08:48Z",
+            "committed_at": "2026-11-11T12:08:48Z",
+            "author_name": "Ifiok Jr.",
+            "author_email": "1160934+ifiokjr@users.noreply.github.com"
+          },
+          "review_request": {
+            "provider": "github",
+            "host": "github.com",
+            "kind": "pull_request",
+            "id": "#191",
+            "title": "feat(privacy-rings): add a Kit-native Privacy Rings client",
+            "url": "https://github.com/pina-rs/solana_kit/pull/191",
+            "author": {
+              "provider": "github",
+              "host": "github.com",
+              "id": null,
+              "login": "ifiokjr",
+              "display_name": "ifiokjr",
+              "url": "https://github.com/ifiokjr",
+              "source": "review_request_author"
+            }
+          }
+        },
+        "last_updated": {
+          "actor": {
+            "provider": "github",
+            "host": "github.com",
+            "id": null,
+            "login": "ifiokjr",
+            "display_name": "ifiokjr",
+            "url": "https://github.com/ifiokjr",
+            "source": "review_request_author"
+          },
+          "commit": {
+            "provider": "github",
+            "host": "github.com",
+            "sha": "baa82f8f5771e9d0eae1aa64a0618b293d8dc1f0",
+            "short_sha": "baa82f8",
+            "url": "https://github.com/pina-rs/solana_kit/commit/baa82f8f5771e9d0eae1aa64a0618b293d8dc1f0",
+            "authored_at": "2026-11-11T12:08:48Z",
+            "committed_at": "2026-11-11T12:08:48Z",
+            "author_name": "Ifiok Jr.",
+            "author_email": "1160934+ifiokjr@users.noreply.github.com"
+          },
+          "review_request": {
+            "provider": "github",
+            "host": "github.com",
+            "kind": "pull_request",
+            "id": "#191",
+            "title": "feat(privacy-rings): add a Kit-native Privacy Rings client",
+            "url": "https://github.com/pina-rs/solana_kit/pull/191",
+            "author": {
+              "provider": "github",
+              "host": "github.com",
+              "id": null,
+              "login": "ifiokjr",
+              "display_name": "ifiokjr",
+              "url": "https://github.com/ifiokjr",
+              "source": "review_request_author"
+            }
+          }
+        },
+        "related_issues": []
+      }
+    }
+  ],
+  "changelogs": [],
+  "provider": {
+    "kind": "github",
+    "owner": "pina-rs",
+    "repo": "solana_kit",
+    "host": null
+  }
+}
