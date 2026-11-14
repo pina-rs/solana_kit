@@ -6,8 +6,6 @@
 //! with the caller. [`crate::subtract_nullified`] drops a note whose derived
 //! nullifier appears in history. This module does not derive that nullifier.
 
-use std::collections::BTreeMap;
-
 use aes::Aes256;
 use ctr::Ctr32BE;
 use ctr::cipher::{KeyIvInit, StreamCipher};
@@ -27,7 +25,7 @@ const RING_CONFIDENTIAL_SCHEME: u8 = 4;
 const PROOFLESS_SCHEME: u8 = 0;
 const VIEWING_KEY_LEN: usize = 33;
 const PAYLOAD_HEADER_LEN: usize = 5;
-const PROOFLESS_NOTE_LEN: usize = 104;
+const PROOFLESS_NOTE_PREFIX_LEN: usize = 104;
 const SIGN_BYTE: usize = 31;
 const CURVE_LOW: u8 = 237;
 const CLAMP_BYTE: u8 = 127;
@@ -83,7 +81,9 @@ impl ViewingKey {
     /// note with a commitment you trust before summing it.
     ///
     /// A proofless deposit is cleartext. This function does not check
-    /// [`ProoflessNote::owner`]. Leave out notes owned by someone else before
+    /// [`ProoflessNote::owner`] and keeps the trailing wire fields raw in
+    /// [`ProoflessNote::records`]; `verify_note` is what rejects a
+    /// non-canonical tail. Leave out notes owned by someone else before
     /// summing.
     ///
     /// `tx_viewing_pk` and `salt` are the transaction fields, already decoded
@@ -150,7 +150,7 @@ pub enum OpenedNote {
 }
 
 /// The fixed prefix of a proofless deposit output.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ProoflessNote {
     /// Recipient owner hash.
     pub owner: [u8; 32],
@@ -160,6 +160,12 @@ pub struct ProoflessNote {
     pub asset: [u8; 32],
     /// Amount in base units.
     pub amount: u64,
+    /// Raw wire bytes after the fixed 104-byte prefix: the six borsh `Option`
+    /// fields in declaration order (`data_hash`, `utxo_data`, `ring_program_id`,
+    /// `ring_data_hash`, `ring_data`, `memo`). Six zero bytes are the canonical
+    /// data-free encoding (all six `None`); any other tail is retained here for
+    /// inspection. Balance admission accepts only the canonical tail.
+    pub records: Vec<u8>,
 }
 
 /// A decrypted note plus the leaf the indexer assigned it.
@@ -171,73 +177,6 @@ pub struct TrackedNote {
     pub leaf_index: u64,
     /// Decrypted or proofless note.
     pub note: OpenedNote,
-}
-
-/// Sum of unspent notes that share an asset key.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub struct AssetBalance {
-    /// Confidential asset id, or `None` for a proofless mint.
-    pub asset_id: Option<u64>,
-    /// Proofless mint, or `None` for a confidential asset id.
-    pub mint: Option<[u8; 32]>,
-    /// Total base units.
-    pub amount: u64,
-}
-
-/// Sums notes whose `(tree_id, leaf_index)` is not in `spent`.
-///
-/// The same leaf is counted once. Two different notes for one leaf are
-/// rejected. Confidential and proofless keys stay separate: a confidential
-/// asset id is not assumed to be a mint. This function does not check a
-/// proofless owner or a confidential commitment, and it does not derive
-/// nullifiers.
-///
-/// # Errors
-/// Rejects a leaf that appears twice with different contents, or a total that
-/// overflows `u64`.
-pub fn private_balances(
-    notes: &[TrackedNote],
-    spent: &std::collections::BTreeSet<(u16, u64)>,
-) -> Result<Vec<AssetBalance>, Error> {
-    let mut seen: BTreeMap<(u16, u64), &OpenedNote> = BTreeMap::new();
-    let mut totals: BTreeMap<(u8, [u8; 8], [u8; 32]), u64> = BTreeMap::new();
-
-    for note in notes {
-        if spent.contains(&(note.tree_id, note.leaf_index)) {
-            continue;
-        }
-
-        match seen.entry((note.tree_id, note.leaf_index)) {
-            std::collections::btree_map::Entry::Occupied(existing) => {
-                reject_conflicting_leaf(existing.get(), &note.note)?;
-                continue;
-            }
-            std::collections::btree_map::Entry::Vacant(slot) => {
-                slot.insert(&note.note);
-            }
-        }
-
-        let (kind, id, mint, amount) = match &note.note {
-            OpenedNote::Confidential(plain) => {
-                (0, plain.asset_id.to_le_bytes(), [0; 32], plain.amount)
-            }
-            OpenedNote::Proofless(plain) => (1, [0; 8], plain.asset, plain.amount),
-        };
-
-        let entry = totals.entry((kind, id, mint)).or_insert(0);
-        *entry = entry
-            .checked_add(amount)
-            .ok_or(Error::Limit("balance overflow"))?;
-    }
-
-    Ok(totals
-        .into_iter()
-        .map(|((kind, id, mint), amount)| AssetBalance {
-            asset_id: (kind == 0).then(|| u64::from_le_bytes(id)),
-            mint: (kind == 1).then_some(mint),
-            amount,
-        })
-        .collect())
 }
 
 fn decrypt_ciphertext(
@@ -292,14 +231,6 @@ fn derive_key(
     nonce.copy_from_slice(&okm[32..]);
     okm.zeroize();
     Ok((key, nonce))
-}
-
-fn reject_conflicting_leaf(existing: &OpenedNote, candidate: &OpenedNote) -> Result<(), Error> {
-    if existing != candidate {
-        return Err(Error::Limit("conflicting leaf"));
-    }
-
-    Ok(())
 }
 
 fn apply_ctr(key: &[u8; 32], nonce: &[u8; 12], buffer: &mut [u8]) {
@@ -389,7 +320,7 @@ fn encoding_body(payload: &[u8]) -> Result<&[u8], Error> {
 }
 
 fn parse_proofless(bytes: &[u8]) -> Result<OpenedNote, Error> {
-    if bytes.len() < PROOFLESS_NOTE_LEN {
+    if bytes.len() < PROOFLESS_NOTE_PREFIX_LEN {
         return Err(Error::Plaintext);
     }
 
@@ -401,15 +332,20 @@ fn parse_proofless(bytes: &[u8]) -> Result<OpenedNote, Error> {
     asset.copy_from_slice(&bytes[BLINDING_END..ASSET_END]);
 
     let amount = u64::from_le_bytes(
-        bytes[ASSET_END..PROOFLESS_NOTE_LEN]
+        bytes[ASSET_END..PROOFLESS_NOTE_PREFIX_LEN]
             .try_into()
             .map_err(|_| Error::Plaintext)?,
     );
+    // ProoflessOutput has six Option fields after the fixed prefix:
+    // data_hash, utxo_data, ring_program_id, ring_data_hash, ring_data, memo.
+    // The tail stays raw for inspection; `verify_note` admits only the six
+    // None tags and never treats an arbitrary or absent tail as data-free.
     Ok(OpenedNote::Proofless(ProoflessNote {
         owner,
         blinding,
         asset,
         amount,
+        records: bytes[PROOFLESS_NOTE_PREFIX_LEN..].to_vec(),
     }))
 }
 
@@ -417,9 +353,8 @@ fn parse_proofless(bytes: &[u8]) -> Result<OpenedNote, Error> {
 mod tests {
     use super::{ViewingKey, apply_ctr, canonical, coordinate, derive_key, diffie_hellman, tagged};
     use crate::encode::{ConfidentialPlaintext, read_confidential, write_confidential};
-    use crate::{OpenedNote, ProoflessNote, TrackedNote, decode_base64, private_balances};
+    use crate::{Error, OpenedNote, ProoflessNote};
     use curve25519_dalek::montgomery::MontgomeryPoint;
-    use std::collections::BTreeSet;
 
     fn seal(
         ephemeral: &[u8; 32],
@@ -508,40 +443,27 @@ mod tests {
         let opened = viewing
             .open_output(&ephemeral, &salt, 1, &payload)
             .expect("open");
-        let proofless = OpenedNote::Proofless(ProoflessNote {
-            owner: [0; 32],
-            blinding: [0; 32],
-            asset: [0; 32],
-            amount: 0,
-        });
-        let mut saw_confidential = false;
 
-        for candidate in [opened, proofless] {
-            if let OpenedNote::Confidential(plain) = candidate {
-                assert_eq!(plain.amount, 99);
-                saw_confidential = true;
-            }
-        }
-
-        assert!(saw_confidential);
+        assert!(matches!(opened, OpenedNote::Confidential(ref plain) if plain.amount == 99));
 
         assert!(viewing.open_output(&ephemeral, &salt, 2, &payload).is_err());
         let other = ViewingKey::from_bytes([8; 32]);
         assert!(matches!(
             other.open_output(&ephemeral, &salt, 1, &payload),
-            Err(crate::Error::NotForViewer)
+            Err(Error::NotForViewer)
         ));
         let parsed = read_confidential(&plaintext).expect("parsed");
         assert_eq!(parsed.amount, note.amount);
     }
 
     #[test]
-    fn proofless_prefix_and_spent_notes_sum() {
-        let mut body = vec![0];
-        body.extend([4; 32]);
-        body.extend([5; 32]);
-        body.extend([0; 32]);
+    fn proofless_canonical_data_free_payload_is_accepted() {
+        let mut body = vec![0u8];
+        body.extend([4; 32]); // owner
+        body.extend([5; 32]); // blinding
+        body.extend([0; 32]); // asset (SOL mint)
         body.extend(40u64.to_le_bytes());
+        body.extend([0, 0, 0, 0, 0, 0]); // canonical empty options
         let mut payload = vec![0];
         payload.extend(u32::try_from(body.len()).expect("len").to_le_bytes());
         payload.extend(body);
@@ -550,49 +472,38 @@ mod tests {
         let opened = viewing
             .open_output(&[4; 33], &[0; 16], 0, &payload)
             .expect("proofless");
-        assert!(matches!(opened, OpenedNote::Proofless(_)));
-        let note = ProoflessNote {
-            owner: [4; 32],
-            blinding: [5; 32],
-            asset: [0; 32],
-            amount: 40,
-        };
-        let notes = [
-            TrackedNote {
-                tree_id: 0,
-                leaf_index: 1,
-                note: OpenedNote::Proofless(note),
-            },
-            TrackedNote {
-                tree_id: 0,
-                leaf_index: 2,
-                note: OpenedNote::Proofless(super::ProoflessNote {
-                    owner: [4; 32],
-                    blinding: [5; 32],
-                    asset: [0; 32],
-                    amount: 2,
-                }),
-            },
-        ];
-        let mut spent = BTreeSet::new();
-        spent.insert((0, 2));
-        let totals = private_balances(&notes, &spent).expect("sum");
-        assert_eq!(totals.len(), 1);
-        assert_eq!(totals[0].amount, 40);
-        assert_eq!(totals[0].mint, Some([0; 32]));
-        assert_eq!(totals[0].asset_id, None);
-        let repeated = [notes[0].clone(), notes[0].clone()];
-        let once = private_balances(&repeated, &BTreeSet::new()).expect("dedup");
-        assert_eq!(once[0].amount, 40);
-        let mut conflict = notes[0].clone();
+        assert_eq!(
+            opened,
+            OpenedNote::Proofless(ProoflessNote {
+                owner: [4; 32],
+                blinding: [5; 32],
+                asset: [0; 32],
+                amount: 40,
+                records: vec![0, 0, 0, 0, 0, 0],
+            })
+        );
+    }
 
-        if let OpenedNote::Proofless(plain) = &mut conflict.note {
-            plain.amount = 1;
-        }
+    #[test]
+    fn proofless_extension_tail_is_retained_for_inspection() {
+        let tail = [0, 1, 0, 0, 0, 0, 0, 0, 0];
+        let mut body = vec![0u8];
+        body.extend([4; 32]);
+        body.extend([5; 32]);
+        body.extend([0; 32]);
+        body.extend(40u64.to_le_bytes());
+        body.extend(tail);
+        let mut payload = vec![0];
+        payload.extend(u32::try_from(body.len()).expect("len").to_le_bytes());
+        payload.extend(body);
 
+        let viewing = ViewingKey::from_bytes([1; 32]);
+        let opened = viewing
+            .open_output(&[4; 33], &[0; 16], 0, &payload)
+            .expect("raw tail retained");
         assert!(matches!(
-            private_balances(&[notes[0].clone(), conflict], &BTreeSet::new()),
-            Err(crate::Error::Limit("conflicting leaf"))
+            opened,
+            OpenedNote::Proofless(ref note) if note.records.as_slice() == tail
         ));
     }
 
@@ -602,12 +513,12 @@ mod tests {
         let error = viewing
             .open_output(&[4; 33], &[0; 16], 0, &[1, 255, 255, 255, 255])
             .expect_err("length");
-        assert!(matches!(error, crate::Error::Plaintext));
+        assert!(matches!(error, Error::Plaintext));
     }
 
     #[test]
     fn published_payload_is_encrypted_confidential() {
-        let bytes = decode_base64(
+        let bytes = crate::decode_base64(
             "AVQAAAADBIs8UXWNMRXj0LYmli1ENBZyF5MaxY28XHJEj0+5z8Y2iCHFvZnXUY8xSxfga5e4QmD/NsPxsja5BbPBsI7tvH69q5E7NwC1p9JIVwbv/RfwioI=",
         )
         .expect("payload");
@@ -673,25 +584,23 @@ mod tests {
         let mut high = [0; 33];
         high[0] = 4;
         high[32] = 0x80;
-        let mut keyed = vec![3];
-        keyed.extend(viewing.public_key().expect("key"));
-        keyed.extend([1, 2, 3]);
+        let mut confidential = vec![3];
+        confidential.extend(viewing.public_key().expect("key"));
+        confidential.extend([1, 2, 3]);
         assert!(
             viewing
-                .open_output(&high, &[0; 16], 0, &framed(&keyed))
+                .open_output(&high, &[0; 16], 0, &framed(&confidential))
                 .is_err()
         );
         let mut above = [0xff; 32];
         above[31] = 127;
         above[0] = 238;
-        assert!(super::tagged(&above).is_err());
+        assert!(tagged(&above).is_err());
         let mut sign = [0; 32];
         sign[31] = 0x80;
-        assert!(super::tagged(&sign).is_err());
+        assert!(tagged(&sign).is_err());
         let mut zero_peer = [0; 33];
         zero_peer[0] = 4;
-        let mut confidential = keyed.clone();
-        confidential.extend([1, 2, 3]);
         assert!(
             viewing
                 .open_output(&zero_peer, &[0; 16], 0, &framed(&confidential))
@@ -703,19 +612,5 @@ mod tests {
                 .open_output(&peer, &[0; 16], 0, &framed(&confidential))
                 .is_err()
         );
-        let confidential_note = TrackedNote {
-            tree_id: 1,
-            leaf_index: 1,
-            note: OpenedNote::Confidential(ConfidentialPlaintext {
-                asset_id: 4,
-                amount: 5,
-                blinding: [0; 32],
-                ring_program_id: None,
-                records: Vec::new(),
-            }),
-        };
-        let totals = private_balances(&[confidential_note], &BTreeSet::new()).expect("sum");
-        assert_eq!(totals[0].amount, 5);
-        assert_eq!(totals[0].asset_id, Some(4));
     }
 }

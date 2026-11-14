@@ -15,6 +15,8 @@
 #![doc = include_str!("../README.md")]
 
 mod address;
+#[cfg(feature = "crypto")]
+mod admission;
 mod deposit;
 mod encode;
 mod error;
@@ -35,6 +37,10 @@ mod transact;
 mod viewing;
 
 pub use address::*;
+#[cfg(all(feature = "crypto", feature = "poseidon"))]
+pub use admission::verify_note;
+#[cfg(feature = "crypto")]
+pub use admission::{AssetBalance, VerifiedNote, private_balances};
 pub use deposit::{AssetDeposit, Deposit, DepositAsset, SplDeposit};
 pub use encode::{
     AnonymousRingProof, Bsb22, CacheAccess, CacheWrite, Circuit, ConfidentialPlaintext, EddsaProof,
@@ -70,15 +76,15 @@ pub use transact::{
     Transact, Withdraw,
 };
 #[cfg(feature = "crypto")]
-pub use viewing::{
-    AssetBalance, OpenedNote, ProoflessNote, TrackedNote, ViewingKey, private_balances,
-};
+pub use viewing::{OpenedNote, ProoflessNote, TrackedNote, ViewingKey};
 #[cfg(feature = "poseidon")]
 pub use witness::{
     IndexedLookup, IndexedTree, NotePreimage, OutputNote, SignedOwner, SpendNote, TransferCircuit,
     TransferWitness, TreeSlotWitness, confidential_transfer_witness, indexed_proof_request,
 };
 
+#[cfg(all(test, feature = "crypto", feature = "poseidon"))]
+mod admission_behavior_tests;
 #[cfg(test)]
 mod admission_tests;
 #[cfg(test)]
