@@ -77,6 +77,8 @@ Helius publishes the prover and the circuit artifacts:
 This repository has no devenv or Nix setup, so the prover stays an external binary:
 
 ```bash
+set -euo pipefail
+
 curl -fsSL -o prover \
   https://github.com/helius-labs/privacy-rings/releases/download/cli-v0.10.0/prover-linux-x64-cli-v0.10.0
 echo "4be11e2d877e5312bb64f298fb50eb69bb46b26059e8d523678338c0e10d11b2  prover" | sha256sum -c -

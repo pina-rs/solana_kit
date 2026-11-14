@@ -99,14 +99,16 @@ jobs:
               cat "$log"
               exit 1
             fi
-            if curl --fail --silent --show-error http://127.0.0.1:3001/health >/dev/null 2>&1; then
+            if curl --fail --silent --show-error --connect-timeout 1 --max-time 2 \
+              http://127.0.0.1:3001/health >/dev/null 2>&1; then
               echo "prover ready after ${attempt}s"
               break
             fi
             sleep 1
           done
 
-          curl --fail --silent --show-error http://127.0.0.1:3001/health >/dev/null
+          curl --fail --silent --show-error --connect-timeout 1 --max-time 2 \
+            http://127.0.0.1:3001/health >/dev/null
 
           cargo +1.99.1 test -p solana_kit_privacy_rings --all-features --locked \
             prover::tests::local_prover_accepts_a_loopback_witness -- --ignored --exact
