@@ -2855,7 +2855,7 @@ dependencies = [
 
 [[package]]
 name = "solana_kit_privacy_rings"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "aes",
  "aes-gcm",
