@@ -89,24 +89,45 @@ fn fresh_wallet(tester: &mut NativeTester, platform: Platform) -> Result<String>
 fn fund(node: &mut Validator, account: &str) -> Result<()> {
     node.alive()?;
     require(
-        node.rpc.balance(account)? == 0,
+        ledger_balance(node, account)? == 0,
         "UI key must be fresh on this ledger",
     )?;
-    let funded = node.rpc.call(
-        "requestAirdrop",
-        json!([
-            account,FUNDING,{"commitment":"confirmed"}
-        ]),
-    )?;
+    let funded = node
+        .rpc
+        .call("requestAirdrop", airdrop_request(account, FUNDING))?;
     let funded = funded
         .as_str()
         .ok_or_else(|| Error::Response("airdrop signature missing".into()))?;
     public_bytes(funded, SIGNATURE_BYTES)?;
     confirmed(node, funded)?;
     require(
-        node.rpc.balance(account)? == FUNDING,
+        ledger_balance(node, account)? == FUNDING,
         "fresh payer funding effect",
     )
+}
+
+/// The RPC returns the signature once the airdrop is processed. Confirmation
+/// stays in [`confirmed`], which can outlast one client timeout.
+pub(super) fn airdrop_request(account: &str, lamports: u64) -> Value {
+    json!([account, lamports, {"commitment":"processed"}])
+}
+
+/// A stalled read is not a balance. The ledger check keeps its own deadline.
+fn ledger_balance(node: &mut Validator, account: &str) -> Result<u64> {
+    let deadline = Instant::now() + OBSERVE;
+
+    loop {
+        node.alive()?;
+
+        match node.rpc.balance(account) {
+            Ok(balance) => return Ok(balance),
+            Err(Error::Transport(error)) if error.is_connect() || error.is_timeout() => {}
+            Err(error) => return Err(error),
+        }
+
+        require(Instant::now() < deadline, "balance observation deadline")?;
+        thread::sleep(INTERVAL);
+    }
 }
 
 fn reject_transfer(
@@ -185,19 +206,33 @@ fn confirmed(node: &mut Validator, signature: &str) -> Result<()> {
 
     loop {
         node.alive()?;
-        let reply = node.rpc.call(
-            "getSignatureStatuses",
-            json!([
-                [signature],{"searchTransactionHistory":true}
-            ]),
-        )?;
 
-        if funding_confirmed(&reply)? {
+        if funding_landed(node, signature)? {
             return Ok(());
         }
 
         require(Instant::now() < deadline, "funding confirmation deadline")?;
         thread::sleep(INTERVAL);
+    }
+}
+
+fn funding_landed(node: &Validator, signature: &str) -> Result<bool> {
+    let reply = match signature_statuses(node, signature)? {
+        Some(reply) => reply,
+        None => return Ok(false),
+    };
+
+    funding_confirmed(&reply)
+}
+
+fn signature_statuses(node: &Validator, signature: &str) -> Result<Option<Value>> {
+    match node.rpc.call(
+        "getSignatureStatuses",
+        json!([[signature], {"searchTransactionHistory": true}]),
+    ) {
+        Ok(reply) => Ok(Some(reply)),
+        Err(Error::Transport(error)) if error.is_connect() || error.is_timeout() => Ok(None),
+        Err(error) => Err(error),
     }
 }
 
@@ -217,4 +252,16 @@ fn funding_confirmed(reply: &Value) -> Result<bool> {
         status["confirmationStatus"].as_str(),
         Some("confirmed" | "finalized")
     ))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn airdrop_returns_once_processed() {
+        let request = airdrop_request("payer", FUNDING);
+        assert_eq!(request[1], json!(FUNDING));
+        assert_eq!(request[2]["commitment"], "processed");
+    }
 }
