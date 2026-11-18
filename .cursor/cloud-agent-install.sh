@@ -8,7 +8,10 @@ if [ -d /agent/repos/solana_kit ]; then
   cd /agent/repos/solana_kit
 fi
 
-if ! command -v cc >/dev/null 2>&1 || ! command -v g++ >/dev/null 2>&1 || ! command -v pkg-config >/dev/null 2>&1; then
+if ! command -v cc >/dev/null 2>&1 \
+  || ! command -v g++ >/dev/null 2>&1 \
+  || ! command -v pkg-config >/dev/null 2>&1
+then
   sudo apt-get update
   sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
     build-essential ca-certificates curl g++ pkg-config
