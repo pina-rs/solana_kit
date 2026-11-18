@@ -83,8 +83,8 @@ impl Validator {
         require(child.try_wait()?.is_none(), "owned validator exited")
     }
 
-    /// Health can be pending during boot; identity is checked only after health
-    /// succeeds and must match the fresh ledger while its child remains alive.
+    /// Health can succeed while the ledger is still on slot zero. The UI starts
+    /// only after identity matches this child and a processed slot exists.
     fn ready(&mut self) -> Result<()> {
         let deadline = Instant::now() + STARTUP;
 
@@ -93,7 +93,7 @@ impl Validator {
                 return Ok(());
             }
 
-            require(Instant::now() < deadline, "validator health deadline")?;
+            require(Instant::now() < deadline, "validator startup deadline")?;
             thread::sleep(OBSERVATION_INTERVAL);
         }
     }
@@ -102,14 +102,15 @@ impl Validator {
         self.alive()?;
 
         match self.rpc.healthy() {
-            Ok(true) => {
-                self.same_identity()?;
-                self.alive()?;
-                Ok(true)
-            }
-            Err(Error::Transport(error)) if error.is_connect() || error.is_timeout() => Ok(false),
-            result => result,
+            Ok(true) => {}
+            Ok(false) => return Ok(false),
+            Err(Error::Transport(error)) if rpc_stalled(&error) => return Ok(false),
+            Err(error) => return Err(error),
         }
+
+        self.same_identity()?;
+        self.alive()?;
+        processed_slot_open(&self.rpc)
     }
 
     fn same_identity(&self) -> Result<()> {
@@ -152,6 +153,29 @@ impl Drop for Validator {
     }
 }
 
+/// `getSlot` answers `0` before the ledger moves. Confirmed reads then block
+/// inside the client deadline, so startup keeps polling until a slot exists.
+fn processed_slot_open(rpc: &Rpc) -> Result<bool> {
+    let slot = match rpc.call("getSlot", json!([{"commitment":"processed"}])) {
+        Ok(slot) => slot,
+        Err(Error::Transport(error)) if rpc_stalled(&error) => return Ok(false),
+        Err(error) => return Err(error),
+    };
+
+    open_slot(&slot)
+}
+
+fn open_slot(slot: &serde_json::Value) -> Result<bool> {
+    match slot.as_u64() {
+        Some(slot) => Ok(slot > 0),
+        None => Err(Error::Response("slot is not an unsigned integer".into())),
+    }
+}
+
+fn rpc_stalled(error: &reqwest::Error) -> bool {
+    error.is_connect() || error.is_timeout()
+}
+
 fn configuration(directory: &Path, ports: &Ports) -> Result<PathBuf> {
     let config = directory.join("solana-config.json");
     fs::write(
@@ -164,4 +188,16 @@ fn configuration(directory: &Path, ports: &Ports) -> Result<PathBuf> {
         }))?,
     )?;
     Ok(config)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn startup_waits_while_the_processed_slot_is_still_zero() {
+        assert!(!open_slot(&json!(0)).unwrap());
+        assert!(open_slot(&json!(1)).unwrap());
+        assert!(open_slot(&json!("none")).is_err());
+    }
 }

@@ -125,8 +125,9 @@ matching that Xcode's simulator SDK.
 It queries the installed application's container and passes its new
 `Library/Application Support` directory to the controller. The job builds the
 pinned driver's WebDriverAgent separately and passes its explicit derived-data
-directory. Agent compilation therefore completes before its service-start
-deadline begins. Launch uses the bundle
+directory. Launch then waits 180 seconds for that prebuilt runner to install
+and start. A cold CI start took 45 seconds, and the driver's 60 second default
+stopped `xcodebuild` while it was still running. Launch uses the bundle
 identifier and explicit simulator ID, preserving the configuration written before
 launch. The iOS session explicitly starts and terminates only its tested app while
 preserving that configuration, as described by the

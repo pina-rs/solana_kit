@@ -10,6 +10,9 @@ use std::{
 
 const DRIVER_STARTUP_SECONDS: u64 = 900;
 const UI_WAIT_SECONDS: u64 = 30;
+/// Cold CI launch of the prebuilt runner took 45s. The driver default of 60s
+/// sends SIGTERM while `xcodebuild test-without-building` is still installing it.
+const WDA_LAUNCH_MS: u64 = 180_000;
 const APP_NOT_RUNNING: u64 = 1;
 const USAGE: &str = "usage: installed_wallet <macos|ios|android|android-mwa> <loopback-driver> <application> <fresh-config-directory> <fresh-run-directory> <validator-binary> [<device> <prebuilt-wda-directory|adb-binary> [<wallet-package>]]";
 
@@ -236,15 +239,7 @@ impl Launch {
         }
 
         if let Target::Ios { wda, .. } = &self.target {
-            options
-                .capabilities
-                .insert("appium:usePrebuiltWDA".into(), true.into());
-            options
-                .capabilities
-                .insert("appium:derivedDataPath".into(), wda.clone().into());
-            options
-                .capabilities
-                .insert("appium:showXcodeLog".into(), true.into());
+            prebuilt_ios_agent(&mut options, wda);
         }
 
         if platform == Platform::Android {
@@ -257,6 +252,19 @@ impl Launch {
         options.startup_seconds = DRIVER_STARTUP_SECONDS;
         options.wait_seconds = UI_WAIT_SECONDS;
         options
+    }
+}
+
+/// The prebuilt runner is installed by `xcodebuild test-without-building`.
+/// Its launch budget is longer than the driver's 60 second default.
+fn prebuilt_ios_agent(options: &mut Options, derived_data: &str) {
+    for (name, value) in [
+        ("appium:usePrebuiltWDA", json!(true)),
+        ("appium:derivedDataPath", json!(derived_data)),
+        ("appium:showXcodeLog", json!(true)),
+        ("appium:wdaLaunchTimeout", json!(WDA_LAUNCH_MS)),
+    ] {
+        options.capabilities.insert(name.into(), value);
     }
 }
 
@@ -331,6 +339,10 @@ mod tests {
         assert_eq!(options.device.as_deref(), Some("explicit-simulator"));
         assert_eq!(options.capabilities["appium:shouldTerminateApp"], true);
         assert_eq!(options.capabilities["appium:usePrebuiltWDA"], true);
+        assert_eq!(
+            options.capabilities["appium:wdaLaunchTimeout"],
+            WDA_LAUNCH_MS
+        );
     }
 
     #[test]

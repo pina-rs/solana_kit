@@ -1,5 +1,5 @@
 //! The owned ledger changes while a cancelled display remains frozen.
-use super::{SIGNATURE_BYTES, confirmed, public_bytes};
+use super::{SIGNATURE_BYTES, airdrop_request, confirmed, public_bytes};
 use crate::{Error, Result, accessibility, require, validator::Validator};
 use leptoskit_testing::native::{Locator, NativeTester, Platform};
 use serde_json::json;
@@ -175,10 +175,9 @@ fn credit(node: &mut Validator, account: &str, before: u64) -> Result<Credit> {
         .checked_add(CREDIT)
         .ok_or_else(|| Error::Response("subscription probe balance overflow".into()))?;
     node.alive()?;
-    let signature = node.rpc.call(
-        "requestAirdrop",
-        json!([account,CREDIT,{"commitment":"confirmed"}]),
-    )?;
+    let signature = node
+        .rpc
+        .call("requestAirdrop", airdrop_request(account, CREDIT))?;
     let signature = signature
         .as_str()
         .ok_or_else(|| Error::Response("subscription credit signature missing".into()))?;
