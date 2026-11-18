@@ -13,6 +13,9 @@ const UI_WAIT_SECONDS: u64 = 30;
 /// Cold CI launch of the prebuilt runner took 45s. The driver default of 60s
 /// sends SIGTERM while `xcodebuild test-without-building` is still installing it.
 const WDA_LAUNCH_MS: u64 = 180_000;
+/// Cold `createSession` was still launching the installed app when the
+/// 30 second WebDriverAgent command budget expired.
+const IOS_LAUNCH_COMMAND_SECONDS: u64 = 120;
 const APP_NOT_RUNNING: u64 = 1;
 const USAGE: &str = "usage: installed_wallet <macos|ios|android|android-mwa> <loopback-driver> <application> <fresh-config-directory> <fresh-run-directory> <validator-binary> [<device> <prebuilt-wda-directory|adb-binary> [<wallet-package>]]";
 
@@ -239,6 +242,7 @@ impl Launch {
         }
 
         if let Target::Ios { wda, .. } = &self.target {
+            options.command_seconds = IOS_LAUNCH_COMMAND_SECONDS;
             prebuilt_ios_agent(&mut options, wda);
         }
 
@@ -343,6 +347,8 @@ mod tests {
             options.capabilities["appium:wdaLaunchTimeout"],
             WDA_LAUNCH_MS
         );
+        assert_eq!(options.command_seconds, IOS_LAUNCH_COMMAND_SECONDS);
+        assert_eq!(options.wait_seconds, UI_WAIT_SECONDS);
     }
 
     #[test]
