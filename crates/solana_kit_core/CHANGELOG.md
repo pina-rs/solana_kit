@@ -9,6 +9,22 @@
 Solana Kit supports off-chain application clients. On-chain programs should use
 Pina or official Solana program libraries.
 
+## [0.2.2](https://github.com/pina-rs/solana_kit/releases/tag/v0.2.2) (2026-11-26)
+
+Grouped release for `sdk`.
+
+### Features
+
+#### Add Rust streams and callbacks for RPC subscriptions
+
+_Packages:_ 🟠 _solana_kit_client_, 🟠 _solana_kit_native_, 🟠 _solana_kit_browser_
+
+_Owner:_ [@ifiokjr](https://github.com/ifiokjr) · _Review:_ [PR #204](https://github.com/pina-rs/solana_kit/pull/204)
+
+`Session::notifications` returns a fused stream of typed RPC notifications. `Session::run_callback` delivers those notifications to a Rust closure in the caller's task. Both support explicit unsubscribe and preserve protocol and socket errors.
+
+Use `TokioClock` on native Tokio, `BrowserClock` in browser WebAssembly, or `WasiClock` with the WASI Preview 2 reactor.
+
 ## [0.2.1](https://github.com/pina-rs/solana_kit/releases/tag/v0.2.1) (2026-11-09)
 
 Grouped release for `sdk`.
