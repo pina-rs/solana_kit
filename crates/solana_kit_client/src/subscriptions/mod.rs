@@ -10,12 +10,14 @@ mod provider;
 mod requests;
 mod responses;
 mod session;
+mod stream;
 pub use clock::{Clock, ClockError};
 pub use owner::*;
 pub use provider::{NotificationKind, Provider, ProviderMethod};
 pub use requests::*;
 pub use responses::*;
 pub use session::{NotificationPoll, ReceivedFrame, Session, SessionError, TextSocket};
+pub use stream::SubscriptionStream;
 
 mod sealed {
     pub trait Sealed {}

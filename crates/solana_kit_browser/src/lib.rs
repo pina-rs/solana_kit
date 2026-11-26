@@ -15,7 +15,13 @@ mod browser;
 mod cause;
 
 #[cfg(all(target_arch = "wasm32", target_os = "unknown"))]
+mod clock;
+
+#[cfg(all(target_arch = "wasm32", target_os = "unknown"))]
 pub use cause::BrowserCause;
+
+#[cfg(all(target_arch = "wasm32", target_os = "unknown"))]
+pub use clock::{BrowserClock, BrowserClockSleep};
 
 #[cfg(all(target_arch = "wasm32", target_os = "unknown"))]
 pub use browser::{BrowserExchange, BrowserHttp, BrowserRest, ConfigError, HttpConfig};

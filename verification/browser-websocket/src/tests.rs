@@ -13,6 +13,7 @@ use wasm_bindgen_futures::JsFuture;
 use wasm_bindgen_test::{wasm_bindgen_test, wasm_bindgen_test_configure};
 mod families;
 mod lifecycle;
+mod stream;
 wasm_bindgen_test_configure!(run_in_browser);
 
 #[wasm_bindgen(inline_js = "

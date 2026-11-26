@@ -276,6 +276,10 @@ fn session_peer(socket: &mut Peer) -> Result<()> {
     socket.send(Message::Text(
         r#"{"jsonrpc":"2.0","id":1,"result":17}"#.into(),
     ))?;
+    socket.send(Message::Text(
+        r#"{"jsonrpc":"2.0","method":"rootNotification","params":{"subscription":17,"result":7}}"#
+            .into(),
+    ))?;
     ensure!(
         socket.read()?
             == Message::Text(
