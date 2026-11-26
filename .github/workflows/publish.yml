@@ -46,7 +46,7 @@ concurrency:
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 env:
-  MONOCHANGE_VERSION: "0.21.0"
+  MONOCHANGE_VERSION: "0.22.0"
   CARGO_HTTP_USER_AGENT: solana-kit-publishing
   GIT_HTTP_USER_AGENT: solana-kit-publishing
 
@@ -102,7 +102,7 @@ jobs:
             "${base}/${release}/${archive}" \
             --output "$directory/monochange.tar.gz"
 
-          printf '%s  %s\n' 3d79ea6d683b48ad6760f5ed60101022b8383b48e15eba49bd400fb53fed4afb \
+          printf '%s  %s\n' 31a1e8fdb48f51e096842379a0cb1288fa9dbc31c4659111f3eae3cde4cdf6b4 \
             "$directory/monochange.tar.gz" | sha256sum --check --strict
 
           tar -xzf "$directory/monochange.tar.gz" -C "$directory"
@@ -231,7 +231,7 @@ jobs:
             "${base}/${release}/${archive}" \
             --output "$directory/monochange.tar.gz"
 
-          printf '%s  %s\n' 3d79ea6d683b48ad6760f5ed60101022b8383b48e15eba49bd400fb53fed4afb \
+          printf '%s  %s\n' 31a1e8fdb48f51e096842379a0cb1288fa9dbc31c4659111f3eae3cde4cdf6b4 \
             "$directory/monochange.tar.gz" | sha256sum --check --strict
 
           tar -xzf "$directory/monochange.tar.gz" -C "$directory"
@@ -279,7 +279,7 @@ jobs:
             "${base}/${release}/${archive}" \
             --output "$directory/monochange.tar.gz"
 
-          printf '%s  %s\n' 3d79ea6d683b48ad6760f5ed60101022b8383b48e15eba49bd400fb53fed4afb \
+          printf '%s  %s\n' 31a1e8fdb48f51e096842379a0cb1288fa9dbc31c4659111f3eae3cde4cdf6b4 \
             "$directory/monochange.tar.gz" | sha256sum --check --strict
 
           tar -xzf "$directory/monochange.tar.gz" -C "$directory"
@@ -351,7 +351,7 @@ jobs:
             "${base}/${release}/${archive}" \
             --output "$directory/monochange.tar.gz"
 
-          printf '%s  %s\n' 3d79ea6d683b48ad6760f5ed60101022b8383b48e15eba49bd400fb53fed4afb \
+          printf '%s  %s\n' 31a1e8fdb48f51e096842379a0cb1288fa9dbc31c4659111f3eae3cde4cdf6b4 \
             "$directory/monochange.tar.gz" | sha256sum --check --strict
 
           tar -xzf "$directory/monochange.tar.gz" -C "$directory"
