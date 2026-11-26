@@ -3,6 +3,7 @@ use std::{collections::BTreeSet, process::Command};
 const CLIENT: &[&str] = &[
     "base64 v0.22.1",
     "bs58 v0.5.1",
+    "futures-core v0.3.34",
     "itoa v1.0.18",
     "memchr v2.8.3",
     "proc-macro2 v1.0.107",
