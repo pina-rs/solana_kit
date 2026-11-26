@@ -1,4 +1,5 @@
 //! Typed Connection requests and results travel through real loopback WebSockets.
+use core::ops::ControlFlow;
 use futures_util::{SinkExt, StreamExt};
 use solana_kit_client::{
     methods::{
@@ -8,8 +9,8 @@ use solana_kit_client::{
     subscriptions::*,
 };
 use solana_kit_core::accounts::MaybeAccount;
-use solana_kit_native::{NativeSubscriptionSocket, NativeWebSocket, WsConfig};
-use std::pin::Pin;
+use solana_kit_native::{NativeSubscriptionSocket, NativeWebSocket, TokioClock, WsConfig};
+use std::time::Duration;
 use tokio::net::TcpListener;
 use tokio_tungstenite::tungstenite::Message;
 
@@ -17,20 +18,7 @@ const ADDRESS: &str = "11111111111111111111111111111111";
 const GENERATION: u64 = 7;
 const ACK_DEADLINE: u64 = 100;
 const NETWORK_DEADLINE: u64 = 2_000;
-struct Monotonic(tokio::time::Instant);
-impl Clock for Monotonic {
-    type Sleep<'a> =
-        Pin<Box<dyn core::future::Future<Output = Result<(), ClockError>> + Send + 'a>>;
-    fn now(&self) -> u64 {
-        u64::try_from(self.0.elapsed().as_millis()).unwrap()
-    }
-    fn sleep_until(&self, deadline: u64) -> Self::Sleep<'_> {
-        Box::pin(async move {
-            tokio::time::sleep_until(self.0 + std::time::Duration::from_millis(deadline)).await;
-            Ok(())
-        })
-    }
-}
+const CLEANUP_TIMEOUT: u64 = 20;
 const SIGNATURE: &str = concat!(
     "11111111111111111111111111111111",
     "11111111111111111111111111111111"
@@ -87,7 +75,7 @@ async fn delivered<R: SubscriptionMethod>(request: R, params: &str, raw: &str) -
     let socket = NativeWebSocket::connect(&endpoint, WsConfig::default())
         .await
         .unwrap();
-    let clock = Monotonic(tokio::time::Instant::now());
+    let clock = TokioClock::new();
     let mut owner = Session::new(
         NativeSubscriptionSocket::from(socket),
         GENERATION,
@@ -303,6 +291,90 @@ async fn signature_peer(listener: TcpListener) {
     ] {
         peer.send(Message::Text(text.into())).await.unwrap();
     }
+    assert!(matches!(
+        peer.next().await.unwrap().unwrap(),
+        Message::Close(_)
+    ));
+    peer.flush().await.unwrap();
+}
+
+#[tokio::test]
+async fn stream_and_callback_consume_typed_notifications_in_a_spawned_tokio_task() {
+    let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let endpoint = format!("ws://{}/rpc", listener.local_addr().unwrap());
+    let peer = tokio::spawn(root_peer(listener));
+    let socket = NativeWebSocket::connect(&endpoint, WsConfig::default())
+        .await
+        .unwrap();
+    let session = Session::new(socket.into(), GENERATION, Budget::default());
+
+    let task = tokio::spawn(consume_root_notifications(session));
+    tokio::time::timeout(Duration::from_millis(NETWORK_DEADLINE), task)
+        .await
+        .unwrap()
+        .unwrap();
+    peer.await.unwrap();
+}
+
+async fn consume_root_notifications(mut session: Session<NativeSubscriptionSocket>) {
+    let clock = TokioClock::new();
+    let handle = session
+        .subscribe(Root, clock.now() + NETWORK_DEADLINE)
+        .unwrap();
+    let first = session
+        .notifications(&handle, &clock, CLEANUP_TIMEOUT)
+        .next()
+        .await
+        .unwrap()
+        .unwrap();
+    let mut second = None;
+
+    session
+        .run_callback(&handle, &clock, CLEANUP_TIMEOUT, |value| {
+            second = Some(value);
+            ControlFlow::Break(())
+        })
+        .await
+        .unwrap();
+    session
+        .unsubscribe(handle, &clock, clock.now() + NETWORK_DEADLINE)
+        .await
+        .unwrap();
+    session
+        .shutdown(&clock, clock.now() + NETWORK_DEADLINE)
+        .await
+        .unwrap();
+
+    assert_eq!((first, second), (u64::MAX, Some(42)));
+}
+
+async fn root_peer(listener: TcpListener) {
+    let (socket, _) = listener.accept().await.unwrap();
+    let mut peer = tokio_tungstenite::accept_async(socket).await.unwrap();
+    assert_eq!(
+        peer.next().await.unwrap().unwrap(),
+        Message::Text(r#"{"jsonrpc":"2.0","id":1,"method":"rootSubscribe","params":[]}"#.into())
+    );
+
+    for frame in [
+        r#"{"jsonrpc":"2.0","id":1,"result":17}"#,
+        r#"{"jsonrpc":"2.0","method":"rootNotification","params":{"subscription":17,"result":18446744073709551615}}"#,
+        r#"{"jsonrpc":"2.0","method":"rootNotification","params":{"subscription":17,"result":42}}"#,
+    ] {
+        peer.send(Message::Text(frame.into())).await.unwrap();
+    }
+
+    assert_eq!(
+        peer.next().await.unwrap().unwrap(),
+        Message::Text(
+            r#"{"jsonrpc":"2.0","id":2,"method":"rootUnsubscribe","params":[17]}"#.into()
+        )
+    );
+    peer.send(Message::Text(
+        r#"{"jsonrpc":"2.0","id":2,"result":true}"#.into(),
+    ))
+    .await
+    .unwrap();
     assert!(matches!(
         peer.next().await.unwrap().unwrap(),
         Message::Close(_)

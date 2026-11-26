@@ -8,6 +8,7 @@
 #![deny(missing_docs)]
 #![doc = include_str!("../README.md")]
 
+mod clock;
 mod config;
 mod endpoint;
 mod exchange;
@@ -22,6 +23,7 @@ pub mod keys;
 #[cfg(feature = "surfpool")]
 pub mod surfpool;
 
+pub use clock::{TokioClock, TokioClockSleep};
 pub use config::{ConfigError, HttpConfig};
 pub use hyper::http::{HeaderMap, HeaderName, HeaderValue};
 pub use rest::NativeRest;

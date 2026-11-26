@@ -23,7 +23,7 @@ solana_kit_wallet = { workspace = true, optional = true }
 solana_kit_signers = { workspace = true, features = ["crypto"], optional = true }
 wasm-bindgen = "=0.2.128"
 wasm-bindgen-futures = "=0.4.78"
-web-sys = { version = "=0.3.105", features = ["CustomEvent", "CustomEventInit", "EventTarget", "BinaryType", "Blob", "CloseEvent", "Event", "MessageEvent", "WebSocket", "AbortController", "AbortSignal", "Headers", "ReadableStream", "ReadableStreamDefaultReader", "ReferrerPolicy", "Request", "RequestCredentials", "RequestInit", "RequestMode", "RequestRedirect", "Response", "ResponseType", "Url", "Window"] }
+web-sys = { version = "=0.3.105", features = ["CustomEvent", "CustomEventInit", "EventTarget", "BinaryType", "Blob", "CloseEvent", "Event", "MessageEvent", "WebSocket", "AbortController", "AbortSignal", "Headers", "ReadableStream", "ReadableStreamDefaultReader", "ReferrerPolicy", "Request", "RequestCredentials", "RequestInit", "RequestMode", "RequestRedirect", "Response", "ResponseType", "Url", "Performance", "Window"] }
 
 [target.'cfg(all(target_arch = "wasm32", target_os = "unknown"))'.dev-dependencies]
 wasm-bindgen-test = "=0.3.78"

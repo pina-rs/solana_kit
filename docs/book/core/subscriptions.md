@@ -88,6 +88,77 @@ The SDK never reconnects or replays on its own. When you open a new socket, call
 
 The adapters are at different stages. Some socket paths are still marked source-only or unexecuted in their own READMEs. Check the [Native](../runtimes/native.md), [Browser](../runtimes/browser.md), [WASI](../runtimes/wasi.md) and [LeptosKit](../runtimes/leptoskit.md) pages before you depend on one.
 
+## Streams and callbacks
+
+Register a typed handle with `Session::subscribe`. Then choose how to consume its notifications:
+
+- `Session::notifications(&handle, &clock, cleanup_timeout_millis)` returns a Rust `Stream` of `Result<R::Response, SessionError<S::Error>>`. Use `StreamExt::next` or other stream combinators.
+- `Session::run_callback(&handle, &clock, cleanup_timeout_millis, callback)` calls a Rust `FnMut` in the caller's task. Return `ControlFlow::Continue(())` to keep listening or `ControlFlow::Break(())` to stop.
+
+Each consumer holds a mutable borrow of the session. Use separate sessions to drive independent consumers concurrently. The cleanup timeout applies to cancelled or abandoned registrations. The socket adapter controls receive and operation timeouts.
+
+### Native Tokio
+
+Use `TokioClock` with the native socket adapter. Move the session into your task to use `tokio::spawn`.
+
+```rust
+use futures_util::StreamExt;
+use solana_kit_client::subscriptions::{Budget, Clock, Root, Session, SessionError};
+use solana_kit_native::{NativeSubscriptionSocket, NativeWebSocket, TokioClock, WsConfig};
+
+let socket = NativeWebSocket::connect(endpoint, WsConfig::default()).await?;
+let mut session = Session::new(NativeSubscriptionSocket::from(socket), 1, Budget::default());
+
+let task = tokio::spawn(async move {
+    let clock = TokioClock::new();
+    let handle = session.subscribe(Root, clock.now() + 2_000)?;
+    let root = session.notifications(&handle, &clock, 500).next().await.transpose()?;
+    session.unsubscribe(handle, &clock, clock.now() + 2_000).await?;
+    session.shutdown(&clock, clock.now() + 2_000).await?;
+    Ok::<_, SessionError<_>>(root)
+});
+
+let root = task.await??;
+```
+
+### Browser Wasm
+
+Use `BrowserClock` with the browser socket adapter. Either consumer can run in a local task with `wasm_bindgen_futures::spawn_local`. A local callback can capture browser state such as `Rc` values.
+
+```rust
+use core::ops::ControlFlow;
+use solana_kit_browser::{BrowserClock, BrowserSubscriptionSocket, BrowserWebSocket, WsError};
+use solana_kit_client::subscriptions::{Budget, Clock, Root, Session, SessionError};
+
+async fn watch_root(socket: BrowserWebSocket) -> Result<(), SessionError<WsError>> {
+    let clock = BrowserClock::new().map_err(SessionError::Clock)?;
+    let mut session = Session::new(BrowserSubscriptionSocket::from(socket), 1, Budget::default());
+    let handle = session.subscribe(Root, clock.now() + 2_000)?;
+
+    session
+        .run_callback(&handle, &clock, 500, |root| {
+            if root >= 100 {
+                ControlFlow::Break(())
+            } else {
+                ControlFlow::Continue(())
+            }
+        })
+        .await?;
+    session.unsubscribe(handle, &clock, clock.now() + 2_000).await?;
+    session.shutdown(&clock, clock.now() + 2_000).await
+}
+```
+
+### WASI Preview 2
+
+Use `WasiClock` and `WasiWebSocket` with the same `Reactor`. Run the callback future with `Reactor::block_on` or use it to await the next stream item. The [WASI verification guest](https://github.com/pina-rs/solana_kit/blob/main/verification/wasi-text-sockets/src/session.rs) shows both over one TLS socket.
+
+### Completion and cancellation
+
+- A one-shot subscription yields its final notification and ends. Call `Session::forget` to release its slot.
+- A stream yields a terminal failure once and then ends. `run_callback` returns the same failure as an error.
+- To stop an idle consumer, race it against your cancellation future. Drop the pending consumer, then await `Session::unsubscribe` to confirm remote cleanup. Use the same cleanup after a callback returns `ControlFlow::Break(())`.
+
 ## Transaction confirmation
 
 `solana_kit_client::confirmation` separates the confirmation _policy_ from how you _observe_ events.

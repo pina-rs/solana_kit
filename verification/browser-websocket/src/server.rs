@@ -102,6 +102,12 @@ fn dispatch(
             thread::sleep(DELIVERY_DELAY);
             socket.send(Message::Text("resumed".into()))?;
         }
+        "/quiet-subscription" => {
+            assert_eq!(
+                socket.read()?.into_text()?,
+                r#"{"jsonrpc":"2.0","id":1,"method":"rootSubscribe","params":[]}"#
+            );
+        }
         "/quiet" | "/early-close" => {}
         "/send-limit" => {
             assert_eq!(socket.read()?.into_text()?, "1234");
